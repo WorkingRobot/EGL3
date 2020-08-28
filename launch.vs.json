@@ -1,0 +1,13 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "EGL3Port.exe",
+      "name": "EGL3Port.exe",
+      "args": [ "-F \"../../../dump5.rawdisk\" --debug" ]
+    }
+  ]
+}
