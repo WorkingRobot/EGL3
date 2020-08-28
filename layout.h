@@ -739,7 +739,7 @@ typedef struct {
 				   array, resident and non-resident attributes
 				   respectively, aligning to an 8-byte
 				   boundary. */
-/* 12*/	ATTR_FLAGS flags;	/* Flags describing the attribute. */
+/* 12*/	u16 flags;	/* Flags describing the attribute. */
 /* 14*/	le16 instance;		/* The instance of this attribute record. This
 				   number is unique within this mft record (see
 				   MFT_RECORD/next_attribute_instance notes
@@ -755,7 +755,7 @@ typedef struct {
 					       have a name present as this might
 					       not have a length of a multiple
 					       of 8-bytes. */
-/* 22 */		RESIDENT_ATTR_FLAGS resident_flags; /* See above. */
+/* 22 */		u8 resident_flags; /* See above. */
 /* 23 */		s8 reservedR;	    /* Reserved/alignment to 8-byte
 					       boundary. */
 /* 24 */		void *resident_end[0]; /* Use offsetof(ATTR_RECORD,
@@ -1137,7 +1137,7 @@ typedef struct {
 	};
 /* 40*/	u8 file_name_length;			/* Length of file name in
 						   (Unicode) characters. */
-/* 41*/	FILE_NAME_TYPE_FLAGS file_name_type;	/* Namespace of the file name.*/
+/* 41*/	u8 file_name_type;	/* Namespace of the file name.*/
 /* 42*/	ntfschar file_name[0];			/* File name in Unicode. */
 } FILE_NAME_ATTR;
 
@@ -2003,9 +2003,9 @@ typedef struct {
  * NOTE: Always resident.
  * NOTE: Present only in FILE_Volume.
  */
-typedef struct {
-	ntfschar name[0];	/* The name of the volume in Unicode. */
-} VOLUME_NAME;
+//typedef struct {
+//	ntfschar name[0];	/* The name of the volume in Unicode. */
+//} VOLUME_NAME;
 
 /**
  * enum VOLUME_FLAGS - Possible flags for the volume (16-bit).
@@ -2034,7 +2034,7 @@ typedef struct {
 	le64 reserved;		/* Not used (yet?). */
 	u8 major_ver;		/* Major version of the ntfs format. */
 	u8 minor_ver;		/* Minor version of the ntfs format. */
-	VOLUME_FLAGS flags;	/* Bit array of VOLUME_* flags. */
+	u16 flags;	/* Bit array of VOLUME_* flags. */
 } VOLUME_INFORMATION;
 
 /**
@@ -2098,7 +2098,6 @@ typedef struct {
 	   size not counting the INDEX_HEADER part (i.e. minus -24).
 	 */
 /* 12*/	INDEX_HEADER_FLAGS ih_flags;	/* Bit field of INDEX_HEADER_FLAGS.  */
-/* 13*/	u8 reserved[3];			/* Reserved/align to 8-byte boundary.*/
 /* sizeof() == 16 */
 } INDEX_HEADER;
 
@@ -2310,7 +2309,6 @@ typedef struct {
 /*  8*/	le16 length;
 /* 10*/	le16 key_length;
 /* 12*/	INDEX_ENTRY_FLAGS flags;
-/* 14*/	le16 reserved;
 /* sizeof() = 16 bytes */
 } INDEX_ENTRY_HEADER;
 
@@ -2345,7 +2343,6 @@ typedef struct {
 				    index entry. It follows field reserved. Not
 				    multiple of 8-bytes. */
 /* 12*/	INDEX_ENTRY_FLAGS ie_flags; /* Bit field of INDEX_ENTRY_* flags. */
-/* 14*/	le16 reserved;		 /* Reserved/align to 8-byte boundary. */
 /*	End of INDEX_ENTRY_HEADER */
 /* 16*/	union {		/* The key of the indexed attribute. NOTE: Only present
 			   if INDEX_ENTRY_END bit in flags is not set. NOTE: On

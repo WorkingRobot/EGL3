@@ -269,7 +269,7 @@ typedef union {
 	FILE_NAME_ATTR filename;
 	OBJECT_ID_ATTR obj_id;
 	SECURITY_DESCRIPTOR_ATTR sec_desc;
-	VOLUME_NAME vol_name;
+	//VOLUME_NAME vol_name;
 	VOLUME_INFORMATION vol_inf;
 	DATA_ATTR data;
 	INDEX_ROOT index_root;

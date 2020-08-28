@@ -2340,7 +2340,6 @@ static int add_attr_index_root(MFT_RECORD* m, const char* name,
 		sizeof(INDEX_ENTRY_HEADER));
 	r->index.allocated_size = r->index.index_length;
 	r->index.ih_flags = SMALL_INDEX;
-	memset(&r->index.reserved, 0, sizeof(r->index.reserved));
 	e = (INDEX_ENTRY_HEADER*)((u8*)&r->index +
 		le32_to_cpu(r->index.entries_offset));
 	/*
@@ -2352,7 +2351,6 @@ static int add_attr_index_root(MFT_RECORD* m, const char* name,
 	e->length = const_cpu_to_le16(sizeof(INDEX_ENTRY_HEADER));
 	e->key_length = const_cpu_to_le16(0);
 	e->flags = INDEX_ENTRY_END;
-	e->reserved = const_cpu_to_le16(0);
 	err = insert_resident_attr_in_mft_record(m, AT_INDEX_ROOT, name,
 		name_len, ic, const_cpu_to_le16(0), 0,
 		(u8*)r, val_len);
@@ -2759,6 +2757,9 @@ static int insert_index_entry_in_res_dir_index(INDEX_ENTRY* idx, u32 idx_size,
 		le32_to_cpu(idx_header->entries_offset));
 	idx_end = (INDEX_ENTRY*)((u8*)idx_entry +
 		le32_to_cpu(idx_header->index_length));
+	
+	printf("%d %d %d %d\n", idx_header->entries_offset, idx_header->index_length, idx_header->allocated_size, idx_header->ih_flags);
+	printf("%llu %d %d %d\n", idx_entry->indexed_file, idx_entry->length, idx_entry->key_length, idx_entry->ie_flags);
 	/*
 	 * Loop until we exceed valid memory (corruption case) or until we
 	 * reach the last entry.
@@ -2883,7 +2884,6 @@ static int initialize_secure(char* sds, u32 sds_size, MFT_RECORD* m)
 		idx_entry_sdh->length = const_cpu_to_le16(0x30);
 		idx_entry_sdh->key_length = const_cpu_to_le16(0x08);
 		idx_entry_sdh->ie_flags = const_cpu_to_le16(0x00);
-		idx_entry_sdh->reserved = const_cpu_to_le16(0x00);
 		idx_entry_sdh->key.sdh.hash = sds_header->hash;
 		idx_entry_sdh->key.sdh.security_id = sds_header->security_id;
 		sdh_data = (SDH_INDEX_DATA*)((u8*)idx_entry_sdh +
@@ -2901,7 +2901,6 @@ static int initialize_secure(char* sds, u32 sds_size, MFT_RECORD* m)
 		idx_entry_sii->length = const_cpu_to_le16(0x28);
 		idx_entry_sii->key_length = const_cpu_to_le16(0x04);
 		idx_entry_sii->ie_flags = const_cpu_to_le16(0x00);
-		idx_entry_sii->reserved = const_cpu_to_le16(0x00);
 		idx_entry_sii->key.sii.security_id = sds_header->security_id;
 		sii_data = (SII_INDEX_DATA*)((u8*)idx_entry_sii +
 			le16_to_cpu(idx_entry_sii->data_offset));
@@ -2947,7 +2946,6 @@ static int initialize_quota(MFT_RECORD* m)
 	idx_entry_q1->length = const_cpu_to_le16(0x48);
 	idx_entry_q1->key_length = const_cpu_to_le16(0x04);
 	idx_entry_q1->ie_flags = const_cpu_to_le16(0x00);
-	idx_entry_q1->reserved = const_cpu_to_le16(0x00);
 	idx_entry_q1->key.owner_id = const_cpu_to_le32(0x01);
 	idx_entry_q1_data = (QUOTA_CONTROL_ENTRY*)((char*)idx_entry_q1
 		+ le16_to_cpu(idx_entry_q1->data_offset));
@@ -2974,7 +2972,6 @@ static int initialize_quota(MFT_RECORD* m)
 	idx_entry_q2->length = const_cpu_to_le16(0x58);
 	idx_entry_q2->key_length = const_cpu_to_le16(0x04);
 	idx_entry_q2->ie_flags = const_cpu_to_le16(0x00);
-	idx_entry_q2->reserved = const_cpu_to_le16(0x00);
 	idx_entry_q2->key.owner_id = QUOTA_FIRST_USER_ID;
 	idx_entry_q2_data = (QUOTA_CONTROL_ENTRY*)((char*)idx_entry_q2
 		+ le16_to_cpu(idx_entry_q2->data_offset));
@@ -3009,7 +3006,6 @@ static int initialize_quota(MFT_RECORD* m)
 	idx_entry_o->length = const_cpu_to_le16(0x28);
 	idx_entry_o->key_length = const_cpu_to_le16(0x10);
 	idx_entry_o->ie_flags = const_cpu_to_le16(0x00);
-	idx_entry_o->reserved = const_cpu_to_le16(0x00);
 	idx_entry_o->key.sid.revision = 0x01;
 	idx_entry_o->key.sid.sub_authority_count = 0x02;
 	for (i = 0; i < 5; i++)
@@ -3159,7 +3155,6 @@ static int insert_file_link_in_dir_index(INDEX_BLOCK* idx, leMFT_REF file_ref,
 	ie->length = cpu_to_le16(i);
 	ie->key_length = cpu_to_le16(file_name_size);
 	ie->ie_flags = const_cpu_to_le16(0);
-	ie->reserved = const_cpu_to_le16(0);
 	memcpy((char*)&ie->key.file_name, (char*)file_name, file_name_size);
 	return 0;
 }

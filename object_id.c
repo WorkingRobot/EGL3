@@ -160,7 +160,6 @@ static int set_object_id_index(ntfs_inode *ni, ntfs_index_context *xo,
 	indx.header.key_length = const_cpu_to_le16(
 					sizeof(OBJECT_ID_INDEX_KEY));
 	indx.header.flags = const_cpu_to_le16(0);
-	indx.header.reserved = const_cpu_to_le16(0);
 
 	memcpy(&indx.key.object_id,object_id,sizeof(GUID));
 
