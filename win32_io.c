@@ -35,6 +35,8 @@
 #include "device.h"
 #include "misc.h"
 
+static s64 written_bytes = -1;
+
 /**
  * ntfs_device_win32_open - open a device
  * @dev:	a pointer to the NTFS_DEVICE to open
@@ -49,20 +51,13 @@
  */
 static int ntfs_device_win32_open(struct ntfs_device *dev, int flags)
 {
-
+	printf("OPENING %s\n", dev->d_name);
 	if (NDevOpen(dev)) {
 		errno = EBUSY;
 		return -1;
 	}
-	const char* mode = NULL;
-	if (flags == O_RDONLY) {
-		mode = "rb";
-	}
-	else if (flags == O_WRONLY) {
-
-	}
 	FILE* fd = fopen(dev->d_name, flags == 0 ? "rb" : "rb+");
-	fseek(fd, 0, SEEK_SET);
+	fseek(fd, 4096, SEEK_SET);
 	/* Setup our read-only flag. */
 	if ((flags & O_RDWR) != O_RDWR)
 		NDevSetReadOnly(dev);
@@ -89,6 +84,10 @@ static int ntfs_device_win32_open(struct ntfs_device *dev, int flags)
 static s64 ntfs_device_win32_seek(struct ntfs_device *dev, s64 offset,
 		int whence)
 {
+	//printf("SEEK TO %lld AT %d\n", offset, whence);
+	if (whence == SEEK_SET) {
+		offset += 4096;
+	}
 	return fseek(dev->d_private, offset, whence);
 }
 
@@ -103,6 +102,7 @@ static s64 ntfs_device_win32_seek(struct ntfs_device *dev, s64 offset,
  */
 static s64 ntfs_device_win32_read(struct ntfs_device *dev, void *b, s64 count)
 {
+	//printf("READING %lld BYTES\n", count);
 	return fread(b, 1, count, dev->d_private);
 }
 
@@ -115,8 +115,7 @@ static s64 ntfs_device_win32_read(struct ntfs_device *dev, void *b, s64 count)
  */
 static int ntfs_device_win32_close(struct ntfs_device *dev)
 {
-	BOOL rvl;
-
+	printf("CLOSING\nTOTAL WRITTEN: %lld\n", written_bytes);
 	ntfs_log_trace("Closing device %p.\n", dev);
 	if (!NDevOpen(dev)) {
 		errno = EBADF;
@@ -139,6 +138,7 @@ static int ntfs_device_win32_close(struct ntfs_device *dev)
  */
 static int ntfs_device_win32_sync(struct ntfs_device *dev)
 {
+	printf("FLUSHING\n");
 	if (!NDevReadOnly(dev) && NDevDirty(dev)) {
 		fflush(dev->d_private);
 		NDevClearDirty(dev);
@@ -158,6 +158,10 @@ static int ntfs_device_win32_sync(struct ntfs_device *dev)
 static s64 ntfs_device_win32_write(struct ntfs_device *dev, const void *b,
 		s64 count)
 {
+	if (written_bytes != -1) {
+		written_bytes += count;
+		//printf("WRITING %lld BYTES\n", count);
+	}
 	return fwrite(b, 1, count, dev->d_private);
 }
 
@@ -173,11 +177,12 @@ static s64 ntfs_device_win32_write(struct ntfs_device *dev, const void *b,
  */
 static int ntfs_device_win32_stat(struct ntfs_device *dev, struct stat *buf)
 {
+	printf("GETTING STATS\n");
 	memset(buf, 0, sizeof(struct stat));
 	buf->st_mode = S_IFCHR;
 	s64 curOff = ftell(dev->d_private);
 	fseek(dev->d_private, 0, SEEK_END);
-	buf->st_size = ftell(dev->d_private);
+	buf->st_size = ftell(dev->d_private) - 4096;
 	fseek(dev->d_private, curOff, SEEK_SET);
 	if (buf->st_size != -1)
 		buf->st_blocks = buf->st_size >> 9;
@@ -191,13 +196,17 @@ static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 {
 	ntfs_log_trace("win32_ioctl(0x%lx) called.\n", request);
 	switch (request) {
+	case 0x304D454D:
+		ntfs_log_debug("MEM0 detected.\n");
+		written_bytes = 0;
+		return 0;
 #if defined(BLKGETSIZE)
 	case BLKGETSIZE:
 	{
 		ntfs_log_debug("BLKGETSIZE detected.\n");
 		s64 curPos = ftell(dev->d_private);
 		fseek(dev->d_private, 0, SEEK_END);
-		*(int*)argp = (int)(ftell(dev->d_private) / 512);
+		*(int*)argp = (int)((ftell(dev->d_private) - 4096) / 512);
 		fseek(dev->d_private, curPos, SEEK_SET);
 		return 0;
 	}
@@ -208,7 +217,7 @@ static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 		ntfs_log_debug("BLKGETSIZE64 detected.\n");
 		s64 curPos = ftell(dev->d_private);
 		fseek(dev->d_private, 0, SEEK_END);
-		*(s64*)argp = (s64)ftell(dev->d_private);
+		*(s64*)argp = (s64)(ftell(dev->d_private) - 4096);
 		fseek(dev->d_private, curPos, SEEK_SET);
 		return 0;
 	}
@@ -241,8 +250,9 @@ static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 static s64 ntfs_device_win32_pread(struct ntfs_device *dev, void *b,
 		s64 count, s64 offset)
 {
+	//printf("READING %lld BYTES AT %ll\n", count, offset);
 	s64 preOff = ftell(dev->d_private);
-	fseek(dev->d_private, offset, SEEK_SET);
+	fseek(dev->d_private, offset + 4096, SEEK_SET);
 	s64 ret = fread(b, 1, count, dev->d_private);
 	fseek(dev->d_private, preOff, SEEK_SET);
 	return ret;
@@ -251,8 +261,12 @@ static s64 ntfs_device_win32_pread(struct ntfs_device *dev, void *b,
 static s64 ntfs_device_win32_pwrite(struct ntfs_device *dev, const void *b,
 		s64 count, s64 offset)
 {
+	if (written_bytes != -1) {
+		written_bytes += count;
+		//printf("WRITING %lld BYTES AT %lld\n", count, offset);
+	}
 	s64 preOff = ftell(dev->d_private);
-	fseek(dev->d_private, offset, SEEK_SET);
+	fseek(dev->d_private, offset + 4096, SEEK_SET);
 	s64 ret = fwrite(b, 1, count, dev->d_private);
 	fseek(dev->d_private, preOff, SEEK_SET);
 	return ret;

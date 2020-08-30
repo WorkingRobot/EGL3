@@ -41,9 +41,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 #include <locale.h>
 #ifdef HAVE_LIBINTL_H
 #include <libintl.h>
@@ -51,12 +49,8 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_LIMITS_H
 #include <limits.h>
-#endif
-#ifdef HAVE_CTYPE_H
 #include <ctype.h>
-#endif
 
 #include "utils.h"
 #include "types.h"

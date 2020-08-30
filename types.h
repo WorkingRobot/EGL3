@@ -35,14 +35,10 @@
 typedef uint32_t gid_t;
 typedef uint32_t uid_t;
 typedef int16_t pid_t;
-typedef uint64_t time_t;
+//typedef uint64_t time_t;
 typedef uint16_t mode_t;
 //typedef int64_t off_t;
 typedef int64_t ssize_t;
-
-#define INT_MAX 2147483647
-#define INT_MIN -2147483648
-#define LONG_MAX 2147483647
 
 typedef uint8_t  u8;			/* Unsigned types of an exact size */
 typedef uint16_t u16;

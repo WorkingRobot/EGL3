@@ -371,7 +371,7 @@ typedef struct {
 /* 20*/	le16 attrs_offset;	/* Byte offset to the first attribute in this
 				   mft record from the start of the mft record.
 				   NOTE: Must be aligned to 8-byte boundary. */
-/* 22*/	MFT_RECORD_FLAGS flags;	/* Bit array of MFT_RECORD_FLAGS. When a file
+/* 22*/	u16 flags;	/* Bit array of MFT_RECORD_FLAGS. When a file
 				   is deleted, the MFT_RECORD_IN_USE flag is
 				   set to zero. */
 /* 24*/	le32 bytes_in_use;	/* Number of bytes used in this mft record.
@@ -446,7 +446,7 @@ typedef struct {
 /* 20*/	le16 attrs_offset;	/* Byte offset to the first attribute in this
 				   mft record from the start of the mft record.
 				   NOTE: Must be aligned to 8-byte boundary. */
-/* 22*/	MFT_RECORD_FLAGS flags;	/* Bit array of MFT_RECORD_FLAGS. When a file
+/* 22*/	u16 flags;	/* Bit array of MFT_RECORD_FLAGS. When a file
 				   is deleted, the MFT_RECORD_IN_USE flag is
 				   set to zero. */
 /* 24*/	le32 bytes_in_use;	/* Number of bytes used in this mft record.
@@ -1495,8 +1495,8 @@ typedef enum {
  * data depends on the ACE type.
  */
 typedef struct {
-	ACE_TYPES type;		/* Type of the ACE. */
-	ACE_FLAGS flags;	/* Flags describing the ACE. */
+	u8 type;		/* Type of the ACE. */
+	u8 flags;	/* Flags describing the ACE. */
 	le16 size;		/* Size in bytes of the ACE. */
 } ACE_HEADER;
 
@@ -1661,8 +1661,8 @@ typedef struct {
  */
 typedef struct {
 /*  0	ACE_HEADER; -- Unfolded here as gcc doesn't like unnamed structs. */
-	ACE_TYPES type;		/* Type of the ACE. */
-	ACE_FLAGS flags;	/* Flags describing the ACE. */
+	u8 type;		/* Type of the ACE. */
+	u8 flags;	/* Flags describing the ACE. */
 	le16 size;		/* Size in bytes of the ACE. */
 
 /*  4*/	ACCESS_MASK mask;	/* Access mask associated with the ACE. */
@@ -1807,7 +1807,7 @@ typedef enum {
 typedef struct {
 	u8 revision;	/* Revision level of the security descriptor. */
 	u8 alignment;
-	SECURITY_DESCRIPTOR_CONTROL control; /* Flags qualifying the type of
+	u16 control; /* Flags qualifying the type of
 			   the descriptor as well as the following fields. */
 	le32 owner;	/* Byte offset to a SID representing an object's
 			   owner. If this is NULL, no owner SID is present in
@@ -1839,7 +1839,7 @@ typedef struct {
 typedef struct {
 	u8 revision;	/* Revision level of the security descriptor. */
 	u8 alignment;
-	SECURITY_DESCRIPTOR_CONTROL control;	/* Flags qualifying the type of
+	u16 control;	/* Flags qualifying the type of
 			   the descriptor as well as the following fields. */
 	SID *owner;	/* Points to a SID representing an object's owner. If
 			   this is NULL, no owner SID is present in the
