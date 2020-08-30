@@ -24,7 +24,9 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -34,8 +36,7 @@
 #include "types.h"
 #include "device.h"
 #include "misc.h"
-
-static s64 written_bytes = -1;
+#include "egl3interface.h"
 
 /**
  * ntfs_device_win32_open - open a device
@@ -51,19 +52,36 @@ static s64 written_bytes = -1;
  */
 static int ntfs_device_win32_open(struct ntfs_device *dev, int flags)
 {
-	printf("OPENING %s\n", dev->d_name);
 	if (NDevOpen(dev)) {
 		errno = EBUSY;
 		return -1;
 	}
-	FILE* fd = fopen(dev->d_name, flags == 0 ? "rb" : "rb+");
-	fseek(fd, 4096, SEEK_SET);
-	/* Setup our read-only flag. */
+	printf("OPENING %s\n", dev->d_name);
+	dev->d_private = ntfs_calloc(sizeof(AppendingFile));
 	if ((flags & O_RDWR) != O_RDWR)
 		NDevSetReadOnly(dev);
-	dev->d_private = fd;
 	NDevSetOpen(dev);
 	NDevClearDirty(dev);
+	return 0;
+}
+
+/**
+ * ntfs_device_win32_close - close an open ntfs deivce
+ * @dev:	ntfs device obtained via ->open
+ *
+ * Return 0 if o.k.
+ *	 -1 if not, and errno set.  Note if error fd->vol_handle is trashed.
+ */
+static int ntfs_device_win32_close(struct ntfs_device* dev)
+{
+	printf("CLOSING\nTOTAL WRITTEN: %lld\n", ((AppendingFile*)dev->d_private)->written_bytes);
+	ntfs_log_trace("Closing device %p.\n", dev);
+	if (!NDevOpen(dev)) {
+		errno = EBADF;
+		return -1;
+	}
+	// not freeing up any data. it's up to ioctl AFOD request to get the data and free it themselves
+	NDevClearOpen(dev);
 	return 0;
 }
 
@@ -85,10 +103,21 @@ static s64 ntfs_device_win32_seek(struct ntfs_device *dev, s64 offset,
 		int whence)
 {
 	//printf("SEEK TO %lld AT %d\n", offset, whence);
+	AppendingFile* ctx = dev->d_private;
 	if (whence == SEEK_SET) {
-		offset += 4096;
+		ctx->position = offset;
 	}
-	return fseek(dev->d_private, offset, whence);
+	else {
+		ntfs_log_error("BUG: seeking not using SEEK_SET (%d)\n", whence);
+	}
+	return ctx->position;
+}
+
+static s64 ntfs_device_win32_pread(struct ntfs_device* dev, void* b,
+	s64 count, s64 offset)
+{
+	errno = EOPNOTSUPP;
+	return -1;
 }
 
 /**
@@ -102,28 +131,61 @@ static s64 ntfs_device_win32_seek(struct ntfs_device *dev, s64 offset,
  */
 static s64 ntfs_device_win32_read(struct ntfs_device *dev, void *b, s64 count)
 {
-	//printf("READING %lld BYTES\n", count);
-	return fread(b, 1, count, dev->d_private);
+	errno = EOPNOTSUPP;
+	return -1;
+}
+
+static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const void* b,
+	s64 count, s64 offset)
+{
+	AppendingFile* ctx = dev->d_private;
+
+	AppendingFileOperation* next = malloc(sizeof(AppendingFileOperation));
+	if (!next) {
+		errno = ENOMEM;
+		return -1;
+	}
+	next->offset = offset;
+	next->size = count;
+	next->data = malloc(count);
+	if (!next->data) {
+		errno = ENOMEM;
+		return -1;
+	}
+	memcpy(next->data, b, count);
+	next->next = NULL;
+
+	if (ctx->first) {
+		ctx->last->next = next;
+	}
+	else {
+		ctx->first = next;
+	}
+	ctx->last = next;
+
+	ctx->count++;
+	ctx->written_bytes += count;
+
+	return count;
 }
 
 /**
- * ntfs_device_win32_close - close an open ntfs deivce
+ * ntfs_device_win32_write - write bytes to an ntfs device
  * @dev:	ntfs device obtained via ->open
+ * @b:		pointer to the data to write
+ * @count:	how many bytes should be written
  *
- * Return 0 if o.k.
- *	 -1 if not, and errno set.  Note if error fd->vol_handle is trashed.
+ * On success returns the number of bytes actually written.
+ * On error returns -1 with errno set.
  */
-static int ntfs_device_win32_close(struct ntfs_device *dev)
+static s64 ntfs_device_win32_write(struct ntfs_device* dev, const void* b,
+	s64 count)
 {
-	printf("CLOSING\nTOTAL WRITTEN: %lld\n", written_bytes);
-	ntfs_log_trace("Closing device %p.\n", dev);
-	if (!NDevOpen(dev)) {
-		errno = EBADF;
-		return -1;
-	}
-	fclose(dev->d_private);
-	NDevClearOpen(dev);
-	return 0;
+	AppendingFile* ctx = dev->d_private;
+	s64 ret = ntfs_device_win32_pwrite(dev, b, count, ctx->position);
+	if (ret != -1)
+		ctx->position += ret;
+	return ret;
 }
 
 /**
@@ -138,31 +200,10 @@ static int ntfs_device_win32_close(struct ntfs_device *dev)
  */
 static int ntfs_device_win32_sync(struct ntfs_device *dev)
 {
-	printf("FLUSHING\n");
 	if (!NDevReadOnly(dev) && NDevDirty(dev)) {
-		fflush(dev->d_private);
 		NDevClearDirty(dev);
 	}
 	return 0;
-}
-
-/**
- * ntfs_device_win32_write - write bytes to an ntfs device
- * @dev:	ntfs device obtained via ->open
- * @b:		pointer to the data to write
- * @count:	how many bytes should be written
- *
- * On success returns the number of bytes actually written.
- * On error returns -1 with errno set.
- */
-static s64 ntfs_device_win32_write(struct ntfs_device *dev, const void *b,
-		s64 count)
-{
-	if (written_bytes != -1) {
-		written_bytes += count;
-		//printf("WRITING %lld BYTES\n", count);
-	}
-	return fwrite(b, 1, count, dev->d_private);
 }
 
 /**
@@ -177,109 +218,28 @@ static s64 ntfs_device_win32_write(struct ntfs_device *dev, const void *b,
  */
 static int ntfs_device_win32_stat(struct ntfs_device *dev, struct stat *buf)
 {
-	printf("GETTING STATS\n");
-	memset(buf, 0, sizeof(struct stat));
-	buf->st_mode = S_IFCHR;
-	s64 curOff = ftell(dev->d_private);
-	fseek(dev->d_private, 0, SEEK_END);
-	buf->st_size = ftell(dev->d_private) - 4096;
-	fseek(dev->d_private, curOff, SEEK_SET);
-	if (buf->st_size != -1)
-		buf->st_blocks = buf->st_size >> 9;
-	else
-		buf->st_size = 0;
-	return 0;
+	errno = EOPNOTSUPP;
+	return -1;
 }
 
 static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 		unsigned long request, void *argp)
 {
-	ntfs_log_trace("win32_ioctl(0x%lx) called.\n", request);
-	switch (request) {
-	case 0x304D454D:
-		ntfs_log_debug("MEM0 detected.\n");
-		written_bytes = 0;
-		return 0;
-#if defined(BLKGETSIZE)
-	case BLKGETSIZE:
-	{
-		ntfs_log_debug("BLKGETSIZE detected.\n");
-		s64 curPos = ftell(dev->d_private);
-		fseek(dev->d_private, 0, SEEK_END);
-		*(int*)argp = (int)((ftell(dev->d_private) - 4096) / 512);
-		fseek(dev->d_private, curPos, SEEK_SET);
-		return 0;
+	if (request == 0x444F4641) { // AFOD: append file operation data
+		*((AppendingFile**)argp) = dev->d_private;
 	}
-#endif
-#if defined(BLKGETSIZE64)
-	case BLKGETSIZE64:
-	{
-		ntfs_log_debug("BLKGETSIZE64 detected.\n");
-		s64 curPos = ftell(dev->d_private);
-		fseek(dev->d_private, 0, SEEK_END);
-		*(s64*)argp = (s64)(ftell(dev->d_private) - 4096);
-		fseek(dev->d_private, curPos, SEEK_SET);
-		return 0;
-	}
-#endif
-#ifdef HDIO_GETGEO
-	case HDIO_GETGEO:
-		ntfs_log_debug("HDIO_GETGEO detected.\n");
-		errno = EOPNOTSUPP;
-		return -1;
-#endif
-#ifdef BLKSSZGET
-	case BLKSSZGET:
-		ntfs_log_debug("BLKSSZGET detected.\n");
-		*(int*)argp = 512;
-		return 0;
-#endif
-#ifdef BLKBSZSET
-	case BLKBSZSET:
-		ntfs_log_debug("BLKBSZSET detected.\n");
-		/* Nothing to do on Windows. */
-		return 0;
-#endif
-	default:
-		ntfs_log_debug("unimplemented ioctl 0x%lx.\n", request);
-		errno = EOPNOTSUPP;
-		return -1;
-	}
-}
-
-static s64 ntfs_device_win32_pread(struct ntfs_device *dev, void *b,
-		s64 count, s64 offset)
-{
-	//printf("READING %lld BYTES AT %ll\n", count, offset);
-	s64 preOff = ftell(dev->d_private);
-	fseek(dev->d_private, offset + 4096, SEEK_SET);
-	s64 ret = fread(b, 1, count, dev->d_private);
-	fseek(dev->d_private, preOff, SEEK_SET);
-	return ret;
-}
-
-static s64 ntfs_device_win32_pwrite(struct ntfs_device *dev, const void *b,
-		s64 count, s64 offset)
-{
-	if (written_bytes != -1) {
-		written_bytes += count;
-		//printf("WRITING %lld BYTES AT %lld\n", count, offset);
-	}
-	s64 preOff = ftell(dev->d_private);
-	fseek(dev->d_private, offset + 4096, SEEK_SET);
-	s64 ret = fwrite(b, 1, count, dev->d_private);
-	fseek(dev->d_private, preOff, SEEK_SET);
-	return ret;
+	errno = EOPNOTSUPP;
+	return -1;
 }
 
 struct ntfs_device_operations ntfs_device_win32_io_ops = {
 	.open		= ntfs_device_win32_open,
 	.close		= ntfs_device_win32_close,
 	.seek		= ntfs_device_win32_seek,
-	.read		= ntfs_device_win32_read,
-	.write		= ntfs_device_win32_write,
 	.pread		= ntfs_device_win32_pread,
+	.read		= ntfs_device_win32_read,
 	.pwrite		= ntfs_device_win32_pwrite,
+	.write		= ntfs_device_win32_write,
 	.sync		= ntfs_device_win32_sync,
 	.stat		= ntfs_device_win32_stat,
 	.ioctl		= ntfs_device_win32_ioctl

@@ -43,18 +43,6 @@
 
 #else /* HAVE_WINDOWS_H */
 
-#ifndef HDIO_GETGEO
-#	define HDIO_GETGEO	0x301
-/**
- * struct hd_geometry -
- */
-struct hd_geometry {
-	unsigned char heads;
-	unsigned char sectors;
-	unsigned short cylinders;
-	unsigned long start;
-};
-#endif
 #ifndef BLKGETSIZE
 #	define BLKGETSIZE	0x1260
 #endif

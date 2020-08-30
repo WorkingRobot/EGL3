@@ -3,7 +3,11 @@
 
 #include "runlist.h"
 
-struct EGL3File {
+typedef struct _AppendingFileOperation AppendingFileOperation;
+typedef struct _AppendingFile AppendingFile;
+typedef struct _EGL3File EGL3File;
+
+struct _EGL3File {
     const char* name;
     s64 size;
     u8 is_directory;
@@ -12,12 +16,23 @@ struct EGL3File {
     INDEX_ALLOCATION* o_index_block;
 };
 
-struct EGL3WrittenDiskData {
-    u64 offset;
-    u64 size;
-    u8* data;
+struct _AppendingFileOperation {
+	u64 offset;
+	u64 size;
+	u8* data;
+
+	AppendingFileOperation* next;
 };
 
-void EGL3CreateDisk(u64 disk_size, const struct EGL3File files[], u32 file_count, struct EGL3WrittenDiskData** o_data, u32* o_data_count);
+struct _AppendingFile {
+	AppendingFileOperation* first;
+	AppendingFileOperation* last;
+	u32 count;
+	u64 written_bytes;
+	s64 position;
+};
+
+// defined at the end of mkntfs.c
+void EGL3CreateDisk(u64 sector_size, const EGL3File files[], u32 file_count, AppendingFile** o_data);
 
 #endif
