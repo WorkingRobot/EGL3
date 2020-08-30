@@ -74,6 +74,10 @@ switch if you want to be able to build the NTFS utilities."
 /* Page size on ia32. Can change to 8192 on Alpha. */
 #define NTFS_PAGE_SIZE	4096
 
+#define OPT_NO_ACTION 0
+#define OPT_SECTOR_SIZE 512
+#define OPT_CLUSTER_SIZE 4096
+
 struct BITMAP_ALLOCATION {
 	struct BITMAP_ALLOCATION* next;
 	LCN	lcn;		/* first allocated cluster */
@@ -101,21 +105,14 @@ struct UPCASEINFO {
  */
 struct mkntfs_options {
 	char* dev_name;			/* Name of the device, or file, to use */
-	BOOL enable_compression;	/* -C, enables compression of all files on the volume by default. */
 	BOOL quick_format;		/* -f or -Q, fast format, don't zero the volume first. */
-	BOOL force;			/* -F, force fs creation. */
 	long heads;			/* -H, number of heads on device */
 	BOOL disable_indexing;		/* -I, disables indexing of file contents on the volume by default. */
-	BOOL no_action;			/* -n, do not write to device, only display what would be done. */
-	long long part_start_sect;	/* -p, start sector of partition on parent device */
-	long sector_size;		/* -s, in bytes, power of 2, default is 512 bytes. */
 	long sectors_per_track;		/* -S, number of sectors per track on device */
-	BOOL use_epoch_time;		/* -T, fake the time to be 00:00:00 UTC, Jan 1, 1970. */
-	long mft_zone_multiplier;	/* -z, value from 1 to 4. Default is 1. */
 	long long num_sectors;		/* size of device in sectors */
-	long cluster_size;		/* -c, format with this cluster-size */
 	BOOL with_uuid;			/* -U, request setting an uuid */
 	char* label;			/* -L, volume label */
+	long mbr_hidden_sectors;
 
 	// these were global variables
 	u8* g_buf;
@@ -386,26 +383,21 @@ static void mkntfs_init_options(struct mkntfs_options* opts2)
 	memset(opts2, 0, sizeof(*opts2));
 
 	/* Mark all the numeric options as "unset". */
-	opts2->cluster_size = -1;
 	opts2->heads = -1;
-	opts2->mft_zone_multiplier = -1;
 	opts2->num_sectors = -1;
-	opts2->part_start_sect = -1;
-	opts2->sector_size = -1;
 	opts2->sectors_per_track = -1;
 }
 
 /**
  * mkntfs_time
  */
-static ntfs_time mkntfs_time(OPTS* opts)
+static ntfs_time mkntfs_time(void)
 {
 	struct timespec ts;
 
 	ts.tv_sec = 0;
 	ts.tv_nsec = 0;
-	if (!opts->use_epoch_time)
-		ts.tv_sec = time(NULL);
+	ts.tv_sec = time(NULL);
 	return timespec2ntfs(ts);
 }
 
@@ -439,7 +431,7 @@ static long long mkntfs_write(OPTS* opts, struct ntfs_device* dev,
 	long long bytes_written, total;
 	int retry;
 
-	if (opts->no_action)
+	if (OPT_NO_ACTION)
 		return count;
 	total = 0LL;
 	retry = 0;
@@ -530,7 +522,7 @@ static s64 ntfs_rlwrite(OPTS* opts, struct ntfs_device* dev, const runlist* rl,
 
 	if (inited_size)
 		*inited_size = 0LL;
-	if (opts->no_action)
+	if (OPT_NO_ACTION)
 		return val_len;
 	total = 0LL;
 	delta = 0LL;
@@ -1758,7 +1750,7 @@ static int add_attr_std_info(OPTS* opts, MFT_RECORD* m, const FILE_ATTR_FLAGS fl
 
 	sd_size = 48;
 
-	si.creation_time = mkntfs_time(opts);
+	si.creation_time = mkntfs_time();
 	si.last_data_change_time = si.creation_time;
 	si.last_mft_change_time = si.creation_time;
 	si.last_access_time = si.creation_time;
@@ -1829,7 +1821,7 @@ static ntfs_time stdinfo_time(OPTS* opts, MFT_RECORD* m)
 	}
 	else {
 		ntfs_log_error("BUG: Standard information not found\n");
-		info_time = mkntfs_time(opts);
+		info_time = mkntfs_time();
 	}
 	if (ctx)
 		ntfs_attr_put_search_ctx(ctx);
@@ -2144,7 +2136,7 @@ static int add_attr_index_root(OPTS* opts, MFT_RECORD* m, const char* name,
 			free(r);
 			return -EINVAL;
 		}
-		if (index_block_size < (u32)opts->sector_size) {
+		if (index_block_size < (u32)OPT_SECTOR_SIZE) {
 			ntfs_log_error("add_attr_index_root: index block size "
 				"is smaller than the sector size.\n");
 			free(r);
@@ -2769,7 +2761,7 @@ static int initialize_quota(OPTS* opts, MFT_RECORD* m)
 	idx_entry_q1_data->version = const_cpu_to_le32(0x02);
 	idx_entry_q1_data->flags = QUOTA_FLAG_DEFAULT_LIMITS;
 	idx_entry_q1_data->bytes_used = const_cpu_to_le64(0x00);
-	idx_entry_q1_data->change_time = mkntfs_time(opts);
+	idx_entry_q1_data->change_time = mkntfs_time();
 	idx_entry_q1_data->threshold = const_cpu_to_sle64(-1);
 	idx_entry_q1_data->limit = const_cpu_to_sle64(-1);
 	idx_entry_q1_data->exceeded_time = const_cpu_to_sle64(0);
@@ -2795,7 +2787,7 @@ static int initialize_quota(OPTS* opts, MFT_RECORD* m)
 	idx_entry_q2_data->version = const_cpu_to_le32(0x02);
 	idx_entry_q2_data->flags = QUOTA_FLAG_DEFAULT_LIMITS;
 	idx_entry_q2_data->bytes_used = const_cpu_to_le64(0x00);
-	idx_entry_q2_data->change_time = mkntfs_time(opts);
+	idx_entry_q2_data->change_time = mkntfs_time();
 	idx_entry_q2_data->threshold = const_cpu_to_sle64(-1);
 	idx_entry_q2_data->limit = const_cpu_to_sle64(-1);
 	idx_entry_q2_data->exceeded_time = const_cpu_to_sle64(0);
@@ -3310,7 +3302,7 @@ static BOOL mkntfs_open_partition(OPTS* opts, ntfs_volume* vol)
 	}
 
 	/* Open the device for reading or reading and writing. */
-	if (opts->no_action) {
+	if (OPT_NO_ACTION) {
 		ntfs_log_quiet("Running in READ-ONLY mode!\n");
 		i = O_RDONLY;
 	}
@@ -3324,36 +3316,7 @@ static BOOL mkntfs_open_partition(OPTS* opts, ntfs_volume* vol)
 			ntfs_log_perror("Could not open %s", vol->dev->d_name);
 		goto done;
 	}
-	/* Verify we are dealing with a block device. */
-	if (vol->dev->d_ops->stat(vol->dev, &sbuf)) {
-		ntfs_log_perror("Error getting information about %s", vol->dev->d_name);
-		goto done;
-	}
 
-	if (!0) { // S_ISBLK(sbuf.st_mode)
-		ntfs_log_error("%s is not a block device.\n", vol->dev->d_name);
-		if (!opts->force) {
-			ntfs_log_error("Refusing to make a filesystem here!\n");
-			goto done;
-		}
-		if (!opts->num_sectors) {
-			ntfs_log_error("No sector count defined? (EGL3)\n");
-			goto done;
-		}
-		ntfs_log_warning("mkntfs forced anyway.\n");
-	}
-	/* Make sure the file system is not mounted. */
-	if (ntfs_check_if_mounted(vol->dev->d_name, &mnt_flags)) {
-		ntfs_log_perror("Failed to determine whether %s is mounted", vol->dev->d_name);
-	}
-	else if (mnt_flags & NTFS_MF_MOUNTED) {
-		ntfs_log_error("%s is mounted.\n", vol->dev->d_name);
-		if (!opts->force) {
-			ntfs_log_error("Refusing to make a filesystem here!\n");
-			goto done;
-		}
-		ntfs_log_warning("mkntfs forced anyway. Hope /etc/mtab is incorrect.\n");
-	}
 	result = TRUE;
 done:
 	return result;
@@ -3400,31 +3363,9 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	int i;
 	BOOL winboot = TRUE;
 
-	/* If user didn't specify the sector size, determine it now. */
-	if (opts->sector_size < 0) {
-		opts->sector_size = ntfs_device_sector_size_get(vol->dev);
-		if (opts->sector_size < 0) {
-			ntfs_log_warning("The sector size was not specified "
-				"for %s and it could not be obtained "
-				"automatically.  It has been set to 512 "
-				"bytes.\n", vol->dev->d_name);
-			opts->sector_size = 512;
-		}
-	}
-	/* Validate sector size. */
-	if ((opts->sector_size - 1) & opts->sector_size) {
-		ntfs_log_error("The sector size is invalid.  It must be a "
-			"power of two, e.g. 512, 1024.\n");
-		return FALSE;
-	}
-	if (opts->sector_size < 256 || opts->sector_size > 4096) {
-		ntfs_log_error("The sector size is invalid.  The minimum size "
-			"is 256 bytes and the maximum is 4096 bytes.\n");
-		return FALSE;
-	}
-	ntfs_log_debug("sector size = %ld bytes\n", opts->sector_size);
+	ntfs_log_debug("sector size = %ld bytes\n", OPT_SECTOR_SIZE);
 	/* Now set the device block size to the sector size. */
-	if (ntfs_device_block_size_set(vol->dev, opts->sector_size))
+	if (ntfs_device_block_size_set(vol->dev, OPT_SECTOR_SIZE))
 		ntfs_log_debug("Failed to set the device block size to the "
 			"sector size.  This may cause problems when "
 			"creating the backup boot sector and also may "
@@ -3433,7 +3374,7 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	/* If user didn't specify the number of sectors, determine it now. */
 	if (opts->num_sectors < 0) {
 		opts->num_sectors = ntfs_device_size_get(vol->dev,
-			opts->sector_size);
+			OPT_SECTOR_SIZE);
 		if (opts->num_sectors <= 0) {
 			ntfs_log_error("Couldn't determine the size of %s.  "
 				"Please specify the number of sectors "
@@ -3449,37 +3390,9 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	 * worth of sectors.
 	 */
 	i = 1;
-	if (opts->sector_size < 512)
-		i = 512 / opts->sector_size;
+	if (OPT_SECTOR_SIZE < 512)
+		i = 512 / OPT_SECTOR_SIZE;
 	opts->num_sectors -= i;
-	/* If user didn't specify the partition start sector, determine it. */
-	if (opts->part_start_sect < 0) {
-		opts->part_start_sect = ntfs_device_partition_start_sector_get(
-			vol->dev);
-		if (opts->part_start_sect < 0) {
-			ntfs_log_warning("The partition start sector was not "
-				"specified for %s and it could not be obtained "
-				"automatically.  It has been set to 0.\n",
-				vol->dev->d_name);
-			opts->part_start_sect = 0;
-			winboot = FALSE;
-		}
-		else if (opts->part_start_sect >> 32) {
-			ntfs_log_warning("The partition start sector was not "
-				"specified for %s and the automatically "
-				"determined value is too large (%lld). "
-				"It has been set to 0.\n",
-				vol->dev->d_name,
-				(long long)opts->part_start_sect);
-			opts->part_start_sect = 0;
-			winboot = FALSE;
-		}
-	}
-	else if (opts->part_start_sect >> 32) {
-		ntfs_log_error("Invalid partition start sector.  Maximum is "
-			"4294967295 (2^32-1).\n");
-		return FALSE;
-	}
 	/* If user didn't specify the sectors per track, determine it now. */
 	if (opts->sectors_per_track < 0) {
 		opts->sectors_per_track = ntfs_device_sectors_per_track_get(
@@ -3530,7 +3443,7 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 		ntfs_log_error("Invalid number of heads.  Maximum is 65535.\n");
 		return FALSE;
 	}
-	volume_size = opts->num_sectors * opts->sector_size;
+	volume_size = opts->num_sectors * OPT_SECTOR_SIZE;
 	/* Validate volume size. */
 	if (volume_size < (1 << 20)) {			/* 1MiB */
 		ntfs_log_error("Device is too small (%llikiB).  Minimum NTFS "
@@ -3548,8 +3461,8 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 		 */
 		vol->cluster_size = 4096;
 		/* For small volumes on devices with large sector sizes. */
-		if (vol->cluster_size < (u32)opts->sector_size)
-			vol->cluster_size = opts->sector_size;
+		if (vol->cluster_size < (u32)OPT_SECTOR_SIZE)
+			vol->cluster_size = OPT_SECTOR_SIZE;
 		/*
 		 * For huge volumes, grow the cluster size until the number of
 		 * clusters fits into 32 bits or the cluster size exceeds the
@@ -3573,13 +3486,13 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 			"power of two, e.g. 1024, 4096.\n");
 		return FALSE;
 	}
-	if (vol->cluster_size < (u32)opts->sector_size) {
+	if (vol->cluster_size < (u32)OPT_SECTOR_SIZE) {
 		ntfs_log_error("The cluster size is invalid.  It must be equal "
 			"to, or larger than, the sector size.\n");
 		return FALSE;
 	}
 	/* Before Windows 10 Creators, the limit was 128 */
-	if (vol->cluster_size > 4096 * (u32)opts->sector_size) {
+	if (vol->cluster_size > 4096 * (u32)OPT_SECTOR_SIZE) {
 		ntfs_log_error("The cluster size is invalid.  It cannot be "
 			"more that 4096 times the size of the sector "
 			"size.\n");
@@ -3596,15 +3509,6 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	ntfs_log_debug("cluster size = %u bytes\n",
 		(unsigned int)vol->cluster_size);
 	if (vol->cluster_size > 4096) {
-		if (opts->enable_compression) {
-			if (!opts->force) {
-				ntfs_log_error("Windows cannot use compression "
-					"when the cluster size is "
-					"larger than 4096 bytes.\n");
-				return FALSE;
-			}
-			opts->enable_compression = 0;
-		}
 		ntfs_log_warning("Windows cannot use compression when the "
 			"cluster size is larger than 4096 bytes.  "
 			"Compression has been disabled for this "
@@ -3616,9 +3520,9 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	 * sector_size and num_sectors. And check both of these for consistency
 	 * with volume_size.
 	 */
-	if ((vol->nr_clusters != ((opts->num_sectors * opts->sector_size) /
+	if ((vol->nr_clusters != ((opts->num_sectors * OPT_SECTOR_SIZE) /
 		vol->cluster_size) ||
-		(volume_size / opts->sector_size) != opts->num_sectors ||
+		(volume_size / OPT_SECTOR_SIZE) != opts->num_sectors ||
 		(volume_size / vol->cluster_size) !=
 		vol->nr_clusters)) {
 		/* XXX is this code reachable? */
@@ -3652,8 +3556,8 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	 * "inode size" can be specified on other Linux/Unix file systems.
 	 */
 	vol->mft_record_size = 1024;
-	if (vol->mft_record_size < (u32)opts->sector_size)
-		vol->mft_record_size = opts->sector_size;
+	if (vol->mft_record_size < (u32)OPT_SECTOR_SIZE)
+		vol->mft_record_size = OPT_SECTOR_SIZE;
 	if (vol->mft_record_size > (unsigned long)page_size)
 		ntfs_log_warning("Mft record size (%u bytes) exceeds system "
 			"page size (%li bytes).  You will not be able "
@@ -3670,8 +3574,8 @@ static BOOL mkntfs_override_vol_params(OPTS* opts, ntfs_volume* vol)
 	 * FIXME: Should we make the index record size to be user specifiable?
 	 */
 	vol->indx_record_size = 4096;
-	if (vol->indx_record_size < (u32)opts->sector_size)
-		vol->indx_record_size = opts->sector_size;
+	if (vol->indx_record_size < (u32)OPT_SECTOR_SIZE)
+		vol->indx_record_size = OPT_SECTOR_SIZE;
 	if (vol->indx_record_size > (unsigned long)page_size)
 		ntfs_log_warning("Index record size (%u bytes) exceeds system "
 			"page size (%li bytes).  You will not be able "
@@ -3781,22 +3685,7 @@ static BOOL mkntfs_initialize_rl_mft(OPTS* opts)
 	}
 	ntfs_log_debug("$MFT logical cluster number = 0x%llx\n", opts->g_mft_lcn);
 	/* Determine MFT zone size. */
-	opts->g_mft_zone_end = opts->g_vol->nr_clusters;
-	switch (opts->mft_zone_multiplier) {  /* % of volume size in clusters */
-	case 4:
-		opts->g_mft_zone_end = opts->g_mft_zone_end >> 1;	/* 50%   */
-		break;
-	case 3:
-		opts->g_mft_zone_end = opts->g_mft_zone_end * 3 >> 3;/* 37.5% */
-		break;
-	case 2:
-		opts->g_mft_zone_end = opts->g_mft_zone_end >> 2;	/* 25%   */
-		break;
-	case 1:
-	default:
-		opts->g_mft_zone_end = opts->g_mft_zone_end >> 3;	/* 12.5% */
-		break;
-	}
+	opts->g_mft_zone_end = opts->g_vol->nr_clusters >> 3; // 1/8th of total volume size
 	ntfs_log_debug("MFT zone size = %lldkiB\n", opts->g_mft_zone_end <<
 		opts->g_vol->cluster_size_bits >> 10 /* >> 10 == / 1024 */);
 	/*
@@ -3820,7 +3709,7 @@ static BOOL mkntfs_initialize_rl_mft(OPTS* opts)
 	/* Allocate clusters for mft. */
 	bitmap_allocate(opts, opts->g_mft_lcn, j);
 	/* Determine mftmirr_lcn (middle of volume). */
-	opts->g_mftmirr_lcn = (opts->num_sectors * opts->sector_size >> 1)
+	opts->g_mftmirr_lcn = (opts->num_sectors * OPT_SECTOR_SIZE >> 1)
 		/ opts->g_vol->cluster_size;
 	ntfs_log_debug("$MFTMirr logical cluster number = 0x%llx\n",
 		g_mftmirr_lcn);
@@ -4091,10 +3980,10 @@ static BOOL mkntfs_fill_device_with_zeroes(OPTS* opts)
 	}
 	ntfs_log_progress("\b\b\b\b100%%");
 	position = (volume_size & (opts->g_vol->cluster_size - 1)) /
-		opts->sector_size;
+		OPT_SECTOR_SIZE;
 	for (i = 0; (unsigned long)i < position; i++) {
-		bw = mkntfs_write(opts, opts->g_vol->dev, opts->g_buf, opts->sector_size);
-		if (bw != opts->sector_size) {
+		bw = mkntfs_write(opts, opts->g_vol->dev, opts->g_buf, OPT_SECTOR_SIZE);
+		if (bw != OPT_SECTOR_SIZE) {
 			if (bw != -1 || errno != EIO) {
 				ntfs_log_error("This should not happen.\n");
 				return FALSE;
@@ -4107,7 +3996,7 @@ static BOOL mkntfs_fill_device_with_zeroes(OPTS* opts)
 			}
 			/* Seek to next sector. */
 			opts->g_vol->dev->d_ops->seek(opts->g_vol->dev,
-				opts->sector_size, SEEK_CUR);
+				OPT_SECTOR_SIZE, SEEK_CUR);
 		}
 	}
 	ntfs_log_progress(" - Done.\n");
@@ -4239,10 +4128,10 @@ static int create_backup_boot_sector(OPTS* opts, u8* buff)
 	 * is how big $Boot is (and how big our buffer is)..
 	 */
 	size = 512;
-	if (size < opts->sector_size)
-		size = opts->sector_size;
+	if (size < OPT_SECTOR_SIZE)
+		size = OPT_SECTOR_SIZE;
 	if (opts->g_vol->dev->d_ops->seek(opts->g_vol->dev, (opts->num_sectors + 1) *
-		opts->sector_size - size, SEEK_SET) == (off_t)-1) {
+		OPT_SECTOR_SIZE - size, SEEK_SET) == (off_t)-1) {
 		ntfs_log_perror("Seek failed");
 		goto bb_err;
 	}
@@ -4351,8 +4240,6 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 			file_attrs |= FILE_ATTR_ARCHIVE;
 			if (opts->disable_indexing)
 				file_attrs |= FILE_ATTR_NOT_CONTENT_INDEXED;
-			if (opts->enable_compression)
-				file_attrs |= FILE_ATTR_COMPRESSED;
 		}
 		/* setting specific security_id flag and */
 		/* file permissions for ntfs 3.x */
@@ -4551,8 +4438,8 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 	 * in the boot sector section and that it has the NTFS OEM id/magic
 	 * already inserted, so no need to worry about these things.
 	 */
-	bs->bpb.bytes_per_sector = cpu_to_le16(opts->sector_size);
-	sectors_per_cluster = opts->g_vol->cluster_size / opts->sector_size;
+	bs->bpb.bytes_per_sector = cpu_to_le16(OPT_SECTOR_SIZE);
+	sectors_per_cluster = opts->g_vol->cluster_size / OPT_SECTOR_SIZE;
 	if (sectors_per_cluster > 128)
 		bs->bpb.sectors_per_cluster = 257 - ffs(sectors_per_cluster);
 	else
@@ -4563,7 +4450,7 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 		opts->sectors_per_track, opts->sectors_per_track);
 	bs->bpb.heads = cpu_to_le16(opts->heads);
 	ntfs_log_debug("heads = %ld (0x%lx)\n", opts->heads, opts->heads);
-	bs->bpb.hidden_sectors = cpu_to_le32(opts->part_start_sect);
+	bs->bpb.hidden_sectors = cpu_to_le32(opts->mbr_hidden_sectors);
 	ntfs_log_debug("hidden sectors = %llu (0x%llx)\n", opts->part_start_sect,
 		opts->part_start_sect);
 	bs->physical_drive = 0x80;  	    /* boot from hard disk */
@@ -4650,21 +4537,8 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 		volume_flags |= VOLUME_IS_DIRTY;
 	}
 	free(bs);
-	/*
-	 * We cheat a little here and if the user has requested all times to be
-	 * set to zero then we set the GUID to zero as well.  This options is
-	 * only used for development purposes so that should be fine.
-	 */
-	if (!opts->use_epoch_time) {
-		/* Generate a GUID for the volume. */
-#ifdef ENABLE_UUID
-		uuid_generate((void*)&vol_guid);
-#else
-		ntfs_generate_guid(&vol_guid);
-#endif
-	}
-	else
-		memset(&vol_guid, 0, sizeof(vol_guid));
+	/* Generate a GUID for the volume. */
+	ntfs_generate_guid(&vol_guid);
 	if (!create_file_volume(opts, m, root_ref, volume_flags, &vol_guid))
 		return FALSE;
 	ntfs_log_verbose("Creating $BadClus (mft record 8)\n");
@@ -4985,7 +4859,7 @@ static int mkntfs_redirect(OPTS* opts)
 		goto done;
 	}
 	/* Initialize the random number generator with the current time. */
-	srand(sle64_to_cpu(mkntfs_time(opts)) / 10000000);
+	srand(sle64_to_cpu(mkntfs_time()) / 10000000);
 	/* Allocate and initialize ntfs_volume structure opts->g_vol. */
 	opts->g_vol = ntfs_volume_alloc();
 	if (!opts->g_vol) {
@@ -5003,8 +4877,8 @@ static int mkntfs_redirect(OPTS* opts)
 			goto done;
 		}
 	}
-	if (opts->cluster_size >= 0)
-		opts->g_vol->cluster_size = opts->cluster_size;
+	if (OPT_CLUSTER_SIZE >= 0)
+		opts->g_vol->cluster_size = OPT_CLUSTER_SIZE;
 	/* Length is in unicode characters. */
 	opts->g_vol->upcase_len = ntfs_upcase_build_default(&opts->g_vol->upcase);
 	/* Since Windows 8, there is a $Info stream in $UpCase */
@@ -5133,7 +5007,7 @@ static int mkntfs_redirect(OPTS* opts)
 	pos = opts->g_mft_lcn * opts->g_vol->cluster_size;
 	lw = 1;
 	for (i = 0; i < opts->g_mft_size / (s32)opts->g_vol->mft_record_size; i++) {
-		if (!opts->no_action)
+		if (!OPT_NO_ACTION)
 			lw = ntfs_mst_pwrite(opts->g_vol->dev, pos, 1, opts->g_vol->mft_record_size, opts->g_buf + i * opts->g_vol->mft_record_size);
 		if (lw != 1) {
 			ntfs_log_error("ntfs_mst_pwrite: %s\n", lw == -1 ?
@@ -5157,7 +5031,7 @@ static int mkntfs_redirect(OPTS* opts)
 			ntfs_log_error("ntfs_mft_usn_dec");
 			goto done;
 		}
-		if (!opts->no_action)
+		if (!OPT_NO_ACTION)
 			lw = ntfs_mst_pwrite(opts->g_vol->dev, pos, 1, opts->g_vol->mft_record_size, opts->g_buf + i * opts->g_vol->mft_record_size);
 		if (lw != 1) {
 			ntfs_log_error("ntfs_mst_pwrite: %s\n", lw == -1 ?
@@ -5170,7 +5044,7 @@ static int mkntfs_redirect(OPTS* opts)
 	ntfs_log_verbose("Creating the base $LogFile record.\n");
 	pos = opts->g_logfile_lcn * opts->g_vol->cluster_size;
 	lw = 1;
-	if (!opts->no_action)
+	if (!OPT_NO_ACTION)
 		lw = ntfs_pwrite(opts->g_vol->dev, pos, DefaultLogPageSize, opts->g_logfile_buf);
 	if (lw != DefaultLogPageSize) {
 		ntfs_log_error("ntfs_mst_pwrite: %s\n", lw == -1 ?
@@ -5208,13 +5082,10 @@ int main(int argc, char* argv[])
 	utils_set_locale();
 
 	OPTS opts = { 0 };
-	opts.cluster_size = -1;
 	opts.heads = -1;
-	opts.mft_zone_multiplier = -1;
 	opts.num_sectors = -1;
-	opts.part_start_sect = -1;
-	opts.sector_size = -1;
 	opts.sectors_per_track = -1;
+
 
 	if (result < 0)
 		result = mkntfs_redirect(&opts);
