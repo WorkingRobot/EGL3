@@ -21,21 +21,8 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdlib.h>
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
 #include <string.h>
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-#ifdef HAVE_SYS_SYSMACROS_H
-#include <sys/sysmacros.h>
-#endif
 
 #include "compat.h"
 #include "types.h"
@@ -359,7 +346,7 @@ static int update_object_id(ntfs_inode *ni, ntfs_index_context *xo,
 				 * id and log the error. There will be an
 				 * inconsistency if removal fails.
 				 */
-				ntfs_attr_rm(na);
+
 				ntfs_log_error("Failed to index object id."
 						" Possible corruption.\n");
 			}

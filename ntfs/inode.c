@@ -1255,7 +1255,6 @@ remove_attrlist_record:
 	ntfs_attr_reinit_search_ctx(ctx);
 	if (!ntfs_attr_lookup(AT_ATTRIBUTE_LIST, NULL, 0,
 				CASE_SENSITIVE, 0, NULL, 0, ctx)) {
-		if (ntfs_attr_record_rm(ctx))
 			ntfs_log_perror("Rollback failed to remove attrlist");
 	} else
 		ntfs_log_perror("Rollback failed to find attrlist");

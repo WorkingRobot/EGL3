@@ -66,7 +66,7 @@ struct ntfs_logging {
  * This struct controls all the logging within the library and tools.
  */
 static struct ntfs_logging ntfs_log = {
-#if 1
+#if 0
 	NTFS_LOG_LEVEL_DEBUG | NTFS_LOG_LEVEL_TRACE | NTFS_LOG_LEVEL_ENTER |
 	NTFS_LOG_LEVEL_LEAVE |
 #endif
@@ -74,7 +74,7 @@ static struct ntfs_logging ntfs_log = {
 	NTFS_LOG_LEVEL_ERROR | NTFS_LOG_LEVEL_PERROR | NTFS_LOG_LEVEL_CRITICAL |
 	NTFS_LOG_LEVEL_PROGRESS,
 	NTFS_LOG_FLAG_ONLYNAME,
-#if 1
+#if 0
 	ntfs_log_handler_outerr
 #else
 	ntfs_log_handler_null

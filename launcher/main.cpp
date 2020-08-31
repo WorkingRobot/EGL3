@@ -5,12 +5,16 @@
 static uint8_t* MBRData;
 static EGL3File EGL3Files[] = {
 	{ "test folder", 0, 1, -1, NULL, NULL },
-	{ "testfile.txt", 500 * 1024 * 1024, 0, 0, NULL, NULL },
+	{ "testfile.txt", 1024*1024*1024*4llu, 0, 0, NULL, NULL },
 	{ "test.folder", 0, 1, 0, NULL, NULL },
 };
 static constexpr int EGL3FileCount = 3;
 
-static void HandleBlock(AppendingFile* Data, UINT64 BlockAddress, PVOID Buffer) {
+__forceinline void HandleFileBlock(EGL3File* File, UINT64 BlockAddress, PVOID Buffer) {
+	*(uint64_t*)Buffer = BlockAddress;
+}
+
+__forceinline void HandleBlock(AppendingFile* Data, UINT64 BlockAddress, PVOID Buffer) {
 	if (BlockAddress < 8) { // MBR cluster
 		if (BlockAddress == 0) {
 			memcpy(Buffer, MBRData, 512);
@@ -18,17 +22,31 @@ static void HandleBlock(AppendingFile* Data, UINT64 BlockAddress, PVOID Buffer) 
 		else {
 			memset(Buffer, 0, 512);
 		}
+		return;
 	}
-	else {
-		BlockAddress -= 8;
-		for (int n = 0; n < EGL3FileCount; ++n) {
 
+	// NTFS filesystem ignores the MBR cluster
+	BlockAddress -= 8;
+	int64_t lcn = BlockAddress >> 3; // divide by 8
+	for (int n = 0; n < EGL3FileCount; ++n) {
+		auto& file = EGL3Files[n];
+		if (file.is_directory) {
+			continue;
 		}
+		if (file.o_runlist->lcn <= lcn && file.o_runlist->lcn + file.o_runlist->length > lcn) {
+			HandleFileBlock(&file, lcn - file.o_runlist->lcn, Buffer);
+			return;
+		}
+	}
 
-		auto search = Data->data.find(BlockAddress);
-		if (search != Data->data.end()) {
-			memcpy(Buffer, search->second, 512);
-		}
+	auto search = Data->data.find(BlockAddress);
+	if (search != Data->data.end()) {
+		memcpy(Buffer, search->second, 512);
+		return;
+	}
+	if (Data->data_ff.contains(BlockAddress)) {
+		memset(Buffer, 255, 512);
+		return;
 	}
 }
 
@@ -43,26 +61,12 @@ static BOOLEAN Read(SPD_STORAGE_UNIT* StorageUnit,
 	return TRUE;
 }
 
-static BOOLEAN Flush(SPD_STORAGE_UNIT* StorageUnit,
-	UINT64 BlockAddress, UINT32 BlockCount,
-	SPD_STORAGE_UNIT_STATUS* Status)
-{
-	return TRUE;
-}
-
-static BOOLEAN Unmap(SPD_STORAGE_UNIT* StorageUnit,
-	SPD_UNMAP_DESCRIPTOR Descriptors[], UINT32 Count,
-	SPD_STORAGE_UNIT_STATUS* Status)
-{
-	return TRUE;
-}
-
 static SPD_STORAGE_UNIT_INTERFACE DiskInterface =
 {
 	Read,
 	0, // write
-	Flush,
-	Unmap,
+	0, // flush
+	0, // unmap
 };
 
 int main(int argc, char* argv[])
@@ -117,7 +121,7 @@ int main(int argc, char* argv[])
 		Unit->UserContext = Disk;
 	}
 
-	SpdStorageUnitSetDebugLog(Unit, -1); // print everything
+	//SpdStorageUnitSetDebugLog(Unit, -1); // print everything
 
 	if (Error = SpdStorageUnitStartDispatcher(Unit, 0)) {
 		printf("start dispatcher error: %d\n", Error);

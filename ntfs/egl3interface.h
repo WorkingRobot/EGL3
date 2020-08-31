@@ -21,8 +21,8 @@ struct _EGL3File {
 	int64_t size;
 	uint8_t is_directory;
 	int64_t parent_index;
+	void* reserved; // internally, this is the o_index_block (INDEX_ALLOCATION*)
 	EGL3Runlist* o_runlist;
-	void* o_index_block;
 };
 
 // defined at the end of mkntfs.c
@@ -32,11 +32,13 @@ int EGL3CreateDisk(uint64_t sector_size, const char* label, const EGL3File files
 #ifdef __cplusplus
 }
 
-// C++ code gets some more data
 #include <unordered_map>
+#include <unordered_set>
 
+// o_data
 struct AppendingFile {
 	std::unordered_map<uint64_t, uint8_t*> data;
+	std::unordered_set<uint64_t> data_ff;
 	uint32_t operation_count;
 	uint64_t written_bytes;
 	int64_t position;

@@ -40,6 +40,8 @@
 
 uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);
 
+void ntfs_device_win32_set_sector_FF(void* ctx, int64_t sector_addr);
+
 int64_t* ntfs_device_win32_get_position(void* ctx);
 uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
 
@@ -141,14 +143,24 @@ static s64 ntfs_device_win32_read(struct ntfs_device* dev, void* b, s64 count)
 	errno = EOPNOTSUPP;
 	return -1;
 }
-static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const void* buf,
-	s64 count, s64 offset);
-static s64 ntfs_device_win32_write(struct ntfs_device* dev, const void* b,
-	s64 count);
-static int ntfs_device_win32_sync(struct ntfs_device* dev);
-static int ntfs_device_win32_stat(struct ntfs_device* dev, struct stat* buf);
-static int ntfs_device_win32_ioctl(struct ntfs_device* dev,
-	unsigned long request, void* argp);
+
+static u8 ntfs_device_win32_is_sector_FF(const u8* b) {
+	for (int n = 0; n < 512; ++n) {
+		if (b[n] != 0xFF) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static u8 ntfs_device_win32_is_sector_00(const u8* b) {
+	for (int n = 0; n < 512; ++n) {
+		if (b[n] != 0x00) {
+			return 0;
+		}
+	}
+	return 1;
+}
 
 static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const u8* b,
 	s64 count, s64 offset)
@@ -159,7 +171,20 @@ static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const u8* b,
 	s64 sector_off = offset % 512;
 	while (bytes_left) {
 		int read_amt = min(512 - sector_off, bytes_left);
-		memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+		if (read_amt != 512) {
+			memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+		}
+		else {
+			if (ntfs_device_win32_is_sector_FF(b)) {
+				ntfs_device_win32_set_sector_FF(dev->d_private, sector_idx);
+			}
+			else if (ntfs_device_win32_is_sector_00(b)) {
+				// it's 0 by default
+			}
+			else {
+				memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+			}
+		}
 		b += read_amt;
 		sector_off = 0;
 		bytes_left -= read_amt;

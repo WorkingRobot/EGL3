@@ -1026,9 +1026,10 @@ static int update_secur_descr(ntfs_volume *vol,
 					ni->owner_id = const_cpu_to_le32(0);
 					ni->quota_charged = const_cpu_to_le64(0);
 					ni->usn = const_cpu_to_le64(0);
-					ntfs_attr_remove(ni,
+					printf("this is never run");
+					/*ntfs_attr_remove(ni,
 						AT_SECURITY_DESCRIPTOR,
-						AT_UNNAMED, 0);
+						AT_UNNAMED, 0);*/
 			}
 				set_nino_flag(ni, v3_Extensions);
 				ni->security_id = securid;
@@ -1100,8 +1101,9 @@ static int upgrade_secur_desc(ntfs_volume *vol,
 				ni->owner_id = const_cpu_to_le32(0);
 				ni->quota_charged = const_cpu_to_le64(0);
 				ni->usn = const_cpu_to_le64(0);
-				ntfs_attr_remove(ni, AT_SECURITY_DESCRIPTOR,
-						AT_UNNAMED, 0);
+				printf("this is never run");
+				/*ntfs_attr_remove(ni, AT_SECURITY_DESCRIPTOR,
+					AT_UNNAMED, 0);*/
 				set_nino_flag(ni, v3_Extensions);
 				ni->security_id = securid;
 				ntfs_attr_close(na);

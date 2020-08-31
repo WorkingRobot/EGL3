@@ -22,33 +22,6 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_WCHAR_H
-#include <wchar.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#include <locale.h>
-
-#if defined(__APPLE__) || defined(__DARWIN__)
-#ifdef ENABLE_NFCONV
-#include <CoreFoundation/CoreFoundation.h>
-#endif /* ENABLE_NFCONV */
-#endif /* defined(__APPLE__) || defined(__DARWIN__) */
-
 #include "compat.h"
 #include "attrib.h"
 #include "types.h"
@@ -72,38 +45,6 @@
  */
 
 static int use_utf8 = 1; /* use UTF-8 encoding for file names */
-
-#if defined(__APPLE__) || defined(__DARWIN__)
-#ifdef ENABLE_NFCONV
-/**
- * This variable controls whether or not automatic normalization form conversion
- * should be performed when translating NTFS unicode file names to UTF-8.
- * Defaults to on, but can be controlled from the outside using the function
- *   int ntfs_macosx_normalize_filenames(int normalize);
- */
-static int nfconvert_utf8 = 1;
-#endif /* ENABLE_NFCONV */
-#endif /* defined(__APPLE__) || defined(__DARWIN__) */
-
-/*
- * This is used by the name collation functions to quickly determine what
- * characters are (in)valid.
- */
-#if 0
-static const u8 legal_ansi_char_array[0x40] = {
-	0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-	0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-
-	0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-	0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-
-	0x17, 0x07, 0x18, 0x17, 0x17, 0x17, 0x17, 0x17,
-	0x17, 0x17, 0x18, 0x16, 0x16, 0x17, 0x07, 0x00,
-
-	0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17, 0x17,
-	0x17, 0x17, 0x04, 0x16, 0x18, 0x16, 0x18, 0x18,
-};
-#endif
 
 /**
  * ntfs_names_are_equal - compare two Unicode names for equality
@@ -412,23 +353,6 @@ void ntfs_name_locase(ntfschar *name, u32 name_len, const ntfschar *locase,
 		for (i = 0; i < name_len; i++)
 			if ((u = le16_to_cpu(name[i])) < locase_len)
 				name[i] = locase[u];
-}
-
-/**
- * ntfs_file_value_upcase - Convert a filename to upper case
- * @file_name_attr:
- * @upcase:
- * @upcase_len:
- *
- * Description...
- *
- * Returns:
- */
-void ntfs_file_value_upcase(FILE_NAME_ATTR *file_name_attr,
-		const ntfschar *upcase, const u32 upcase_len)
-{
-	ntfs_name_upcase((ntfschar*)&file_name_attr->file_name,
-			file_name_attr->file_name_length, upcase, upcase_len);
 }
 
 /*
@@ -808,19 +732,6 @@ fail:
  */
 static int ntfs_utf8_to_utf16(const char *ins, ntfschar **outs)
 {
-#if defined(__APPLE__) || defined(__DARWIN__)
-#ifdef ENABLE_NFCONV
-	char *new_ins = NULL;
-	if(nfconvert_utf8) {
-		int new_ins_len;
-		new_ins_len = ntfs_macosx_normalize_utf8(ins, &new_ins, 1); // Normalize to composed form
-		if(new_ins_len >= 0)
-			ins = new_ins;
-		else
-			ntfs_log_error("Failed to normalize NTFS string to UTF-8 NFC: %s\n", ins);
-	}
-#endif /* ENABLE_NFCONV */
-#endif /* defined(__APPLE__) || defined(__DARWIN__) */
 	const char *t = ins;
 	u32 wc;
 	BOOL allocated;
@@ -1388,38 +1299,6 @@ u32 ntfs_upcase_build_default(ntfschar **upcase)
 	return (upcase_len);
 }
 
-/*
- *		Build a table for converting to lower case
- *
- *	This is only meaningful when there is a single lower case
- *	character leading to an upper case one, and currently the
- *	only exception is the greek letter sigma which has a single
- *	upper case glyph (code U+03A3), but two lower case glyphs
- *	(code U+03C3 and U+03C2, the latter to be used at the end
- *	of a word). In the following implementation the upper case
- *	sigma will be lowercased as U+03C3.
- */
-
-ntfschar *ntfs_locase_table_build(const ntfschar *uc, u32 uc_cnt)
-{
-	ntfschar *lc;
-	u32 upp;
-	u32 i;
-
-	lc = (ntfschar*)ntfs_malloc(uc_cnt*sizeof(ntfschar));
-	if (lc) {
-		for (i=0; i<uc_cnt; i++)
-			lc[i] = cpu_to_le16(i);
-		for (i=0; i<uc_cnt; i++) {
-			upp = le16_to_cpu(uc[i]);
-			if ((upp != i) && (upp < uc_cnt))
-				lc[upp] = cpu_to_le16(i);
-		}
-	} else
-		ntfs_log_error("Could not build the locase table\n");
-	return (lc);
-}
-
 /**
  * ntfs_str2ucs - convert a string to a valid NTFS file name
  * @s:		input string
@@ -1632,123 +1511,3 @@ BOOL ntfs_collapsible_chars(ntfs_volume *vol,
 	}
 	return (collapsible);
 }
-
-/*
- * Define the character encoding to be used.
- * Use UTF-8 unless specified otherwise.
- */
-
-int ntfs_set_char_encoding(const char *locale)
-{
-	use_utf8 = 0;
-	if (!locale || strstr(locale,"utf8") || strstr(locale,"UTF8")
-	    || strstr(locale,"utf-8") || strstr(locale,"UTF-8"))
-		use_utf8 = 1;
-	else
-		if (setlocale(LC_ALL, locale))
-			use_utf8 = 0;
-		else {
-			ntfs_log_error("Invalid locale, encoding to UTF-8\n");
-			use_utf8 = 1;
-	 	}
-	return 0; /* always successful */
-}
-
-#if defined(__APPLE__) || defined(__DARWIN__)
-
-int ntfs_macosx_normalize_filenames(int normalize) {
-#ifdef ENABLE_NFCONV
-	if (normalize == 0 || normalize == 1) {
-		nfconvert_utf8 = normalize;
-		return 0;
-	}
-	else {
-		return -1;
-	}
-#else
-	return -1;
-#endif /* ENABLE_NFCONV */
-} 
-
-int ntfs_macosx_normalize_utf8(const char *utf8_string, char **target,
-		int composed)
-{
-#ifdef ENABLE_NFCONV
-	/* For this code to compile, the CoreFoundation framework must be fed to
-	 * the linker. */
-	CFStringRef cfSourceString;
-	CFMutableStringRef cfMutableString;
-	CFRange rangeToProcess;
-	CFIndex requiredBufferLength;
-	char *result = NULL;
-	int resultLength = -1;
-	
-	/* Convert the UTF-8 string to a CFString. */
-	cfSourceString = CFStringCreateWithCString(kCFAllocatorDefault,
-		utf8_string, kCFStringEncodingUTF8);
-	if (cfSourceString == NULL) {
-		ntfs_log_error("CFStringCreateWithCString failed!\n");
-		return -2;
-	}
-
-	/* Create a mutable string from cfSourceString that we are free to
-	 * modify. */
-	cfMutableString = CFStringCreateMutableCopy(kCFAllocatorDefault, 0,
-		cfSourceString);
-	CFRelease(cfSourceString); /* End-of-life. */
-	if (cfMutableString == NULL) {
-		ntfs_log_error("CFStringCreateMutableCopy failed!\n");
-		return -3;
-	}
-
-	/* Normalize the mutable string to the desired normalization form. */
-	CFStringNormalize(cfMutableString, (composed != 0 ?
-		kCFStringNormalizationFormC : kCFStringNormalizationFormD));
-
-	/* Store the resulting string in a '\0'-terminated UTF-8 encoded char*
-	 * buffer. */
-	rangeToProcess = CFRangeMake(0, CFStringGetLength(cfMutableString));
-	if (CFStringGetBytes(cfMutableString, rangeToProcess,
-		kCFStringEncodingUTF8, 0, false, NULL, 0,
-		&requiredBufferLength) > 0)
-	{
-		resultLength = sizeof(char) * (requiredBufferLength + 1);
-		result = ntfs_calloc(resultLength);
-
-		if (result != NULL) {
-			if (CFStringGetBytes(cfMutableString, rangeToProcess,
-				kCFStringEncodingUTF8, 0, false,
-				(UInt8*) result, resultLength - 1,
-				&requiredBufferLength) <= 0)
-			{
-				ntfs_log_error("Could not perform UTF-8 "
-					"conversion of normalized "
-					"CFMutableString.\n");
-				free(result);
-				result = NULL;
-			}
-		}
-		else {
-			ntfs_log_error("Could not perform a ntfs_calloc of %d "
-				"bytes for char *result.\n", resultLength);
-		}
-	}
-	else {
-		ntfs_log_error("Could not perform check for required length of "
-			"UTF-8 conversion of normalized CFMutableString.\n");
-	}
-
-	CFRelease(cfMutableString);
-
-	if (result != NULL) {
-	 	*target = result;
-		return resultLength - 1;
-	}
-	else {
-		return -1;
-	}
-#else
-	return -1;
-#endif /* ENABLE_NFCONV */
-}
-#endif /* defined(__APPLE__) || defined(__DARWIN__) */

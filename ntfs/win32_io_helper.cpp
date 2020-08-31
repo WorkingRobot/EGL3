@@ -1,11 +1,15 @@
 #include "egl3interface.h"
 
-extern "C" uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);
+extern "C" {
+	uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);
 
-extern "C" int64_t* ntfs_device_win32_get_position(void* ctx);
-extern "C" uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
+	void ntfs_device_win32_set_sector_FF(void* ctx, int64_t sector_addr);
 
-extern "C" void* ntfs_device_win32_create_ctx();
+	int64_t* ntfs_device_win32_get_position(void* ctx);
+	uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
+
+	void* ntfs_device_win32_create_ctx();
+}
 
 uint8_t* ntfs_device_win32_get_sector(void* c, int64_t sector_addr) {
 	auto ctx = (AppendingFile*)c;
@@ -17,6 +21,12 @@ uint8_t* ntfs_device_win32_get_sector(void* c, int64_t sector_addr) {
 	ctx->data.emplace(sector_addr, ret);
 
 	return ret;
+}
+
+void ntfs_device_win32_set_sector_FF(void* c, int64_t sector_addr) {
+	auto ctx = (AppendingFile*)c;
+	ctx->data.erase(sector_addr);
+	ctx->data_ff.emplace(sector_addr);
 }
 
 int64_t* ntfs_device_win32_get_position(void* ctx) {

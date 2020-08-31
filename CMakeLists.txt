@@ -3,7 +3,7 @@
 project(EGL3)
 
 add_executable(EGL3
-     "ntfs/mkntfs.c" "ntfs/attrdef.c" "ntfs/sd.c" "ntfs/utils.c" "ntfs/boot.c" "ntfs/security.c" "ntfs/getopt.c" "ntfs/attrib.c"  "ntfs/volume.c" "ntfs/logfile.c" "ntfs/bootsect.c" "ntfs/attrlist.c" "ntfs/lcnalloc.c" "ntfs/bitmap.c" "ntfs/compress.c" "ntfs/device.c" "ntfs/dir.c" "ntfs/unistr.c" "ntfs/runlist.c" "ntfs/mst.c" "ntfs/cache.c" "ntfs/index.c" "ntfs/inode.c" "ntfs/logging.c" "ntfs/mft.c" "ntfs/reparse.c" "ntfs/win32_io.c" "ntfs/acls.c" "ntfs/collate.c" "ntfs/object_id.c" "ntfs/winsd.h" "ntfs/winsd.c" "ntfs/misc.c"  "launcher/main.cpp"  "ntfs/win32_io_helper.cpp")
+     "ntfs/mkntfs.c" "ntfs/attrdef.c" "ntfs/sd.c" "ntfs/utils.c" "ntfs/boot.c" "ntfs/security.c" "ntfs/getopt.c" "ntfs/attrib.c"  "ntfs/volume.c" "ntfs/logfile.c" "ntfs/bootsect.c" "ntfs/attrlist.c" "ntfs/lcnalloc.c" "ntfs/bitmap.c" "ntfs/device.c" "ntfs/dir.c" "ntfs/unistr.c" "ntfs/runlist.c" "ntfs/mst.c" "ntfs/cache.c" "ntfs/index.c" "ntfs/inode.c" "ntfs/logging.c" "ntfs/mft.c" "ntfs/win32_io.c" "ntfs/acls.c" "ntfs/collate.c" "ntfs/winsd.h" "ntfs/winsd.c" "ntfs/misc.c"  "launcher/main.cpp"  "ntfs/win32_io_helper.cpp")
 
 set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
 

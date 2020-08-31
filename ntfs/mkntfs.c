@@ -1559,8 +1559,8 @@ static int insert_non_resident_attr_in_mft_record_nowrite(OPTS* opts, MFT_RECORD
 	a->mapping_pairs_offset = cpu_to_le16(hdr_size + ((name_len + 7) & ~7));
 	memset(a->reserved1, 0, sizeof(a->reserved1));
 	/* FIXME: Allocated size depends on compression. */
-	a->allocated_size = cpu_to_sle64((val_len + (opts->g_vol->cluster_size - 1)) &
-		~(opts->g_vol->cluster_size - 1));
+	a->allocated_size = cpu_to_sle64((val_len + ((s64)opts->g_vol->cluster_size - 1)) &
+		~((s64)opts->g_vol->cluster_size - 1));
 	a->data_size = cpu_to_sle64(val_len);
 	a->initialized_size = cpu_to_sle64(val_len);
 	if (name_len)
@@ -4423,12 +4423,12 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 			}
 			else {
 				EGL3File* ParentFile = opts->egl3_files + File->parent_index;
-				if (!ParentFile->o_index_block) {
+				if (!ParentFile->reserved) {
 					if (!err)
-						err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->o_index_block);
+						err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->reserved);
 				}
 				if (!err)
-					err = create_hardlink(opts, ParentFile->o_index_block, MK_LE_MREF(File->parent_index + 27, 1), m,
+					err = create_hardlink(opts, ParentFile->reserved, MK_LE_MREF(File->parent_index + 27, 1), m,
 						MK_LE_MREF(MFTrecnum, 1),
 						0, 0,
 						FILE_ATTR_I30_INDEX_PRESENT, 0, 0,
@@ -4455,12 +4455,12 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 			}
 			else {
 				EGL3File* ParentFile = opts->egl3_files + File->parent_index;
-				if (!ParentFile->o_index_block) {
+				if (!ParentFile->reserved) {
 					if (!err)
-						err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->o_index_block);
+						err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->reserved);
 				}
 				if (!err)
-					err = create_hardlink(opts, ParentFile->o_index_block, MK_LE_MREF(File->parent_index + 27, 1), m,
+					err = create_hardlink(opts, ParentFile->reserved, MK_LE_MREF(File->parent_index + 27, 1), m,
 						MK_LE_MREF(MFTrecnum, 1),
 						((File->size) + opts->g_vol->cluster_size - 1) & ~(opts->g_vol->cluster_size - 1),
 						File->size, FILE_ATTR_ARCHIVE, 0, 0,
@@ -4480,13 +4480,13 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 	for (int i = 0; i < opts->egl3_file_count; ++i) {
 		EGL3File* File = opts->egl3_files + i;
 		s64 MFTrecnum = i + 27;
-		if (!File->is_directory || !File->o_index_block)
+		if (!File->is_directory || !File->reserved)
 			continue;
 		ntfs_log_verbose("Syncing %s index record (mft record %X)\n", File->name, MFTrecnum);
 		m = (MFT_RECORD*)(opts->g_buf + MFTrecnum * opts->g_vol->mft_record_size);
 
 		if (!err)
-			err = mkntfs_sync_index_record(opts, File->o_index_block, m, L"$I30", 4);
+			err = mkntfs_sync_index_record(opts, File->reserved, m, L"$I30", 4);
 
 		if (err < 0) {
 			ntfs_log_error("Couldn't sync %s: %s\n", File->name,
