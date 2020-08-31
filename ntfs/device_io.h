@@ -22,57 +22,12 @@
 #ifndef _NTFS_DEVICE_IO_H
 #define _NTFS_DEVICE_IO_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define HAVE_WINDOWS_H
-
-#ifndef NO_NTFS_DEVICE_DEFAULT_IO_OPS
-
-#if defined(linux) || defined(__uClinux__) || defined(__sun) \
-		|| defined(__APPLE__) || defined(__DARWIN__)
-  /* Make sure the presence of <windows.h> means compiling for Windows */
-#undef HAVE_WINDOWS_H
-#endif
-
-#ifndef HAVE_WINDOWS_H
-
-/* Not for Windows use standard Unix style low level device operations. */
-#define ntfs_device_default_io_ops ntfs_device_unix_io_ops
-
-#else /* HAVE_WINDOWS_H */
-
-#ifndef BLKGETSIZE
-#	define BLKGETSIZE	0x1260
-#endif
-#ifndef BLKSSZGET
-#	define BLKSSZGET	0x1268
-#endif
-#ifndef BLKGETSIZE64
-#	define BLKGETSIZE64	0x80041272
-#endif
-#ifndef BLKBSZSET
-#	define BLKBSZSET	0x40041271
-#endif
-
-/* On Windows (and Cygwin) : use Win32 low level device operations. */
 #define ntfs_device_default_io_ops ntfs_device_win32_io_ops
-
-/* A few useful functions */
-int ntfs_win32_set_sparse(int);
-int ntfs_win32_ftruncate(int fd, s64 size);
-int ntfs_device_win32_ftruncate(struct ntfs_device*, s64);
-
-#endif /* HAVE_WINDOWS_H */
-
 
 /* Forward declaration. */
 struct ntfs_device_operations;
 
 extern struct ntfs_device_operations ntfs_device_default_io_ops;
-
-#endif /* NO_NTFS_DEVICE_DEFAULT_IO_OPS */
 
 #endif /* defined _NTFS_DEVICE_IO_H */
 

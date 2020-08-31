@@ -34,6 +34,7 @@
 #include "logging.h"
 #include "bitmap.h"
 #include "misc.h"
+#include "support.h"
 
 /**
  * ntfs_index_entry_mark_dirty - mark an index entry dirty

@@ -28,7 +28,6 @@
 
 #include "types.h"
 #include "endians.h"
-#include "support.h"
 
 /* The NTFS oem_id */
 #define magicNTFS	const_cpu_to_le64(0x202020205346544e)	/* "NTFS    " */

@@ -47,7 +47,6 @@ typedef struct _ntfs_volume ntfs_volume;
 
 #include "param.h"
 #include "types.h"
-#include "support.h"
 #include "device.h"
 #include "inode.h"
 #include "attrib.h"

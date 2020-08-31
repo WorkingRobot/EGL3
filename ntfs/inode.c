@@ -23,38 +23,13 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_ERRNO_H
 #include <errno.h>
-#endif
 
-#include "param.h"
-#include "compat.h"
 #include "types.h"
 #include "volume.h"
 #include "cache.h"
-#include "inode.h"
-#include "attrib.h"
-#include "debug.h"
-#include "mft.h"
-#include "attrlist.h"
-#include "runlist.h"
-#include "lcnalloc.h"
-#include "index.h"
 #include "dir.h"
-#include "ntfstime.h"
-#include "logging.h"
-#include "misc.h"
-#include "xattrs.h"
+#include "support.h"
 
 ntfs_inode *ntfs_inode_base(ntfs_inode *ni)
 {
@@ -568,14 +543,14 @@ int ntfs_inode_close(ntfs_inode *ni)
  * Note, extent inodes are never closed directly. They are automatically
  * disposed off by the closing of the base inode.
  */
-ntfs_inode *ntfs_extent_inode_open(ntfs_inode *base_ni, const leMFT_REF mref)
+ntfs_inode* ntfs_extent_inode_open(ntfs_inode* base_ni, const leMFT_REF mref)
 {
 	u64 mft_no = MREF_LE(mref);
 	VCN extent_vcn;
-	runlist_element *rl;
-	ntfs_volume *vol;
-	ntfs_inode *ni = NULL;
-	ntfs_inode **extent_nis;
+	runlist_element* rl;
+	ntfs_volume* vol;
+	ntfs_inode* ni = NULL;
+	ntfs_inode** extent_nis;
 	int i;
 
 	if (!base_ni) {
@@ -583,34 +558,34 @@ ntfs_inode *ntfs_extent_inode_open(ntfs_inode *base_ni, const leMFT_REF mref)
 		ntfs_log_perror("%s", __FUNCTION__);
 		return NULL;
 	}
-	
+
 	ntfs_log_enter("Opening extent inode %lld (base mft record %lld).\n",
-			(unsigned long long)mft_no,
-			(unsigned long long)base_ni->mft_no);
-	
+		(unsigned long long)mft_no,
+		(unsigned long long)base_ni->mft_no);
+
 	if (!base_ni->mft_no) {
-			/*
-			 * When getting extents of MFT, we must be sure
-			 * they are in the MFT part which has already
-			 * been mapped, otherwise we fall into an endless
-			 * recursion.
-			 * Situations have been met where extents locations
-			 * are described in themselves.
-			 * This is a severe error which chkdsk cannot fix.
-			 */
+		/*
+		 * When getting extents of MFT, we must be sure
+		 * they are in the MFT part which has already
+		 * been mapped, otherwise we fall into an endless
+		 * recursion.
+		 * Situations have been met where extents locations
+		 * are described in themselves.
+		 * This is a severe error which chkdsk cannot fix.
+		 */
 		vol = base_ni->vol;
 		extent_vcn = mft_no << vol->mft_record_size_bits
-				>> vol->cluster_size_bits;
+			>> vol->cluster_size_bits;
 		rl = vol->mft_na->rl;
 		if (rl) {
 			while (rl->length
-			    && ((rl->vcn + rl->length) <= extent_vcn))
+				&& ((rl->vcn + rl->length) <= extent_vcn))
 				rl++;
 		}
 		if (!rl || (rl->lcn < 0)) {
 			ntfs_log_error("MFT is corrupt, cannot read"
 				" its unmapped extent record %lld\n",
-					(long long)mft_no);
+				(long long)mft_no);
 			ntfs_log_error("Note : chkdsk cannot fix this,"
 				" try ntfsfix\n");
 			errno = EIO;
@@ -631,7 +606,7 @@ ntfs_inode *ntfs_extent_inode_open(ntfs_inode *base_ni, const leMFT_REF mref)
 			/* Verify the sequence number if given. */
 			seq_no = MSEQNO_LE(mref);
 			if (seq_no && seq_no != le16_to_cpu(
-					ni->mrec->sequence_number)) {
+				ni->mrec->sequence_number)) {
 				errno = EIO;
 				ntfs_log_perror("Found stale extent mft "
 					"reference mft=%lld",
@@ -652,14 +627,14 @@ ntfs_inode *ntfs_extent_inode_open(ntfs_inode *base_ni, const leMFT_REF mref)
 	ni->base_ni = base_ni;
 	/* Attach extent inode to base inode, reallocating memory if needed. */
 	if (!(base_ni->nr_extents & 3)) {
-		i = (base_ni->nr_extents + 4) * sizeof(ntfs_inode *);
+		i = (base_ni->nr_extents + 4) * sizeof(ntfs_inode*);
 
 		extent_nis = ntfs_malloc(i);
 		if (!extent_nis)
 			goto err_out;
 		if (base_ni->nr_extents) {
 			memcpy(extent_nis, base_ni->extent_nis,
-					i - 4 * sizeof(ntfs_inode *));
+				i - 4 * sizeof(ntfs_inode*));
 			free(base_ni->extent_nis);
 		}
 		base_ni->extent_nis = extent_nis;
@@ -1514,109 +1489,4 @@ int ntfs_inode_get_times(ntfs_inode *ni, char *value, size_t size)
 		ntfs_attr_put_search_ctx(ctx);
 	}		
 	return (ret ? ret : -errno);
-}
-
-/*
- *		Set high precision NTFS times
- *
- *	They are expected in this order : create, update, access
- *	provided they are present in input. The change time is set to
- *	current time.
- *
- *	The times are inserted directly in the standard_information and
- *	file names attributes to avoid manipulating low precision times
- *
- *	Returns 0 if success
- *		-1 if there were an error (described by errno)
- */
-
-int ntfs_inode_set_times(ntfs_inode *ni, const char *value, size_t size,
-			int flags)
-{
-	ntfs_attr_search_ctx *ctx;
-	STANDARD_INFORMATION *std_info;
-	FILE_NAME_ATTR *fn;
-	u64 times[4];
-	ntfs_time now;
-	int cnt;
-	int ret;
-
-	ret = -1;
-	if ((size >= 8) && !(flags & XATTR_CREATE)) {
-		/* Copy, to avoid alignment issue encountered on ARM */
-		memcpy(times, value,
-			(size < sizeof(times) ? size : sizeof(times)));
-		now = ntfs_current_time();
-			/* update the standard information attribute */
-		ctx = ntfs_attr_get_search_ctx(ni, NULL);
-		if (ctx) {
-			if (ntfs_attr_lookup(AT_STANDARD_INFORMATION,
-					AT_UNNAMED, 0, CASE_SENSITIVE,
-					0, NULL, 0, ctx)) {
-				ntfs_log_perror("Failed to get standard info (inode %lld)",
-						(long long)ni->mft_no);
-			} else {
-				std_info = (STANDARD_INFORMATION *)((u8 *)ctx->attr +
-					le16_to_cpu(ctx->attr->value_offset));
-				/*
-				 * Mark times set to avoid overwriting
-				 * them when the inode is closed.
-				 * The inode structure must also be updated
-				 * (with loss of precision) because of cacheing.
-				 * TODO : use NTFS precision in inode, and
-				 * return sub-second times in getattr()
-				 */
-				set_nino_flag(ni, TimesSet);
-				std_info->creation_time = cpu_to_sle64(times[0]);
-				ni->creation_time
-					= std_info->creation_time;
-				if (size >= 16) {
-					std_info->last_data_change_time = cpu_to_sle64(times[1]);
-					ni->last_data_change_time
-						= std_info->last_data_change_time;
-				}
-				if (size >= 24) {
-					std_info->last_access_time = cpu_to_sle64(times[2]);
-					ni->last_access_time
-						= std_info->last_access_time;
-				}
-				std_info->last_mft_change_time = now;
-				ni->last_mft_change_time = now;
-				ntfs_inode_mark_dirty(ctx->ntfs_ino);
-				NInoFileNameSetDirty(ni);
-
-				/* update the file names attributes */
-				ntfs_attr_reinit_search_ctx(ctx);
-				cnt = 0;
-				while (!ntfs_attr_lookup(AT_FILE_NAME,
-						AT_UNNAMED, 0, CASE_SENSITIVE,
-						0, NULL, 0, ctx)) {
-					fn = (FILE_NAME_ATTR*)((u8 *)ctx->attr +
-						le16_to_cpu(ctx->attr->value_offset));
-					fn->creation_time
-						= cpu_to_sle64(times[0]);
-					if (size >= 16)
-						fn->last_data_change_time
-							= cpu_to_sle64(times[1]);
-					if (size >= 24)
-						fn->last_access_time
-							= cpu_to_sle64(times[2]);
-					fn->last_mft_change_time = now;
-					cnt++;
-				}
-				if (cnt)
-					ret = 0;
-				else {
-					ntfs_log_perror("Failed to get file names (inode %lld)",
-						(long long)ni->mft_no);
-				}
-			}
-			ntfs_attr_put_search_ctx(ctx);
-		}
-	} else
-		if (size < 8)
-			errno = ERANGE;
-		else
-			errno = EEXIST;
-	return (ret);
 }

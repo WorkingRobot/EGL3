@@ -36,6 +36,7 @@
 #include "types.h"
 #include "device.h"
 #include "misc.h"
+#include "support.h"
 #include "egl3interface.h"
 
 uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);

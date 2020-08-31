@@ -30,6 +30,7 @@
 #include "mst.h"
 #include "debug.h"
 #include "device.h"
+#include "support.h"
 #include "logging.h"
 #include "misc.h"
 

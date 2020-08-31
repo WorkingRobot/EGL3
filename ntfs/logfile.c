@@ -40,6 +40,7 @@
 #include "mst.h"
 #include "logging.h"
 #include "misc.h"
+#include "support.h"
 
 /**
  * ntfs_check_restart_page_header - check the page header for consistency

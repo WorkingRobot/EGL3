@@ -56,11 +56,11 @@
 #include "boot.h"
 #include "attrdef.h"
 #include "logging.h"
-#include "support.h"
 #include "unistr.h"
 #include "misc.h"
 #include "winsd.h"
 #include "logfile.h"
+#include "support.h"
 #include "egl3interface.h"
 
 typedef enum { WRITE_STANDARD, WRITE_BITMAP, WRITE_LOGFILE } WRITE_TYPE;
@@ -2297,12 +2297,6 @@ static int upgrade_to_large_index(OPTS* opts, MFT_RECORD* m, const char* name,
 	}
 	else {
 		ia_val->usa_count = const_cpu_to_le16(1);
-		ntfs_log_error("Sector size is bigger than index block size. "
-			"Setting usa_count to 1. If Windows chkdsk "
-			"reports this as corruption, please email %s "
-			"stating that you saw this message and that "
-			"the filesystem created was corrupt.  "
-			"Thank you.", NTFS_DEV_LIST);
 	}
 	/* Set USN to 1. */
 	*(le16*)((char*)ia_val + le16_to_cpu(ia_val->usa_ofs)) =
@@ -3818,11 +3812,6 @@ static int create_backup_boot_sector(OPTS* opts, u8* buff)
 		return -1;
 	}
 bb_err:
-	ntfs_log_error("Couldn't write backup boot sector. This is due to a "
-		"limitation in the\nLinux kernel. This is not a major "
-		"problem as Windows check disk will create the\n"
-		"backup boot sector when it is run on your next boot "
-		"into Windows.\n");
 	return -1;
 }
 

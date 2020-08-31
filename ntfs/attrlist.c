@@ -22,16 +22,6 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #include <errno.h>
 
 #include "types.h"
@@ -42,6 +32,7 @@
 #include "unistr.h"
 #include "logging.h"
 #include "misc.h"
+#include "support.h"
 
 /**
  * ntfs_attrlist_need - check whether inode need attribute list

@@ -23,14 +23,10 @@
 #ifndef _NTFS_DEVICE_H
 #define _NTFS_DEVICE_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "device_io.h"
 #include "types.h"
-#include "support.h"
 #include "volume.h"
+#include "support.h"
 
 /**
  * enum ntfs_device_state_bits -
@@ -118,28 +114,12 @@ struct ntfs_device_operations {
 extern struct ntfs_device *ntfs_device_alloc(const char *name, const long state,
 		struct ntfs_device_operations *dops, void *priv_data);
 extern int ntfs_device_free(struct ntfs_device *dev);
-extern int ntfs_device_sync(struct ntfs_device *dev);
 
 extern s64 ntfs_pread(struct ntfs_device *dev, const s64 pos, s64 count,
 		void *b);
 extern s64 ntfs_pwrite(struct ntfs_device *dev, const s64 pos, s64 count,
 		const void *b);
-
-extern s64 ntfs_mst_pread(struct ntfs_device *dev, const s64 pos, s64 count,
-		const u32 bksize, void *b);
-extern s64 ntfs_mst_pwrite(struct ntfs_device *dev, const s64 pos, s64 count,
-		const u32 bksize, void *b);
-
-extern s64 ntfs_cluster_read(const ntfs_volume *vol, const s64 lcn,
-		const s64 count, void *b);
 extern s64 ntfs_cluster_write(const ntfs_volume *vol, const s64 lcn,
 		const s64 count, const void *b);
-
-extern s64 ntfs_device_size_get(struct ntfs_device *dev, int block_size);
-extern s64 ntfs_device_partition_start_sector_get(struct ntfs_device *dev);
-extern int ntfs_device_heads_get(struct ntfs_device *dev);
-extern int ntfs_device_sectors_per_track_get(struct ntfs_device *dev);
-extern int ntfs_device_sector_size_get(struct ntfs_device *dev);
-extern int ntfs_device_block_size_set(struct ntfs_device *dev, int block_size);
 
 #endif /* defined _NTFS_DEVICE_H */

@@ -23,23 +23,6 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-
 #include "compat.h"
 #include "types.h"
 #include "volume.h"
@@ -48,6 +31,7 @@
 #include "device.h"
 #include "logging.h"
 #include "misc.h"
+#include "support.h"
 
 /**
  * ntfs_rl_mm - runlist memmove

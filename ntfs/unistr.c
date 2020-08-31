@@ -29,6 +29,7 @@
 #include "debug.h"
 #include "logging.h"
 #include "misc.h"
+#include "support.h"
 
 #ifndef ALLOW_BROKEN_UNICODE
 /* Erik allowing broken UTF-16 surrogate pairs and U+FFFE and U+FFFF by default,

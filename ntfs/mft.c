@@ -23,17 +23,10 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 #include <time.h>
 
 #include "compat.h"
@@ -48,6 +41,7 @@
 #include "lcnalloc.h"
 #include "mft.h"
 #include "logging.h"
+#include "support.h"
 #include "misc.h"
 
 /**
@@ -356,12 +350,6 @@ int ntfs_mft_record_layout(const ntfs_volume *vol, const MFT_REF mref,
 				NTFS_BLOCK_SIZE + 1);
 	else {
 		mrec->usa_count = const_cpu_to_le16(1);
-		ntfs_log_error("Sector size is bigger than MFT record size.  "
-				"Setting usa_count to 1.  If Windows chkdsk "
-				"reports this as corruption, please email %s "
-				"stating that you saw this message and that "
-				"the file system created was corrupt.  "
-				"Thank you.\n", NTFS_DEV_LIST);
 	}
 	/* Set the update sequence number to 1. */
 	*(le16*)((u8*)mrec + le16_to_cpu(mrec->usa_ofs)) = const_cpu_to_le16(1);

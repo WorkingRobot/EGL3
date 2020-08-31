@@ -163,13 +163,6 @@ not_ntfs:
 	return ret;
 }
 
-static const char *last_sector_error =
-"HINTS: Either the volume is a RAID/LDM but it wasn't setup yet,\n"
-"   or it was not setup correctly (e.g. by not using mdadm --build ...),\n"
-"   or a wrong device is tried to be mounted,\n"
-"   or the partition table is corrupt (partition is smaller than NTFS),\n"
-"   or the NTFS boot sector is corrupt (NTFS size is not valid).\n";
-
 static int ffs(int i)
 {
 	int bit;
@@ -232,7 +225,6 @@ int ntfs_boot_sector_parse(ntfs_volume *vol, const NTFS_BOOT_SECTOR *bs)
 				  SEEK_SET) == -1) {
 		ntfs_log_perror("Failed to read last sector (%lld)",
 			       	(long long)(sectors - 1));
-		ntfs_log_error("%s", last_sector_error);
 		return -1;
 	}
 	

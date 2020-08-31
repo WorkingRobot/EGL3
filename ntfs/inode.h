@@ -30,7 +30,6 @@ typedef struct _ntfs_inode ntfs_inode;
 
 #include "types.h"
 #include "layout.h"
-#include "support.h"
 #include "volume.h"
 #include "ntfstime.h"
 

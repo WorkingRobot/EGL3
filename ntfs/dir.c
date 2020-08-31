@@ -23,28 +23,8 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
 #include <string.h>
 #include <sys/stat.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef MAJOR_IN_MKDEV
-#include <sys/mkdev.h>
-#endif
-#ifdef MAJOR_IN_SYSMACROS
-#include <sys/sysmacros.h>
-#endif
 
 #include "param.h"
 #include "types.h"
@@ -62,7 +42,7 @@
 #include "misc.h"
 #include "security.h"
 #include "object_id.h"
-#include "xattrs.h"
+#include "support.h"
 
 #define S_ISREG(n) 0
 #define S_ISDIR(n) 0

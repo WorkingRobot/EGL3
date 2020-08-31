@@ -44,7 +44,6 @@
 #include "bitmap.h"
 #include "logging.h"
 #include "misc.h"
-#include "efs.h"
 
 ntfschar AT_UNNAMED[] = { const_cpu_to_le16('\0') };
 ntfschar STREAM_SDS[] = { const_cpu_to_le16('$'),
@@ -1274,8 +1273,7 @@ static int ntfs_attr_fill_hole(ntfs_attr *na, s64 count, s64 *ofs,
 	/* Restore @*rl, it probably get lost during runlist mapping. */
 	*rl = ntfs_attr_find_vcn(na, cur_vcn);
 	if (!*rl) {
-		ntfs_log_error("Failed to find run after mapping runlist. "
-			       "Please report to %s.\n", NTFS_DEV_LIST);
+		ntfs_log_error("Failed to find run after mapping runlist.\n");
 		errno = EIO;
 		goto err_out;
 	}
@@ -1381,8 +1379,7 @@ static int ntfs_attr_fill_hole(ntfs_attr *na, s64 count, s64 *ofs,
 		 * It's definitely a BUG, if we failed to find @cur_vcn, because
 		 * we missed it during instantiating of the hole.
 		 */
-		ntfs_log_error("Failed to find run after hole instantiation. "
-			       "Please report to %s.\n", NTFS_DEV_LIST);
+		ntfs_log_error("Failed to find run after hole instantiation.\n");
 		errno = EIO;
 		goto err_out;
 	}
@@ -1391,8 +1388,7 @@ static int ntfs_attr_fill_hole(ntfs_attr *na, s64 count, s64 *ofs,
 		(*rl)++;
 	/* Now LCN shoudn't be less than 0. */
 	if ((*rl)->lcn < 0) {
-		ntfs_log_error("BUG! LCN is lesser than 0. "
-			       "Please report to the %s.\n", NTFS_DEV_LIST);
+		ntfs_log_error("BUG! LCN is lesser than 0.\n");
 		errno = EIO;
 		goto err_out;
 	}
@@ -4904,9 +4900,7 @@ static int ntfs_attr_make_resident(ntfs_attr *na, ntfs_attr_search_ctx *ctx)
 		 * Bug, because ntfs_attr_record_resize should not fail (we
 		 * already checked that attribute fits MFT record).
 		 */
-		ntfs_log_error("BUG! Failed to resize attribute record. "
-				"Please report to the %s.  Aborting...\n",
-				NTFS_DEV_LIST);
+		ntfs_log_error("BUG! Failed to resize attribute record. Aborting...\n");
 		errno = EIO;
 		return -1;
 	}
