@@ -106,7 +106,7 @@ struct mkntfs_options {
 	EGL3File* egl3_files;
 	u32 egl3_file_count;
 
-	AppendingFile* o_file;
+	void* o_data; // AppendingFile*
 
 	// these were global variables
 	u8* g_buf;
@@ -3354,7 +3354,7 @@ static BOOL mkntfs_initialize_bitmaps(OPTS* opts)
 	i = (opts->g_lcn_bitmap_byte_size + opts->g_vol->cluster_size - 1) &
 		~(opts->g_vol->cluster_size - 1);
 	ntfs_log_debug("g_lcn_bitmap_byte_size = %i, allocated = %llu\n",
-		g_lcn_bitmap_byte_size, (unsigned long long)i);
+		opts->g_lcn_bitmap_byte_size, (unsigned long long)i);
 	opts->g_dynamic_buf_size = 4096; // default page size
 	opts->g_dynamic_buf = (u8*)ntfs_calloc(opts->g_dynamic_buf_size);
 	if (!opts->g_dynamic_buf)
@@ -3374,7 +3374,7 @@ static BOOL mkntfs_initialize_bitmaps(OPTS* opts)
 	opts->g_mft_size *= opts->g_vol->mft_record_size;
 	if (opts->g_mft_size < (s32)opts->g_vol->cluster_size)
 		opts->g_mft_size = opts->g_vol->cluster_size;
-	ntfs_log_debug("MFT size = %i (0x%x) bytes\n", g_mft_size, g_mft_size);
+	ntfs_log_debug("MFT size = %i (0x%x) bytes\n", opts->g_mft_size, opts->g_mft_size);
 	/* Determine mft bitmap size and allocate it. */
 	mft_bitmap_size = opts->g_mft_size / opts->g_vol->mft_record_size;
 	/* Convert to bytes, at least one. */
@@ -3382,7 +3382,7 @@ static BOOL mkntfs_initialize_bitmaps(OPTS* opts)
 	/* Mft bitmap is allocated in multiples of 8 bytes. */
 	opts->g_mft_bitmap_byte_size = (opts->g_mft_bitmap_byte_size + 7) & ~7;
 	ntfs_log_debug("mft_bitmap_size = %i, g_mft_bitmap_byte_size = %i\n",
-		mft_bitmap_size, g_mft_bitmap_byte_size);
+		mft_bitmap_size, opts->g_mft_bitmap_byte_size);
 	opts->g_mft_bitmap = ntfs_calloc(opts->g_mft_bitmap_byte_size);
 	if (!opts->g_mft_bitmap)
 		return FALSE;
@@ -3455,7 +3455,7 @@ static BOOL mkntfs_initialize_rl_mft(OPTS* opts)
 	opts->g_mftmirr_lcn = (opts->num_sectors * OPT_SECTOR_SIZE >> 1)
 		/ opts->g_vol->cluster_size;
 	ntfs_log_debug("$MFTMirr logical cluster number = 0x%llx\n",
-		g_mftmirr_lcn);
+		opts->g_mftmirr_lcn);
 	/* Create runlist for mft mirror. */
 	opts->g_rl_mftmirr = ntfs_malloc(2 * sizeof(runlist));
 	if (!opts->g_rl_mftmirr)
@@ -3479,7 +3479,7 @@ static BOOL mkntfs_initialize_rl_mft(OPTS* opts)
 	done = bitmap_allocate(opts, opts->g_mftmirr_lcn, j);
 	opts->g_logfile_lcn = opts->g_mftmirr_lcn + j;
 	ntfs_log_debug("$LogFile logical cluster number = 0x%llx\n",
-		g_logfile_lcn);
+		opts->g_logfile_lcn);
 	return (done);
 }
 
@@ -4111,13 +4111,8 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
 		bs->bpb.sectors_per_cluster = sectors_per_cluster;
 	bs->bpb.media_type = 0xf8; /* hard disk */
 	bs->bpb.sectors_per_track = 0;
-	ntfs_log_debug("sectors per track = %ld (0x%lx)\n",
-		opts->sectors_per_track, opts->sectors_per_track);
 	bs->bpb.heads = 0;
-	ntfs_log_debug("heads = %ld (0x%lx)\n", opts->heads, opts->heads);
 	bs->bpb.hidden_sectors = cpu_to_le32(opts->mbr_hidden_sectors);
-	ntfs_log_debug("hidden sectors = %llu (0x%llx)\n", opts->part_start_sect,
-		opts->part_start_sect);
 	bs->physical_drive = 0x80;  	    /* boot from hard disk */
 	bs->extended_boot_signature = 0x80; /* everybody sets this, so we do */
 	bs->number_of_sectors = cpu_to_sle64(opts->num_sectors);
@@ -4718,43 +4713,16 @@ static int mkntfs_redirect(OPTS* opts)
 	result = 0;
 done:
 	ntfs_attr_put_search_ctx(ctx);
-	opts->g_vol->dev->d_ops->ioctl(opts->g_vol->dev, 0x444F4641, &opts->o_file);
+	opts->g_vol->dev->d_ops->ioctl(opts->g_vol->dev, 0x444F4641, &opts->o_data);
 	mkntfs_cleanup(opts);	/* Device is unlocked and closed here */
 	return result;
 }
 
-
-/**
- * main - Begin here
- *
- * Start from here.
- *
- * Return:  0  Success, the program worked
- *	    1  Error, something went wrong
- */
-int main(int argc, char* argv[])
+int EGL3CreateDisk(u64 sector_size, const char* label, const EGL3File files[], u32 file_count, void** o_data)
 {
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
 	utils_set_locale();
 
-	static EGL3File EGL3Files[] = {
-		{ "test folder", 0, 1, -1, NULL, NULL },
-		{ "testfile.txt", 500 * 1024 * 1024, 0, 0, NULL, NULL },
-		{ "test.folder", 0, 1, 0, NULL, NULL },
-	};
-
-	OPTS opts = { 0 };
-	opts.num_sectors = 1024*1023;
-	opts.egl3_files = EGL3Files;
-	opts.egl3_file_count = 3;
-	opts.label = NULL;
-
-	int result = mkntfs_redirect(&opts);
-
-	return result;
-}
-int EGL3CreateDisk(u64 sector_size, const char* label, const EGL3File files[], u32 file_count, AppendingFile** o_data)
-{
 	OPTS opts = { 0 };
 	opts.num_sectors = sector_size;
 	opts.egl3_files = files;
@@ -4762,6 +4730,6 @@ int EGL3CreateDisk(u64 sector_size, const char* label, const EGL3File files[], u
 	opts.label = label;
 
 	int result = mkntfs_redirect(&opts);
-	*o_data = opts.o_file;
+	*o_data = opts.o_data;
 	return result;
 }

@@ -1,17 +1,20 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-project(EGL3Port)
+project(EGL3)
 
-add_executable(EGL3Port
-     "mkntfs.c" "attrdef.c" "sd.c" "utils.c" "boot.c" "security.c" "getopt.c" "attrib.c"  "volume.c" "logfile.c" "bootsect.c" "attrlist.c" "lcnalloc.c" "bitmap.c" "compress.c" "device.c" "dir.c" "unistr.c" "runlist.c" "mst.c" "cache.c" "index.c" "inode.c" "logging.c" "mft.c" "reparse.c" "win32_io.c" "acls.c" "collate.c" "object_id.c" "winsd.h" "winsd.c" "misc.c" )
+add_executable(EGL3
+     "ntfs/mkntfs.c" "ntfs/attrdef.c" "ntfs/sd.c" "ntfs/utils.c" "ntfs/boot.c" "ntfs/security.c" "ntfs/getopt.c" "ntfs/attrib.c"  "ntfs/volume.c" "ntfs/logfile.c" "ntfs/bootsect.c" "ntfs/attrlist.c" "ntfs/lcnalloc.c" "ntfs/bitmap.c" "ntfs/compress.c" "ntfs/device.c" "ntfs/dir.c" "ntfs/unistr.c" "ntfs/runlist.c" "ntfs/mst.c" "ntfs/cache.c" "ntfs/index.c" "ntfs/inode.c" "ntfs/logging.c" "ntfs/mft.c" "ntfs/reparse.c" "ntfs/win32_io.c" "ntfs/acls.c" "ntfs/collate.c" "ntfs/object_id.c" "ntfs/winsd.h" "ntfs/winsd.c" "ntfs/misc.c"  "launcher/main.cpp"  "ntfs/win32_io_helper.cpp")
 
-set_property(TARGET EGL3Port PROPERTY CXX_STANDARD 20)
+set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
-   target_compile_options(EGL3Port PRIVATE /Zi)
-    set_target_properties(EGL3Port PROPERTIES
+   target_compile_options(EGL3 PRIVATE /Zi)
+    set_target_properties(EGL3 PROPERTIES
         LINK_FLAGS "/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"
-        COMPILE_PDB_NAME EGL3Port 
+        COMPILE_PDB_NAME EGL3 
         COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
     )
 endif()
+
+target_include_directories(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
+target_link_libraries(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib" Rpcrt4)

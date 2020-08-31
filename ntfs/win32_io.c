@@ -38,26 +38,33 @@
 #include "misc.h"
 #include "egl3interface.h"
 
+uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);
+
+int64_t* ntfs_device_win32_get_position(void* ctx);
+uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
+
+void* ntfs_device_win32_create_ctx();
+
 /**
- * ntfs_device_win32_open - open a device
- * @dev:	a pointer to the NTFS_DEVICE to open
- * @flags:	unix open status flags
- *
- * @dev->d_name must hold the device name, the rest is ignored.
- * Supported flags are O_RDONLY, O_WRONLY and O_RDWR.
- *
- * If name is in format "(hd[0-9],[0-9])" then open a partition.
- * If name is in format "(hd[0-9])" then open a volume.
- * Otherwise open a file.
- */
-static int ntfs_device_win32_open(struct ntfs_device *dev, int flags)
+	* ntfs_device_win32_open - open a device
+	* @dev:	a pointer to the NTFS_DEVICE to open
+	* @flags:	unix open status flags
+	*
+	* @dev->d_name must hold the device name, the rest is ignored.
+	* Supported flags are O_RDONLY, O_WRONLY and O_RDWR.
+	*
+	* If name is in format "(hd[0-9],[0-9])" then open a partition.
+	* If name is in format "(hd[0-9])" then open a volume.
+	* Otherwise open a file.
+	*/
+static int ntfs_device_win32_open(struct ntfs_device* dev, int flags)
 {
 	if (NDevOpen(dev)) {
 		errno = EBUSY;
 		return -1;
 	}
 	printf("OPENING %s\n", dev->d_name);
-	dev->d_private = ntfs_calloc(sizeof(AppendingFile));
+	dev->d_private = ntfs_device_win32_create_ctx();
 	if ((flags & O_RDWR) != O_RDWR)
 		NDevSetReadOnly(dev);
 	NDevSetOpen(dev);
@@ -66,15 +73,15 @@ static int ntfs_device_win32_open(struct ntfs_device *dev, int flags)
 }
 
 /**
- * ntfs_device_win32_close - close an open ntfs deivce
- * @dev:	ntfs device obtained via ->open
- *
- * Return 0 if o.k.
- *	 -1 if not, and errno set.  Note if error fd->vol_handle is trashed.
- */
+	* ntfs_device_win32_close - close an open ntfs deivce
+	* @dev:	ntfs device obtained via ->open
+	*
+	* Return 0 if o.k.
+	*	 -1 if not, and errno set.  Note if error fd->vol_handle is trashed.
+	*/
 static int ntfs_device_win32_close(struct ntfs_device* dev)
 {
-	printf("CLOSING\nTOTAL WRITTEN: %lld\n", ((AppendingFile*)dev->d_private)->written_bytes);
+	printf("CLOSING\nTOTAL WRITTEN: %lld\n", ntfs_device_win32_get_written_bytes(dev->d_private));
 	ntfs_log_trace("Closing device %p.\n", dev);
 	if (!NDevOpen(dev)) {
 		errno = EBADF;
@@ -86,31 +93,31 @@ static int ntfs_device_win32_close(struct ntfs_device* dev)
 }
 
 /**
- * ntfs_device_win32_seek - change current logical file position
- * @dev:	ntfs device obtained via ->open
- * @offset:	required offset from the whence anchor
- * @whence:	whence anchor specifying what @offset is relative to
- *
- * Return the new position on the volume on success and -1 on error with errno
- * set to the error code.
- *
- * @whence may be one of the following:
- *	SEEK_SET - Offset is relative to file start.
- *	SEEK_CUR - Offset is relative to current position.
- *	SEEK_END - Offset is relative to end of file.
- */
-static s64 ntfs_device_win32_seek(struct ntfs_device *dev, s64 offset,
-		int whence)
+	* ntfs_device_win32_seek - change current logical file position
+	* @dev:	ntfs device obtained via ->open
+	* @offset:	required offset from the whence anchor
+	* @whence:	whence anchor specifying what @offset is relative to
+	*
+	* Return the new position on the volume on success and -1 on error with errno
+	* set to the error code.
+	*
+	* @whence may be one of the following:
+	*	SEEK_SET - Offset is relative to file start.
+	*	SEEK_CUR - Offset is relative to current position.
+	*	SEEK_END - Offset is relative to end of file.
+	*/
+static s64 ntfs_device_win32_seek(struct ntfs_device* dev, s64 offset,
+	int whence)
 {
 	//printf("SEEK TO %lld AT %d\n", offset, whence);
-	AppendingFile* ctx = dev->d_private;
+	int64_t* pos = ntfs_device_win32_get_position(dev->d_private);
 	if (whence == SEEK_SET) {
-		ctx->position = offset;
+		*pos = offset;
 	}
 	else {
 		ntfs_log_error("BUG: seeking not using SEEK_SET (%d)\n", whence);
 	}
-	return ctx->position;
+	return *pos;
 }
 
 static s64 ntfs_device_win32_pread(struct ntfs_device* dev, void* b,
@@ -121,51 +128,45 @@ static s64 ntfs_device_win32_pread(struct ntfs_device* dev, void* b,
 }
 
 /**
- * ntfs_device_win32_read - read bytes from an ntfs device
- * @dev:	ntfs device obtained via ->open
- * @b:		pointer to where to put the contents
- * @count:	how many bytes should be read
- *
- * On success returns the number of bytes actually read (can be < @count).
- * On error returns -1 with errno set.
- */
-static s64 ntfs_device_win32_read(struct ntfs_device *dev, void *b, s64 count)
+	* ntfs_device_win32_read - read bytes from an ntfs device
+	* @dev:	ntfs device obtained via ->open
+	* @b:		pointer to where to put the contents
+	* @count:	how many bytes should be read
+	*
+	* On success returns the number of bytes actually read (can be < @count).
+	* On error returns -1 with errno set.
+	*/
+static s64 ntfs_device_win32_read(struct ntfs_device* dev, void* b, s64 count)
 {
 	errno = EOPNOTSUPP;
 	return -1;
 }
+static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const void* buf,
+	s64 count, s64 offset);
+static s64 ntfs_device_win32_write(struct ntfs_device* dev, const void* b,
+	s64 count);
+static int ntfs_device_win32_sync(struct ntfs_device* dev);
+static int ntfs_device_win32_stat(struct ntfs_device* dev, struct stat* buf);
+static int ntfs_device_win32_ioctl(struct ntfs_device* dev,
+	unsigned long request, void* argp);
 
-static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const void* b,
+static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const u8* b,
 	s64 count, s64 offset)
 {
-	AppendingFile* ctx = dev->d_private;
+	s64 bytes_left = count;
 
-	AppendingFileOperation* next = malloc(sizeof(AppendingFileOperation));
-	if (!next) {
-		errno = ENOMEM;
-		return -1;
+	s64 sector_idx = offset >> 9; // divide by 512
+	s64 sector_off = offset % 512;
+	while (bytes_left) {
+		int read_amt = min(512 - sector_off, bytes_left);
+		memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+		b += read_amt;
+		sector_off = 0;
+		bytes_left -= read_amt;
+		sector_idx++;
 	}
-	next->offset = offset;
-	next->size = count;
-	next->data = malloc(count);
-	if (!next->data) {
-		errno = ENOMEM;
-		return -1;
-	}
-	memcpy(next->data, b, count);
-	next->next = NULL;
 
-	if (ctx->first) {
-		ctx->last->next = next;
-	}
-	else {
-		ctx->first = next;
-	}
-	ctx->last = next;
-
-	ctx->count++;
-	ctx->written_bytes += count;
-
+	*ntfs_device_win32_get_written_bytes(dev->d_private) += count;
 	return count;
 }
 
@@ -181,10 +182,9 @@ static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const void* b,
 static s64 ntfs_device_win32_write(struct ntfs_device* dev, const void* b,
 	s64 count)
 {
-	AppendingFile* ctx = dev->d_private;
-	s64 ret = ntfs_device_win32_pwrite(dev, b, count, ctx->position);
+	s64 ret = ntfs_device_win32_pwrite(dev, b, count, *ntfs_device_win32_get_position(dev->d_private));
 	if (ret != -1)
-		ctx->position += ret;
+		*ntfs_device_win32_get_position(dev->d_private) += ret;
 	return ret;
 }
 
@@ -226,7 +226,7 @@ static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 		unsigned long request, void *argp)
 {
 	if (request == 0x444F4641) { // AFOD: append file operation data
-		*((AppendingFile**)argp) = dev->d_private;
+		*((void**)argp) = dev->d_private;
 	}
 	errno = EOPNOTSUPP;
 	return -1;
@@ -236,10 +236,10 @@ struct ntfs_device_operations ntfs_device_win32_io_ops = {
 	.open		= ntfs_device_win32_open,
 	.close		= ntfs_device_win32_close,
 	.seek		= ntfs_device_win32_seek,
-	.pread		= ntfs_device_win32_pread,
 	.read		= ntfs_device_win32_read,
-	.pwrite		= ntfs_device_win32_pwrite,
 	.write		= ntfs_device_win32_write,
+	.pread		= ntfs_device_win32_pread,
+	.pwrite		= ntfs_device_win32_pwrite,
 	.sync		= ntfs_device_win32_sync,
 	.stat		= ntfs_device_win32_stat,
 	.ioctl		= ntfs_device_win32_ioctl
