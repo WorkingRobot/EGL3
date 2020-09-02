@@ -38,30 +38,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "getopt.h"
-#include "param.h"
-#include "security.h"
 #include "types.h"
-#include "attrib.h"
-#include "bitmap.h"
-#include "bootsect.h"
+#include "egl3interface.h"
+#include "runlist.h"
 #include "device.h"
 #include "dir.h"
-#include "mft.h"
-#include "mst.h"
-#include "runlist.h"
-#include "utils.h"
-#include "ntfstime.h"
-#include "sd.h"
+#include "device_io.h"
+#include "logfile.h"
 #include "boot.h"
 #include "attrdef.h"
-#include "logging.h"
-#include "unistr.h"
 #include "misc.h"
-#include "winsd.h"
-#include "logfile.h"
-#include "support.h"
-#include "egl3interface.h"
 
 typedef enum { WRITE_STANDARD, WRITE_BITMAP, WRITE_LOGFILE } WRITE_TYPE;
 
@@ -380,27 +366,6 @@ static ntfs_time mkntfs_time(void)
 }
 
 /**
- * append_to_bad_blocks
- */
-static BOOL append_to_bad_blocks(OPTS* opts, unsigned long long block)
-{
-	long long* new_buf;
-
-	if (!(opts->g_num_bad_blocks & 15)) {
-		new_buf = realloc(opts->g_bad_blocks, (opts->g_num_bad_blocks + 16) *
-			sizeof(long long));
-		if (!new_buf) {
-			ntfs_log_perror("Reallocating memory for bad blocks "
-				"list failed");
-			return FALSE;
-		}
-		opts->g_bad_blocks = new_buf;
-	}
-	opts->g_bad_blocks[opts->g_num_bad_blocks++] = block;
-	return TRUE;
-}
-
-/**
  * mkntfs_write
  */
 static long long mkntfs_write(OPTS* opts, struct ntfs_device* dev,
@@ -604,26 +569,6 @@ static int make_room_for_attribute(MFT_RECORD* m, char* pos, const u32 size)
 
 	if (!size)
 		return 0;
-#ifdef DEBUG
-	/*
-	 * Rigorous consistency checks. Always return -EINVAL even if more
-	 * appropriate codes exist for simplicity of parsing the return value.
-	 */
-	if (size != ((size + 7) & ~7)) {
-		ntfs_log_error("make_room_for_attribute() received non 8-byte aligned "
-			"size.\n");
-		return -EINVAL;
-	}
-	if (!m || !pos)
-		return -EINVAL;
-	if (pos < (char*)m || pos + size < (char*)m ||
-		pos >(char*)m + le32_to_cpu(m->bytes_allocated) ||
-		pos + size >(char*)m + le32_to_cpu(m->bytes_allocated))
-		return -EINVAL;
-	/* The -8 is for the attribute terminator. */
-	if (pos - (char*)m > (int)le32_to_cpu(m->bytes_in_use) - 8)
-		return -EINVAL;
-#endif
 	biu = le32_to_cpu(m->bytes_in_use);
 	/* Do we have enough space? */
 	if (biu + size > le32_to_cpu(m->bytes_allocated))
@@ -633,25 +578,6 @@ static int make_room_for_attribute(MFT_RECORD* m, char* pos, const u32 size)
 	/* Update mft record. */
 	m->bytes_in_use = cpu_to_le32(biu + size);
 	return 0;
-}
-
-/**
- * deallocate_scattered_clusters
- */
-static void deallocate_scattered_clusters(OPTS* opts, const runlist* rl)
-{
-	int i;
-
-	if (!rl)
-		return;
-	/* Iterate over all runs in the runlist @rl. */
-	for (i = 0; rl[i].length; i++) {
-		/* Skip sparse runs. */
-		if (rl[i].lcn == -1LL)
-			continue;
-		/* Deallocate the current run. */
-		bitmap_deallocate(opts, rl[i].lcn, rl[i].length);
-	}
 }
 
 /**
@@ -734,8 +660,6 @@ err_end:
 		rl[rlpos].vcn = vcn;
 		rl[rlpos].lcn = -1LL;
 		rl[rlpos].length = 0LL;
-		/* Deallocate all allocated clusters. */
-		deallocate_scattered_clusters(opts, rl);
 		/* Free the runlist. */
 		free(rl);
 	}
@@ -1893,31 +1817,6 @@ static int add_attr_file_name(OPTS* opts, MFT_RECORD* m, const leMFT_REF parent_
 }
 
 /**
- * add_attr_object_id -
- *
- * Note we insert only a basic object id which only has the GUID and none of
- * the extended fields.  This is because we currently only use this function
- * when creating the object id for the volume.
- *
- * Return 0 on success or -errno on error.
- */
-static int add_attr_object_id(OPTS* opts, MFT_RECORD* m, const GUID* object_id)
-{
-	OBJECT_ID_ATTR oi;
-	int err;
-
-	oi = (OBJECT_ID_ATTR){
-		.object_id = *object_id,
-	};
-	err = insert_resident_attr_in_mft_record(opts, m, AT_OBJECT_ID, NULL,
-		0, CASE_SENSITIVE, const_cpu_to_le16(0),
-		0, (u8*)&oi, sizeof(oi.object_id));
-	if (err < 0)
-		ntfs_log_error("add_attr_vol_info failed: %s\n", strerror(-err));
-	return err;
-}
-
-/**
  * add_attr_sd
  *
  * Create the security descriptor attribute adding the security descriptor @sd
@@ -2384,32 +2283,6 @@ static int make_room_for_index_entry_in_index_block(INDEX_BLOCK* idx,
 
 	if (!size)
 		return 0;
-#ifdef DEBUG
-	/*
-	 * Rigorous consistency checks. Always return -EINVAL even if more
-	 * appropriate codes exist for simplicity of parsing the return value.
-	 */
-	if (size != ((size + 7) & ~7)) {
-		ntfs_log_error("make_room_for_index_entry_in_index_block() received "
-			"non 8-byte aligned size.\n");
-		return -EINVAL;
-	}
-	if (!idx || !pos)
-		return -EINVAL;
-	if ((char*)pos < (char*)idx || (char*)pos + size < (char*)idx ||
-		(char*)pos >(char*)idx + sizeof(INDEX_BLOCK) -
-		sizeof(INDEX_HEADER) +
-		le32_to_cpu(idx->index.allocated_size) ||
-		(char*)pos + size >(char*)idx + sizeof(INDEX_BLOCK) -
-		sizeof(INDEX_HEADER) +
-		le32_to_cpu(idx->index.allocated_size))
-		return -EINVAL;
-	/* The - sizeof(INDEX_ENTRY_HEADER) is for the index terminator. */
-	if ((char*)pos - (char*)&idx->index >
-		(int)le32_to_cpu(idx->index.index_length)
-		- (int)sizeof(INDEX_ENTRY_HEADER))
-		return -EINVAL;
-#endif
 	biu = le32_to_cpu(idx->index.index_length);
 	/* Do we have enough space? */
 	if (biu + size > le32_to_cpu(idx->index.allocated_size))
@@ -2839,37 +2712,6 @@ static int insert_file_link_in_dir_index(OPTS* opts, INDEX_BLOCK* idx, leMFT_REF
 	 * reach the last entry.
 	 */
 	while ((char*)ie < index_end && !(ie->ie_flags & INDEX_ENTRY_END)) {
-#if 0
-#ifdef DEBUG
-		ntfs_log_debug("file_name_attr1->file_name_length = %i\n",
-			file_name->file_name_length);
-		if (file_name->file_name_length) {
-			char* __buf = NULL;
-			i = ntfs_ucstombs((ntfschar*)&file_name->file_name,
-				file_name->file_name_length, &__buf, 0);
-			if (i < 0)
-				ntfs_log_debug("Name contains non-displayable "
-					"Unicode characters.\n");
-			ntfs_log_debug("file_name_attr1->file_name = %s\n",
-				__buf);
-			free(__buf);
-		}
-		ntfs_log_debug("file_name_attr2->file_name_length = %i\n",
-			ie->key.file_name.file_name_length);
-		if (ie->key.file_name.file_name_length) {
-			char* __buf = NULL;
-			i = ntfs_ucstombs(ie->key.file_name.file_name,
-				ie->key.file_name.file_name_length + 1, &__buf,
-				0);
-			if (i < 0)
-				ntfs_log_debug("Name contains non-displayable "
-					"Unicode characters.\n");
-			ntfs_log_debug("file_name_attr2->file_name = %s\n",
-				__buf);
-			free(__buf);
-		}
-#endif
-#endif
 		/*
 		i = ntfs_file_values_compare(file_name,
 				(FILE_NAME_ATTR*)&ie->key.file_name, 1,
@@ -2914,14 +2756,6 @@ static int insert_file_link_in_dir_index(OPTS* opts, INDEX_BLOCK* idx, leMFT_REF
 		if (!i)
 			return -EEXIST;
 	do_next:
-#ifdef DEBUG
-		/* Next entry. */
-		if (!ie->length) {
-			ntfs_log_debug("BUG: ie->length is zero, breaking out "
-				"of loop.\n");
-			break;
-		}
-#endif
 		ie = (INDEX_ENTRY*)((char*)ie + le16_to_cpu(ie->length));
 	};
 	i = (sizeof(INDEX_ENTRY_HEADER) + file_name_size + 7) & ~7;
@@ -3163,53 +2997,6 @@ static int create_hardlink(OPTS* opts, INDEX_BLOCK* idx, const leMFT_REF ref_par
 }
 
 /**
- * index_obj_id_insert
- *
- * Insert an index entry with the key @guid and data pointing to the mft record
- * @ref in the $O index root of the mft record @m (which must be the mft record
- * for $ObjId).
- *
- * Return 0 on success or -errno on error.
- */
-static int index_obj_id_insert(OPTS* opts, MFT_RECORD* m, const GUID* guid,
-	const leMFT_REF ref)
-{
-	INDEX_ENTRY* idx_entry_new;
-	int data_ofs, idx_size, err;
-	OBJ_ID_INDEX_DATA* oi;
-
-	/*
-	 * Insert the index entry for the object id in the index.
-	 *
-	 * First determine the size of the index entry to be inserted.  This
-	 * consists of the index entry header, followed by the index key, i.e.
-	 * the GUID, followed by the index data, i.e. OBJ_ID_INDEX_DATA.
-	 */
-	data_ofs = (sizeof(INDEX_ENTRY_HEADER) + sizeof(GUID) + 7) & ~7;
-	idx_size = (data_ofs + sizeof(OBJ_ID_INDEX_DATA) + 7) & ~7;
-	idx_entry_new = ntfs_calloc(idx_size);
-	if (!idx_entry_new)
-		return -errno;
-	idx_entry_new->data_offset = cpu_to_le16(data_ofs);
-	idx_entry_new->data_length =
-		const_cpu_to_le16(sizeof(OBJ_ID_INDEX_DATA));
-	idx_entry_new->length = cpu_to_le16(idx_size);
-	idx_entry_new->key_length = const_cpu_to_le16(sizeof(GUID));
-	idx_entry_new->key.object_id = *guid;
-	oi = (OBJ_ID_INDEX_DATA*)((u8*)idx_entry_new + data_ofs);
-	oi->mft_reference = ref;
-	err = insert_index_entry_in_res_dir_index(opts, idx_entry_new, idx_size, m,
-		NTFS_INDEX_O, 2, AT_UNUSED);
-	free(idx_entry_new);
-	if (err < 0) {
-		ntfs_log_error("index_obj_id_insert failed inserting index "
-			"entry: %s\n", strerror(-err));
-		return err;
-	}
-	return 0;
-}
-
-/**
  * mkntfs_cleanup
  */
 static void mkntfs_cleanup(OPTS* opts)
@@ -3235,6 +3022,7 @@ static void mkntfs_cleanup(OPTS* opts)
 	free(opts->g_buf);			opts->g_buf = NULL;
 	free(opts->g_index_block);	opts->g_index_block = NULL;
 	free(opts->g_dynamic_buf);	opts->g_dynamic_buf = NULL;
+	free(opts->g_upcaseinfo);	opts->g_upcaseinfo = NULL;
 	free(opts->g_mft_bitmap);	opts->g_mft_bitmap = NULL;
 	free(opts->g_rl_bad);		opts->g_rl_bad = NULL;
 	free(opts->g_rl_boot);		opts->g_rl_boot = NULL;
@@ -3250,8 +3038,14 @@ static void mkntfs_cleanup(OPTS* opts)
 		free(p);
 		p = q;
 	}
-}
 
+	for (int i = 0; i < opts->egl3_file_count; ++i) {
+		if (opts->egl3_files[i].is_directory) {
+			// freed like g_index_block
+			free(opts->egl3_files[i].reserved);	opts->egl3_files[i].reserved = NULL;
+		}
+	}
+}
 
 /**
  * mkntfs_open_partition -

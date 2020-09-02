@@ -39,9 +39,9 @@
 #include "support.h"
 #include "egl3interface.h"
 
-uint8_t* ntfs_device_win32_get_sector(void* ctx, int64_t sector_addr);
+uint8_t* ntfs_device_win32_get_cluster(void* ctx, int64_t cluster_addr);
 
-void ntfs_device_win32_set_sector_FF(void* ctx, int64_t sector_addr);
+void ntfs_device_win32_set_cluster_FF(void* ctx, int64_t cluster_addr);
 
 int64_t* ntfs_device_win32_get_position(void* ctx);
 uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
@@ -145,8 +145,8 @@ static s64 ntfs_device_win32_read(struct ntfs_device* dev, void* b, s64 count)
 	return -1;
 }
 
-static u8 ntfs_device_win32_is_sector_FF(const u8* b) {
-	for (int n = 0; n < 512; ++n) {
+static u8 ntfs_device_win32_is_cluster_FF(const u8* b) {
+	for (int n = 0; n < 4096; ++n) {
 		if (b[n] != 0xFF) {
 			return 0;
 		}
@@ -154,8 +154,8 @@ static u8 ntfs_device_win32_is_sector_FF(const u8* b) {
 	return 1;
 }
 
-static u8 ntfs_device_win32_is_sector_00(const u8* b) {
-	for (int n = 0; n < 512; ++n) {
+static u8 ntfs_device_win32_is_cluster_00(const u8* b) {
+	for (int n = 0; n < 4096; ++n) {
 		if (b[n] != 0x00) {
 			return 0;
 		}
@@ -168,28 +168,28 @@ static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const u8* b,
 {
 	s64 bytes_left = count;
 
-	s64 sector_idx = offset >> 9; // divide by 512
-	s64 sector_off = offset % 512;
+	s64 cluster_idx = offset >> 12; // divide by 4096
+	s64 cluster_off = offset & 4095;
 	while (bytes_left) {
-		int read_amt = min(512 - sector_off, bytes_left);
-		if (read_amt != 512) {
-			memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+		int read_amt = min(4096 - cluster_off, bytes_left);
+		if (read_amt != 4096) {
+			memcpy(ntfs_device_win32_get_cluster(dev->d_private, cluster_idx) + cluster_off, b, read_amt);
 		}
 		else {
-			if (ntfs_device_win32_is_sector_FF(b)) {
-				ntfs_device_win32_set_sector_FF(dev->d_private, sector_idx);
+			if (ntfs_device_win32_is_cluster_FF(b)) {
+				ntfs_device_win32_set_cluster_FF(dev->d_private, cluster_idx);
 			}
-			else if (ntfs_device_win32_is_sector_00(b)) {
+			else if (ntfs_device_win32_is_cluster_00(b)) {
 				// it's 0 by default
 			}
 			else {
-				memcpy(ntfs_device_win32_get_sector(dev->d_private, sector_idx) + sector_off, b, read_amt);
+				memcpy(ntfs_device_win32_get_cluster(dev->d_private, cluster_idx) + cluster_off, b, read_amt);
 			}
 		}
 		b += read_amt;
-		sector_off = 0;
+		cluster_off = 0;
 		bytes_left -= read_amt;
-		sector_idx++;
+		cluster_idx++;
 	}
 
 	*ntfs_device_win32_get_written_bytes(dev->d_private) += count;

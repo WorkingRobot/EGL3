@@ -23,7 +23,6 @@
 #ifndef _NTFS_DEVICE_H
 #define _NTFS_DEVICE_H
 
-#include "device_io.h"
 #include "types.h"
 #include "volume.h"
 #include "support.h"

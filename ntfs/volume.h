@@ -26,30 +26,12 @@
 #ifndef _NTFS_VOLUME_H
 #define _NTFS_VOLUME_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-	/* Do not #include <sys/mount.h> here : conflicts with <linux/fs.h> */
-#undef HAVE_MNTENT_H
-#ifdef HAVE_MNTENT_H
-#include <mntent.h>
-#endif
-
 /* Forward declaration */
 typedef struct _ntfs_volume ntfs_volume;
 
 #include "param.h"
 #include "types.h"
-#include "device.h"
 #include "inode.h"
-#include "attrib.h"
 #include "index.h"
 
 /**

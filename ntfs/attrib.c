@@ -26,6 +26,7 @@
 
 #include <limits.h>
 
+#include "support.h"
 #include "param.h"
 #include "compat.h"
 #include "attrib.h"

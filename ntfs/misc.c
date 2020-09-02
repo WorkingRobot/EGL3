@@ -20,22 +20,10 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-
 #include <stdio.h>
 #include <malloc.h>
 
 #include "types.h"
-#include "misc.h"
 #include "logging.h"
 
 /**

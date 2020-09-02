@@ -21,26 +21,14 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdio.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
 
 #include "param.h"
 #include "compat.h"
 #include "bootsect.h"
 #include "debug.h"
 #include "logging.h"
+#include "device.h"
 
 /**
  * ntfs_boot_sector_is_ntfs - check if buffer contains a valid ntfs boot sector

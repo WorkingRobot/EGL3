@@ -29,7 +29,6 @@
 typedef struct _runlist_element runlist_element;
 typedef runlist_element runlist;
 
-#include "attrib.h"
 #include "volume.h"
 
 /**
