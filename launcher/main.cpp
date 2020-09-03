@@ -1,5 +1,7 @@
 #include "../ntfs/egl3interface.h"
-#include "../utils/stringex/stringex.h"
+#include "../utils/assert.h"
+#include "../utils/align.h"
+#include "../storage/install.h"
 
 #include <chrono>
 namespace ch = std::chrono;
@@ -64,11 +66,6 @@ __forceinline void HandleCluster(AppendingFile* Data, UINT64 LCN, UINT8 Buffer[4
 	}
 }
 
-template<int Alignment, class N>
-static constexpr N Align(N Value) {
-	return Value + (-Value & (Alignment - 1));
-}
-
 static BOOLEAN Read(SPD_STORAGE_UNIT* StorageUnit,
 	PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
 	SPD_STORAGE_UNIT_STATUS* Status)
@@ -102,14 +99,7 @@ static SPD_STORAGE_UNIT_INTERFACE DiskInterface =
 
 int main(int argc, char* argv[])
 {
-	for (int i = 0; i < 500; ++i) {
-		StringEx::Evaluate("++Fortnite+Release-2.4.x-CL-3846605-Platform", "Regex(\\+\\+Fortnite\\+Release-(.*)-CL-(\\d+)-.*) && RegexGroupInt64(2) < 4016789 && ((RegexGroupString(1) == \"Prep\" && RegexGroupInt64(2) >= 3779789) || (RegexGroupString(1) == \"Next\" && RegexGroupInt64(2) >= 3779794) || (RegexGroupString(1) == \"Cert\" && RegexGroupInt64(2) >= 3785892) || (RegexGroupInt64(2) >= 3846604))");
-	}
-	START_TIMER(StringEx);
-	for (int i = 0; i < 50000; ++i) {
-		StringEx::Evaluate("++Fortnite+Release-2.4.x-CL-3846605-Platform", "Regex(\\+\\+Fortnite\\+Release-(.*)-CL-(\\d+)-.*) && RegexGroupInt64(2) < 4016789 && ((RegexGroupString(1) == \"Prep\" && RegexGroupInt64(2) >= 3779789) || (RegexGroupString(1) == \"Next\" && RegexGroupInt64(2) >= 3779794) || (RegexGroupString(1) == \"Cert\" && RegexGroupInt64(2) >= 3785892) || (RegexGroupInt64(2) >= 3846604))");
-	}
-	STOP_TIMER(StringEx);
+	InstallArchive archive("archive.egi");
 
 	return 0;
 	constexpr uint64_t disk_size_mb = 1024 * 1024 - 1; // max: 1024 * 1024 - 1
@@ -146,7 +136,17 @@ int main(int argc, char* argv[])
 	DWORD Error;
 	{
 		SPD_STORAGE_UNIT_PARAMS Params = { 0 };
-		UuidCreate(&Params.Guid); // windows function
+		{
+			uint8_t* p = (uint8_t*)&Params.Guid;
+			srand(time(NULL));
+			for (int i = 0; i < sizeof(GUID); i++) {
+				p[i] = (uint8_t)(rand() & 0xFF);
+				if (i == 7)
+					p[7] = (p[7] & 0x0F) | 0x40;
+				if (i == 8)
+					p[8] = (p[8] & 0x3F) | 0x80;
+			}
+		}
 		Params.BlockCount = disk_size_mb * 2048; // 2048 * 512 bytes = 1 mb
 		Params.BlockLength = 512; // should stay at this
 		strcpy((char*)Params.ProductId, "EGL3");
