@@ -1,7 +1,10 @@
 #include "../ntfs/egl3interface.h"
 #include "../utils/assert.h"
 #include "../utils/align.h"
-#include "../storage/install.h"
+#include "../utils/open_browser.h"
+#include "../web/epic/auth/device_code.h"
+#include "../web/epic/auth/token_to_token.h"
+#include "../web/epic/epic_client.h"
 
 #include <chrono>
 namespace ch = std::chrono;
@@ -99,7 +102,42 @@ static SPD_STORAGE_UNIT_INTERFACE DiskInterface =
 
 int main(int argc, char* argv[])
 {
-	InstallArchive archive("archive.egi");
+#undef ERROR_SUCCESS
+
+	static const cpr::Authentication AuthClientSwitch{ "5229dcd3ac3845208b496649092f251b", "e3bd2d3e-bf8c-4857-9e7d-f3d947d220c7" };
+	static const cpr::Authentication AuthClientLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
+
+	AuthDeviceCode Login(AuthClientSwitch);
+	auto bRet = Login.GetBrowserUrlFuture().get();
+	if (bRet != AuthDeviceCode::ERROR_SUCCESS) {
+		// couldn't get the browser url
+		return 0;
+	}
+	OpenInBrowser(Login.GetBrowserUrl());
+
+	bRet = Login.GetOAuthResponseFuture().get();
+	if (bRet != AuthDeviceCode::ERROR_SUCCESS) {
+		// couldn't get oauth data, probably expired
+		return 0;
+	}
+
+	AuthTokenToToken Login2(AuthClientLauncher, Login.GetOAuthResponse()["access_token"].GetString());
+
+	auto bRet2 = Login2.GetOAuthResponseFuture().get();
+	if (bRet != AuthTokenToToken::ERROR_SUCCESS) {
+		// couldn't get new launcher token
+		return 0;
+	}
+
+	EpicClient client(Login2.GetOAuthResponse(), AuthClientLauncher);
+
+	auto response = client.GetAccount();
+	auto response2 = client.GetAssets("Windows", "Live");
+	auto response3 = client.GetCatalogItems(response2->Assets[0].Namespace, { response2->Assets[0].CatalogItemId }, "US", "en");
+
+	printf("Hello %s (%s %s)!\n", response->DisplayName.c_str(), response->Name.c_str(), response->LastName.c_str());
+	
+	std::this_thread::sleep_for(std::chrono::hours(99));
 
 	return 0;
 	constexpr uint64_t disk_size_mb = 1024 * 1024 - 1; // max: 1024 * 1024 - 1

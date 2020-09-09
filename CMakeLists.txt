@@ -27,7 +27,11 @@ endfunction()
 add_dir(EGL3 launcher)
 add_dir(EGL3 ntfs)
 add_dir(EGL3 storage)
+add_dir(EGL3 utils)
+add_dir(EGL3 utils/base64)
 add_dir(EGL3 utils/stringex)
+add_dir(EGL3 web/epic)
+add_dir(EGL3 web/epic/auth)
 
 add_executable(EGL3 ${EGL3_SOURCES})
 
@@ -43,6 +47,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
 endif()
 
 find_package(cpr CONFIG REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
 
-target_include_directories(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
+target_include_directories(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc" ${RAPIDJSON_INCLUDE_DIRS})
 target_link_libraries(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib" cpr)
