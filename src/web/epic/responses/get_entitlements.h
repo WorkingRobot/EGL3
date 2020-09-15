@@ -90,6 +90,6 @@ struct RespGetEntitlements {
 	std::vector<Entitlement> Entitlements;
 
 	PARSE_DEFINE(RespGetEntitlements)
-		PARSE_ITEM_ROOT(Assets)
+		PARSE_ITEM_ROOT(Entitlements)
 	PARSE_END
 };

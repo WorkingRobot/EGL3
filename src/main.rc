@@ -1,0 +1,38 @@
+#define VERSION_MAJOR 1
+#define VERSION_MINOR 2
+#define VERSION_PATCH 0
+
+#define STR_INDIR(x) #x
+#define STR(x) STR_INDIR(x)
+#define VERSION_STRING STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_PATCH)
+
+#include <windows.h>
+
+APP_ICON ICON "icon.ico"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    1, 0, 0, 0
+PRODUCTVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, 0
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904b0"
+        {
+            VALUE "Comments", "EGL3"
+            VALUE "CompanyName", "WorkingRobot"
+
+            VALUE "FileDescription", "EGL3"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "egl3"
+            VALUE "LegalCopyright", "EGL3 (c) by Aleks Margarian (WorkingRobot)"
+
+            VALUE "OriginalFilename", "EGL3.exe"
+            VALUE "ProductName", "EGL3"
+            VALUE "ProductVersion", VERSION_STRING ".0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x409, 1200
+    }
+}

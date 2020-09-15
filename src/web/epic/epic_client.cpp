@@ -10,43 +10,22 @@ EpicClient::EpicClient(const rapidjson::Document& OAuthResponse, const cpr::Auth
 	AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
 }
 
-EpicClient::~EpicClient()
-{
-	Cancelled = true;
-
-	// Prevents the client functions from running past the lifetime of itself
-	std::unique_lock<std::mutex> lock(RunningFunctionMutex);
-	RunningFunctionCV.wait(lock, [this] { return RunningFunctionCount <= 0; });
-
-	// Now that we can ensure no requests are being run on our client, we should kill the token
-
-	// Token isn't expired yet
-	if (AuthData.ExpiresAt > TimePoint::clock::now()) {
-		// This will return a 204
-		// If it fails, it's on epic's side. We don't really need any handling
-		Http::Delete(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/" + AuthData.AccessToken },
-			cpr::Header{ { "Authorization", AuthHeader } }
-		);
-	}
-}
-
 EpicClient::Response<RespGetAccount> EpicClient::GetAccount()
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId },
 		cpr::Header{ { "Authorization", AuthHeader } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -70,18 +49,18 @@ EpicClient::Response<RespGetAccountExternalAuths> EpicClient::GetAccountExternal
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/externalAuths" },
 		cpr::Header{ { "Authorization", AuthHeader } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -105,18 +84,18 @@ EpicClient::Response<RespGetDefaultBillingAccount> EpicClient::GetDefaultBilling
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/" + AuthData.AccountId + "/billingaccounts/default" },
 		cpr::Header{ { "Authorization", AuthHeader } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -140,11 +119,11 @@ EpicClient::Response<RespGetAssets> EpicClient::GetAssets(const std::string& Pla
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/" + Platform },
@@ -152,7 +131,7 @@ EpicClient::Response<RespGetAssets> EpicClient::GetAssets(const std::string& Pla
 		cpr::Parameters{ { "label", Label } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -176,19 +155,19 @@ EpicClient::Response<RespGetCurrencies> EpicClient::GetCurrencies(int Start, int
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/currencies" },
 		cpr::Header{ { "Authorization", AuthHeader } },
-		cpr::Parameters{ { "start", Start }, { "count", Count } }
+		cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -212,11 +191,11 @@ EpicClient::Response<RespGetCatalogItems> EpicClient::GetCatalogItems(const std:
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	cpr::Parameters Parameters;
 	for (auto& Item : Items) {
@@ -233,7 +212,7 @@ EpicClient::Response<RespGetCatalogItems> EpicClient::GetCatalogItems(const std:
 		Parameters
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -257,19 +236,19 @@ EpicClient::Response<RespGetEntitlements> EpicClient::GetEntitlements(int Start,
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/" + AuthData.AccountId + "/entitlements" },
 		cpr::Header{ { "Authorization", AuthHeader } },
-		cpr::Parameters{ { "start", Start }, { "count", Count } }
+		cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -293,18 +272,18 @@ EpicClient::Response<RespGetExternalSourceSettings> EpicClient::GetExternalSourc
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/v1/" + AuthData.AccountId + "/settings/externalSources/" + Platform },
 		cpr::Header{ { "Authorization", AuthHeader } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -328,11 +307,11 @@ EpicClient::Response<RespGetFriends> EpicClient::GetFriends(bool IncludePending)
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId },
@@ -340,7 +319,7 @@ EpicClient::Response<RespGetFriends> EpicClient::GetFriends(bool IncludePending)
 		cpr::Parameters{ { "includePending", IncludePending } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -364,18 +343,18 @@ EpicClient::Response<RespGetBlockedUsers> EpicClient::GetBlockedUsers()
 {
 	RunningFunctionGuard Guard(*this);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	auto Response = Http::Get(
 		cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/blocklist/" },
 		cpr::Header{ { "Authorization", AuthHeader } }
 	);
 
-	if (Cancelled) { return ERROR_CANCELLED; }
+	if (GetCancelled()) { return ERROR_CANCELLED; }
 
 	if (Response.status_code != 200) {
 		return ERROR_CODE_NOT_200;
@@ -393,6 +372,19 @@ EpicClient::Response<RespGetBlockedUsers> EpicClient::GetBlockedUsers()
 	}
 
 	return Resp;
+}
+
+void EpicClient::KillAuthentication()
+{
+	// Token isn't expired yet
+	if (AuthData.ExpiresAt > TimePoint::clock::now()) {
+		// This will return a 204
+		// If it fails, it's on epic's blame. We don't really need any handling
+		Http::Delete(
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/" + AuthData.AccessToken },
+			cpr::Header{ { "Authorization", AuthHeader } }
+		);
+	}
 }
 
 bool EpicClient::EnsureTokenValidity()

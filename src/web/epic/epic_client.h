@@ -1,45 +1,11 @@
 #pragma once
 
-#include "../http.h"
+#include "base_client.h"
 #include "responses/responses.h"
 
-class EpicClient {
+class EpicClient : public BaseClient {
 public:
-    enum ErrorCode {
-        ERROR_SUCCESS,
-        ERROR_CANCELLED,
-        ERROR_INVALID_TOKEN,
-        ERROR_CODE_NOT_200,
-        ERROR_CODE_NOT_JSON,
-        ERROR_CODE_BAD_JSON
-    };
-
-    template<class T>
-    class Response {
-    public:
-        bool HasError() const {
-            return Error != ERROR_SUCCESS;
-        }
-
-        ErrorCode GetErrorCode() const {
-            return Error;
-        }
-
-        T* operator->() const {
-            return Data.get();
-        }
-
-        Response(ErrorCode Error) : Error(Error), Data(nullptr) {}
-        Response(T&& Data) : Error(ERROR_SUCCESS), Data(std::make_unique<T>(std::forward<T&&>(Data))) {}
-
-    private:
-        ErrorCode Error;
-        std::unique_ptr<T> Data;
-    };
-
     EpicClient(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient);
-
-    ~EpicClient();
 
     // Account service
 
@@ -81,40 +47,15 @@ public:
 
     Response<RespGetBlockedUsers> GetBlockedUsers();
 
+protected:
+    void KillAuthentication() override;
+
 private:
-    class RunningFunctionGuard {
-    public:
-        RunningFunctionGuard(EpicClient& Client) : Client(Client) {
-            {
-                std::lock_guard<std::mutex> lock(Client.RunningFunctionMutex);
-                Client.RunningFunctionCount++;
-            }
-            Client.RunningFunctionCV.notify_all();
-        }
-
-        ~RunningFunctionGuard() {
-            {
-                std::lock_guard<std::mutex> lock(Client.RunningFunctionMutex);
-                Client.RunningFunctionCount--;
-            }
-            Client.RunningFunctionCV.notify_all();
-        }
-
-    private:
-        EpicClient& Client;
-    };
-
     bool EnsureTokenValidity();
 
     std::mutex TokenValidityMutex;
 
-    std::mutex RunningFunctionMutex;
-    std::condition_variable RunningFunctionCV;
-    int32_t RunningFunctionCount;
-
     RespOAuthToken AuthData;
     std::string AuthHeader;
     cpr::Authentication AuthClient; // used for refresh token auth
-
-    std::atomic_bool Cancelled;
 };

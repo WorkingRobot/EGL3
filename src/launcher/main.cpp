@@ -131,11 +131,31 @@ int main(int argc, char* argv[])
 
 	EpicClient client(Login2.GetOAuthResponse(), AuthClientLauncher);
 
-	auto response = client.GetAccount();
-	auto response2 = client.GetAssets("Windows", "Live");
-	auto response3 = client.GetCatalogItems(response2->Assets[0].Namespace, { response2->Assets[0].CatalogItemId }, "US", "en");
+	auto accData = client.GetAccount();
+	printf("Hello %s (%s %s)!\n", accData->DisplayName.c_str(), accData->Name.c_str(), accData->LastName.c_str());
+	auto assets = client.GetAssets("Windows", "Live");
+	std::vector<std::future<void>> Futures;
+	for (auto& asset : assets->Assets) {
+		Futures.emplace_back(std::async([&, asset]() {
+			auto catalogInfo = client.GetCatalogItems(asset.Namespace, { asset.CatalogItemId }, "US", "en");
+			auto& catalogMap = catalogInfo->Items;
+			auto catalogItr = catalogMap.find(asset.CatalogItemId);
+			if (catalogItr != catalogMap.end()) {
+				auto& catalogItem = catalogItr->second;
+				printf("%s by %s\n", catalogItem.Title.c_str(), catalogItem.Developer.c_str());
+			}
+			else {
+				printf("COULD NOT FIND %s\n", asset.CatalogItemId.c_str());
+			}
+		}));
+	}
 
-	printf("Hello %s (%s %s)!\n", response->DisplayName.c_str(), response->Name.c_str(), response->LastName.c_str());
+	for (auto& fut : Futures) {
+		fut.wait();
+	}
+	//auto response3 = client.GetCatalogItems(response2->Assets[0].Namespace, { response2->Assets[0].CatalogItemId }, "US", "en");
+
+	//printf("Hello %s (%s %s)!\n", response->DisplayName.c_str(), response->Name.c_str(), response->LastName.c_str());
 	
 	std::this_thread::sleep_for(std::chrono::hours(99));
 

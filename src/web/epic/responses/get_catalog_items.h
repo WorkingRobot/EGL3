@@ -69,7 +69,7 @@ struct RespGetCatalogItems {
 		std::vector<std::string> Platform;
 
 		// Date when the release was added
-		TimePoint DateAdded;
+		std::optional<TimePoint> DateAdded;
 
 		// These 2 fields were seen in poodle/twinmotion, but both were empty
 		std::optional<std::string> ReleaseNote;
@@ -80,7 +80,7 @@ struct RespGetCatalogItems {
 			PARSE_ITEM("id", Id)
 			PARSE_ITEM("appId", AppId)
 			PARSE_ITEM("platform", Platform)
-			PARSE_ITEM("dateAdded", DateAdded)
+			PARSE_ITEM_OPT("dateAdded", DateAdded)
 			PARSE_ITEM_OPT("releaseNote", ReleaseNote)
 			PARSE_ITEM_OPT("versionTitle", VersionTitle)
 		PARSE_END

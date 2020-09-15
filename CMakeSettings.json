@@ -1,4 +1,4 @@
-{
+﻿{
   "configurations": [
     {
       "name": "x64-Debug",
@@ -7,10 +7,16 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "variables": []
+      "variables": [
+        {
+          "name": "ENABLE_CONSOLE",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
     },
     {
       "name": "x64-RelDbg",
@@ -18,7 +24,7 @@
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -30,7 +36,7 @@
       "configurationType": "Release",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -42,7 +48,7 @@
       "configurationType": "MinSizeRel",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
