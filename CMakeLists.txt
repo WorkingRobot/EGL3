@@ -63,6 +63,7 @@ link_libraries(${SIGC_LIBRARY})
 find_path(GTKMM_INCLUDE_DIRS gtkmm.h)
 include_directories(${GTKMM_INCLUDE_DIRS})
 
+
 ## Source Files ##
 
 function(ADD_DIR PROJECT TARGET_DIR)
@@ -76,17 +77,23 @@ function(ADD_FILE PROJECT TARGET_FILE)
     set(${PROJECT}_SOURCES ${${PROJECT}_SOURCES} PARENT_SCOPE)
 endfunction()
 
-add_dir(EGL3 src)
-add_dir(EGL3 src/modules)
-#add_dir(EGL3 src/widgets)
-add_dir(EGL3 src/ntfs)
-add_dir(EGL3 src/storage)
-add_dir(EGL3 src/utils)
-add_dir(EGL3 src/utils/base64)
-add_dir(EGL3 src/utils/stringex)
-add_dir(EGL3 src/web/epic)
-add_dir(EGL3 src/web/epic/auth)
+function(ADD_DIR_RECURSIVE PROJECT TARGET_DIR)
+    file(GLOB_RECURSE CHILDREN ${TARGET_DIR}/*)
+    foreach(CHILDPATH ${CHILDREN})
+        get_filename_component(CHILD ${CHILDPATH} DIRECTORY)
+        if(IS_DIRECTORY ${CHILD})
+            list(APPEND DIRLIST ${CHILD})
+        endif()
+    endforeach()
+    list(REMOVE_DUPLICATES DIRLIST)
 
+    foreach(DIRPATH ${DIRLIST})
+        add_dir(${PROJECT} ${DIRPATH})
+    endforeach()
+    set(${PROJECT}_SOURCES ${${PROJECT}_SOURCES} PARENT_SCOPE)
+endfunction()
+
+add_dir_recursive(EGL3 src)
 add_file(EGL3 src/main.rc)
 
 

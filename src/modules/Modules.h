@@ -10,7 +10,7 @@ namespace EGL3::Modules {
 		std::default_delete<ModuleList>()((ModuleList*)Modules);
 	}
 
-	void InitializeModules(Gtk::ApplicationWindow& AppWnd, GladeBuilder& Builder) {
+	void Initialize(Gtk::ApplicationWindow& AppWnd, Utils::GladeBuilder& Builder) {
 		auto Modules = new ModuleList;
 
 		Modules->emplace_back(std::unique_ptr<BaseModule>(new SidebarNotebookModule(Builder)));

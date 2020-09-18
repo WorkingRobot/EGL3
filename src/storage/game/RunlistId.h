@@ -1,0 +1,10 @@
+#pragma once
+
+namespace EGL3::Storage::Game {
+	enum RunlistId {
+		RUNLIST_ID_FILE = 0x11111111,
+		RUNLIST_ID_CHUNK_PART = 0x22222222,
+		RUNLIST_ID_CHUNK_INFO = 0x33333333,
+		RUNLIST_ID_CHUNK_DATA = 0x44444444,
+	};
+}

@@ -69,7 +69,7 @@ namespace EGL3::Web::Epic::Responses {
 }
 
 // Set to one to print any json parsing errors
-#if 1
+#if EGL3_DISABLE_JSON_VERBOSITY
 #define PRINT_JSON_ERROR printf("JSON parsing error at %d @ %s\n", __LINE__, __FILE__)
 #else
 #define PRINT_JSON_ERROR
@@ -97,23 +97,23 @@ namespace EGL3::Web::Epic::Responses {
 
 // Authorized client
 
-#include "get_account.h"
-#include "get_account_external_auths.h"
-#include "get_assets.h"
-#include "get_blocked_users.h"
-#include "get_catalog_items.h"
-#include "get_currencies.h"
-#include "get_default_billing_account.h"
-#include "get_entitlements.h"
-#include "get_external_source_settings.h"
-#include "get_friends.h"
-#include "get_lightswitch_status.h"
-#include "oauth_token.h"
+#include "GetAccount.h"
+#include "GetAccountExternalAuths.h"
+#include "GetAssets.h"
+#include "GetBlockedUsers.h"
+#include "GetCatalogItems.h"
+#include "GetCurrencies.h"
+#include "GetDefaultBillingAccount.h"
+#include "GetEntitlements.h"
+#include "GetExternalSourceSettings.h"
+#include "GetFriends.h"
+#include "GetLightswitchStatus.h"
+#include "OAuthToken.h"
 
 // Unauthorized client
 
-#include "get_blog_posts.h"
-#include "get_page_info.h"
+#include "GetBlogPosts.h"
+#include "GetPageInfo.h"
 
 #undef PARSE_DEFINE
 #undef PARSE_END

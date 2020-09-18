@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 // TODO: call some sort of logging function instead of just printf
-__forceinline bool _EGL3_Assert(const char* Condition, const char* Message, const char* Filename, unsigned Line) {
+static __forceinline bool _EGL3_Assert(const char* Condition, const char* Message, const char* Filename, unsigned Line) {
 	printf("ASSERTION FAILED - %s @ %u - %s - %s\n", Filename, Line, Condition, Message);
 	abort();
 }
