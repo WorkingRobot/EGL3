@@ -47,6 +47,12 @@ public:
 
     Response<RespGetBlockedUsers> GetBlockedUsers();
 
+    // Lightswitch
+
+    Response<RespGetLightswitchStatus::ServiceStatus> GetLightswitchStatus(const std::string& AppName);
+
+    Response<RespGetLightswitchStatus> GetLightswitchStatus(const std::initializer_list<std::string>& AppNames);
+
 protected:
     void KillAuthentication() override;
 

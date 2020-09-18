@@ -78,6 +78,7 @@ endfunction()
 
 add_dir(EGL3 src)
 add_dir(EGL3 src/modules)
+#add_dir(EGL3 src/widgets)
 add_dir(EGL3 src/ntfs)
 add_dir(EGL3 src/storage)
 add_dir(EGL3 src/utils)

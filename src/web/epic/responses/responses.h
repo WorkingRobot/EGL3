@@ -66,6 +66,13 @@ __forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<
 	return true;
 }
 
+// Set to one to print any json parsing errors
+#if 1
+#define PRINT_JSON_ERROR printf("JSON parsing error at %d @ %s\n", __LINE__, __FILE__)
+#else
+#define PRINT_JSON_ERROR
+#endif
+
 #define PARSE_DEFINE(ClassName) \
 	static bool Parse(const rapidjson::Value& Json, ClassName& Obj) { \
 		rapidjson::Document::ConstMemberIterator Itr;
@@ -76,15 +83,17 @@ __forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<
 
 #define PARSE_ITEM(JsonName, TargetVariable) \
 		Itr = Json.FindMember(JsonName); \
-		if (Itr == Json.MemberEnd()) { return false; } \
-		if (!ParseObject(Itr->value, Obj.TargetVariable)) { return false; }
+		if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR; return false; } \
+		if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; }
 
 #define PARSE_ITEM_OPT(JsonName, TargetVariable) \
 		Itr = Json.FindMember(JsonName); \
-		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { return false; } }
+		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; } }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
-		if (!ParseObject(Json, Obj.TargetVariable)) { return false; }
+		if (!ParseObject(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; }
+
+// Authorized client
 
 #include "get_account.h"
 #include "get_account_external_auths.h"
@@ -96,7 +105,13 @@ __forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<
 #include "get_entitlements.h"
 #include "get_external_source_settings.h"
 #include "get_friends.h"
+#include "get_lightswitch_status.h"
 #include "oauth_token.h"
+
+// Unauthorized client
+
+#include "get_blog_posts.h"
+#include "get_page_info.h"
 
 #undef PARSE_DEFINE
 #undef PARSE_END

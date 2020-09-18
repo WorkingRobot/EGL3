@@ -2,8 +2,12 @@
 
 #include "modules/Modules.h"
 #include "utils/GladeBuilder.h"
+#include "web/epic/unauthed_epic_client.h"
 
 __forceinline int start() {
+    UnauthedEpicClient C;
+    auto Resp = C.GetBlogPosts("en-US");
+
     if (!getenv("GTK_CSD")) {
         _putenv_s("GTK_CSD", "0");
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SidebarNotebook.h"
+#include "../widgets/WhatsNewItem.h"
 
 typedef std::vector<std::unique_ptr<BaseModule>> ModuleList;
 

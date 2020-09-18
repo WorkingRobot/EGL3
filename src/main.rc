@@ -1,5 +1,5 @@
 #define VERSION_MAJOR 1
-#define VERSION_MINOR 2
+#define VERSION_MINOR 0
 #define VERSION_PATCH 0
 
 #define STR_INDIR(x) #x
@@ -8,7 +8,7 @@
 
 #include <windows.h>
 
-APP_ICON ICON "icon.ico"
+APP_ICON ICON "graphics/icon.ico"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION    1, 0, 0, 0

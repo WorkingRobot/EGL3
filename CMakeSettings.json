@@ -13,7 +13,7 @@
       "variables": [
         {
           "name": "ENABLE_CONSOLE",
-          "value": "False",
+          "value": "True",
           "type": "BOOL"
         }
       ]

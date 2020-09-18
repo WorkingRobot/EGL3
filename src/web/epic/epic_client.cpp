@@ -10,7 +10,7 @@ EpicClient::EpicClient(const rapidjson::Document& OAuthResponse, const cpr::Auth
 	AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
 }
 
-EpicClient::Response<RespGetAccount> EpicClient::GetAccount()
+BaseClient::Response<RespGetAccount> EpicClient::GetAccount()
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -45,7 +45,7 @@ EpicClient::Response<RespGetAccount> EpicClient::GetAccount()
 	return Resp;
 }
 
-EpicClient::Response<RespGetAccountExternalAuths> EpicClient::GetAccountExternalAuths()
+BaseClient::Response<RespGetAccountExternalAuths> EpicClient::GetAccountExternalAuths()
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -80,7 +80,7 @@ EpicClient::Response<RespGetAccountExternalAuths> EpicClient::GetAccountExternal
 	return Resp;
 }
 
-EpicClient::Response<RespGetDefaultBillingAccount> EpicClient::GetDefaultBillingAccount()
+BaseClient::Response<RespGetDefaultBillingAccount> EpicClient::GetDefaultBillingAccount()
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -115,7 +115,7 @@ EpicClient::Response<RespGetDefaultBillingAccount> EpicClient::GetDefaultBilling
 	return Resp;
 }
 
-EpicClient::Response<RespGetAssets> EpicClient::GetAssets(const std::string& Platform, const std::string& Label)
+BaseClient::Response<RespGetAssets> EpicClient::GetAssets(const std::string& Platform, const std::string& Label)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -151,7 +151,7 @@ EpicClient::Response<RespGetAssets> EpicClient::GetAssets(const std::string& Pla
 	return Resp;
 }
 
-EpicClient::Response<RespGetCurrencies> EpicClient::GetCurrencies(int Start, int Count)
+BaseClient::Response<RespGetCurrencies> EpicClient::GetCurrencies(int Start, int Count)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -187,7 +187,7 @@ EpicClient::Response<RespGetCurrencies> EpicClient::GetCurrencies(int Start, int
 	return Resp;
 }
 
-EpicClient::Response<RespGetCatalogItems> EpicClient::GetCatalogItems(const std::string& Namespace, const std::initializer_list<std::string>& Items, const std::string& Country, const std::string& Locale, bool IncludeDLCDetails, bool IncludeMainGameDetails)
+BaseClient::Response<RespGetCatalogItems> EpicClient::GetCatalogItems(const std::string& Namespace, const std::initializer_list<std::string>& Items, const std::string& Country, const std::string& Locale, bool IncludeDLCDetails, bool IncludeMainGameDetails)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -232,7 +232,7 @@ EpicClient::Response<RespGetCatalogItems> EpicClient::GetCatalogItems(const std:
 	return Resp;
 }
 
-EpicClient::Response<RespGetEntitlements> EpicClient::GetEntitlements(int Start, int Count)
+BaseClient::Response<RespGetEntitlements> EpicClient::GetEntitlements(int Start, int Count)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -268,7 +268,7 @@ EpicClient::Response<RespGetEntitlements> EpicClient::GetEntitlements(int Start,
 	return Resp;
 }
 
-EpicClient::Response<RespGetExternalSourceSettings> EpicClient::GetExternalSourceSettings(const std::string& Platform)
+BaseClient::Response<RespGetExternalSourceSettings> EpicClient::GetExternalSourceSettings(const std::string& Platform)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -303,7 +303,7 @@ EpicClient::Response<RespGetExternalSourceSettings> EpicClient::GetExternalSourc
 	return Resp;
 }
 
-EpicClient::Response<RespGetFriends> EpicClient::GetFriends(bool IncludePending)
+BaseClient::Response<RespGetFriends> EpicClient::GetFriends(bool IncludePending)
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -339,7 +339,7 @@ EpicClient::Response<RespGetFriends> EpicClient::GetFriends(bool IncludePending)
 	return Resp;
 }
 
-EpicClient::Response<RespGetBlockedUsers> EpicClient::GetBlockedUsers()
+BaseClient::Response<RespGetBlockedUsers> EpicClient::GetBlockedUsers()
 {
 	RunningFunctionGuard Guard(*this);
 
@@ -368,6 +368,82 @@ EpicClient::Response<RespGetBlockedUsers> EpicClient::GetBlockedUsers()
 
 	RespGetBlockedUsers Resp;
 	if (!RespGetBlockedUsers::Parse(RespJson, Resp)) {
+		return ERROR_CODE_BAD_JSON;
+	}
+
+	return Resp;
+}
+
+BaseClient::Response<RespGetLightswitchStatus::ServiceStatus> EpicClient::GetLightswitchStatus(const std::string& AppName)
+{
+	RunningFunctionGuard Guard(*this);
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	auto Response = Http::Get(
+		cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/" + AppName + "/status" },
+		cpr::Header{ { "Authorization", AuthHeader } }
+	);
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	if (Response.status_code != 200) {
+		return ERROR_CODE_NOT_200;
+	}
+
+	auto RespJson = Http::ParseJson(Response);
+
+	if (RespJson.HasParseError()) {
+		return ERROR_CODE_NOT_JSON;
+	}
+
+	RespGetLightswitchStatus::ServiceStatus Resp;
+	if (!RespGetLightswitchStatus::ServiceStatus::Parse(RespJson, Resp)) {
+		return ERROR_CODE_BAD_JSON;
+	}
+
+	return Resp;
+}
+
+
+BaseClient::Response<RespGetLightswitchStatus> EpicClient::GetLightswitchStatus(const std::initializer_list<std::string>& AppNames)
+{
+	RunningFunctionGuard Guard(*this);
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	cpr::Parameters Parameters;
+	for (auto& AppName : AppNames) {
+		Parameters.AddParameter({ "serviceId", AppName });
+	}
+	auto Response = Http::Get(
+		cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/bulk/status" },
+		cpr::Header{ { "Authorization", AuthHeader } },
+		Parameters
+	);
+
+	if (GetCancelled()) { return ERROR_CANCELLED; }
+
+	if (Response.status_code != 200) {
+		return ERROR_CODE_NOT_200;
+	}
+
+	auto RespJson = Http::ParseJson(Response);
+
+	if (RespJson.HasParseError()) {
+		return ERROR_CODE_NOT_JSON;
+	}
+
+	RespGetLightswitchStatus Resp;
+	if (!RespGetLightswitchStatus::Parse(RespJson, Resp)) {
 		return ERROR_CODE_BAD_JSON;
 	}
 
