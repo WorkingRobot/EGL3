@@ -10,60 +10,62 @@ namespace ch = std::chrono;
 
 typedef ch::system_clock::time_point TimePoint;
 
-template<class T>
-__forceinline bool ParseObject(const rapidjson::Value& Json, T& Obj) {
-	return T::Parse(Json, Obj);
-}
-
-template<class T>
-__forceinline bool ParseObject(const rapidjson::Value& Json, std::optional<T>& Obj) {
-	return ParseObject(Json, Obj.emplace());
-}
-
-__forceinline bool ParseObject(const rapidjson::Value& Json, std::string& Obj) {
-	Obj = std::string(Json.GetString(), Json.GetStringLength());
-	return true;
-}
-
-__forceinline bool ParseObject(const rapidjson::Value& Json, bool& Obj) {
-	Obj = Json.GetBool();
-	return true;
-}
-
-__forceinline bool ParseObject(const rapidjson::Value& Json, int& Obj) {
-	Obj = Json.GetInt();
-	return true;
-}
-
-__forceinline bool ParseObject(const rapidjson::Value& Json, TimePoint& Obj) {
-	std::istringstream istr(Json.GetString(), Json.GetStringLength());
-	istr >> date::parse("%FT%TZ", Obj);
-	return !istr.fail();
-}
-
-template<class T>
-__forceinline bool ParseObject(const rapidjson::Value& Json, std::vector<T>& Obj) {
-	Obj.reserve(Json.GetArray().Size());
-	for (auto& Value : Json.GetArray()) {
-		auto& Item = Obj.emplace_back();
-		if (!ParseObject(Value, Item)) { return false; }
+namespace EGL3::Web::Epic::Responses {
+	template<class T>
+	__forceinline bool ParseObject(const rapidjson::Value& Json, T& Obj) {
+		return T::Parse(Json, Obj);
 	}
-	return true;
-}
 
-template<class T>
-__forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<std::string, T>& Obj) {
-	Obj.reserve(Json.GetObject().MemberCount());
-	for (auto& Value : Json.GetObject()) {
-		auto Item = Obj.emplace(
-			std::piecewise_construct,
-			std::forward_as_tuple(Value.name.GetString(), Value.name.GetStringLength()),
-			std::forward_as_tuple()
-		);
-		if (!Item.second) { return false; }
-		if (!ParseObject(Value.value, Item.first->second)) { return false; }
+	template<class T>
+	__forceinline bool ParseObject(const rapidjson::Value& Json, std::optional<T>& Obj) {
+		return ParseObject(Json, Obj.emplace());
 	}
-	return true;
+
+	__forceinline bool ParseObject(const rapidjson::Value& Json, std::string& Obj) {
+		Obj = std::string(Json.GetString(), Json.GetStringLength());
+		return true;
+	}
+
+	__forceinline bool ParseObject(const rapidjson::Value& Json, bool& Obj) {
+		Obj = Json.GetBool();
+		return true;
+	}
+
+	__forceinline bool ParseObject(const rapidjson::Value& Json, int& Obj) {
+		Obj = Json.GetInt();
+		return true;
+	}
+
+	__forceinline bool ParseObject(const rapidjson::Value& Json, TimePoint& Obj) {
+		std::istringstream istr(Json.GetString(), Json.GetStringLength());
+		istr >> date::parse("%FT%TZ", Obj);
+		return !istr.fail();
+	}
+
+	template<class T>
+	__forceinline bool ParseObject(const rapidjson::Value& Json, std::vector<T>& Obj) {
+		Obj.reserve(Json.GetArray().Size());
+		for (auto& Value : Json.GetArray()) {
+			auto& Item = Obj.emplace_back();
+			if (!ParseObject(Value, Item)) { return false; }
+		}
+		return true;
+	}
+
+	template<class T>
+	__forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<std::string, T>& Obj) {
+		Obj.reserve(Json.GetObject().MemberCount());
+		for (auto& Value : Json.GetObject()) {
+			auto Item = Obj.emplace(
+				std::piecewise_construct,
+				std::forward_as_tuple(Value.name.GetString(), Value.name.GetStringLength()),
+				std::forward_as_tuple()
+			);
+			if (!Item.second) { return false; }
+			if (!ParseObject(Value.value, Item.first->second)) { return false; }
+		}
+		return true;
+	}
 }
 
 // Set to one to print any json parsing errors

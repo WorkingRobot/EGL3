@@ -2,32 +2,27 @@
 
 #include <gtkmm.h>
 
-namespace EGL3 {
-    namespace Widgets {
-        class WhatsNewItem {
-        public:
-            WhatsNewItem();
-            Gtk::Widget& operator()();
+namespace EGL3::Widgets {
+    class WhatsNewItem {
+    public:
+        inline WhatsNewItem() {
+            box.pack_start(label);
+            box.pack_start(entry, Gtk::PACK_EXPAND_WIDGET);
+            box.pack_end(BtnNext);
+            box.pack_end(BtnPrev);
+            box.pack_end(BtnOk);
+        }
 
-        public:
-            Gtk::Box    box{ Gtk::ORIENTATION_HORIZONTAL };
-            Gtk::Label  label{ "search: " };
-            Gtk::Entry  entry;
-            Gtk::Button BtnOk{ "find" };
-            Gtk::Button BtnNext{ ">" };
-            Gtk::Button BtnPrev{ "<" };
-        };
-    }
-}
+        inline Gtk::Widget& operator()() {
+            return box;
+        }
 
-inline SearchBar::SearchBar() {
-    box.pack_start(label);
-    box.pack_start(entry, Gtk::PACK_EXPAND_WIDGET);
-    box.pack_end(BtnNext);
-    box.pack_end(BtnPrev);
-    box.pack_end(BtnOk);
-}
-
-inline Gtk::Widget& SearchBar::operator()() {
-    return box;
+    public:
+        Gtk::Box Container { Gtk::ORIENTATION_VERTICAL };
+        Gtk::Image MainImage;
+        Gtk::Label ;
+        Gtk::Button BtnOk{ "find" };
+        Gtk::Button BtnNext{ ">" };
+        Gtk::Button BtnPrev{ "<" };
+    };
 }

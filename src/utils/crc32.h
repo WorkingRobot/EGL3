@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 
-class Crc32 {
-public:
+namespace EGL3::Utils {
     template<bool insensitive = false>
     static __forceinline uint32_t Crc32(const std::string& str) {
         return Crc32<insensitive>(str, str.size());
@@ -20,11 +18,11 @@ public:
         return ~crc32_impl<insensitive>(str, size, ~0);
     }
 
-private:
-    // https://stackoverflow.com/a/28801005
-    template <unsigned c, int k = 8>
-    struct f : f<((c & 1) ? 0xedb88320 : 0) ^ (c >> 1), k - 1> {};
-    template <unsigned c> struct f<c, 0> { enum { value = c }; };
+    namespace {
+        // https://stackoverflow.com/a/28801005
+        template <unsigned c, int k = 8>
+        struct f : f<((c & 1) ? 0xedb88320 : 0) ^ (c >> 1), k - 1> {};
+        template <unsigned c> struct f<c, 0> { enum { value = c }; };
 
 #define A(x) B(x) B(x + 128)
 #define B(x) C(x) C(x +  64)
@@ -36,7 +34,7 @@ private:
 #define H(x) I(x) I(x +   1)
 #define I(x) f<x>::value,
 
-    static constexpr int crc_table[] = { A(0) };
+        static constexpr int crc_table[] = { A(0) };
 
 #undef A
 #undef B
@@ -48,10 +46,11 @@ private:
 #undef H
 #undef I
 
-    template<bool insensitive>
-    static constexpr uint32_t crc32_impl(const char* p, size_t len, uint32_t crc) {
-        return len ?
-            crc32_impl<insensitive>(p + 1, len - 1, (crc >> 8) ^ crc_table[(crc & 0xFF) ^ (!insensitive ? *p : (*p >= 'a' && *p <= 'z' ? *p - 0x20 : *p))])
-            : crc;
+        template<bool insensitive>
+        static constexpr uint32_t crc32_impl(const char* p, size_t len, uint32_t crc) {
+            return len ?
+                crc32_impl<insensitive>(p + 1, len - 1, (crc >> 8) ^ crc_table[(crc & 0xFF) ^ (!insensitive ? *p : (*p >= 'a' && *p <= 'z' ? *p - 0x20 : *p))])
+                : crc;
+        }
     }
-};
+}

@@ -1,5 +1,7 @@
 #pragma once
 
-class BaseModule {
+namespace EGL3::Modules {
+	class BaseModule {
 
-};
+	};
+}

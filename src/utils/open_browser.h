@@ -2,4 +2,6 @@
 
 #include <string>
 
-bool OpenInBrowser(const std::string& Url);
+namespace EGL3::Utils {
+	bool OpenInBrowser(const std::string& Url);
+}
