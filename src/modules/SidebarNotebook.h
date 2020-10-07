@@ -1,3 +1,5 @@
+#pragma once
+
 #include "BaseModule.h"
 
 #include <gtkmm.h>

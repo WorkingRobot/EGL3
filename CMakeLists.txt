@@ -36,6 +36,9 @@ include_directories(${RAPIDJSON_INCLUDE_DIRS})
 include_directories("$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
 link_libraries("$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib")
 
+# NtDll (Used for mmio) #
+link_libraries("${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")
+
 # GUI #
 
 # These aren't really needed for compilation and the libraries automatically

@@ -84,7 +84,7 @@ namespace EGL3::Web::Epic::Auth {
 
 		ExpiresAt = std::chrono::steady_clock::now() + std::chrono::seconds(DeviceAuthJson["expires_in"].GetInt64());
 
-		RefreshInterval = std::chrono::seconds(DeviceAuthJson["interval"].GetInt64());
+		RefreshInterval = std::chrono::seconds(DeviceAuthJson["interval"].GetInt64() / 2);
 
 		auto& DeviceAuthBrowserUrlValue = DeviceAuthJson["verification_uri_complete"];
 		BrowserUrl = std::string(DeviceAuthBrowserUrlValue.GetString(), DeviceAuthBrowserUrlValue.GetStringLength());

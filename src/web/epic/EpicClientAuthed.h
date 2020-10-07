@@ -14,6 +14,11 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetAccountExternalAuths> GetAccountExternalAuths();
 
+        Response<Responses::GetDeviceAuths> GetDeviceAuths();
+
+        // You can optionally add a X-Epic-Device-Info header with JSON {"type": "Google","model":"Pixel 3","os":"10"}
+        Response<Responses::GetDeviceAuths::DeviceAuth> CreateDeviceAuth();
+
         // Launcher service
 
         Response<Responses::GetDefaultBillingAccount> GetDefaultBillingAccount();

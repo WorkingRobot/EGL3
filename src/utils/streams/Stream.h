@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <stdint.h>
 #include <string>
+#include <unordered_map>
 
 namespace EGL3::Utils::Streams {
     class Stream {
@@ -80,16 +82,37 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        Stream& operator<<(std::string Val) {
+        Stream& operator<<(const std::string& Val) {
             write((char*)Val.c_str(), Val.size() + 1);
             return *this;
         }
 
         template<class T, uint32_t Size>
-        Stream& operator<<(T(&Val)[Size]) {
+        Stream& operator<<(const T(&Val)[Size]) {
             for (int i = 0; i < Size; ++i) {
                 *this << Val[i];
             }
+            return *this;
+        }
+
+        template<class K, class V>
+        Stream& operator<<(const std::pair<K, V>& Val) {
+            *this << Val.first;
+            *this << Val.second;
+            return *this;
+        }
+
+        template<class K, class V>
+        Stream& operator<<(const std::unordered_map<K, V>& Val) {
+            *this << Val.size();
+            for (auto& Item : Val) {
+                *this << Item;
+            }
+            return *this;
+        }
+
+        Stream& operator<<(const std::chrono::system_clock::time_point& Val) {
+            *this << Val.time_since_epoch().count();
             return *this;
         }
 
@@ -171,6 +194,35 @@ namespace EGL3::Utils::Streams {
             for (int i = 0; i < Size; ++i) {
                 *this >> Val[i];
             }
+            return *this;
+        }
+
+        template<class K, class V>
+        Stream& operator>>(std::pair<K, V>& Val) {
+            *this >> Val.first;
+            *this >> Val.second;
+            return *this;
+        }
+
+        template<class K, class V>
+        Stream& operator>>(std::unordered_map<K, V>& Val) {
+            size_t Size;
+            *this >> Size;
+            Val.reserve(Size);
+            K Key;
+            V Value;
+            for (int i = 0; i < Size; ++i) {
+                *this >> Key;
+                *this >> Value;
+                Val.emplace(Key, Value);
+            }
+            return *this;
+        }
+
+        Stream& operator>>(std::chrono::system_clock::time_point& Val) {
+            std::chrono::system_clock::rep Data;
+            *this >> Data;
+            Val = std::chrono::system_clock::time_point(std::chrono::system_clock::duration(Data));
             return *this;
         }
     };

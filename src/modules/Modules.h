@@ -1,20 +1,22 @@
 #pragma once
 
 #include "SidebarNotebook.h"
-#include "../widgets/WhatsNewItem.h"
+#include "WhatsNew.h"
 
 namespace EGL3::Modules {
-	typedef std::vector<std::unique_ptr<BaseModule>> ModuleList;
 
-	void DeleteModuleList(void* Modules) {
-		std::default_delete<ModuleList>()((ModuleList*)Modules);
-	}
-
-	void Initialize(Gtk::ApplicationWindow& AppWnd, Utils::GladeBuilder& Builder) {
-		auto Modules = new ModuleList;
+	void Initialize(const Glib::RefPtr<Gtk::Application>& App, Utils::GladeBuilder& Builder) {
+		auto Modules = new std::vector<std::unique_ptr<BaseModule>>;
 
 		Modules->emplace_back(std::unique_ptr<BaseModule>(new SidebarNotebookModule(Builder)));
+		Modules->emplace_back(std::unique_ptr<BaseModule>(new WhatsNewModule(App, Builder)));
 
-		AppWnd.set_data("EGL3Modules", Modules, &DeleteModuleList);
+		App->set_data("EGL3Modules", Modules, [](void* Data) {
+			delete (decltype(Modules))Data;
+		});
+	}
+
+	void Destroy(const Glib::RefPtr<Gtk::Application>& App) {
+		App->remove_data("EGL3Modules");
 	}
 }

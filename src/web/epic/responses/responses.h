@@ -70,9 +70,9 @@ namespace EGL3::Web::Epic::Responses {
 
 // Set to one to print any json parsing errors
 #if EGL3_DISABLE_JSON_VERBOSITY
-#define PRINT_JSON_ERROR printf("JSON parsing error at %d @ %s\n", __LINE__, __FILE__)
-#else
 #define PRINT_JSON_ERROR
+#else
+#define PRINT_JSON_ERROR printf("JSON parsing error at %d @ %s\n", __LINE__, __FILE__)
 #endif
 
 #define PARSE_DEFINE(ClassName) \
@@ -104,6 +104,7 @@ namespace EGL3::Web::Epic::Responses {
 #include "GetCatalogItems.h"
 #include "GetCurrencies.h"
 #include "GetDefaultBillingAccount.h"
+#include "GetDeviceAuths.h"
 #include "GetEntitlements.h"
 #include "GetExternalSourceSettings.h"
 #include "GetFriends.h"

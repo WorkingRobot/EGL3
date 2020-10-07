@@ -7,133 +7,161 @@
 #include "RunlistId.h"
 
 namespace EGL3::Storage::Game {
-	Archive::Archive(fs::path Path) :
-		Header({ 0 }),
-		FileRunlist({ 0 }),
-		ChunkPartRunlist({ 0 }),
-		ChunkInfoRunlist({ 0 }),
-		ChunkDataRunlist({ 0 }),
-		ManifestData({ 0 }),
-		RunIndex({ 0 })
+	Archive&& Archive::Create(const fs::path& Path, CreationData&& Data)
 	{
-		if (fs::is_regular_file(Path)) {
-			Stream.open(Path, "rb+");
-			if (!Stream.valid()) {
-				// ERROR
-				// File could not be opened
-			}
-			InitializeParse();
+		Archive Ar(Path);
+		EGL3_ASSERT(Ar.Stream.valid(), "Archive isn't open");
+
+		Ar.ModifyMetadataInternal(std::forward<CreationData&&>(Data));
+
+		auto& Stream = Ar.Stream.acquire();
+		{
+			Ar.Header.Magic = Header::MAGIC;
+			Ar.Header.ArchiveVersion = Header::VERSION_LATEST;
+
+			Stream.seek(0, Stream::Beg);
+			Stream << Ar.Header;
 		}
-		else {
-			Stream.open(Path, "wb+");
-			if (!Stream.valid()) {
-				// ERROR
-				// File could not be created
-			}
-			InitializeCreate();
+
+		{
+			Ar.FileRunlist.AllocationId = RUNLIST_ID_FILE;
+			Ar.FileRunlist.TotalSize = 0;
+			Ar.FileRunlist.RunCount = 0;
+
+			Stream.seek(256, Stream::Beg);
+			Stream << Ar.FileRunlist;
 		}
+
+		{
+			Ar.ChunkPartRunlist.AllocationId = RUNLIST_ID_CHUNK_PART;
+			Ar.ChunkPartRunlist.TotalSize = 0;
+			Ar.ChunkPartRunlist.RunCount = 0;
+
+			Stream.seek(512, Stream::Beg);
+			Stream << Ar.ChunkPartRunlist;
+		}
+
+		{
+			Ar.ChunkInfoRunlist.AllocationId = RUNLIST_ID_CHUNK_INFO;
+			Ar.ChunkInfoRunlist.TotalSize = 0;
+			Ar.ChunkInfoRunlist.RunCount = 0;
+
+			Stream.seek(768, Stream::Beg);
+			Stream << Ar.ChunkInfoRunlist;
+		}
+
+		{
+			Ar.ChunkDataRunlist.AllocationId = RUNLIST_ID_CHUNK_DATA;
+			Ar.ChunkDataRunlist.TotalSize = 0;
+			Ar.ChunkDataRunlist.RunCount = 0;
+
+			Stream.seek(1024, Stream::Beg);
+			Stream << Ar.ChunkDataRunlist;
+		}
+
+		{
+			Stream.seek(2048, Stream::Beg);
+			Stream << Ar.ManifestData;
+		}
+
+		{
+			Ar.RunIndex.NextAvailableSector = 16; // 8192 bytes
+			Ar.RunIndex.ElementCount = 0;
+
+			Stream.seek(4096, Stream::Beg);
+			Stream << Ar.RunIndex;
+		}
+
+		return std::move(Ar);
+	}
+
+	Archive&& Archive::Open(const fs::path& Path)
+	{
+		Archive Ar(Path);
+		EGL3_ASSERT(Ar.Stream.valid(), "Archive isn't open");
+
+		auto& Stream = Ar.Stream.acquire();
+		{
+			Stream.seek(0, Stream::Beg);
+			Stream >> Ar.Header;
+		}
+
+		{
+			Stream.seek(256, Stream::Beg);
+			Stream >> Ar.FileRunlist;
+		}
+
+		{
+			Stream.seek(512, Stream::Beg);
+			Stream >> Ar.ChunkPartRunlist;
+		}
+
+		{
+			Stream.seek(768, Stream::Beg);
+			Stream >> Ar.ChunkInfoRunlist;
+		}
+
+		{
+			Stream.seek(1024, Stream::Beg);
+			Stream >> Ar.ChunkDataRunlist;
+		}
+
+		{
+			Stream.seek(2048, Stream::Beg);
+			Stream >> Ar.ManifestData;
+		}
+
+		{
+			Stream.seek(4096, Stream::Beg);
+			Stream >> Ar.RunIndex;
+		}
+
+
+		return std::move(Ar);
+	}
+
+	void Archive::ModifyMetadata(CreationData&& Data)
+	{
+		ModifyMetadataInternal(std::forward<CreationData&&>(Data));
+
+		auto& Stream = this->Stream.acquire();
+		Stream.seek(0, Stream::Beg);
+		Stream << Header;
+
+		Stream.seek(2048, Stream::Beg);
+		Stream << ManifestData;
 	}
 
 	Archive::~Archive()
 	{
 	}
 
-	void Archive::InitializeParse()
+	Archive::Archive(const fs::path& Path) :
+		Header({ 0 }),
+		FileRunlist({ 0 }),
+		ChunkPartRunlist({ 0 }),
+		ChunkInfoRunlist({ 0 }),
+		ChunkDataRunlist({ 0 }),
+		ManifestData({ 0 }),
+		RunIndex({ 0 }),
+		Backend(Path)
 	{
-		EGL3_ASSERT(Stream.valid(), "Archive isn't open");
-		Stream >> Header;
-
-		Stream.seek(256, Stream::Beg);
-		Stream >> FileRunlist;
-
-		Stream.seek(512, Stream::Beg);
-		Stream >> ChunkPartRunlist;
-
-		Stream.seek(768, Stream::Beg);
-		Stream >> ChunkInfoRunlist;
-
-		Stream.seek(1024, Stream::Beg);
-		Stream >> ChunkDataRunlist;
-
-		Stream.seek(2048, Stream::Beg);
-		Stream >> ManifestData;
-
-		Stream.seek(4096, Stream::Beg);
-		Stream >> RunIndex;
+		
 	}
 
-	void Archive::InitializeCreate()
+	void Archive::ModifyMetadataInternal(CreationData&& Data)
 	{
-		{
-			Header.Magic = Header::MAGIC;
-			Header.ArchiveVersion = Header::VERSION_LATEST;
-			strcpy(Header.Game, "Fortnite");
-			strcpy(Header.VersionStringLong, "++Fortnite+Release-12.30-CL-12624643-Windows");
-			strcpy(Header.VersionStringHR, "12.30");
-			Header.GameNumeric = GAME_ID_FORTNITE;
-			Header.VersionNumeric = 12624643;
+		strcpy_s(Header.Game, Data.Game.c_str());
+		strcpy_s(Header.VersionStringLong, Data.VersionStringLong.c_str());
+		strcpy_s(Header.VersionStringHR, Data.VersionStringHR.c_str());
+		Header.GameNumeric = Data.GameNumeric;
+		Header.VersionNumeric = Data.VersionNumeric;
 
-			Stream.seek(0, Stream::Beg);
-			Stream << Header;
-		}
-
-		{
-			FileRunlist.AllocationId = RUNLIST_ID_FILE;
-			FileRunlist.TotalSize = 0;
-			FileRunlist.RunCount = 0;
-
-			Stream.seek(256, Stream::Beg);
-			Stream << FileRunlist;
-		}
-
-		{
-			ChunkPartRunlist.AllocationId = RUNLIST_ID_CHUNK_PART;
-			ChunkPartRunlist.TotalSize = 0;
-			ChunkPartRunlist.RunCount = 0;
-
-			Stream.seek(512, Stream::Beg);
-			Stream << ChunkPartRunlist;
-		}
-
-		{
-			ChunkInfoRunlist.AllocationId = RUNLIST_ID_CHUNK_INFO;
-			ChunkInfoRunlist.TotalSize = 0;
-			ChunkInfoRunlist.RunCount = 0;
-
-			Stream.seek(768, Stream::Beg);
-			Stream << ChunkInfoRunlist;
-		}
-
-		{
-			ChunkDataRunlist.AllocationId = RUNLIST_ID_CHUNK_DATA;
-			ChunkDataRunlist.TotalSize = 0;
-			ChunkDataRunlist.RunCount = 0;
-
-			Stream.seek(1024, Stream::Beg);
-			Stream << ChunkDataRunlist;
-		}
-
-		{
-			strcpy(ManifestData.LaunchExeString, "FortniteGame/Binaries/Win64/FortniteLauncher.exe");
-			strcpy(ManifestData.LaunchCommand, " -obfuscationid=NaQlKPDGk9dl7U3yYEqV48dpcim8OA");
-			strcpy(ManifestData.AppNameString, "FortniteReleaseBuilds");
-			ManifestData.AppID = 1;
-			ManifestData.BaseUrlCount = 3;
-			ManifestData.BaseUrls.emplace_back("http://example.com/CloudDir");
-			ManifestData.BaseUrls.emplace_back("https://cdn2.example.com/areallyreallyreallyverylongstringhereforsomereason/CloudDir");
-			ManifestData.BaseUrls.emplace_back("https://cdn3.example.net/fortnite/CloudDir");
-
-			Stream.seek(2048, Stream::Beg);
-			Stream << ManifestData;
-		}
-
-		{
-			RunIndex.NextAvailableSector = 16; // 8192 bytes
-			RunIndex.ElementCount = 0;
-
-			Stream.seek(4096, Stream::Beg);
-			Stream << RunIndex;
-		}
+		strcpy_s(ManifestData.LaunchExeString, Data.LaunchExeString.c_str());
+		strcpy_s(ManifestData.LaunchCommand, Data.LaunchCommand.c_str());
+		strcpy_s(ManifestData.AppNameString, Data.AppNameString.c_str());
+		ManifestData.AppID = Data.AppID;
+		ManifestData.BaseUrls = std::move(Data.BaseUrls);
 	}
 
 	void Archive::Resize(Runlist& Runlist, int64_t NewSize)
@@ -144,7 +172,7 @@ namespace EGL3::Storage::Game {
 
 		auto AllocatedSectors = std::accumulate(Runlist.Runs.begin(), Runlist.Runs.end(), 0ull, [](uint64_t A, const RunlistElement& B) {
 			return A + B.SectorSize;
-			});
+		});
 		auto RequiredSectors = Utils::Align<512>(NewSize) / 512;
 		if (RequiredSectors <= AllocatedSectors) {
 			Runlist.TotalSize = NewSize;

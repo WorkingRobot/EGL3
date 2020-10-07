@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../../utils/streams/FileStream.h"
+#include "../../utils/streams/SyncedFileStream.h"
+#include "../../utils/mmio/MmioFile.h"
+#include "GameId.h"
 #include "Header.h"
 #include "Runlist.h"
 #include "ManifestData.h"
@@ -16,7 +18,7 @@ namespace EGL3::Storage::Game {
 	class Archive {
 	public:
 		// at offset 0
-		Header Header;
+		const Header* Header;
 
 		// at offset 256
 		Runlist FileRunlist;
@@ -39,17 +41,42 @@ namespace EGL3::Storage::Game {
 		// at offset 8192 (sector 16)
 		// technical start of file data and all
 
-		Archive(fs::path Path);
+		struct CreationData {
+			std::string Game;
+			std::string VersionStringLong;
+			std::string VersionStringHR;
+			GameId GameNumeric;
+			uint64_t VersionNumeric;
+
+			std::string LaunchExeString;
+			std::string LaunchCommand;
+			std::string AppNameString;
+			uint32_t AppID;
+			std::vector<std::string> BaseUrls;
+		};
+
+		static Archive&& Create(const fs::path& Path, CreationData&& Data);
+
+		static Archive&& Open(const fs::path& Path);
+
+		void ModifyMetadata(CreationData&& Data);
+
+		/*template<RunlistId RunlistType>
+		RunlistStream OpenRunlist() {
+
+		}*/
+
 		~Archive();
 
 		friend class RunlistStream;
 
 	private:
-		void InitializeParse();
-		void InitializeCreate();
+		Archive(const fs::path& Path);
+		
+		void ModifyMetadataInternal(CreationData&& Data);
 
 		void Resize(Runlist& Runlist, int64_t NewSize);
 
-		Utils::Streams::FileStream Stream;
+		Utils::Mmio::MmioFile Backend;
 	};
 }

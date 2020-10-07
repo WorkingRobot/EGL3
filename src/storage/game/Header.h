@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../utils/streams/Stream.h"
+#include "GameId.h"
 
 namespace EGL3::Storage::Game {
 	using Utils::Streams::Stream;
@@ -11,7 +12,7 @@ namespace EGL3::Storage::Game {
 		char Game[40];					// Game name - example: Fortnite
 		char VersionStringLong[64];		// Example: ++Fortnite+Release-13.30-CL-13884634-Windows
 		char VersionStringHR[16];		// Human readable version - example: 13.30
-		uint64_t GameNumeric;			// Should be some sort of enum (GameId)
+		GameId GameNumeric;				// Should be some sort of enum (GameId)
 		uint64_t VersionNumeric;		// Game specific, but a new update will always have a higher number (e.g. Fortnite's P4 CL)
 
 		enum Constants {
@@ -29,7 +30,9 @@ namespace EGL3::Storage::Game {
 			Stream >> Header.Game;
 			Stream >> Header.VersionStringLong;
 			Stream >> Header.VersionStringHR;
-			Stream >> Header.GameNumeric;
+			uint64_t GameNumeric;
+			Stream >> GameNumeric;
+			Header.GameNumeric = (GameId)GameNumeric;
 			Stream >> Header.VersionNumeric;
 
 			return Stream;

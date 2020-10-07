@@ -7,7 +7,7 @@ namespace EGL3::Web::Epic::Responses {
 			std::optional<std::string> Image;
 			bool Hidden;
 			std::optional<std::string> MessageType;
-			std::optional<std::string> SubGame;
+			std::optional<std::string> SubGame; // "br", "stw"
 			std::optional<std::string> AdSpace;
 			std::string Title;
 			std::string Body;
@@ -39,7 +39,7 @@ namespace EGL3::Web::Epic::Responses {
 		};
 
 		struct GenericRegionPost {
-			std::string Region;
+			std::string Region; // "NA", "EU"
 			GenericNewsPost Message;
 
 			PARSE_DEFINE(GenericRegionPost)
@@ -49,21 +49,24 @@ namespace EGL3::Web::Epic::Responses {
 		};
 
 		struct GenericMotd {
-			std::string EntryType;
+			std::string EntryType; // "NavigateToSpatialScreen", "NavigateToTab", "Text", "Website"
 			std::string Image;
 			std::string TileImage;
 			std::optional<std::string> NavigateToTabValue;
 			bool VideoMute;
 			bool Hidden;
-			std::string TabTitleOverride;
+			std::optional<std::string> TabTitleOverride;
+			std::optional<std::string> CameraTag;
 			std::string Title;
 			std::string Body;
 			bool VideoLoop;
+			std::optional<std::string> WebsiteButtonText;
 			bool VideoStreamingEnabled;
-			int SortingPriority;
+			std::optional<int> SortingPriority;
 			std::optional<std::string> WebsiteUrl;
 			std::optional<std::string> ButtonTextOverride;
-			std::optional<std::string> VideoUID;
+			std::optional<std::string> VideoUID; // => https://fortnite-vod.akamaized.net/{VideoUID}/master.blurl
+			std::optional<std::string> VideoVideoString;
 			std::string Id;
 			bool VideoAutoplay;
 			bool VideoFullscreen;
@@ -76,15 +79,18 @@ namespace EGL3::Web::Epic::Responses {
 				PARSE_ITEM_OPT("navigateToTabValue", NavigateToTabValue)
 				PARSE_ITEM("videoMute", VideoMute)
 				PARSE_ITEM("hidden", Hidden)
-				PARSE_ITEM("tabTitleOverride", TabTitleOverride)
+				PARSE_ITEM_OPT("tabTitleOverride", TabTitleOverride)
+				PARSE_ITEM_OPT("cameraTag", CameraTag)
 				PARSE_ITEM("title", Title)
 				PARSE_ITEM("body", Body)
 				PARSE_ITEM("videoLoop", VideoLoop)
+				PARSE_ITEM_OPT("websiteButtonText", WebsiteButtonText)
 				PARSE_ITEM("videoStreamingEnabled", VideoStreamingEnabled)
-				PARSE_ITEM("sortingPriority", SortingPriority)
+				PARSE_ITEM_OPT("sortingPriority", SortingPriority)
 				PARSE_ITEM_OPT("websiteURL", WebsiteUrl)
 				PARSE_ITEM_OPT("buttonTextOverride", ButtonTextOverride)
 				PARSE_ITEM_OPT("videoUID", VideoUID)
+				PARSE_ITEM_OPT("videoVideoString", VideoVideoString)
 				PARSE_ITEM("id", Id)
 				PARSE_ITEM("videoAutoplay", VideoAutoplay)
 				PARSE_ITEM("videoFullscreen", VideoFullscreen)
@@ -95,7 +101,7 @@ namespace EGL3::Web::Epic::Responses {
 		struct GenericPlatformMotd {
 			bool Hidden;
 			GenericMotd Message;
-			std::string Platform;
+			std::string Platform; // "XBoxOne", "PS4", "android", "windows", "switch"
 
 			PARSE_DEFINE(GenericPlatformMotd)
 				PARSE_ITEM("hidden", Hidden)
@@ -104,14 +110,14 @@ namespace EGL3::Web::Epic::Responses {
 			PARSE_END
 		};
 
-		struct GenericNewsContainer {
+		struct GenericContainer {
 			std::vector<GenericNewsPost> Messages;
 			std::optional<std::vector<GenericPlatformPost>> PlatformMessages;
 			std::optional<std::vector<GenericRegionPost>> RegionMessages;
 			std::optional<std::vector<GenericMotd>> Motds;
 			std::optional<std::vector<GenericPlatformMotd>> PlatformMotds;
 
-			PARSE_DEFINE(GenericNewsContainer)
+			PARSE_DEFINE(GenericContainer)
 				PARSE_ITEM("messages", Messages)
 				PARSE_ITEM_OPT("platform_messages", PlatformMessages)
 				PARSE_ITEM_OPT("region_messages", RegionMessages)
@@ -120,18 +126,10 @@ namespace EGL3::Web::Epic::Responses {
 			PARSE_END
 		};
 
-		struct STWNewsContainer {
-			GenericNewsContainer News;
+		struct GenericNewsContainer {
+			GenericContainer News;
 
-			PARSE_DEFINE(STWNewsContainer)
-				PARSE_ITEM("news", News)
-			PARSE_END
-		};
-
-		struct EmegencyNoticeContainer {
-			GenericNewsContainer News;
-
-			PARSE_DEFINE(EmegencyNoticeContainer)
+			PARSE_DEFINE(GenericNewsContainer)
 				PARSE_ITEM("news", News)
 			PARSE_END
 		};
@@ -260,39 +258,27 @@ namespace EGL3::Web::Epic::Responses {
 			PARSE_END
 		};
 
-		struct BRNewsV2Container {
-			GenericNewsContainer News;
-
-			PARSE_DEFINE(BRNewsV2Container)
-				PARSE_ITEM("news", News)
-			PARSE_END
-		};
-
-		struct CreativeNewsV2Container {
-			GenericNewsContainer News;
-
-			PARSE_DEFINE(CreativeNewsV2Container)
-				PARSE_ITEM("news", News)
-			PARSE_END
-		};
-
 		// No real need for this
 		// TimePoint _activeDate = "2017-08-30T03:20:48.050Z"
 
 		// Last modification time of the page content
 		TimePoint LastModified;
 
-		STWNewsContainer SaveTheWorldNews;
+		// Uses messages
+		GenericNewsContainer SaveTheWorldNews;
 
-		EmegencyNoticeContainer EmergencyNotice;
+		// Uses messages and region_messages
+		GenericNewsContainer EmergencyNotice;
 
 		PlaylistInfoContainer PlaylistInfo;
 
 		TournamentInfoContainer TournamentInfo;
 
-		BRNewsV2Container BRNewsV2;
+		// Uses motds, platform_motds, and messages (unused)
+		GenericNewsContainer BRNewsV2;
 
-		CreativeNewsV2Container CreativeNewsV2;
+		// Uses motds and messages (unused)
+		GenericNewsContainer CreativeNewsV2;
 
 		PARSE_DEFINE(GetPageInfo)
 			PARSE_ITEM("lastModified", LastModified)

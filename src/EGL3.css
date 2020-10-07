@@ -1,0 +1,31 @@
+.font-huge {
+    font-size: 300%;
+}
+
+.font-h1 {
+    font-size: 200%;
+}
+
+.font-h2 {
+    font-size: 175%;
+}
+
+.font-h3 {
+    font-size: 150%;
+}
+
+.font-h4 {
+    font-size: 125%;
+}
+
+.font-h5 {
+    font-size: 110%;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.font-translucent {
+    opacity: 0.5;
+}

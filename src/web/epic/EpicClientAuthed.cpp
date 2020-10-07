@@ -81,6 +81,76 @@ namespace EGL3::Web::Epic {
 		return Resp;
 	}
 
+	BaseClient::Response<Responses::GetDeviceAuths> EpicClientAuthed::GetDeviceAuths()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		auto Response = Http::Get(
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/deviceAuth" },
+			cpr::Header{ { "Authorization", AuthHeader } }
+		);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return ERROR_CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return ERROR_CODE_NOT_JSON;
+		}
+
+		Responses::GetDeviceAuths Resp;
+		if (!Responses::GetDeviceAuths::Parse(RespJson, Resp)) {
+			return ERROR_CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<Responses::GetDeviceAuths::DeviceAuth> EpicClientAuthed::CreateDeviceAuth()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		auto Response = Http::Post(
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/deviceAuth" },
+			cpr::Header{ { "Authorization", AuthHeader } }
+		);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return ERROR_CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return ERROR_CODE_NOT_JSON;
+		}
+
+		Responses::GetDeviceAuths::DeviceAuth Resp;
+		if (!Responses::GetDeviceAuths::DeviceAuth::Parse(RespJson, Resp)) {
+			return ERROR_CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
 	BaseClient::Response<Responses::GetDefaultBillingAccount> EpicClientAuthed::GetDefaultBillingAccount()
 	{
 		RunningFunctionGuard Guard(*this);

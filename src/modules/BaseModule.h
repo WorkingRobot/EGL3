@@ -2,6 +2,7 @@
 
 namespace EGL3::Modules {
 	class BaseModule {
-
+	public:
+		virtual ~BaseModule() {};
 	};
 }

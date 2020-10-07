@@ -13,6 +13,12 @@ namespace EGL3::Utils::Streams {
             Position = 0;
         }
 
+        MemoryStream(size_t Capacity) {
+            Buffer.resize(Capacity);
+            Size = 0;
+            Position = 0;
+        }
+
         Stream& write(const char* Buf, size_t BufCount) override {
             while (Buffer.size() < BufCount + Position) {
                 Buffer.resize(Buffer.size() * 2);
