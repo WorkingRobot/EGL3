@@ -15,6 +15,9 @@ namespace EGL3::Utils::Mmio {
 
 		MmioFile(const char* FilePath);
 
+		MmioFile(const MmioFile&) = delete;
+		MmioFile& operator=(const MmioFile&) = delete;
+
 		~MmioFile();
 
 		bool Valid() const;
@@ -43,6 +46,9 @@ namespace EGL3::Utils::Mmio {
 		MmioReadonlyFile(const fs::path& FilePath);
 
 		MmioReadonlyFile(const char* FilePath);
+
+		MmioReadonlyFile(const MmioReadonlyFile&) = delete;
+		MmioReadonlyFile& operator=(const MmioReadonlyFile&) = delete;
 
 		~MmioReadonlyFile();
 

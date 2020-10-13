@@ -43,6 +43,8 @@ link_libraries("${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")
 
 # These aren't really needed for compilation and the libraries automatically
 # include the dlls needed into the output anyway
+find_package(unofficial-cairo CONFIG REQUIRED)
+link_libraries(unofficial::cairo::cairo unofficial::cairo::cairo-gobject)
 find_library(CAIROMM_LIBRARY cairomm-1.0)
 link_libraries(${CAIROMM_LIBRARY})
 find_library(GDKMM_LIBRARY gdkmm)

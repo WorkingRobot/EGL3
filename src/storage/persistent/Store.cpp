@@ -11,9 +11,15 @@ namespace EGL3::Storage::Persistent {
 			for (int i = 0; i < ElementCount; ++i) {
 				uint32_t KeyConstant;
 				Stream >> KeyConstant;
+
 				auto Elem = Data.emplace(KeyConstant, KeyConstant);
-				EGL3_ASSERT(Elem.second, "Could not emplace new constant to store");
-				Elem.first->second.Deserialize(Stream);
+				if (Elem.first->second.Item) {
+					EGL3_ASSERT(Elem.second, "Could not emplace new constant to store");
+					Elem.first->second.Deserialize(Stream);
+				}
+				else { // Constant is not defined
+					Data.erase(KeyConstant);
+				}
 			}
 		}
 	}

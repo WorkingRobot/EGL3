@@ -43,7 +43,8 @@ namespace EGL3::Storage::Persistent {
 		// The VA_ARGS are used because macros notice the , in templates and this is the least complicated way of solving this issue
 #define KEY(Name, ...) static constexpr KeyType<Utils::Crc32(#Name), __VA_ARGS__> Name{};
 
-		KEY(WhatsNew, std::unordered_map<size_t, std::chrono::system_clock::time_point>);
+		KEY(WhatsNewTimestamps, std::unordered_map<size_t, std::chrono::system_clock::time_point>);
+		KEY(WhatsNewSelection,  uint8_t);
 
 #undef KEY
 
@@ -52,7 +53,8 @@ namespace EGL3::Storage::Persistent {
 			{
 #define KEY(Name) case Name.Constant: Item = std::make_unique<KeyContainer<Name.Constant, decltype(Name)::ValueType>>(); break;
 				
-				KEY(WhatsNew);
+				KEY(WhatsNewTimestamps);
+				KEY(WhatsNewSelection);
 
 #undef KEY
 			}

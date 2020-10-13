@@ -15,16 +15,16 @@ namespace EGL3::Web::Epic::Responses {
 		std::string TokenType;
 
 		// Refresh token
-		std::string RefreshToken;
+		std::optional<std::string> RefreshToken;
 
 		// Seconds until refresh token expires
-		int RefreshExpiresIn;
+		std::optional<int> RefreshExpiresIn;
 
 		// Time when refresh token expired
-		TimePoint RefreshExpiresAt;
+		std::optional<TimePoint> RefreshExpiresAt;
 
 		// Account id
-		std::string AccountId;
+		std::optional<std::string> AccountId;
 
 		// Client id used to authenticate
 		std::string ClientId;
@@ -36,13 +36,13 @@ namespace EGL3::Web::Epic::Responses {
 		std::string ClientService;
 
 		// Display name of user
-		std::string DisplayName;
+		std::optional<std::string> DisplayName;
 
 		// App of the client, not too sure what this exactly is
-		std::string App;
+		std::optional<std::string> App;
 
 		// Id of the user inside the app, i've only seen this be set to the account id, but it could be different?
-		std::string InAppId;
+		std::optional<std::string> InAppId;
 
 
 		PARSE_DEFINE(OAuthToken)
@@ -50,16 +50,16 @@ namespace EGL3::Web::Epic::Responses {
 			PARSE_ITEM("expires_in", ExpiresIn)
 			PARSE_ITEM("expires_at", ExpiresAt)
 			PARSE_ITEM("token_type", TokenType)
-			PARSE_ITEM("refresh_token", RefreshToken)
-			PARSE_ITEM("refresh_expires", RefreshExpiresIn)
-			PARSE_ITEM("refresh_expires_at", RefreshExpiresAt)
-			PARSE_ITEM("account_id", AccountId)
+			PARSE_ITEM_OPT("refresh_token", RefreshToken)
+			PARSE_ITEM_OPT("refresh_expires", RefreshExpiresIn)
+			PARSE_ITEM_OPT("refresh_expires_at", RefreshExpiresAt)
+			PARSE_ITEM_OPT("account_id", AccountId)
 			PARSE_ITEM("client_id", ClientId)
 			PARSE_ITEM("internal_client", IsInternalClient)
 			PARSE_ITEM("client_service", ClientService)
-			PARSE_ITEM("displayName", DisplayName)
-			PARSE_ITEM("app", App)
-			PARSE_ITEM("in_app_id", InAppId)
+			PARSE_ITEM_OPT("displayName", DisplayName)
+			PARSE_ITEM_OPT("app", App)
+			PARSE_ITEM_OPT("in_app_id", InAppId)
 		PARSE_END
 	};
 }

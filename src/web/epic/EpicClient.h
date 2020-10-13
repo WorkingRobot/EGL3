@@ -16,5 +16,9 @@ namespace EGL3::Web::Epic {
 		// Blog Posts
 
 		Response<Responses::GetBlogPosts> GetBlogPosts(const std::string& Locale, int PostsPerPage = 0, int Offset = 0);
+
+		// Statuspage Info
+
+		Response<Responses::GetStatuspageSummary> GetStatuspageSummary();
 	};
 }

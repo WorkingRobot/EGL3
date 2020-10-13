@@ -24,12 +24,14 @@ namespace EGL3::Web::Epic {
         Response<Responses::GetDefaultBillingAccount> GetDefaultBillingAccount();
 
         // URL I'm unsure of: GET https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/accounts/{AccountId}/wallet?currencyCode=USD
-        // It just returns 204, not sure what it does
+        // It just returns 204, not sure what it does exactly
 
         // Default label is Production (if omitted from the request), but the launcher always calls with Live
         // All platforms are technically valid, but they'll return an empty list
         // Some that I know for sure that work are "Windows", "Mac", "IOS"
         Response<Responses::GetAssets> GetAssets(const std::string& Platform, const std::string& Label);
+
+        Response<Responses::GetDownloadInfo> GetDownloadInfo(const std::string& Platform, const std::string& Label, const std::string& CatalogItemId, const std::string& AppName);
 
         // Catalog service
 

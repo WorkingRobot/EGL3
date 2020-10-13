@@ -29,3 +29,23 @@
 .font-translucent {
     opacity: 0.5;
 }
+
+.status-major {
+    color: #e74c3c;
+}
+
+.status-partial {
+    color: #f1c40f;
+}
+
+.status-degraded {
+    color: #e67e22;
+}
+
+.status-maintenance {
+    color: #3498db;
+}
+
+.status-operational {
+    color: #2fcc66;
+}

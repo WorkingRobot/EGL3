@@ -7,12 +7,12 @@
 
 namespace EGL3::Storage::Models {
     struct WhatsNew {
-        enum class ItemSource {
-            BLOG,
-            BR,
-            STW,
-            CREATIVE,
-            NOTICE
+        enum class ItemSource : uint8_t {
+            BLOG        = 1,
+            BR          = 2,
+            STW         = 4,
+            CREATIVE    = 8,
+            NOTICE      = 16
         };
 
         std::variant<

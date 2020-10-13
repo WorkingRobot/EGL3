@@ -9,17 +9,17 @@ namespace EGL3::Web {
 	public:
 		template<typename... Ts>
 		static cpr::Response Get(Ts&&... ts) {
-			return cpr::Get(std::forward<decltype(ts)>(ts)...);
+			return cpr::Get(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response Post(Ts&&... ts) {
-			return cpr::Post(std::forward<decltype(ts)>(ts)...);
+			return cpr::Post(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response Delete(Ts&&... ts) {
-			return cpr::Delete(std::forward<decltype(ts)>(ts)...);
+			return cpr::Delete(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
 		}
 
 		// Make sure to check validity with Json.HasParseError()

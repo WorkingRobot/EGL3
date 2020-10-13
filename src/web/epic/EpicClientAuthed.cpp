@@ -17,12 +17,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId },
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -52,12 +54,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/externalAuths" },
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/externalAuths" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -87,12 +91,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/deviceAuth" },
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -122,13 +128,16 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Post(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId + "/deviceAuth" },
-			cpr::Header{ { "Authorization", AuthHeader } }
+			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
+			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
+			cpr::Body{ "{}" }
 		);
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
@@ -157,12 +166,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/" + AuthData.AccountId + "/billingaccounts/default" },
+			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/" + AuthData.AccountId.value() + "/billingaccounts/default" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -216,6 +227,42 @@ namespace EGL3::Web::Epic {
 
 		Responses::GetAssets Resp;
 		if (!Responses::GetAssets::Parse(RespJson, Resp)) {
+			return ERROR_CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<Responses::GetDownloadInfo> EpicClientAuthed::GetDownloadInfo(const std::string& Platform, const std::string& Label, const std::string& CatalogItemId, const std::string& AppName)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		auto Response = Http::Post(
+			cpr::Url{ "https://launcher-public-service-prod-m.ol.epicgames.com/launcher/api/public/assets/v2/platform/" + Platform + "/catalogItem/" + CatalogItemId + "/app/" + AppName + "/label/" + Label },
+			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
+			cpr::Body{ "{}" }
+		);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return ERROR_CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return ERROR_CODE_NOT_JSON;
+		}
+
+		Responses::GetDownloadInfo Resp;
+		if (!Responses::GetDownloadInfo::Parse(RespJson, Resp)) {
 			return ERROR_CODE_BAD_JSON;
 		}
 
@@ -309,12 +356,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/" + AuthData.AccountId + "/entitlements" },
+			cpr::Url{ "https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/" + AuthData.AccountId.value() + "/entitlements" },
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
@@ -345,12 +394,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/v1/" + AuthData.AccountId + "/settings/externalSources/" + Platform },
+			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/v1/" + AuthData.AccountId.value() + "/settings/externalSources/" + Platform },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -380,12 +431,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
 
 		if (GetCancelled()) { return ERROR_CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId },
+			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "includePending", IncludePending } }
 		);
@@ -545,15 +598,27 @@ namespace EGL3::Web::Epic {
 			return true; // access token isn't invalid yet
 		}
 
-		if (AuthData.RefreshExpiresAt < Now) {
-			return false; // refresh token is also invalid, what do we do here?
-		}
+		cpr::Response Response;
+		// Refresh tokens were given in the oauth response
+		if (AuthData.RefreshToken.has_value()) {
+			if (AuthData.RefreshExpiresAt.value() < Now) {
+				return false; // refresh token is also invalid, what do we do here?
+			}
 
-		auto Response = Http::Post(
-			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
-			AuthClient,
-			cpr::Payload{ { "grant_type", "refresh_token" }, { "refresh_token", AuthData.RefreshToken } }
-		);
+			Response = Http::Post(
+				cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+				AuthClient,
+				cpr::Payload{ { "grant_type", "refresh_token" }, { "refresh_token", AuthData.RefreshToken.value() } }
+			);
+		}
+		// Refresh tokens were not given in the oauth response, use client_credentials here
+		else {
+			Response = Http::Post(
+				cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+				AuthClient,
+				cpr::Payload{ { "grant_type", "client_credentials" } }
+			);
+		}
 
 		if (Response.status_code != 200) {
 			return false;

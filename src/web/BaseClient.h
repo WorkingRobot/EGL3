@@ -33,6 +33,7 @@ namespace EGL3::Web {
                 return Data.get();
             }
 
+            Response() : Response(ERROR_SUCCESS) {}
             Response(ErrorCode Error) : Error(Error), Data(nullptr) {}
             Response(T&& Data) : Error(ERROR_SUCCESS), Data(std::make_unique<T>(std::forward<T&&>(Data))) {}
 

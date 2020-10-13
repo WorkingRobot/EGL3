@@ -1,10 +1,6 @@
 #pragma once
 
-#include "../../utils/streams/Stream.h"
-
 namespace EGL3::Storage::Game {
-	using Utils::Streams::Stream;
-
 	struct ChunkInfo {
 		char SHA[20];					// SHA hash of the chunk to check against
 		uint32_t UncompressedSize;		// Uncompressed, total size that the chunk can provide (a value of 0xFFFFFFFF means uncompressed)
@@ -13,38 +9,8 @@ namespace EGL3::Storage::Game {
 		char Guid[16];					// GUID of the chunk, used in EGL's manifests, unique
 		uint64_t Hash;					// Hash of the chunk, used in EGL's manifests, used to get chunk url
 		uint8_t DataGroup;				// Data group of the chunk, used in EGL's manifests, used to get chunk url
-		// 1 byte padding
+		uint8_t Padding0;				// 1 byte padding
 		uint16_t Flags;					// Flags of the chunk, marks multiple things, like compression method
-		// 4 byte padding (8 byte alignment)
-
-		friend Stream& operator>>(Stream& Stream, ChunkInfo& ChunkInfo) {
-			Stream >> ChunkInfo.SHA;
-			Stream >> ChunkInfo.UncompressedSize;
-			Stream >> ChunkInfo.DataSize;
-			Stream >> ChunkInfo.DataSector;
-			Stream >> ChunkInfo.Guid;
-			Stream >> ChunkInfo.Hash;
-			Stream >> ChunkInfo.DataGroup;
-			Stream.seek(1, Stream::Cur);
-			Stream >> ChunkInfo.Flags;
-			Stream.seek(4, Stream::Cur);
-
-			return Stream;
-		}
-
-		friend Stream& operator<<(Stream& Stream, ChunkInfo& ChunkInfo) {
-			Stream << ChunkInfo.SHA;
-			Stream << ChunkInfo.UncompressedSize;
-			Stream << ChunkInfo.DataSize;
-			Stream << ChunkInfo.DataSector;
-			Stream << ChunkInfo.Guid;
-			Stream << ChunkInfo.Hash;
-			Stream << ChunkInfo.DataGroup;
-			Stream.seek(1, Stream::Cur);
-			Stream << ChunkInfo.Flags;
-			Stream.seek(4, Stream::Cur);
-
-			return Stream;
-		}
+		uint32_t Padding1;				// 4 byte padding (8 byte alignment)
 	};
 }

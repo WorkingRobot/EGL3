@@ -4,18 +4,18 @@ namespace EGL3::Web::Epic::Responses {
 	struct GetDeviceAuths {
 		struct DeviceInfo {
 			// Manufacturer? e.g: Google
-			std::string Type;
+			std::optional<std::string> Type;
 
 			// Phone model e.g: Pixel 2
-			std::string Model;
+			std::optional<std::string> Model;
 
 			// OS version e.g: 10
-			std::string OS;
+			std::optional<std::string> OS;
 
 			PARSE_DEFINE(DeviceInfo)
-				PARSE_ITEM("type", Type)
-				PARSE_ITEM("model", Model)
-				PARSE_ITEM("os", OS)
+				PARSE_ITEM_OPT("type", Type)
+				PARSE_ITEM_OPT("model", Model)
+				PARSE_ITEM_OPT("os", OS)
 			PARSE_END
 		};
 
@@ -49,7 +49,9 @@ namespace EGL3::Web::Epic::Responses {
 			// If a user agent was given during the creation, it'll be here
 			std::optional<std::string> UserAgent;
 
-			// Not sure how to set this from creation
+			// Provided with X-Epic-Device-Info header on creation, e.g. {"type":"Google","model":"Pixel 2","os":"10"}
+			// One of the fields must be not empty/null in order to set it
+			// If a field is null or does not exist, it isn't set, but if it's an empty string (as long as another field is set), it is
 			std::optional<DeviceInfo> DeviceInfo;
 
 			// When the auth was created

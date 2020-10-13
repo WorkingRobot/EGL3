@@ -105,6 +105,7 @@ namespace EGL3::Web::Epic::Responses {
 #include "GetCurrencies.h"
 #include "GetDefaultBillingAccount.h"
 #include "GetDeviceAuths.h"
+#include "GetDownloadInfo.h"
 #include "GetEntitlements.h"
 #include "GetExternalSourceSettings.h"
 #include "GetFriends.h"
@@ -115,6 +116,7 @@ namespace EGL3::Web::Epic::Responses {
 
 #include "GetBlogPosts.h"
 #include "GetPageInfo.h"
+#include "GetStatuspageSummary.h"
 
 #undef PARSE_DEFINE
 #undef PARSE_END

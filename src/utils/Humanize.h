@@ -38,7 +38,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<std::chrono::milliseconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one millisecond from now";
+                    return "1 millisecond from now";
                 }
                 else {
                     return std::to_string(Amount) + " milliseconds from now";
@@ -46,7 +46,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one millisecond ago";
+                    return "a millisecond ago";
                 }
                 else {
                     return std::to_string(Amount) + " milliseconds ago";
@@ -58,7 +58,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<std::chrono::seconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one second from now";
+                    return "1 second from now";
                 }
                 else {
                     return std::to_string(Amount) + " seconds from now";
@@ -66,7 +66,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one second ago";
+                    return "a second ago";
                 }
                 else {
                     return std::to_string(Amount) + " seconds ago";
@@ -78,7 +78,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<std::chrono::minutes>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one minute from now";
+                    return "1 minute from now";
                 }
                 else {
                     return std::to_string(Amount) + " minutes from now";
@@ -86,7 +86,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one minute ago";
+                    return "a minute ago";
                 }
                 else {
                     return std::to_string(Amount) + " minutes ago";
@@ -98,7 +98,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<std::chrono::hours>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one hour from now";
+                    return "1 hour from now";
                 }
                 else {
                     return std::to_string(Amount) + " hours from now";
@@ -106,7 +106,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one hour ago";
+                    return "an hour ago";
                 }
                 else {
                     return std::to_string(Amount) + " hours ago";
@@ -138,7 +138,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<ChronoMonths>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one month from now";
+                    return "1 month from now";
                 }
                 else {
                     return std::to_string(Amount) + " months from now";
@@ -146,7 +146,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one month ago";
+                    return "a month ago";
                 }
                 else {
                     return std::to_string(Amount) + " months ago";
@@ -158,7 +158,7 @@ namespace EGL3::Utils {
         std::string ConvertDate<ChronoYears>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
-                    return "one year from now";
+                    return "1 year from now";
                 }
                 else {
                     return std::to_string(Amount) + " years from now";
@@ -166,7 +166,7 @@ namespace EGL3::Utils {
             }
             else {
                 if (IsSingular) {
-                    return "one year ago";
+                    return "a year ago";
                 }
                 else {
                     return std::to_string(Amount) + " years ago";

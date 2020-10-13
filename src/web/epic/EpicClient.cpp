@@ -62,4 +62,34 @@ namespace EGL3::Web::Epic {
 
 		return Resp;
 	}
+
+	BaseClient::Response<Responses::GetStatuspageSummary> EpicClient::GetStatuspageSummary()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		auto Response = Http::Get(
+			cpr::Url{ "https://status.epicgames.com/api/v2/summary.json" }
+		);
+
+		if (GetCancelled()) { return ERROR_CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return ERROR_CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return ERROR_CODE_NOT_JSON;
+		}
+
+		Responses::GetStatuspageSummary Resp;
+		if (!Responses::GetStatuspageSummary::Parse(RespJson, Resp)) {
+			return ERROR_CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
 }
