@@ -9,6 +9,7 @@
 #include "web/xmpp/XmppClient.h"
 #include "storage/persistent/Store.h"
 #include "utils/mmio/MmioFile.h"
+#include <Exports/UObject.h>
 
 namespace EGL3 {
     __forceinline int Start() {

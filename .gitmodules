@@ -1,0 +1,3 @@
+[submodule "ZenReader"]
+	path = ZenReader
+	url = https://github.com/WorkingRobot/ZenReader
