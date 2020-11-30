@@ -36,6 +36,18 @@ namespace EGL3::Web::Epic::Responses {
 		return true;
 	}
 
+	__forceinline bool ParseObject(const rapidjson::Value& Json, float& Obj) {
+		Obj = Json.GetFloat();
+		return true;
+	}
+
+	typedef rapidjson::Document JsonObject;
+
+	__forceinline bool ParseObject(const rapidjson::Value& Json, JsonObject& Obj) {
+		Obj.CopyFrom(Json, rapidjson::MemoryPoolAllocator(), true);
+		return true;
+	}
+
 	__forceinline bool ParseObject(const rapidjson::Value& Json, TimePoint& Obj) {
 		std::istringstream istr(Json.GetString(), Json.GetStringLength());
 		istr >> date::parse("%FT%TZ", Obj);
@@ -69,10 +81,12 @@ namespace EGL3::Web::Epic::Responses {
 }
 
 // Set to one to print any json parsing errors
-#if EGL3_DISABLE_JSON_VERBOSITY
-#define PRINT_JSON_ERROR
+#ifdef EGL3_DISABLE_JSON_VERBOSITY
+#define PRINT_JSON_ERROR_NOTFOUND
+#define PRINT_JSON_ERROR_PARSE
 #else
-#define PRINT_JSON_ERROR printf("JSON parsing error at %d @ %s\n", __LINE__, __FILE__)
+#define PRINT_JSON_ERROR_NOTFOUND printf("JSON parsing error (not found) at %d @ %s\n", __LINE__, __FILE__)
+#define PRINT_JSON_ERROR_PARSE printf("JSON parsing error (bad parse) at %d @ %s\n", __LINE__, __FILE__)
 #endif
 
 #define PARSE_DEFINE(ClassName) \
@@ -85,15 +99,15 @@ namespace EGL3::Web::Epic::Responses {
 
 #define PARSE_ITEM(JsonName, TargetVariable) \
 		Itr = Json.FindMember(JsonName); \
-		if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR; return false; } \
-		if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; }
+		if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR_NOTFOUND; return false; } \
+		if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 #define PARSE_ITEM_OPT(JsonName, TargetVariable) \
 		Itr = Json.FindMember(JsonName); \
-		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; } }
+		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
-		if (!ParseObject(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR; return false; }
+		if (!ParseObject(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 // Authorized client
 
@@ -111,6 +125,10 @@ namespace EGL3::Web::Epic::Responses {
 #include "GetFriends.h"
 #include "GetLightswitchStatus.h"
 #include "OAuthToken.h"
+
+// Authorized client (MCP)
+
+#include "QueryProfile.h"
 
 // Unauthorized client
 

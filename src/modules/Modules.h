@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Authorization.h"
+#include "Game.h"
 #include "SidebarNotebook.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
@@ -10,10 +12,14 @@ namespace EGL3::Modules {
 	void Initialize(const Glib::RefPtr<Gtk::Application>& App, Utils::GladeBuilder& Builder) {
 		auto Modules = new std::vector<std::unique_ptr<BaseModule>>;
 
+		auto Storage = (Storage::Persistent::Store*)App->get_data("EGL3Storage");
+
 		Modules->emplace_back(std::unique_ptr<BaseModule>(new SidebarNotebookModule(Builder)));
-		Modules->emplace_back(std::unique_ptr<BaseModule>(new WhatsNewModule(App, Builder)));
+		Modules->emplace_back(std::unique_ptr<BaseModule>(new WhatsNewModule(Storage, Builder)));
 		Modules->emplace_back(std::unique_ptr<BaseModule>(new StatsGraphModule(Builder)));
 		Modules->emplace_back(std::unique_ptr<BaseModule>(new StatusPageModule(Builder)));
+		//Modules->emplace_back(std::unique_ptr<BaseModule>(new GameModule(Builder)));
+		Modules->emplace_back(std::unique_ptr<BaseModule>(new AuthorizationModule(Storage, Builder)));
 
 		App->set_data("EGL3Modules", Modules, [](void* Data) {
 			delete (decltype(Modules))Data;

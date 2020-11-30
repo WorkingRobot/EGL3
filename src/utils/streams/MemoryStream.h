@@ -63,6 +63,10 @@ namespace EGL3::Utils::Streams {
             return Size;
         }
 
+        const char* get() const {
+            return Buffer.data();
+        }
+
     private:
         std::vector<char> Buffer;
         size_t Position;

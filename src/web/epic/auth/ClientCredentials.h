@@ -9,10 +9,10 @@ namespace EGL3::Web::Epic::Auth {
 	class ClientCredentials {
 	public:
 		enum ErrorCode {
-			ERROR_SUCCESS,
-			ERROR_CANCELLED,
-			ERROR_EXCH_CODE_NOT_200,
-			ERROR_EXCH_CODE_JSON
+			SUCCESS,
+			CANCELLED,
+			EXCH_CODE_NOT_200,
+			EXCH_CODE_JSON
 		};
 
 		ClientCredentials(const cpr::Authentication& AuthClient);

@@ -32,19 +32,19 @@ namespace EGL3::Web::Epic::Auth {
 			cpr::Payload{ { "grant_type", "token_to_token" }, { "access_token", Token } }
 		);
 
-		if (Cancelled) { return ERROR_CANCELLED; }
+		if (Cancelled) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_TTK_CODE_NOT_200;
+			return TTK_CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_TTK_CODE_JSON;
+			return TTK_CODE_JSON;
 		}
 
 		OAuthResponse = std::move(RespJson);
-		return ERROR_SUCCESS;
+		return SUCCESS;
 	}
 }

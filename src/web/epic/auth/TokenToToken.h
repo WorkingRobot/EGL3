@@ -9,10 +9,10 @@ namespace EGL3::Web::Epic::Auth {
 	class TokenToToken {
 	public:
 		enum ErrorCode {
-			ERROR_SUCCESS,
-			ERROR_CANCELLED,
-			ERROR_TTK_CODE_NOT_200,
-			ERROR_TTK_CODE_JSON
+			SUCCESS,
+			CANCELLED,
+			TTK_CODE_NOT_200,
+			TTK_CODE_JSON
 		};
 
 		TokenToToken(const cpr::Authentication& AuthClient, const std::string& Token);

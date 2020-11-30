@@ -12,7 +12,7 @@ namespace EGL3::Utils::Streams {
         {}
 
         Stream& write(const char* Buf, size_t BufCount) override {
-            if (Position + BufCount < Size) {
+            if (Position + BufCount > Size) {
                 BufCount = Size - Position;
             }
             memcpy(Buffer + Position, Buf, BufCount);
@@ -21,7 +21,7 @@ namespace EGL3::Utils::Streams {
         }
 
         Stream& read(char* Buf, size_t BufCount) override {
-            if (Position + BufCount < Size) {
+            if (Position + BufCount > Size) {
                 BufCount = Size - Position;
             }
             memcpy(Buf, Buffer + Position, BufCount);

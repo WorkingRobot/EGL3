@@ -18,7 +18,7 @@ namespace base64
 
 	struct decoder
 	{
-		base64_decodestate _state;
+		base64_decodestate _state {};
 		int _buffersize;
 
 		decoder(int buffersize_in = 256)

@@ -1,25 +1,28 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
 namespace EGL3::Web {
 	// static wrapper class for handling everything http errors/logging/etc
 	class Http {
+		// Add "cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, " for fiddler
 	public:
 		template<typename... Ts>
 		static cpr::Response Get(Ts&&... ts) {
-			return cpr::Get(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
+			return cpr::GetAsync(std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		template<typename... Ts>
 		static cpr::Response Post(Ts&&... ts) {
-			return cpr::Post(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
+			return cpr::PostAsync(std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		template<typename... Ts>
 		static cpr::Response Delete(Ts&&... ts) {
-			return cpr::Delete(cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false }, std::forward<decltype(ts)>(ts)...);
+			return cpr::DeleteAsync(std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		// Make sure to check validity with Json.HasParseError()
@@ -30,10 +33,24 @@ namespace EGL3::Web {
 			return Json;
 		}
 
-		// Make sure to check validity with Json.HasParseError()
-		// Use something similar to printf("%d @ %zu\n", Json.GetParseError(), Json.GetErrorOffset());
 		static rapidjson::Document ParseJson(const cpr::Response& Response) {
 			return ParseJson(Response.text);
+		}
+
+	private:
+		template<typename... Ts>
+		static cpr::Response GetSync(Ts&&... ts) {
+			return cpr::Get(std::forward<decltype(ts)>(ts)...);
+		}
+
+		template<typename... Ts>
+		static cpr::Response PostSync(Ts&&... ts) {
+			return cpr::Post(std::forward<decltype(ts)>(ts)...);
+		}
+
+		template<typename... Ts>
+		static cpr::Response DeleteSync(Ts&&... ts) {
+			return cpr::Delete(std::forward<decltype(ts)>(ts)...);
 		}
 	};
 }

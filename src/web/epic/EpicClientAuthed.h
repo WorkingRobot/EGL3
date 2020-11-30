@@ -61,10 +61,26 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetLightswitchStatus> GetLightswitchStatus(const std::initializer_list<std::string>& AppNames);
 
+        // MCP Requests
+
+        // ProfileIds:
+        // athena = br
+        // collections = s14 fish collections
+        // common_core = purchases and banners(?)
+        // creative = islands and stuff
+        // common_public = no idea, hasn't been updated in 2 years
+        // metadata = stw storm shield stuff
+        // campaign = stw
+        // collection_book_schematics0 = stw collection book
+        // collection_book_people0 = stw collection book
+        // theater0 = stw world inventory
+        // outpost0 = stw storm shield storage
+        Response<Responses::QueryProfile> QueryProfile(const std::string& ProfileId, int Revision = -1);
+
     protected:
         void KillAuthentication() override;
 
-    private:
+    public:
         bool EnsureTokenValidity();
 
         std::mutex TokenValidityMutex;

@@ -50,8 +50,8 @@ namespace EGL3::Web::Epic::Responses {
 
 		struct GenericMotd {
 			std::string EntryType; // "NavigateToSpatialScreen", "NavigateToTab", "Text", "Website"
-			std::string Image;
-			std::string TileImage;
+			std::optional<std::string> Image;
+			std::optional<std::string> TileImage;
 			std::optional<std::string> NavigateToTabValue;
 			bool VideoMute;
 			bool Hidden;
@@ -74,8 +74,8 @@ namespace EGL3::Web::Epic::Responses {
 
 			PARSE_DEFINE(GenericMotd)
 				PARSE_ITEM("entryType", EntryType)
-				PARSE_ITEM("image", Image)
-				PARSE_ITEM("tileImage", TileImage)
+				PARSE_ITEM_OPT("image", Image)
+				PARSE_ITEM_OPT("tileImage", TileImage)
 				PARSE_ITEM_OPT("navigateToTabValue", NavigateToTabValue)
 				PARSE_ITEM("videoMute", VideoMute)
 				PARSE_ITEM("hidden", Hidden)

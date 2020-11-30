@@ -45,16 +45,16 @@ namespace EGL3::Web::Epic::Auth {
 			cpr::Payload{ { "grant_type", "client_credentials" } }
 		);
 
-		if (Cancelled) { return ERROR_CANCELLED; }
+		if (Cancelled) { return CANCELLED; }
 
 		if (ClientCredResponse.status_code != 200) {
-			return ERROR_CLIENT_CREDS_NOT_200;
+			return CLIENT_CREDS_NOT_200;
 		}
 
 		auto ClientCredJson = Http::ParseJson(ClientCredResponse);
 
 		if (ClientCredJson.HasParseError()) {
-			return ERROR_CLIENT_CREDS_JSON;
+			return CLIENT_CREDS_JSON;
 		}
 
 		// We don't care about any of the other parameters since this is only used once anyway
@@ -67,16 +67,16 @@ namespace EGL3::Web::Epic::Auth {
 			cpr::Body{ }
 		);
 
-		if (Cancelled) { return ERROR_CANCELLED; }
+		if (Cancelled) { return CANCELLED; }
 
 		if (DeviceAuthResponse.status_code != 200) {
-			return ERROR_DEVICE_AUTH_NOT_200;
+			return DEVICE_AUTH_NOT_200;
 		}
 
 		auto DeviceAuthJson = Http::ParseJson(DeviceAuthResponse);
 
 		if (DeviceAuthJson.HasParseError()) {
-			return ERROR_DEVICE_AUTH_JSON;
+			return DEVICE_AUTH_JSON;
 		}
 
 		auto& DeviceDeviceCodeValue = DeviceAuthJson["device_code"];
@@ -84,6 +84,7 @@ namespace EGL3::Web::Epic::Auth {
 
 		ExpiresAt = std::chrono::steady_clock::now() + std::chrono::seconds(DeviceAuthJson["expires_in"].GetInt64());
 
+		// Halved because I don't feel like waiting 10 seconds OkayChamp
 		RefreshInterval = std::chrono::seconds(DeviceAuthJson["interval"].GetInt64() / 2);
 
 		auto& DeviceAuthBrowserUrlValue = DeviceAuthJson["verification_uri_complete"];
@@ -91,19 +92,19 @@ namespace EGL3::Web::Epic::Auth {
 
 		OAuthResponseFuture = std::async(std::launch::async, &DeviceCode::RunOAuthResponseTask, this);
 
-		return ERROR_SUCCESS;
+		return SUCCESS;
 	}
 
 	DeviceCode::ErrorCode DeviceCode::RunOAuthResponseTask()
 	{
-		if (Cancelled) { return ERROR_CANCELLED; }
+		if (Cancelled) { return CANCELLED; }
 
 		auto NextSleep = std::chrono::steady_clock::now() + RefreshInterval;
 		while (!Cancelled) {
 			std::this_thread::sleep_until(NextSleep);
-			if (Cancelled) { return ERROR_CANCELLED; }
+			if (Cancelled) { return CANCELLED; }
 			if (std::chrono::steady_clock::now() > ExpiresAt) {
-				return ERROR_EXPIRED;
+				return EXPIRED;
 			}
 			NextSleep += RefreshInterval;
 
@@ -112,7 +113,7 @@ namespace EGL3::Web::Epic::Auth {
 				AuthClient,
 				cpr::Payload{ { "grant_type", "device_code" }, { "device_code", Code } }
 			);
-			if (Cancelled) { return ERROR_CANCELLED; }
+			if (Cancelled) { return CANCELLED; }
 
 			if (Response.status_code != 200) {
 				// User hasn't finished yet
@@ -122,13 +123,13 @@ namespace EGL3::Web::Epic::Auth {
 			auto RespJson = Http::ParseJson(Response);
 
 			if (RespJson.HasParseError()) {
-				return ERROR_DEVICE_CODE_JSON;
+				return DEVICE_CODE_JSON;
 			}
 
 			OAuthResponse = std::move(RespJson);
-			return ERROR_SUCCESS;
+			return SUCCESS;
 		}
 
-		return ERROR_CANCELLED;
+		return CANCELLED;
 	}
 }

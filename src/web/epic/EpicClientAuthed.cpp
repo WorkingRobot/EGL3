@@ -15,34 +15,34 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetAccount Resp;
 		if (!Responses::GetAccount::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -52,34 +52,34 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/externalAuths" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetAccountExternalAuths Resp;
 		if (!Responses::GetAccountExternalAuths::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -89,34 +89,34 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetDeviceAuths Resp;
 		if (!Responses::GetDeviceAuths::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -126,13 +126,13 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Post(
 			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
@@ -140,21 +140,21 @@ namespace EGL3::Web::Epic {
 			cpr::Body{ "{}" }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetDeviceAuths::DeviceAuth Resp;
 		if (!Responses::GetDeviceAuths::DeviceAuth::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -164,34 +164,34 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/" + AuthData.AccountId.value() + "/billingaccounts/default" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetDefaultBillingAccount Resp;
 		if (!Responses::GetDefaultBillingAccount::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -201,11 +201,11 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/" + Platform },
@@ -213,21 +213,21 @@ namespace EGL3::Web::Epic {
 			cpr::Parameters{ { "label", Label } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetAssets Resp;
 		if (!Responses::GetAssets::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -237,11 +237,11 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Post(
 			cpr::Url{ "https://launcher-public-service-prod-m.ol.epicgames.com/launcher/api/public/assets/v2/platform/" + Platform + "/catalogItem/" + CatalogItemId + "/app/" + AppName + "/label/" + Label },
@@ -249,21 +249,21 @@ namespace EGL3::Web::Epic {
 			cpr::Body{ "{}" }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetDownloadInfo Resp;
 		if (!Responses::GetDownloadInfo::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -273,11 +273,11 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/currencies" },
@@ -285,21 +285,21 @@ namespace EGL3::Web::Epic {
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetCurrencies Resp;
 		if (!Responses::GetCurrencies::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -309,20 +309,21 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		cpr::Parameters Parameters;
+		cpr::Parameters Parameters{
+			{ "includeDLCDetails", std::to_string(IncludeDLCDetails) },
+			{ "includeMainGameDetails", std::to_string(IncludeMainGameDetails) },
+			{ "country", Country },
+			{ "locale", Locale }
+		};
 		for (auto& Item : Items) {
 			Parameters.AddParameter({ "id", Item });
 		}
-		Parameters.AddParameter({ "includeDLCDetails", IncludeDLCDetails });
-		Parameters.AddParameter({ "includeMainGameDetails", IncludeMainGameDetails });
-		Parameters.AddParameter({ "country", Country });
-		Parameters.AddParameter({ "locale", Locale });
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/" + Namespace + "/bulk/items" },
@@ -330,21 +331,21 @@ namespace EGL3::Web::Epic {
 			Parameters
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetCatalogItems Resp;
 		if (!Responses::GetCatalogItems::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -354,13 +355,13 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/" + AuthData.AccountId.value() + "/entitlements" },
@@ -368,21 +369,21 @@ namespace EGL3::Web::Epic {
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetEntitlements Resp;
 		if (!Responses::GetEntitlements::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -392,34 +393,34 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/v1/" + AuthData.AccountId.value() + "/settings/externalSources/" + Platform },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetExternalSourceSettings Resp;
 		if (!Responses::GetExternalSourceSettings::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -429,35 +430,35 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!AuthData.AccountId.has_value()) { return ERROR_INVALID_TOKEN; }
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } },
-			cpr::Parameters{ { "includePending", IncludePending } }
+			cpr::Parameters{ { "includePending", std::to_string(IncludePending) } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetFriends Resp;
 		if (!Responses::GetFriends::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -467,32 +468,32 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/blocklist/" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetBlockedUsers Resp;
 		if (!Responses::GetBlockedUsers::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -502,32 +503,32 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
 			cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/" + AppName + "/status" },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetLightswitchStatus::ServiceStatus Resp;
 		if (!Responses::GetLightswitchStatus::ServiceStatus::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;
@@ -538,11 +539,11 @@ namespace EGL3::Web::Epic {
 	{
 		RunningFunctionGuard Guard(*this);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
-		if (!EnsureTokenValidity()) { return ERROR_INVALID_TOKEN; }
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		cpr::Parameters Parameters;
 		for (auto& AppName : AppNames) {
@@ -554,21 +555,21 @@ namespace EGL3::Web::Epic {
 			Parameters
 		);
 
-		if (GetCancelled()) { return ERROR_CANCELLED; }
+		if (GetCancelled()) { return CANCELLED; }
 
 		if (Response.status_code != 200) {
-			return ERROR_CODE_NOT_200;
+			return CODE_NOT_200;
 		}
 
 		auto RespJson = Http::ParseJson(Response);
 
 		if (RespJson.HasParseError()) {
-			return ERROR_CODE_NOT_JSON;
+			return CODE_NOT_JSON;
 		}
 
 		Responses::GetLightswitchStatus Resp;
 		if (!Responses::GetLightswitchStatus::Parse(RespJson, Resp)) {
-			return ERROR_CODE_BAD_JSON;
+			return CODE_BAD_JSON;
 		}
 
 		return Resp;

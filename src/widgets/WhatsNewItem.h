@@ -37,7 +37,7 @@ namespace EGL3::Widgets {
         WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
             WhatsNewItem(
                 Item.Title,
-                Item.ShareImage,
+                Item.ShareImage.value_or(Item.TrendingImage),
                 Item.Author.empty() ? 
                     Storage::Models::WhatsNew::SourceToString(Source) :
                     Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Author),
@@ -48,7 +48,7 @@ namespace EGL3::Widgets {
         WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
             WhatsNewItem(
                 Item.Title,
-                Item.Image,
+                Item.Image.value_or(""),
                 Storage::Models::WhatsNew::SourceToString(Source),
                 Item.Body,
                 Time)
@@ -57,7 +57,7 @@ namespace EGL3::Widgets {
         WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
             WhatsNewItem(
                 Item.Message.Title,
-                Item.Message.Image,
+                Item.Message.Image.value_or(""),
                 Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform)),
                 Item.Message.Body,
                 Time)
@@ -67,9 +67,14 @@ namespace EGL3::Widgets {
             WhatsNewItem(
                 Item.Title,
                 Item.Image.value_or(""),
-                Item.SubGame.has_value() ?
+                (Item.SubGame.has_value() ?
                     Glib::ustring::compose("%2 %1", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::SubGameToString(Item.SubGame.value())) :
-                    Storage::Models::WhatsNew::SourceToString(Source),
+                    Storage::Models::WhatsNew::SourceToString(Source)
+                ) +
+                ((Item.PlaylistId.has_value() && !Item.PlaylistId->empty()) ?
+                    Glib::ustring::compose(" (%1)", Item.PlaylistId.value()) :
+                    Glib::ustring("")
+                ),
                 Item.Body,
                 Time)
         { }
@@ -78,7 +83,7 @@ namespace EGL3::Widgets {
             WhatsNewItem(
                 Item.Message.Title,
                 Item.Message.Image.value_or(""),
-                Item.Message.SubGame.has_value() ?
+                (Item.Message.SubGame.has_value() && !Item.Message.SubGame->empty()) ?
                     Glib::ustring::compose("%3 %1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform), Storage::Models::WhatsNew::SubGameToString(Item.Message.SubGame.value())) :
                     Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform)),
                 Item.Message.Body,
@@ -89,14 +94,14 @@ namespace EGL3::Widgets {
             WhatsNewItem(
                 Item.Message.Title,
                 Item.Message.Image.value_or(""),
-                Item.Message.SubGame.has_value() ?
+                (Item.Message.SubGame.has_value() && !Item.Message.SubGame->empty()) ?
                 Glib::ustring::compose("%3 %1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Region, Storage::Models::WhatsNew::SubGameToString(Item.Message.SubGame.value())) :
                 Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Region),
                 Item.Message.Body,
                 Time)
         { }
 
-        WhatsNewItem(WhatsNewItem&& other) = default;
+        WhatsNewItem(WhatsNewItem&&) = default;
         WhatsNewItem& operator=(WhatsNewItem&&) = default;
 
         operator Gtk::Widget&() {

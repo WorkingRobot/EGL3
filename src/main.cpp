@@ -5,13 +5,10 @@
 #include "utils/OpenBrowser.h"
 #include "modules/Modules.h"
 #include "utils/GladeBuilder.h"
-#include "web/epic/EpicClient.h"
 #include "web/epic/EpicClientAuthed.h"
-#include "web/epic/responses/Responses.h"
+#include "web/xmpp/XmppClient.h"
 #include "storage/persistent/Store.h"
 #include "utils/mmio/MmioFile.h"
-#include "storage/game/RunlistStream.h"
-#include "storage/game/Archive.h"
 
 namespace EGL3 {
     __forceinline int Start() {
@@ -19,18 +16,19 @@ namespace EGL3 {
         static const cpr::Authentication AuthClientLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
         static const cpr::Authentication AuthClientAndroidPortal{ "38dbfc3196024d5980386a37b7c792bb", "a6280b87-e45e-409b-9681-8f15eb7dbcf5" };
 
+        //Web::Xmpp::XmppClient Client("acccountId", "token");
+
         if constexpr (false)
         {
             Web::Epic::Auth::DeviceCode DevCodeAuth(AuthClientSwitch);
             auto BrowserUrlResult = DevCodeAuth.GetBrowserUrlFuture().get();
-            EGL3_ASSERT(BrowserUrlResult == Web::Epic::Auth::DeviceCode::ERROR_SUCCESS, "Could not get browser url");
+            EGL3_ASSERT(BrowserUrlResult == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not get browser url");
             Utils::OpenInBrowser(DevCodeAuth.GetBrowserUrl());
 
             auto OAuthRespResult = DevCodeAuth.GetOAuthResponseFuture().get();
-            EGL3_ASSERT(OAuthRespResult == Web::Epic::Auth::DeviceCode::ERROR_SUCCESS, "Could not get oauth data");
+            EGL3_ASSERT(OAuthRespResult == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not get oauth data");
 
             Web::Epic::EpicClientAuthed C(DevCodeAuth.GetOAuthResponse(), AuthClientSwitch);
-            C.CreateDeviceAuth();
 
             Web::Epic::Responses::OAuthToken AuthData;
             EGL3_ASSERT(Web::Epic::Responses::OAuthToken::Parse(DevCodeAuth.GetOAuthResponse(), AuthData), "Could not parse oauth data");
@@ -46,7 +44,7 @@ namespace EGL3 {
         if constexpr (false)
         {
             Web::Epic::Auth::ClientCredentials CredsAuth(AuthClientAndroidPortal);
-            EGL3_ASSERT(CredsAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ClientCredentials::ERROR_SUCCESS, "Could not get oauth data");
+            EGL3_ASSERT(CredsAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ClientCredentials::SUCCESS, "Could not get oauth data");
             Web::Epic::EpicClientAuthed C(CredsAuth.GetOAuthResponse(), AuthClientAndroidPortal);
 
             auto Resp = C.GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");

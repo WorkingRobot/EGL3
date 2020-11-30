@@ -6,7 +6,7 @@ namespace EGL3::Web::Epic::Responses {
 		// for the fields that are HTML
 		struct BlogItem {
 			std::string Image; // smaller 1:1
-			std::string ShareImage; // 16:9 wide
+			std::optional<std::string> ShareImage; // 16:9 wide
 			std::string TrendingImage; // 19:6 wide af
 			std::string Author;
 			std::string Title;
@@ -18,7 +18,7 @@ namespace EGL3::Web::Epic::Responses {
 
 			PARSE_DEFINE(BlogItem)
 				PARSE_ITEM("image", Image)
-				PARSE_ITEM("shareImage", ShareImage)
+				PARSE_ITEM_OPT("shareImage", ShareImage)
 				PARSE_ITEM("trendingImage", TrendingImage)
 				PARSE_ITEM("author", Author)
 				PARSE_ITEM("title", Title)

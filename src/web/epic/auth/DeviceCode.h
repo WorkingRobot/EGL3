@@ -10,14 +10,14 @@ namespace EGL3::Web::Epic::Auth {
 	class DeviceCode {
 	public:
 		enum ErrorCode {
-			ERROR_SUCCESS,
-			ERROR_CANCELLED,
-			ERROR_CLIENT_CREDS_NOT_200,
-			ERROR_CLIENT_CREDS_JSON,
-			ERROR_DEVICE_AUTH_NOT_200,
-			ERROR_DEVICE_AUTH_JSON,
-			ERROR_EXPIRED,
-			ERROR_DEVICE_CODE_JSON
+			SUCCESS,
+			CANCELLED,
+			CLIENT_CREDS_NOT_200,
+			CLIENT_CREDS_JSON,
+			DEVICE_AUTH_NOT_200,
+			DEVICE_AUTH_JSON,
+			EXPIRED,
+			DEVICE_CODE_JSON
 		};
 
 		DeviceCode(const cpr::Authentication& AuthClient);

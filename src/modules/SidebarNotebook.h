@@ -9,13 +9,12 @@
 namespace EGL3::Modules {
     class SidebarNotebookModule : public BaseModule {
     public:
-        SidebarNotebookModule(Utils::GladeBuilder& Builder) : SelectedBtn(Builder.GetWidget<Gtk::Button>("PlayTabBtn")) {
+        SidebarNotebookModule(Utils::GladeBuilder& Builder) : SelectedBtn(Builder.GetWidget<Gtk::Button>("NewsTabBtn")) {
             auto& Notebook = Builder.GetWidget<Gtk::Notebook>("EGL3Notebook");
-            TabSetup<0>("PlayTabBtn", Notebook, Builder);
-            TabSetup<1>("NewsTabBtn", Notebook, Builder);
-            TabSetup<2>("FriendsTabBtn", Notebook, Builder);
-            TabSetup<3>("SettingsTabBtn", Notebook, Builder);
-            TabSetup<4>("AboutTabBtn", Notebook, Builder);
+            TabSetup<0>("NewsTabBtn", Notebook, Builder);
+            TabSetup<1>("FriendsTabBtn", Notebook, Builder);
+            TabSetup<2>("SettingsTabBtn", Notebook, Builder);
+            TabSetup<3>("AboutTabBtn", Notebook, Builder);
         }
 
     private:

@@ -3,7 +3,6 @@
 #include "BaseModule.h"
 
 #include <gtkmm.h>
-#include <variant>
 
 #include "../storage/models/WhatsNew.h"
 #include "../storage/persistent/Store.h"
@@ -12,22 +11,11 @@
 #include "../web/epic/EpicClient.h"
 #include "../widgets/WhatsNewItem.h"
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0') 
-
 namespace EGL3::Modules {
 	class WhatsNewModule : public BaseModule {
 	public:
-		WhatsNewModule(const Glib::RefPtr<Gtk::Application>& App, Utils::GladeBuilder& Builder) :
-			Storage((Storage::Persistent::Store*)App->get_data("EGL3Storage")), 
+		WhatsNewModule(Storage::Persistent::Store* Storage, Utils::GladeBuilder& Builder) :
+			Storage(Storage),
 			Box(Builder.GetWidget<Gtk::Box>("PlayWhatsNewBox")),
 			RefreshBtn(Builder.GetWidget<Gtk::Button>("PlayWhatsNewRefreshBtn")),
 			CheckBR(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewBR")),
@@ -40,7 +28,6 @@ namespace EGL3::Modules {
 			Dispatcher.connect([this]() { UpdateBox(); });
 			RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
 
-			printf(BYTE_TO_BINARY_PATTERN" init selection\n", BYTE_TO_BINARY(Selection));
 			CheckBR.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::BR>());
 			CheckBlog.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::BLOG>());
 			CheckCreative.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::CREATIVE>());
@@ -56,6 +43,10 @@ namespace EGL3::Modules {
 			Refresh();
 		}
 
+		~WhatsNewModule() {
+			std::lock_guard Guard(ItemDataMutex);
+		}
+
 		void Refresh() {
 			if (!RefreshBtn.get_sensitive()) {
 				return;
@@ -64,7 +55,8 @@ namespace EGL3::Modules {
 			RefreshBtn.set_sensitive(false);
 
 			RefreshTask = std::async(std::launch::async, [this]() {
-				std::lock_guard ItemDataGuard(ItemDataMutex);
+				std::unique_lock ItemDataGuard(ItemDataMutex);
+
 				ItemData.clear();
 				Web::Epic::EpicClient Client;
 
@@ -78,7 +70,7 @@ namespace EGL3::Modules {
 					ItemDataError = News.GetErrorCode();
 				}
 				else {
-					ItemDataError = Web::BaseClient::ERROR_SUCCESS;
+					ItemDataError = Web::BaseClient::SUCCESS;
 
 					auto& Store = Storage->Get(Storage::Persistent::Key::WhatsNewTimestamps);
 
@@ -184,6 +176,7 @@ namespace EGL3::Modules {
 					}, A.Item);
 				}), ItemData.end());
 
+				ItemDataGuard.unlock();
 				Dispatcher.emit();
 			});
 		}
@@ -211,7 +204,6 @@ namespace EGL3::Modules {
 				(CheckSTW.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::STW) |
 				(CheckCreative.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::CREATIVE) |
 				(CheckNotice.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::NOTICE);
-			printf(BYTE_TO_BINARY_PATTERN" updated selection\n", BYTE_TO_BINARY(Selection));
 			Refresh();
 		}
 

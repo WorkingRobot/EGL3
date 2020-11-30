@@ -3,15 +3,10 @@
 #include "BaseModule.h"
 
 #include <gtkmm.h>
-#include <gdk/gdk.h>
-#include <variant>
 
-#include "../storage/models/WhatsNew.h"
-#include "../storage/persistent/Store.h"
 #include "../utils/GladeBuilder.h"
 #include "../utils/OpenBrowser.h"
 #include "../web/epic/EpicClient.h"
-#include "../widgets/WhatsNewItem.h"
 
 namespace EGL3::Modules {
 	class StatusPageModule : public BaseModule {

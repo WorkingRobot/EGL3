@@ -4,29 +4,22 @@ project(EGL3)
 
 option(ENABLE_CONSOLE "Use console subsystem" OFF)
 
-## Use /MT instead of /MD ##
-set(CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS_MINSIZEREL
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_C_FLAGS_MINSIZEREL
-        CMAKE_C_FLAGS_RELEASE
-        )
-foreach(CompilerFlag ${CompilerFlags})
-  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-endforeach()
-
-
 ## Dependencies ##
 
 # Http #
 find_package(cpr CONFIG REQUIRED)
 link_libraries(cpr)
+
+# WebSockets (XMPP) #
+find_library(WS_TLS_LIBRARY mbedtls)
+get_filename_component(WS_TLS_LIBRARY ${WS_TLS_LIBRARY} DIRECTORY)
+link_libraries(${WS_TLS_LIBRARY}/mbedtls.lib ${WS_TLS_LIBRARY}/mbedcrypto.lib ${WS_TLS_LIBRARY}/mbedx509.lib)
+find_library(WS_LIBRARY ixwebsocket)
+link_libraries(${WS_LIBRARY})
+
+# XML (XMPP) #
+find_path(RAPIDXML_INCLUDE_DIRS "rapidxml/rapidxml.hpp")
+include_directories(${RAPIDXML_INCLUDE_DIRS})
 
 # JSON #
 find_package(RapidJSON CONFIG REQUIRED)
