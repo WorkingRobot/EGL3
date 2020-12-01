@@ -86,12 +86,14 @@ namespace EGL3::Modules {
 					// Emergency Notices
 
 					if (SourceEnabled<Storage::Models::WhatsNew::ItemSource::NOTICE>()) {
-						for (auto& Post : News->EmergencyNotice.News.Messages) {
-							if (Post.Hidden) {
-								continue;
+						if (News->EmergencyNotice.News.Messages.has_value()) {
+							for (auto& Post : News->EmergencyNotice.News.Messages.value()) {
+								if (Post.Hidden) {
+									continue;
+								}
+								// Emergency notices should be at the top (plus, they're not unique between downtimes so it's hard to put a uuid on them anyway)
+								ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
 							}
-							// Emergency notices should be at the top (plus, they're not unique between downtimes so it's hard to put a uuid on them anyway)
-							ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
 						}
 
 						if (News->EmergencyNotice.News.RegionMessages.has_value()) {
@@ -146,11 +148,13 @@ namespace EGL3::Modules {
 					// STW News
 
 					if (SourceEnabled<Storage::Models::WhatsNew::ItemSource::STW>()) {
-						for (auto& Post : News->SaveTheWorldNews.News.Messages) {
-							if (Post.Hidden) {
-								continue;
+						if (News->SaveTheWorldNews.News.Messages.has_value()) {
+							for (auto& Post : News->SaveTheWorldNews.News.Messages.value()) {
+								if (Post.Hidden) {
+									continue;
+								}
+								ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::STW);
 							}
-							ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::STW);
 						}
 					}
 				}

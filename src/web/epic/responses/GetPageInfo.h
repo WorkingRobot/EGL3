@@ -111,14 +111,14 @@ namespace EGL3::Web::Epic::Responses {
 		};
 
 		struct GenericContainer {
-			std::vector<GenericNewsPost> Messages;
+			std::optional<std::vector<GenericNewsPost>> Messages;
 			std::optional<std::vector<GenericPlatformPost>> PlatformMessages;
 			std::optional<std::vector<GenericRegionPost>> RegionMessages;
 			std::optional<std::vector<GenericMotd>> Motds;
 			std::optional<std::vector<GenericPlatformMotd>> PlatformMotds;
 
 			PARSE_DEFINE(GenericContainer)
-				PARSE_ITEM("messages", Messages)
+				PARSE_ITEM_OPT("messages", Messages)
 				PARSE_ITEM_OPT("platform_messages", PlatformMessages)
 				PARSE_ITEM_OPT("region_messages", RegionMessages)
 				PARSE_ITEM_OPT("motds", Motds)
