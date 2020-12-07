@@ -5,7 +5,8 @@
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
-#define WEB_SUFFIX_DATA cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
+//#define WEB_SUFFIX_DATA cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
+#define WEB_SUFFIX_DATA
 
 namespace EGL3::Web {
 	// static wrapper class for handling everything http errors/logging/etc
@@ -47,22 +48,22 @@ namespace EGL3::Web {
 	private:
 		template<typename... Ts>
 		static cpr::Response GetSync(Ts&&... ts) {
-			return cpr::Get(std::forward<decltype(ts)>(ts)...);
+			return cpr::Get(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response PostSync(Ts&&... ts) {
-			return cpr::Post(std::forward<decltype(ts)>(ts)...);
+			return cpr::Post(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response DeleteSync(Ts&&... ts) {
-			return cpr::Delete(std::forward<decltype(ts)>(ts)...);
+			return cpr::Delete(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response PutSync(Ts&&... ts) {
-			return cpr::Put(std::forward<decltype(ts)>(ts)...);
+			return cpr::Put(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 	};
 }

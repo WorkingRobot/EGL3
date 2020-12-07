@@ -579,7 +579,7 @@ namespace EGL3::Web::Xmpp {
 		{
 		case ix::WebSocketMessageType::Message:
 		{
-			printf("%s\n", Message->str.c_str());
+			//printf("%s\n", Message->str.c_str());
 			auto Document = CreateDocument();
 			auto Data = std::make_unique<char[]>(Message->str.size() + 1);
 			memcpy(Data.get(), Message->str.c_str(), Message->str.size() + 1); // c_str is required to have a \0 at the end
