@@ -5,6 +5,8 @@
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
+#define WEB_SUFFIX_DATA cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
+
 namespace EGL3::Web {
 	// static wrapper class for handling everything http errors/logging/etc
 	class Http {
@@ -12,17 +14,22 @@ namespace EGL3::Web {
 	public:
 		template<typename... Ts>
 		static cpr::Response Get(Ts&&... ts) {
-			return cpr::GetAsync(std::forward<decltype(ts)>(ts)...).get();
+			return cpr::GetAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		template<typename... Ts>
 		static cpr::Response Post(Ts&&... ts) {
-			return cpr::PostAsync(std::forward<decltype(ts)>(ts)...).get();
+			return cpr::PostAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		template<typename... Ts>
 		static cpr::Response Delete(Ts&&... ts) {
-			return cpr::DeleteAsync(std::forward<decltype(ts)>(ts)...).get();
+			return cpr::DeleteAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
+		}
+
+		template<typename... Ts>
+		static cpr::Response Put(Ts&&... ts) {
+			return cpr::PutAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
 		}
 
 		// Make sure to check validity with Json.HasParseError()
@@ -51,6 +58,11 @@ namespace EGL3::Web {
 		template<typename... Ts>
 		static cpr::Response DeleteSync(Ts&&... ts) {
 			return cpr::Delete(std::forward<decltype(ts)>(ts)...);
+		}
+
+		template<typename... Ts>
+		static cpr::Response PutSync(Ts&&... ts) {
+			return cpr::Put(std::forward<decltype(ts)>(ts)...);
 		}
 	};
 }

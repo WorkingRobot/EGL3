@@ -2,6 +2,7 @@
 
 #include <gtkmm.h>
 
+#include "AsyncImage.h"
 #include "../storage/models/WhatsNew.h"
 #include "../utils/Humanize.h"
 #include "../web/epic/responses/Responses.h"
@@ -9,32 +10,18 @@
 namespace EGL3::Widgets {
     class WhatsNewItem {
     public:
-        WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date) {
-            ImageDispatcher.connect([this]() {
-                MainImage.set(ImageBuf);
-            });
-            ImageTask = std::async(std::launch::async, [this](const std::string& ImageUrl) {
-                auto Response = Web::Http::Get(cpr::Url{ ImageUrl });
-                if (Response.status_code != 200) {
-                    return;
-                }
-                auto Stream = Gio::MemoryInputStream::create();
-                Stream->add_bytes(Glib::Bytes::create(Response.text.data(), Response.text.size()));
-                ImageBuf = Gdk::Pixbuf::create_from_stream_at_scale(Stream, 768, 432, true);
-
-                ImageDispatcher.emit();
-            }, ImageUrl);
-
+        WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) {
             this->Title.set_text(Title);
             this->Source.set_text(Source);
             auto date = Utils::Humanize(Date);
             this->Date.set_text(date);
             this->Description.set_text(Description);
+            this->MainImage.set_async(ImageUrl, 768, 432, ImageCache);
 
             Construct();
         }
 
-        WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
                 Item.Title,
                 Item.ShareImage.value_or(Item.TrendingImage),
@@ -42,30 +29,33 @@ namespace EGL3::Widgets {
                     Storage::Models::WhatsNew::SourceToString(Source) :
                     Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Author),
                 Item.ShareDescription,
-                Time)
-        { }
+                Time,
+                ImageCache)
+        {}
 
-        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
                 Item.Title,
                 Item.Image.value_or(""),
                 Storage::Models::WhatsNew::SourceToString(Source),
                 Item.Body,
-                Time)
-        { }
+                Time,
+                ImageCache)
+        {}
 
-        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
                 Item.Message.Title,
                 Item.Message.Image.value_or(""),
                 Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform)),
                 Item.Message.Body,
-                Time)
-        { }
+                Time,
+                ImageCache)
+        {}
 
-        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
-                Item.Title,
+                Item.Title.value_or(""),
                 Item.Image.value_or(""),
                 (Item.SubGame.has_value() ?
                     Glib::ustring::compose("%2 %1", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::SubGameToString(Item.SubGame.value())) :
@@ -75,31 +65,34 @@ namespace EGL3::Widgets {
                     Glib::ustring::compose(" (%1)", Item.PlaylistId.value()) :
                     Glib::ustring("")
                 ),
-                Item.Body,
-                Time)
-        { }
+                Item.Body.value_or(""),
+                Time,
+                ImageCache)
+        {}
 
-        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
-                Item.Message.Title,
+                Item.Message.Title.value_or(""),
                 Item.Message.Image.value_or(""),
                 (Item.Message.SubGame.has_value() && !Item.Message.SubGame->empty()) ?
                     Glib::ustring::compose("%3 %1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform), Storage::Models::WhatsNew::SubGameToString(Item.Message.SubGame.value())) :
                     Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Storage::Models::WhatsNew::PlatformToString(Item.Platform)),
-                Item.Message.Body,
-                Time)
-        { }
+                Item.Message.Body.value_or(""),
+                Time,
+                ImageCache)
+        {}
 
-        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericRegionPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source) :
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericRegionPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
             WhatsNewItem(
-                Item.Message.Title,
+                Item.Message.Title.value_or(""),
                 Item.Message.Image.value_or(""),
                 (Item.Message.SubGame.has_value() && !Item.Message.SubGame->empty()) ?
                 Glib::ustring::compose("%3 %1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Region, Storage::Models::WhatsNew::SubGameToString(Item.Message.SubGame.value())) :
                 Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Region),
-                Item.Message.Body,
-                Time)
-        { }
+                Item.Message.Body.value_or(""),
+                Time,
+                ImageCache)
+        {}
 
         WhatsNewItem(WhatsNewItem&&) = default;
         WhatsNewItem& operator=(WhatsNewItem&&) = default;
@@ -152,7 +145,7 @@ namespace EGL3::Widgets {
         }
 
         Gtk::Box BaseContainer{ Gtk::ORIENTATION_VERTICAL };
-        Gtk::Image MainImage;
+        AsyncImage MainImage;
         Gtk::Box TitleContainer{ Gtk::ORIENTATION_HORIZONTAL };
         Gtk::Label Title;
         Gtk::Label Source;
@@ -161,10 +154,6 @@ namespace EGL3::Widgets {
         Gtk::Box ButtonContainer{ Gtk::ORIENTATION_HORIZONTAL };
         Gtk::Button MarkReadButton{ "Mark as Read" };
         Gtk::Button ClickButton{ "View Online" };
-
-        Glib::RefPtr<Gdk::Pixbuf> ImageBuf;
-        std::future<void> ImageTask;
-        Glib::Dispatcher ImageDispatcher;
 
         sigc::connection MarkReadAction;
         sigc::connection ClickAction;

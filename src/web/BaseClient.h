@@ -42,17 +42,35 @@ namespace EGL3::Web {
             std::unique_ptr<T> Data;
         };
 
+        // For 204 responses, or update requests (no real data is returned)
+        template<>
+        class Response<void> {
+        public:
+            bool HasError() const {
+                return Error != SUCCESS;
+            }
+
+            ErrorCode GetErrorCode() const {
+                return Error;
+            }
+
+            Response() : Response(SUCCESS) {}
+            Response(ErrorCode Error) : Error(Error) {}
+
+        private:
+            ErrorCode Error;
+        };
+
         ~BaseClient();
 
     protected:
-        virtual void KillAuthentication() {
-            // Implementation is offered to derived class
-            // This is kind given as an alternative to a destructor
-            // The base client's destructor handles the concurrency,
-            // so we don't want the derived client's destructor to
-            // invalidate its token before we know all of its requests
-            // have ended.
-        }
+        // Implementation is offered to derived classes
+        // This is given as an alternative to a destructor
+        // The base client's destructor handles the concurrency,
+        // so we don't want the derived client's destructor to
+        // invalidate its token before we know all of its requests
+        // have ended.
+        virtual void KillAuthentication() {}
 
         __forceinline const std::atomic_bool& GetCancelled() const {
             return Cancelled;

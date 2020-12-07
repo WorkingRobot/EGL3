@@ -9,8 +9,8 @@ namespace EGL3::Web::Epic::Responses {
 			std::optional<std::string> MessageType;
 			std::optional<std::string> SubGame; // "br", "stw"
 			std::optional<std::string> AdSpace;
-			std::string Title;
-			std::string Body;
+			std::optional<std::string> Title;
+			std::optional<std::string> Body;
 			bool Spotlight;
 
 			PARSE_DEFINE(GenericNewsPost)
@@ -20,8 +20,8 @@ namespace EGL3::Web::Epic::Responses {
 				PARSE_ITEM_OPT("messagetype", MessageType)
 				PARSE_ITEM_OPT("subgame", SubGame)
 				PARSE_ITEM_OPT("adspace", AdSpace)
-				PARSE_ITEM("title", Title)
-				PARSE_ITEM("body", Body)
+				PARSE_ITEM_OPT("title", Title)
+				PARSE_ITEM_OPT("body", Body)
 				PARSE_ITEM("spotlight", Spotlight)
 			PARSE_END
 		};

@@ -9,7 +9,7 @@
 namespace EGL3::Modules {
     class SidebarNotebookModule : public BaseModule {
     public:
-        SidebarNotebookModule(Utils::GladeBuilder& Builder) : SelectedBtn(Builder.GetWidget<Gtk::Button>("NewsTabBtn")) {
+        SidebarNotebookModule(const Utils::GladeBuilder& Builder) : SelectedBtn(Builder.GetWidget<Gtk::Button>("NewsTabBtn")) {
             auto& Notebook = Builder.GetWidget<Gtk::Notebook>("EGL3Notebook");
             TabSetup<0>("NewsTabBtn", Notebook, Builder);
             TabSetup<1>("FriendsTabBtn", Notebook, Builder);
@@ -27,7 +27,7 @@ namespace EGL3::Modules {
         }
 
         template<int TabIdx>
-        void TabSetup(char* WidgetName, Gtk::Notebook& Notebook, Utils::GladeBuilder& Builder) {
+        void TabSetup(char* WidgetName, Gtk::Notebook& Notebook, const Utils::GladeBuilder& Builder) {
             auto& TabBtn = Builder.GetWidget<Gtk::Button>(WidgetName);
             if (TabIdx == Notebook.get_current_page()) {
                 TabBtn.set_sensitive(false);

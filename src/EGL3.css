@@ -49,3 +49,15 @@
 .status-operational {
     color: #2fcc66;
 }
+
+.main-headerbar entry,
+.main-headerbar spinbutton,
+.main-headerbar button,
+.main-headerbar separator {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.main-headerbar {
+    min-height: 24px;
+}

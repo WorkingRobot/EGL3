@@ -1,25 +1,40 @@
 #include "XmppClient.h"
 
 #include <ixwebsocket/IXNetSystem.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <rapidxml/rapidxml_print.hpp>
-#include <glibmm/ustring.h>
 
 #include "../../utils/Assert.h"
 #include "../../utils/Base64.h"
+#include "../../utils/Crc32.h"
 #include "../../utils/Hex.h"
 #include "../../utils/RandGuid.h"
 #include "../../utils/streams/MemoryStream.h"
 
 namespace EGL3::Web::Xmpp {
-	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken) : State(ClientState::OPENING)
+	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, const Json::StatusData&)>& OnPresenceUpdate) :
+		OnLoggedIn(OnLoggedIn),
+		OnPresenceUpdate(OnPresenceUpdate),
+		State(ClientState::OPENING)
 	{
-		std::call_once(InitFlag, []() {printf("initializing system\n"); ix::initNetSystem(); printf("initalized system\n"); });
+		std::call_once(InitFlag, ix::initNetSystem);
 
 		Socket.setUrl("wss://xmpp-service-prod.ol.epicgames.com//");
 		Socket.addSubProtocol("xmpp");
 		Socket.setOnMessageCallback([this](auto& Message) { ReceivedMessage(Message); });
-		Socket.setTrafficTrackerCallback([](size_t size, bool incoming) {
-			printf("size %zu, %s\n", size, incoming ? "in" : "out");
+		Socket.setTrafficTrackerCallback([this](size_t size, bool incoming) {
+			// BackgroundPingNextTime is the time until a ping needs to be sent from the client
+			// Any text traffic resets this timeout back to 60s
+			{
+				auto OldValue = BackgroundPingNextTime.load();
+				auto NewValue = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+				do {
+					if (OldValue == std::chrono::steady_clock::time_point::max()) {
+						return false;
+					}
+				} while (!BackgroundPingNextTime.compare_exchange_weak(OldValue, NewValue));
+			}
 		});
 
 		{
@@ -30,23 +45,99 @@ namespace EGL3::Web::Xmpp {
 			AuthStream.write(AccessToken.c_str(), AccessToken.size());
 			EncodedAuthValue = Utils::B64Encode((uint8_t*)AuthStream.get(), AuthStream.size());
 		}
-		CurrentJid = AccountId + "@prod.ol.epicgames.com";
+		CurrentJidWithoutResource = CurrentJid = AccountId + "@prod.ol.epicgames.com";
 
-		printf("starting\n");
 		Socket.start();
-	}
-
-	void XmppClient::KillAuthentication()
-	{
-		//BackgroundPingCancelled = true;
-		BackgroundPingFuture.get();
-		// TODO: move this to when gtk is closing the app,
-		// so we can ensure safety when 2+ clients are used
-		ix::uninitNetSystem();
 	}
 
 	std::unique_ptr<rapidxml::xml_document<>> CreateDocument() {
 		return std::make_unique<rapidxml::xml_document<>>();
+	}
+
+	void SendXml(ix::WebSocket& Socket, const rapidxml::xml_node<>& Node)
+	{
+		std::string OutputString;
+		rapidxml::print(std::back_inserter(OutputString), Node, rapidxml::print_no_indenting);
+		Socket.sendText(OutputString);
+	}
+
+	void XmppClient::SetPresence(const Json::StatusData& Status)
+	{
+		auto CurrentTime = Json::GetCurrentTimePoint();
+		auto Document = CreateDocument();
+		auto RootNode = Document->allocate_node(rapidxml::node_element, "presence");
+		Document->append_node(RootNode);
+		if (Status.ShowStatus != Json::ShowStatus::Online && Status.ShowStatus != Json::ShowStatus::Offline) {
+			auto ShowNode = Document->allocate_node(rapidxml::node_element, "show");
+			RootNode->append_node(ShowNode);
+			switch (Status.ShowStatus)
+			{
+			case EGL3::Web::Xmpp::Json::ShowStatus::Chat:
+				ShowNode->value("chat", 4);
+				break;
+			case EGL3::Web::Xmpp::Json::ShowStatus::DoNotDisturb:
+				ShowNode->value("dnd", 3);
+				break;
+			case EGL3::Web::Xmpp::Json::ShowStatus::Away:
+				ShowNode->value("away", 4);
+				break;
+			case EGL3::Web::Xmpp::Json::ShowStatus::ExtendedAway:
+				ShowNode->value("xa", 2);
+				break;
+			}
+		}
+
+		auto StatusNode = Document->allocate_node(rapidxml::node_element, "status");
+		RootNode->append_node(StatusNode);
+		rapidjson::StringBuffer StatusBuffer;
+		{
+			rapidjson::Writer<rapidjson::StringBuffer> Writer(StatusBuffer);
+
+			Writer.StartObject();
+
+			Writer.Key("Status");
+			Writer.String(Status.Status.c_str());
+
+			Writer.Key("bIsPlaying");
+			Writer.Bool(Status.Playing);
+
+			Writer.Key("bIsJoinable");
+			Writer.Bool(Status.Joinable);
+
+			Writer.Key("bHasVoiceSupport");
+			Writer.Bool(Status.HasVoiceSupport.value_or(false));
+
+			if (Status.ProductName.has_value()) {
+				Writer.Key("ProductName");
+				Writer.String(Status.ProductName.value().c_str());
+			}
+
+			Writer.Key("SessionId");
+			Writer.String(Status.SessionId.c_str());
+
+			Writer.Key("Properties");
+			Status.Properties.WriteTo(Writer);
+
+			Writer.EndObject();
+		}
+		StatusNode->value(StatusBuffer.GetString(), StatusBuffer.GetLength());
+
+		auto DelayNode = Document->allocate_node(rapidxml::node_element, "delay");
+		RootNode->append_node(DelayNode);
+		DelayNode->append_attribute(Document->allocate_attribute("stamp", CurrentTime.c_str(), 5, CurrentTime.size()));
+		DelayNode->append_attribute(Document->allocate_attribute("xmlns", "urn:xmpp:delay"));
+
+		SendXml(Socket, *Document);
+	}
+
+	XmppClient::~XmppClient()
+	{
+		BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
+		BackgroundPingFuture.get();
+		Socket.close();
+		// TODO: move this to when gtk is closing the app,
+		// so we can ensure safety when 2+ clients are used
+		ix::uninitNetSystem();
 	}
 
 	// Subtract 1, we aren't comparing \0 at the end of the source string
@@ -59,10 +150,10 @@ namespace EGL3::Web::Xmpp {
 	}
 
 	bool XmlStringEqual(const char* XmlString, size_t XmlStringSize, const std::string& SourceString) {
-		if (XmlStringSize != SourceString.size() - 1) {
+		if (XmlStringSize != SourceString.size()) {
 			return false;
 		}
-		return memcmp(XmlString, SourceString.c_str(), SourceString.size() - 1) == 0;
+		return memcmp(XmlString, SourceString.c_str(), SourceString.size()) == 0;
 	}
 
 	template<size_t SourceStringSize>
@@ -74,11 +165,13 @@ namespace EGL3::Web::Xmpp {
 		return XmlStringEqual(Node->name(), Node->name_size(), SourceString);
 	}
 
-	void SendXml(ix::WebSocket& Socket, const rapidxml::xml_node<>& Node)
-	{
-		std::string OutputString;
-		rapidxml::print(std::back_inserter(OutputString), Node, rapidxml::print_no_indenting);
-		Socket.sendText(OutputString);
+	template<size_t SourceStringSize>
+	bool XmlValueEqual(const rapidxml::xml_base<>* Node, const char(&SourceString)[SourceStringSize]) {
+		return XmlStringEqual(Node->value(), Node->value_size(), SourceString);
+	}
+
+	bool XmlValueEqual(const rapidxml::xml_base<>* Node, const std::string& SourceString) {
+		return XmlStringEqual(Node->value(), Node->value_size(), SourceString);
 	}
 
 	void SendXmppOpen(ix::WebSocket& Socket)
@@ -100,22 +193,22 @@ namespace EGL3::Web::Xmpp {
 
 		auto XmlnsAttr = Node->first_attribute("xmlns", 5);
 		EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
-		EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-framing"), "Bad xmlns attr value with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
+		EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-framing"), "Bad xmlns attr value with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
 
 		auto FromAttr = Node->first_attribute("from", 4); // JID
 		EGL3_ASSERT(FromAttr, "RFC 6120 4.7.1 (Page 37) requires from attr to be given by server");
-		EGL3_ASSERT(XmlNameEqual(FromAttr, "prod.ol.epicgames.com"), "Bad from attr value with <open>, from=\"prod.ol.epicgames.com\" expected");
+		EGL3_ASSERT(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), "Bad from attr value with <open>, from=\"prod.ol.epicgames.com\" expected");
 
 		auto IdAttr = Node->first_attribute("id", 2);
 		EGL3_ASSERT(IdAttr, "RFC 6120 4.7.3 (Page 39) requires id attr to be given by server");
 
 		auto VersionAttr = Node->first_attribute("version", 7);
 		EGL3_ASSERT(VersionAttr, "RFC 6120 4.7.5 (Page 42) requires version attr to be given by server");
-		EGL3_ASSERT(XmlNameEqual(VersionAttr, "1.0"), "Bad version attr value with <open>, version=\"1.0\" expected");
+		EGL3_ASSERT(XmlValueEqual(VersionAttr, "1.0"), "Bad version attr value with <open>, version=\"1.0\" expected");
 
 		auto LangAttr = Node->first_attribute("xml:lang", 8);
 		EGL3_ASSERT(LangAttr, "RFC 6120 4.7.4 (Page 40) requires xml:lang attr to be given by server");
-		EGL3_ASSERT(XmlNameEqual(LangAttr, "en"), "Bad xml:lang attr value with <open>, xml:lang=\"en\" expected");
+		EGL3_ASSERT(XmlValueEqual(LangAttr, "en"), "Bad xml:lang attr value with <open>, xml:lang=\"en\" expected");
 	}
 
 	template<bool Authed>
@@ -128,7 +221,7 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = Node->first_attribute("xmlns:stream", 12);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "http://etherx.jabber.org/streams"), "Bad xmlns:stream attr value with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://etherx.jabber.org/streams"), "Bad xmlns:stream attr value with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
 		}
 
 		// <ver>
@@ -140,7 +233,7 @@ namespace EGL3::Web::Xmpp {
 			if (VerNode) {
 				auto XmlnsAttr = VerNode->first_attribute("xmlns", 5);
 				EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
-				EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:xmpp:features:rosterver"), "Bad xmlns attr value with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
+				EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:features:rosterver"), "Bad xmlns attr value with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
 			}
 			else {
 				// WARN: roster versioning node is usually given by epic
@@ -156,7 +249,7 @@ namespace EGL3::Web::Xmpp {
 			if (TlsNode) {
 				auto XmlnsAttr = TlsNode->first_attribute("xmlns", 5);
 				EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
-				EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-tls"), "Bad xmlns attr value with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
+				EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-tls"), "Bad xmlns attr value with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
 
 				EGL3_ASSERT(TlsNode->first_node("required", 8) == NULL, "STARTTLS is required. We do not support it");
 			}
@@ -174,7 +267,7 @@ namespace EGL3::Web::Xmpp {
 			if (CompressionNode) {
 				auto XmlnsAttr = CompressionNode->first_attribute("xmlns", 5);
 				EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
-				EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "http://jabber.org/features/compress"), "Bad xmlns attr value with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
+				EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/compress"), "Bad xmlns attr value with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
 
 				EGL3_ASSERT(CompressionNode->first_node("method", 6), "Compression nodes must have at least one included method");
 			}
@@ -192,16 +285,16 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = MechanismsNode->first_attribute("xmlns", 5);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
 
 			bool PlainAuthExists = false;
 			for (auto MechanismNode = MechanismsNode->first_node(); MechanismNode; MechanismNode = MechanismNode->next_sibling()) {
-				if (XmlStringEqual(MechanismNode->value(), MechanismNode->value_size(), "PLAIN")) {
+				if (XmlValueEqual(MechanismNode, "PLAIN")) {
 					PlainAuthExists = true;
 					break;
 				}
 			}
-			EGL3_ASSERT(!PlainAuthExists, "Only the PLAIN SASL mechanism is supported");
+			EGL3_ASSERT(PlainAuthExists, "Only the PLAIN SASL mechanism is supported");
 		}
 
 		// <auth>
@@ -213,7 +306,7 @@ namespace EGL3::Web::Xmpp {
 			if (IqAuthNode) {
 				auto XmlnsAttr = IqAuthNode->first_attribute("xmlns", 5);
 				EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
-				EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "http://jabber.org/features/iq-auth"), "Bad xmlns attr value with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
+				EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/iq-auth"), "Bad xmlns attr value with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
 			}
 			else {
 				// WARN: iq auth node is usually given by epic
@@ -230,7 +323,7 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = BindNode->first_attribute("xmlns", 5);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
 		}
 
 		// <session>
@@ -243,7 +336,7 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = SessionNode->first_attribute("xmlns", 5);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-session"), "Bad xmlns attr value with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-session"), "Bad xmlns attr value with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
 		}
 	}
 
@@ -257,24 +350,24 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = Node->first_attribute("xmlns", 5);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
 
 			auto TypeAttr = Node->first_attribute("type", 4);
 			EGL3_ASSERT(TypeAttr, "No type recieved with <iq>, type=\"result\" expected");
-			EGL3_ASSERT(XmlNameEqual(TypeAttr, "result"), "Bad type attr value with <iq>, type=\"result\" expected");
+			EGL3_ASSERT(XmlValueEqual(TypeAttr, "result"), "Bad type attr value with <iq>, type=\"result\" expected");
 
 			auto ToAttr = Node->first_attribute("to", 2);
 			EGL3_ASSERT(ToAttr, "No to jid recieved with <iq>");
-			EGL3_ASSERT(XmlNameEqual(ToAttr, CurrentJid), "Bad type attr value with <iq>, expected JID does not match");
+			EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <iq>, expected JID does not match");
 
 			auto IdAttr = Node->first_attribute("id", 2);
 			if constexpr (!Session) {
 				EGL3_ASSERT(IdAttr, "No id recieved with <iq>, id=\"_xmpp_bind1\" expected");
-				EGL3_ASSERT(XmlNameEqual(IdAttr, "_xmpp_bind1"), "Bad id attr value with <iq>, id=\"_xmpp_bind1\" expected");
+				EGL3_ASSERT(XmlValueEqual(IdAttr, "_xmpp_bind1"), "Bad id attr value with <iq>, id=\"_xmpp_bind1\" expected");
 			}
 			else {
 				EGL3_ASSERT(IdAttr, "No id recieved with <iq>, id=\"_xmpp_session1\" expected");
-				EGL3_ASSERT(XmlNameEqual(IdAttr, "_xmpp_session1"), "Bad id attr value with <iq>, id=\"_xmpp_session1\" expected");
+				EGL3_ASSERT(XmlValueEqual(IdAttr, "_xmpp_session1"), "Bad id attr value with <iq>, id=\"_xmpp_session1\" expected");
 			}
 		}
 
@@ -287,7 +380,7 @@ namespace EGL3::Web::Xmpp {
 
 				auto XmlnsAttr = BindNode->first_attribute("xmlns", 5);
 				EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
-				EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+				EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
 			}
 
 			// <jid>
@@ -295,9 +388,151 @@ namespace EGL3::Web::Xmpp {
 				auto JidNode = BindNode->first_node("jid", 3);
 				EGL3_ASSERT(JidNode, "Jid must be given back to the client in a binding success result");
 
-				EGL3_ASSERT(XmlStringEqual(JidNode->value(), JidNode->value_size(), CurrentJid), "Jid must be given back to the client in a binding success result");
+				EGL3_ASSERT(XmlValueEqual(JidNode, CurrentJid), "Jid must be given back to the client in a binding success result");
 			}
 		}
+	}
+
+	bool ParseJID(const std::string& JID, std::string_view& Node, std::string_view& Domain, std::string_view& Resource) {
+		auto at = JID.find('@');
+		auto slash = JID.find('/', at == std::string::npos ? 0 : at);
+
+		if (at != std::string::npos) {
+			Node = std::string_view(JID.data(), at);
+			if (Node.size() >= 1024) {
+				return false;
+			}
+		}
+
+		Domain = std::string_view(JID.data() + (at == std::string::npos ? 0 : at + 1), slash - at - 1);
+		if (Domain.size() >= 1024) {
+			return false;
+		}
+
+		if (slash != std::string::npos) {
+			Resource = std::string_view(JID.data() + slash + 1);
+			if (Resource.size() >= 1024) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool XmppClient::HandlePong(const rapidxml::xml_node<>* Node) {
+		if (XmlNameEqual(Node, "iq")) {
+			auto IdAttr = Node->first_attribute("id", 2);
+			if (IdAttr) {
+				bool IsPong;
+				{
+					std::lock_guard IdLock(BackgroundPingIdMutex);
+					IsPong = XmlValueEqual(IdAttr, BackgroundPingId);
+				}
+
+				if (IsPong) {
+					// TODO: maybe mix this in with ReadXmppInfoQueryResult?
+					auto XmlnsAttr = Node->first_attribute("xmlns", 5);
+					EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected");
+					EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
+
+					auto TypeAttr = Node->first_attribute("type", 4);
+					EGL3_ASSERT(TypeAttr, "No type recieved with <iq>, type=\"result\" expected");
+					EGL3_ASSERT(XmlValueEqual(TypeAttr, "result"), "Bad type attr value with <iq>, type=\"result\" expected");
+
+					auto FromAttr = Node->first_attribute("from", 4);
+					EGL3_ASSERT(FromAttr, "No from recieved with <iq>");
+					EGL3_ASSERT(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), "Bad from attr value with <iq>, from=\"prod.ol.epicgames.com\" expected");
+
+					auto ToAttr = Node->first_attribute("to", 2);
+					EGL3_ASSERT(ToAttr, "No to jid recieved with <iq>");
+					EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <iq>, expected JID does not match");
+
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool XmppClient::HandlePresence(const rapidxml::xml_node<>* Node) {
+		if (XmlNameEqual(Node, "presence")) {
+			// I've recieved presences without an xmnls (third party games just don't care about em)
+
+			auto FromAttr = Node->first_attribute("from", 4);
+			EGL3_ASSERT(FromAttr, "No from recieved with <presence>");
+			auto FromJID = std::string(FromAttr->value(), FromAttr->value_size());
+			std::string_view JIDId, JIDDomain, JIDResource;
+			EGL3_ASSERT(ParseJID(FromJID, JIDId, JIDDomain, JIDResource), "Bad from attr value with <presence>, expected valid JID");
+
+			auto ToAttr = Node->first_attribute("to", 2);
+			EGL3_ASSERT(ToAttr, "No to jid recieved with <presence>");
+			EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJidWithoutResource) || XmlValueEqual(ToAttr, CurrentJid), "Bad to attr value with <presence>, expected JID does not match");
+
+			Json::StatusData Status;
+
+			auto ShowNode = Node->first_node("show", 4);
+			if (ShowNode) {
+				switch (Utils::Crc32(ShowNode->value(), ShowNode->value_size()))
+				{
+				case Utils::Crc32("chat"):
+					Status.ShowStatus = Json::ShowStatus::Chat;
+					break;
+				case Utils::Crc32("dnd"):
+					Status.ShowStatus = Json::ShowStatus::DoNotDisturb;
+					break;
+				case Utils::Crc32("away"):
+					Status.ShowStatus = Json::ShowStatus::Away;
+					break;
+				case Utils::Crc32("xa"):
+					Status.ShowStatus = Json::ShowStatus::ExtendedAway;
+					break;
+				default:
+					Status.ShowStatus = Json::ShowStatus::Online;
+				}
+			}
+			else {
+				Status.ShowStatus = Json::ShowStatus::Online;
+			}
+
+			// https://tools.ietf.org/html/rfc3921#section-2.2.1
+			// I've only observed "unavailable", and that's basically the same as offline
+			// All other values are errors, and we can set those to offline as well
+			auto TypeAttr = Node->first_attribute("type", 4);
+			if (TypeAttr) {
+				if (!XmlValueEqual(TypeAttr, "available")) {
+					Status.ShowStatus = Json::ShowStatus::Offline;
+				}
+			}
+
+			{
+				auto StatusNode = Node->first_node("status", 6);
+				EGL3_ASSERT(StatusNode, "No status recieved with <presence>");
+
+				rapidjson::Document Json;
+				Json.Parse(StatusNode->value(), StatusNode->value_size());
+				EGL3_ASSERT(Json::StatusData::Parse(Json, Status), "Failed to parse status json from presence");
+			}
+
+			{
+				auto DelayNode = Node->first_node("delay", 5);
+				if (DelayNode) {
+					auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
+					EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected");
+					EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
+
+					auto StampAttr = DelayNode->first_attribute("stamp", 5);
+					EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
+					EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), Status.UpdatedTime), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
+				}
+				else {
+					Status.UpdatedTime = std::chrono::system_clock::now();
+				}
+			}
+
+			OnPresenceUpdate(std::string(JIDId), Status);
+			return true;
+		}
+		return false;
 	}
 
 	// https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88
@@ -307,17 +542,33 @@ namespace EGL3::Web::Xmpp {
 		return "V2:launcher:WIN::" + Utils::ToHex<true>(Guid);
 	}
 
+	void SendPing(ix::WebSocket& Socket, const std::string& CurrentJid) {
+		uint8_t Guid[16];
+		Utils::GenerateRandomGuid(Guid);
+		auto IdString = Utils::ToHex<true>(Guid);
+		auto Document = CreateDocument();
+		auto RootNode = Document->allocate_node(rapidxml::node_element, "iq");
+		Document->append_node(RootNode);
+		RootNode->append_attribute(Document->allocate_attribute("id", IdString.c_str(), 2, IdString.size()));
+		RootNode->append_attribute(Document->allocate_attribute("type", "get"));
+		RootNode->append_attribute(Document->allocate_attribute("to", "prod.ol.epicgames.com"));
+		RootNode->append_attribute(Document->allocate_attribute("from", CurrentJid.c_str(), 4, CurrentJid.size()));
+		auto PingNode = Document->allocate_node(rapidxml::node_element, "ping");
+		PingNode->append_attribute(Document->allocate_attribute("xmlns", "urn:xmpp:ping"));
+
+		RootNode->append_node(PingNode);
+		SendXml(Socket, *Document);
+	}
+
 	void XmppClient::BackgroundPingTask()
 	{
-		std::chrono::steady_clock::time_point NextTime = BackgroundPingNextTime;
+		auto NextTime = BackgroundPingNextTime.load();
 		while (NextTime != std::chrono::steady_clock::time_point::max()) {
 			if (NextTime <= std::chrono::steady_clock::now()) {
-				// send ping
-
-				// Only if the value hasn't changed, set it to a minute forward
-				BackgroundPingNextTime.compare_exchange_weak(NextTime, NextTime + std::chrono::seconds(60));
+				SendPing(Socket, CurrentJid);
 			}
-			std::this_thread::yield();
+			// TODO: add condition variable here (yielding actually uses a lot of cpu you know)
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 			NextTime = BackgroundPingNextTime;
 		}
 	}
@@ -328,7 +579,7 @@ namespace EGL3::Web::Xmpp {
 		{
 		case ix::WebSocketMessageType::Message:
 		{
-			printf("Recieved message\n");
+			printf("%s\n", Message->str.c_str());
 			auto Document = CreateDocument();
 			auto Data = std::make_unique<char[]>(Message->str.size() + 1);
 			memcpy(Data.get(), Message->str.c_str(), Message->str.size() + 1); // c_str is required to have a \0 at the end
@@ -339,7 +590,6 @@ namespace EGL3::Web::Xmpp {
 		}
 		case ix::WebSocketMessageType::Open:
 		{
-			printf("Recieved open\n");
 			SendXmppOpen(Socket);
 			BackgroundPingFuture = std::async(std::launch::async, [this]() {
 				BackgroundPingTask();
@@ -371,6 +621,16 @@ namespace EGL3::Web::Xmpp {
 	void XmppClient::ParseMessage(const rapidxml::xml_node<>* Node)
 	{
 		EGL3_ASSERT(Node, "No xml recieved?");
+
+		// XMPP "Pong" response
+		if (HandlePong(Node)) {
+			return;
+		}
+
+		if (HandlePresence(Node)) {
+			return;
+		}
+
 		switch (State)
 		{
 		case ClientState::BEFORE_OPEN:
@@ -407,7 +667,7 @@ namespace EGL3::Web::Xmpp {
 
 			auto XmlnsAttr = Node->first_attribute("xmlns", 5);
 			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
-			EGL3_ASSERT(XmlNameEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
 
 			// After recieving success, we restart the xmpp
 			// we can send an auth response back
@@ -442,7 +702,7 @@ namespace EGL3::Web::Xmpp {
 				BindNode->append_attribute(Document->allocate_attribute("xmlns", "urn:ietf:params:xml:ns:xmpp-bind"));
 				auto ResourceNode = Document->allocate_node(rapidxml::node_element, "resource");
 				BindNode->append_node(ResourceNode);
-				ResourceNode->value(CurrentJid.c_str(), CurrentJid.size());
+				ResourceNode->value(CurrentResource.c_str(), CurrentResource.size());
 				SendXml(Socket, *Document);
 			}
 
@@ -473,12 +733,13 @@ namespace EGL3::Web::Xmpp {
 			ReadXmppInfoQueryResult<true>(Node, CurrentJid);
 
 			State = ClientState::AUTHENTICATED;
+			OnLoggedIn();
 			break;
 		}
 		case ClientState::AUTHENTICATED:
+		{
 			break;
-		default:
-			break;
+		}
 		}
 	}
 }

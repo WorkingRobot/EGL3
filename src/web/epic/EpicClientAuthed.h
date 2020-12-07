@@ -14,10 +14,15 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetAccountExternalAuths> GetAccountExternalAuths();
 
+        // NOTE: You can only request a maximum of 100 accounts at a time!
+        // Fortnite uses 50 at a time, so it's recommended to do the same
+        Response<Responses::GetAccounts> GetAccounts(const std::vector<std::string>& Accounts);
+
         Response<Responses::GetDeviceAuths> GetDeviceAuths();
 
         // You can optionally add a X-Epic-Device-Info header with JSON {"type": "Google","model":"Pixel 3","os":"10"}
         Response<Responses::GetDeviceAuths::DeviceAuth> CreateDeviceAuth();
+
 
         // Launcher service
 
@@ -33,6 +38,7 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetDownloadInfo> GetDownloadInfo(const std::string& Platform, const std::string& Label, const std::string& CatalogItemId, const std::string& AppName);
 
+
         // Catalog service
 
         // You can actually get by without auth (e.g. open in browser) if you set start to 0 and count to 100
@@ -42,9 +48,11 @@ namespace EGL3::Web::Epic {
         // I have never seen those 2 booleans actually add something to the response
         Response<Responses::GetCatalogItems> GetCatalogItems(const std::string& Namespace, const std::initializer_list<std::string>& Items, const std::string& Country, const std::string& Locale, bool IncludeDLCDetails = false, bool IncludeMainGameDetails = false);
 
+
         // Entitlement service
 
         Response<Responses::GetEntitlements> GetEntitlements(int Start = 0, int Count = 5000);
+
 
         // Friends service
 
@@ -54,6 +62,17 @@ namespace EGL3::Web::Epic {
         Response<Responses::GetFriends> GetFriends(bool IncludePending);
 
         Response<Responses::GetBlockedUsers> GetBlockedUsers();
+
+
+        // Channels service
+
+        // Valid setting values: "avatar", "avatarBackground", "appInstalled"
+        Response<Responses::GetAvailableSettingValues> GetAvailableSettingValues(const std::string& Setting);
+
+        Response<Responses::GetSettingsForAccounts> GetSettingsForAccounts(const std::vector<std::string>& Accounts, const std::initializer_list<std::string>& Settings);
+
+        Response<void> UpdateAccountSetting(const std::string& Setting, const std::string& Value);
+
 
         // Lightswitch
 

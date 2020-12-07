@@ -101,11 +101,17 @@ find_library(GIOMM_LIBRARY giomm)
 target_link_libraries(EGL3 ${GIOMM_LIBRARY})
 find_library(PANGOMM_LIBRARY pangomm)
 target_link_libraries(EGL3 ${PANGOMM_LIBRARY})
+find_library(FONTCONFIG_LIBRARY fontconfig)
+target_link_libraries(EGL3 ${FONTCONFIG_LIBRARY})
+find_library(PANGOFT_LIBRARY pangoft2-1.0)
+target_link_libraries(EGL3 ${PANGOFT_LIBRARY})
+find_library(PANGOCAIRO_LIBRARY pangocairo-1.0)
+target_link_libraries(EGL3 ${PANGOCAIRO_LIBRARY})
 
 find_library(ATKMM_LIBRARY atkmm)
 target_link_libraries(EGL3 ${ATKMM_LIBRARY})
-find_library(GLIB2_LIBRARY glib-2.0)
-target_link_libraries(EGL3 ${GLIB2_LIBRARY})
+find_package(unofficial-glib CONFIG REQUIRED)
+target_link_libraries(EGL3 unofficial::glib::gio unofficial::glib::glib unofficial::glib::gmodule unofficial::glib::gobject)
 find_library(GLIBMM_LIBRARY glibmm)
 target_link_libraries(EGL3 ${GLIBMM_LIBRARY})
 find_library(GTKMM_LIBRARY gtkmm)
@@ -115,6 +121,7 @@ target_link_libraries(EGL3 ${SIGC_LIBRARY})
 
 find_path(GTKMM_INCLUDE_DIRS gtkmm.h)
 target_include_directories(EGL3 PRIVATE ${GTKMM_INCLUDE_DIRS})
+
 
 ## Properties ##
 
@@ -130,3 +137,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
         COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
    )
 endif()
+
+# Visual Studio 16.8 decided to enable /permissive- without my knowledge, and this is the only fix I know
+# I'll figure out a way to make my code run without this later on, maybe before release
+list(APPEND CMAKE_CXX20_EXTENSION_COMPILE_OPTION /permissive)

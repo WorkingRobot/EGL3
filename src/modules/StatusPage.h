@@ -11,7 +11,7 @@
 namespace EGL3::Modules {
 	class StatusPageModule : public BaseModule {
 	public:
-		StatusPageModule(Utils::GladeBuilder& Builder) :
+		StatusPageModule(const Utils::GladeBuilder& Builder) :
 			RefreshBtn(Builder.GetWidget<Gtk::Button>("StatusPageRefreshBtn")),
 			LabelTitleEventBox(Builder.GetWidget<Gtk::EventBox>("StatusPageTitleEventBox")),
 			LabelTitle(Builder.GetWidget<Gtk::Label>("StatusPageTitle")),

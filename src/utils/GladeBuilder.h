@@ -12,10 +12,10 @@ namespace EGL3::Utils {
 		}
 
 		template<class T>
-		T& GetWidget(const char* Name) {
-			T* Ret = NULL;
+		T& GetWidget(const char* Name) const {
+			T* Ret = nullptr;
 			Builder->get_widget(Name, Ret);
-			EGL3_ASSERT(Ret != NULL, "Widget does not exist");
+			EGL3_ASSERT(Ret, "Widget does not exist");
 			return std::ref(*Ret);
 		}
 

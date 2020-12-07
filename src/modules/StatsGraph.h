@@ -11,10 +11,13 @@
 namespace EGL3::Modules {
 	class StatsGraphModule : public BaseModule {
 	public:
-		StatsGraphModule(Utils::GladeBuilder& Builder) :
+		StatsGraphModule(const Utils::GladeBuilder& Builder) :
 			DrawArea(Builder.GetWidget<Gtk::DrawingArea>("StatsGraph"))
 		{
 			DrawArea.signal_query_tooltip().connect([this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
+				if (Snapshots.empty()) {
+					return true;
+				}
 				Gtk::Allocation allocation = DrawArea.get_allocation();
 				const int width = allocation.get_width();
 				const int height = allocation.get_height();
@@ -79,7 +82,7 @@ namespace EGL3::Modules {
 				DrawArea.queue_draw();
 
 				return true;
-			}, 50, Glib::PRIORITY_HIGH_IDLE);
+			}, 5000, Glib::PRIORITY_HIGH_IDLE);
 		}
 
 		~StatsGraphModule() {
@@ -92,15 +95,18 @@ namespace EGL3::Modules {
 
 		// https://stackoverflow.com/a/2539718
 		using point_t = std::pair<float, float>;
-		static void ExecuteBSpline(std::vector<point_t>& bspline, std::function<void(point_t, point_t, point_t, point_t)> draw_cb) {
+		template<typename DrawCallback>
+		static void ExecuteBSpline(std::vector<point_t>& bspline, const DrawCallback& draw_cb) {
 			std::vector<point_t> one_thirds;
 			std::vector<point_t> two_thirds;
-			decltype(bspline.end()) PrevItr = bspline.end();
-			for (auto Itr = bspline.begin(); Itr != bspline.end(); Itr++) {
-				if (PrevItr != bspline.end()) {
-					one_thirds.emplace_back(Interpolate(*PrevItr, *Itr, 1 / 3.f));
-					two_thirds.emplace_back(Interpolate(*Itr, *PrevItr, 1 / 3.f));
-				}
+			one_thirds.reserve(bspline.size() - 1);
+			two_thirds.reserve(bspline.size() - 1);
+
+			auto PrevItr = bspline.begin();
+			for (auto Itr = bspline.begin() + 1; Itr != bspline.end(); Itr++) {
+				one_thirds.emplace_back(Interpolate(*PrevItr, *Itr, 1 / 3.f));
+				two_thirds.emplace_back(Interpolate(*Itr, *PrevItr, 1 / 3.f));
+
 				PrevItr = Itr;
 			}
 

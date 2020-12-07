@@ -5,7 +5,7 @@
 namespace EGL3::Utils {
     template<bool insensitive = false>
     static __forceinline uint32_t Crc32(const std::string& str) {
-        return Crc32<insensitive>(str, str.size());
+        return Crc32<insensitive>(str.c_str(), str.size());
     }
 
     template<bool insensitive = false, size_t size>

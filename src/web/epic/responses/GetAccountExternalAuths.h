@@ -22,8 +22,8 @@ namespace EGL3::Web::Epic::Responses {
 			// Type of connection (github, google, steam, twitch, etc)
 			std::string Type;
 
-			// Username/id of the user on the external platform
-			std::string ExternalAuthId;
+			// Username/id of the user on the external platform (optional)
+			std::optional<std::string> ExternalAuthId;
 
 			// Type of the auth id (optional)
 			std::optional<std::string> ExternalAuthIdType;
@@ -32,16 +32,16 @@ namespace EGL3::Web::Epic::Responses {
 			std::optional<std::string> ExternalAuthSecondaryId;
 
 			// Display name of the user on the external platform
-			std::string ExternalDisplayName;
+			std::optional<std::string> ExternalDisplayName;
 
 			// Avatar (id) of the user on the external platform (optional)
 			std::optional<std::string> Avatar;
 
-			// List of all auth ids this connection is attatched to
+			// List of all auth ids this connection is attached to
 			std::vector<AuthId> AuthIds;
 
-			// When this connection was added to the epic account
-			TimePoint DateAdded;
+			// When this connection was added to the epic account (only given if this is your account)
+			std::optional<TimePoint> DateAdded;
 
 			// When this connection was used to login to the epic account (this doesn't look accurate) (optional)
 			std::optional<TimePoint> LastLogin;
@@ -49,13 +49,13 @@ namespace EGL3::Web::Epic::Responses {
 			PARSE_DEFINE(ExternalAuth)
 				PARSE_ITEM("accountId", AccountId)
 				PARSE_ITEM("type", Type)
-				PARSE_ITEM("externalAuthId", ExternalAuthId)
+				PARSE_ITEM_OPT("externalAuthId", ExternalAuthId)
 				PARSE_ITEM_OPT("externalAuthIdType", ExternalAuthIdType)
 				PARSE_ITEM_OPT("externalAuthSecondaryId", ExternalAuthSecondaryId)
-				PARSE_ITEM("externalDisplayName", ExternalDisplayName)
+				PARSE_ITEM_OPT("externalDisplayName", ExternalDisplayName)
 				PARSE_ITEM_OPT("avatar", Avatar)
 				PARSE_ITEM("authIds", AuthIds)
-				PARSE_ITEM("dateAdded", DateAdded)
+				PARSE_ITEM_OPT("dateAdded", DateAdded)
 				PARSE_ITEM_OPT("lastLogin", LastLogin)
 			PARSE_END
 		};

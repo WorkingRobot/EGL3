@@ -3,7 +3,7 @@
 #include "web/epic/auth/ClientCredentials.h"
 #include "web/epic/auth/DeviceCode.h"
 #include "utils/OpenBrowser.h"
-#include "modules/Modules.h"
+#include "modules/ModuleList.h"
 #include "utils/GladeBuilder.h"
 #include "web/epic/EpicClientAuthed.h"
 #include "web/xmpp/XmppClient.h"
@@ -11,29 +11,14 @@
 #include "utils/mmio/MmioFile.h"
 #include <Exports/UObject.h>
 
+#include <fontconfig/fontconfig.h>
+#include <pango/pangofc-fontmap.h>
+
 namespace EGL3 {
     __forceinline int Start() {
         static const cpr::Authentication AuthClientSwitch{ "5229dcd3ac3845208b496649092f251b", "e3bd2d3e-bf8c-4857-9e7d-f3d947d220c7" };
         static const cpr::Authentication AuthClientLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
         static const cpr::Authentication AuthClientAndroidPortal{ "38dbfc3196024d5980386a37b7c792bb", "a6280b87-e45e-409b-9681-8f15eb7dbcf5" };
-
-        //Web::Xmpp::XmppClient Client("acccountId", "token");
-
-        if constexpr (false)
-        {
-            Web::Epic::Auth::DeviceCode DevCodeAuth(AuthClientSwitch);
-            auto BrowserUrlResult = DevCodeAuth.GetBrowserUrlFuture().get();
-            EGL3_ASSERT(BrowserUrlResult == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not get browser url");
-            Utils::OpenInBrowser(DevCodeAuth.GetBrowserUrl());
-
-            auto OAuthRespResult = DevCodeAuth.GetOAuthResponseFuture().get();
-            EGL3_ASSERT(OAuthRespResult == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not get oauth data");
-
-            Web::Epic::EpicClientAuthed C(DevCodeAuth.GetOAuthResponse(), AuthClientSwitch);
-
-            Web::Epic::Responses::OAuthToken AuthData;
-            EGL3_ASSERT(Web::Epic::Responses::OAuthToken::Parse(DevCodeAuth.GetOAuthResponse(), AuthData), "Could not parse oauth data");
-        }
 
         if constexpr (false)
         {
@@ -70,12 +55,23 @@ namespace EGL3 {
         Web::Epic::EpicClient C;
         auto Resp = C.GetBlogPosts("en-US");*/
 
-        if (!getenv("GTK_CSD")) {
+        /*if (!getenv("GTK_CSD")) {
             _putenv_s("GTK_CSD", "0");
+        }*/
+
+        {
+            auto Config = FcConfigCreate();
+            FcConfigSetCurrent(Config);
+            FcConfigParseAndLoad(Config, (FcChar8*)R"(J:\Code\Visual Studio 2017\Projects\EGL3\src\graphics\fonts\fonts.conf)", true);
+            FcConfigAppFontAddDir(Config, (FcChar8*)R"(J:\Code\Visual Studio 2017\Projects\EGL3\src\graphics\fonts)");
+            FcConfigAppFontAddDir(Config, (FcChar8*)R"(C:\WINDOWS\Fonts)");
+
+            auto FontMap = (PangoFcFontMap*)pango_cairo_font_map_new_for_font_type(CAIRO_FONT_TYPE_FT);
+            pango_fc_font_map_set_config(FontMap, Config);
+            pango_cairo_font_map_set_default((PangoCairoFontMap*)FontMap);
         }
         //_putenv_s("GTK_DEBUG", "interactive");
         //_putenv_s("GOBJECT_DEBUG", "instance-count");
-
 
         auto App = Gtk::Application::create("me.workingrobot.egl3");
 
@@ -91,10 +87,6 @@ namespace EGL3 {
 
         auto& AppWnd = Builder.GetWidget<Gtk::ApplicationWindow>("EGL3App");
 
-        App->set_data("EGL3Storage", new Storage::Persistent::Store("storage.stor"), [](void* Store) {
-            delete (Storage::Persistent::Store*)Store;
-        });
-
         App->signal_activate().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
             AppWnd.set_application(App);
 
@@ -106,13 +98,21 @@ namespace EGL3 {
             }
         }, App));
 
-        App->signal_startup().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
-            Modules::Initialize(App, Builder);
-        }, App));
+        App->set_data("EGL3Storage", new Storage::Persistent::Store("storage.stor"), [](void* Store) {
+            delete (Storage::Persistent::Store*)Store;
+        });
 
         App->signal_shutdown().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
-            Modules::Destroy(App);
             App->remove_data("EGL3Storage");
+        }, App));
+
+        App->signal_startup().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
+            try {
+                Modules::ModuleList::Attach(App, Builder);
+            }
+            catch (std::exception& e) {
+                printf("%s\n", e.what());
+            }
         }, App));
 
         Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);

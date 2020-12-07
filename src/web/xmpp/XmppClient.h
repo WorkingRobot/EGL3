@@ -4,18 +4,24 @@
 #include <rapidxml/rapidxml.hpp>
 
 #include "../BaseClient.h"
+#include "Responses.h"
 
 namespace EGL3::Web::Xmpp {
     // Standards used are listed in comments inside the cpp file and in asserts
     // TODO: Create constant to easily switch environments (currently only in prod)
-    class XmppClient : public BaseClient {
+    class XmppClient {
     public:
-        XmppClient(const std::string& AccountId, const std::string& AccessToken);
+        XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, const Json::StatusData&)>& OnPresenceUpdate);
 
-    protected:
-        void KillAuthentication() override;
+        void SetPresence(const Json::StatusData& Status);
+
+        ~XmppClient();
 
     private:
+        bool HandlePong(const rapidxml::xml_node<>* Node);
+
+        bool HandlePresence(const rapidxml::xml_node<>* Node);
+
         void BackgroundPingTask();
 
         void ReceivedMessage(const ix::WebSocketMessagePtr& Message);
@@ -37,12 +43,19 @@ namespace EGL3::Web::Xmpp {
             AUTHENTICATED
         };
 
+        std::function<void()> OnLoggedIn;
+        std::function<void(const std::string&, const Json::StatusData&)> OnPresenceUpdate;
+
         ClientState State;
         std::string EncodedAuthValue;
         std::string CurrentResource;
+        std::string CurrentJidWithoutResource;
         std::string CurrentJid;
 
         std::atomic<std::chrono::steady_clock::time_point> BackgroundPingNextTime;
+        // Better safe than sorry!
+        std::mutex BackgroundPingIdMutex;
+        std::string BackgroundPingId;
         std::future<void> BackgroundPingFuture;
 
         ix::WebSocket Socket;

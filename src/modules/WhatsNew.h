@@ -14,7 +14,8 @@
 namespace EGL3::Modules {
 	class WhatsNewModule : public BaseModule {
 	public:
-		WhatsNewModule(Storage::Persistent::Store* Storage, Utils::GladeBuilder& Builder) :
+		WhatsNewModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
+			ImageCache(Modules.GetModule<ImageCacheModule>()),
 			Storage(Storage),
 			Box(Builder.GetWidget<Gtk::Box>("PlayWhatsNewBox")),
 			RefreshBtn(Builder.GetWidget<Gtk::Button>("PlayWhatsNewRefreshBtn")),
@@ -23,7 +24,7 @@ namespace EGL3::Modules {
 			CheckCreative(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewCreative")),
 			CheckNotice(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewNotice")),
 			CheckSTW(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewSTW")),
-			Selection(Storage->Get(Storage::Persistent::Key::WhatsNewSelection))
+			Selection(Storage.Get(Storage::Persistent::Key::WhatsNewSelection))
 		{
 			Dispatcher.connect([this]() { UpdateBox(); });
 			RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
@@ -72,7 +73,7 @@ namespace EGL3::Modules {
 				else {
 					ItemDataError = Web::BaseClient::SUCCESS;
 
-					auto& Store = Storage->Get(Storage::Persistent::Key::WhatsNewTimestamps);
+					auto& Store = Storage.Get(Storage::Persistent::Key::WhatsNewTimestamps);
 
 					// Blogs
 
@@ -190,11 +191,11 @@ namespace EGL3::Modules {
 			std::lock_guard ItemDataGuard(ItemDataMutex);
 
 			Widgets.clear();
-			Box.foreach([&](Gtk::Widget& Widget) { Box.remove(Widget); });
+			Box.foreach([this](Gtk::Widget& Widget) { Box.remove(Widget); });
 
 			for (auto& Pair : ItemData) {
 				std::visit([&, this](auto&& Item) {
-					Box.pack_start(*Widgets.emplace_back(std::make_unique<Widgets::WhatsNewItem>(Item, Pair.Date, Pair.Source)));
+					Box.pack_start(*Widgets.emplace_back(std::make_unique<Widgets::WhatsNewItem>(Item, Pair.Date, Pair.Source, ImageCache)));
 				}, Pair.Item);
 			}
 			Box.show_all_children();
@@ -238,7 +239,8 @@ namespace EGL3::Modules {
 			return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), std::chrono::system_clock::now()).first->second;
 		}
 
-		Storage::Persistent::Store* Storage;
+		Storage::Persistent::Store& Storage;
+		Modules::ImageCacheModule& ImageCache;
 		Gtk::Box& Box;
 		Gtk::Button& RefreshBtn;
 		Gtk::CheckMenuItem& CheckBR;

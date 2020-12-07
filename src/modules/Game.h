@@ -9,7 +9,7 @@
 namespace EGL3::Modules {
 	class GameModule : public BaseModule {
 	public:
-		GameModule(Utils::GladeBuilder& Builder) {
+		GameModule(const Utils::GladeBuilder& Builder) {
 
 		}
 

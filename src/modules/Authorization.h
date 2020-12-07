@@ -7,6 +7,7 @@
 #include "../storage/models/Authorization.h"
 #include "../storage/persistent/Store.h"
 #include "../utils/GladeBuilder.h"
+#include "../utils/OpenBrowser.h"
 #include "../web/epic/EpicClientAuthed.h"
 #include "../web/epic/auth/DeviceCode.h"
 #include "../web/epic/auth/DeviceAuth.h"
@@ -15,7 +16,7 @@
 namespace EGL3::Modules {
 	class AuthorizationModule : public BaseModule {
 	public:
-		AuthorizationModule(Storage::Persistent::Store* Storage, Utils::GladeBuilder& Builder) :
+		AuthorizationModule(Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
 			Storage(Storage),
 			PlayButton(Builder.GetWidget<Gtk::Button>("PlayBtn")),
 			MenuButton(Builder.GetWidget<Gtk::MenuButton>("PlayDropdown"))
@@ -24,7 +25,7 @@ namespace EGL3::Modules {
 
 			PlayButton.signal_clicked().connect([this]() { ButtonClick(); });
 
-			auto& Auth = Storage->Get(Storage::Persistent::Key::Auth);
+			auto& Auth = Storage.Get(Storage::Persistent::Key::Auth);
 			if (!Auth.AccountId.empty()) {
 				UpdateButton(PlayButtonState::SIGNING_IN);
 				SignInTask = std::async(std::launch::async, [this](decltype(Auth)& Auth) {
@@ -34,13 +35,14 @@ namespace EGL3::Modules {
 					Web::Epic::Auth::TokenToToken LauncherAuth(AuthorizationLauncher, FNAuth.GetOAuthResponse()["access_token"].GetString());
 					EGL3_ASSERT(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::TokenToToken::SUCCESS, "Could not transfer fn auth to launcher auth");
 
-					AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch);
-					AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher);
-					printf("Launcher auth token %s\n", AuthClientLauncher->AuthData.AccessToken.c_str());
+					AuthChanged.emit(
+						AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch),
+						AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher)
+					);
 
 					Dispatcher.emit();
 					return true;
-				}, Auth);
+					}, Auth);
 			}
 			else {
 				UpdateButton(PlayButtonState::SIGN_IN);
@@ -48,7 +50,7 @@ namespace EGL3::Modules {
 		}
 
 		~AuthorizationModule() {
-
+			
 		}
 
 		enum class PlayButtonState {
@@ -60,6 +62,7 @@ namespace EGL3::Modules {
 			UPDATING
 		};
 
+		// Update the actual button state, called from the dispatcher
 		void UpdateButton(PlayButtonState TargetState) {
 			ButtonState = TargetState;
 			switch (ButtonState)
@@ -102,6 +105,9 @@ namespace EGL3::Modules {
 			}
 		}
 
+		// This will not be emitted from the main thread
+		sigc::signal<void(Web::Epic::EpicClientAuthed&, Web::Epic::EpicClientAuthed&)> AuthChanged;
+
 	private:
 		PlayButtonState ButtonState = PlayButtonState::SIGN_IN; // Default state, doesn't matter too much
 
@@ -120,18 +126,19 @@ namespace EGL3::Modules {
 					Web::Epic::Auth::TokenToToken LauncherAuth(AuthorizationLauncher, FNAuth.GetOAuthResponse()["access_token"].GetString());
 					EGL3_ASSERT(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::TokenToToken::SUCCESS, "Could not transfer fn auth to launcher auth");
 
-					AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch);
-					AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher);
+					AuthChanged.emit(
+						AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch),
+						AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher)
+					);
 
 					auto DevAuthResp = AuthClientFN->CreateDeviceAuth();
 					EGL3_ASSERT(!DevAuthResp.HasError(), "Could not create device auth");
 
-					auto& Auth = Storage->Get(Storage::Persistent::Key::Auth);
+					auto& Auth = Storage.Get(Storage::Persistent::Key::Auth);
 					Auth.AccountId = DevAuthResp->AccountId;
 					Auth.DeviceId = DevAuthResp->DeviceId;
 					Auth.Secret = DevAuthResp->Secret.value();
-
-					printf("Created auth\n");
+					Storage.Flush();
 
 					Dispatcher.emit();
 					return true;
@@ -149,7 +156,7 @@ namespace EGL3::Modules {
 		static inline const cpr::Authentication AuthorizationLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
 		static inline const cpr::Authentication AuthorizationSwitch{ "5229dcd3ac3845208b496649092f251b", "e3bd2d3e-bf8c-4857-9e7d-f3d947d220c7" };
 
-		Storage::Persistent::Store* Storage;
+		Storage::Persistent::Store& Storage;
 		Gtk::Button& PlayButton;
 		Gtk::MenuButton& MenuButton;
 

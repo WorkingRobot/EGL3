@@ -1,5 +1,8 @@
 #include "EpicClientAuthed.h"
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 namespace EGL3::Web::Epic {
 	EpicClientAuthed::EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient) : AuthClient(AuthClient)
 	{
@@ -79,6 +82,47 @@ namespace EGL3::Web::Epic {
 
 		Responses::GetAccountExternalAuths Resp;
 		if (!Responses::GetAccountExternalAuths::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+	
+	BaseClient::Response<Responses::GetAccounts> EpicClientAuthed::GetAccounts(const std::vector<std::string>& Accounts)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		cpr::Parameters Parameters;
+		for (auto& Item : Accounts) {
+			Parameters.AddParameter({ "accountId", Item }, cpr::CurlHolder());
+		}
+
+		auto Response = Http::Get(
+			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/public/account" },
+			cpr::Header{ { "Authorization", AuthHeader } },
+			Parameters
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetAccounts Resp;
+		if (!Responses::GetAccounts::Parse(RespJson, Resp)) {
 			return CODE_BAD_JSON;
 		}
 
@@ -322,7 +366,7 @@ namespace EGL3::Web::Epic {
 			{ "locale", Locale }
 		};
 		for (auto& Item : Items) {
-			Parameters.AddParameter({ "id", Item });
+			Parameters.AddParameter({ "id", Item }, cpr::CurlHolder());
 		}
 
 		auto Response = Http::Get(
@@ -441,7 +485,7 @@ namespace EGL3::Web::Epic {
 		auto Response = Http::Get(
 			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } },
-			cpr::Parameters{ { "includePending", std::to_string(IncludePending) } }
+			cpr::Parameters{ { "includePending", "true" } }
 		);
 
 		if (GetCancelled()) { return CANCELLED; }
@@ -499,6 +543,128 @@ namespace EGL3::Web::Epic {
 		return Resp;
 	}
 
+	BaseClient::Response<Responses::GetAvailableSettingValues> EpicClientAuthed::GetAvailableSettingValues(const std::string& Setting)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Get(
+			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/" + AuthData.AccountId.value() + "/setting/" + Setting + "/available" },
+			cpr::Header{ { "Authorization", AuthHeader } }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetAvailableSettingValues Resp;
+		if (!Responses::GetAvailableSettingValues::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<Responses::GetSettingsForAccounts> EpicClientAuthed::GetSettingsForAccounts(const std::vector<std::string>& Accounts, const std::initializer_list<std::string>& Settings)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		cpr::Parameters Parameters;
+
+		for (auto& Account : Accounts) {
+			Parameters.AddParameter({ "accountId", Account }, cpr::CurlHolder());
+		}
+
+		for (auto& Setting : Settings) {
+			Parameters.AddParameter({ "settingKey", Setting }, cpr::CurlHolder());
+		}
+
+		auto Response = Http::Get(
+			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/setting" },
+			cpr::Header{ { "Authorization", AuthHeader } },
+			Parameters
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetSettingsForAccounts Resp;
+		if (!Responses::GetSettingsForAccounts::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::UpdateAccountSetting(const std::string& Setting, const std::string& Value)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		rapidjson::StringBuffer Buf;
+		{
+			rapidjson::Writer Writer(Buf);
+
+			Writer.StartObject();
+
+			Writer.Key("value");
+			Writer.String(Value.c_str(), Value.size());
+
+			Writer.EndObject();
+		}
+
+		auto Response = Http::Put(
+			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/" + AuthData.AccountId.value() + "/setting/" + Setting },
+			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
+			cpr::Body{ Buf.GetString(), Buf.GetSize() }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
 	BaseClient::Response<Responses::GetLightswitchStatus::ServiceStatus> EpicClientAuthed::GetLightswitchStatus(const std::string& AppName)
 	{
 		RunningFunctionGuard Guard(*this);
@@ -547,7 +713,7 @@ namespace EGL3::Web::Epic {
 
 		cpr::Parameters Parameters;
 		for (auto& AppName : AppNames) {
-			Parameters.AddParameter({ "serviceId", AppName });
+			Parameters.AddParameter({ "serviceId", AppName }, cpr::CurlHolder());
 		}
 		auto Response = Http::Get(
 			cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/bulk/status" },
@@ -578,7 +744,7 @@ namespace EGL3::Web::Epic {
 	void EpicClientAuthed::KillAuthentication()
 	{
 		// Token isn't expired yet
-		if (AuthData.ExpiresAt > TimePoint::clock::now()) {
+		if (AuthData.ExpiresAt > Responses::TimePoint::clock::now()) {
 			// This will return a 204
 			// If it fails, it's on epic's blame. We don't really need any handling
 			Http::Delete(
@@ -593,7 +759,7 @@ namespace EGL3::Web::Epic {
 		// Make sure that no other thread will call in to this function and end up with the refresh token being used multiple times
 		const std::lock_guard<std::mutex> lock(TokenValidityMutex);
 
-		auto Now = TimePoint::clock::now();
+		auto Now = Responses::TimePoint::clock::now();
 
 		if (AuthData.ExpiresAt > Now) {
 			return true; // access token isn't invalid yet
