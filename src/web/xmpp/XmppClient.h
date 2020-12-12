@@ -11,9 +11,9 @@ namespace EGL3::Web::Xmpp {
     // TODO: Create constant to easily switch environments (currently only in prod)
     class XmppClient {
     public:
-        XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, const Json::StatusData&)>& OnPresenceUpdate);
+        XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate);
 
-        void SetPresence(const Json::StatusData& Status);
+        void SetPresence(const Json::Presence& NewPresence);
 
         ~XmppClient();
 
@@ -44,7 +44,7 @@ namespace EGL3::Web::Xmpp {
         };
 
         std::function<void()> OnLoggedIn;
-        std::function<void(const std::string&, const Json::StatusData&)> OnPresenceUpdate;
+        std::function<void(const std::string&, Json::Presence&&)> OnPresenceUpdate;
 
         ClientState State;
         std::string EncodedAuthValue;

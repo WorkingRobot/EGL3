@@ -42,7 +42,7 @@ namespace EGL3::Modules {
 
 					Dispatcher.emit();
 					return true;
-					}, Auth);
+				}, Auth);
 			}
 			else {
 				UpdateButton(PlayButtonState::SIGN_IN);

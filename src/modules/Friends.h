@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../storage/models/CurrentUser.h"
 #include "../storage/models/Friend.h"
 #include "../utils/GladeBuilder.h"
 #include "../web/xmpp/XmppClient.h"
@@ -44,7 +45,7 @@ namespace EGL3::Modules {
 				KairosAvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
 					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
 					auto Data = (Widgets::AsyncImageKeyed*)Widget.get_child()->get_data("EGL3_ImageBase");
-					if (Data->GetKey() == CurrentUserModel.Kairos.Avatar) {
+					if (Data->GetKey() == CurrentUserModel.GetKairosAvatar()) {
 						KairosAvatarBox.select_child(Widget);
 					}
 				});
@@ -52,7 +53,7 @@ namespace EGL3::Modules {
 				KairosBackgroundBox.foreach([this](Gtk::Widget& WidgetBase) {
 					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
 					auto Data = (Widgets::AsyncImageKeyed*)Widget.get_child()->get_data("EGL3_ImageBase");
-					if (Data->GetKey() == CurrentUserModel.Kairos.Background) {
+					if (Data->GetKey() == CurrentUserModel.GetKairosBackground()) {
 						KairosBackgroundBox.select_child(Widget);
 					}
 				});
@@ -69,15 +70,15 @@ namespace EGL3::Modules {
 
 			KairosAvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
 				auto Data = (Widgets::AsyncImageKeyed*)child->get_child()->get_data("EGL3_ImageBase");
-				if (Data->GetKey() == CurrentUserModel.Kairos.Avatar) {
+				if (Data->GetKey() == CurrentUserModel.GetKairosAvatar()) {
 					return;
 				}
 
-				CurrentUserModel.Kairos.Avatar = Data->GetKey();
-				XmppClient->SetPresence(CurrentUserModel.GetStatusData());
+				CurrentUserModel.SetKairosAvatar(Data->GetKey());
+				XmppClient->SetPresence(CurrentUserModel.BuildPresence());
 
 				UpdateKairosAvatarTask = std::async(std::launch::async, [this]() {
-					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatar", CurrentUserModel.Kairos.Avatar);
+					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatar", CurrentUserModel.GetKairosAvatar());
 					if (UpdateResp.HasError()) {
 						printf("Avatar resp: %d\n", UpdateResp.GetErrorCode());
 					}
@@ -86,22 +87,22 @@ namespace EGL3::Modules {
 
 			KairosBackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
 				auto Data = (Widgets::AsyncImageKeyed*)child->get_child()->get_data("EGL3_ImageBase");
-				if (Data->GetKey() == CurrentUserModel.Kairos.Background) {
+				if (Data->GetKey() == CurrentUserModel.GetKairosBackground()) {
 					return;
 				}
 
-				CurrentUserModel.Kairos.Background = Data->GetKey();
-				XmppClient->SetPresence(CurrentUserModel.GetStatusData());
+				CurrentUserModel.SetKairosBackground(Data->GetKey());
+				XmppClient->SetPresence(CurrentUserModel.BuildPresence());
 
 				UpdateKairosBackgroundTask = std::async(std::launch::async, [this]() {
-					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatarBackground", CurrentUserModel.Kairos.Background);
+					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatarBackground", CurrentUserModel.GetKairosBackground());
 					if (UpdateResp.HasError()) {
 						printf("Background resp: %d\n", UpdateResp.GetErrorCode());
 					}
 				});
 			});
 
-			CurrentUserModel.Updated = [this](const auto& Status) { CurrentUserWidget.Update(); ReSortBoxDispatcher.emit(); };
+			CurrentUserModel.SetUpdateCallback([this](const auto& Status) { CurrentUserWidget.Update(); ReSortBoxDispatcher.emit(); });
 			CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
 			CurrentUserWidget.SetAsCurrentUser(KairosMenu);
 
@@ -110,8 +111,8 @@ namespace EGL3::Modules {
 			auto& AuthModule = Modules.GetModule<AuthorizationModule>();
 			AuthModule.AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
 
-			CurrentUserModel.DisplayStatus = "Using EGL3";
-			CurrentUserModel.OnlineStatus = Web::Xmpp::Json::ShowStatus::Online;
+			CurrentUserModel.SetDisplayStatus("Using EGL3");
+			CurrentUserModel.SetOnlineStatus(Web::Xmpp::Json::ShowStatus::Online);
 		}
 
 		~FriendsModule() {
@@ -122,17 +123,17 @@ namespace EGL3::Modules {
 		}
 
 	private:
-		void OnPresenceUpdate(const std::string& AccountId, const Web::Xmpp::Json::StatusData& Status) {
+		void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) {
 			if (AccountId != LauncherClient->AuthData.AccountId) {
 				std::lock_guard Guard(ItemDataMutex);
 
-				auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountId](const auto& Friend) { return Friend.AccountId == AccountId; });
+				auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountId](const auto& Friend) { return Friend.GetAccountId() == AccountId; });
 				if (FriendItr != FriendsData.end()) {
-					FriendItr->Update(Status);
+					FriendItr->Update(std::move(Presence));
 				}
 			}
 			else {
-				CurrentUserModel.Update(Status);
+				CurrentUserModel.Update(std::move(Presence));
 			}
 		}
 
@@ -141,8 +142,8 @@ namespace EGL3::Modules {
 
 			XmppClient.emplace(
 				LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.AccessToken,
-				[this]() { XmppClient->SetPresence(CurrentUserModel.GetStatusData()); },
-				[this](const std::string& AccountId, const Web::Xmpp::Json::StatusData& Status) { OnPresenceUpdate(AccountId, Status); }
+				[this]() { XmppClient->SetPresence(CurrentUserModel.BuildPresence()); },
+				[this](const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) { OnPresenceUpdate(AccountId, std::move(Presence)); }
 			);
 			this->LauncherClient = &LauncherClient;
 
@@ -219,7 +220,7 @@ namespace EGL3::Modules {
 
 							for (auto& Account : FriendsAccResp->Accounts) {
 								if (Account.Id != LauncherClient->AuthData.AccountId.value()) {
-									auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&Account](const auto& Friend) { return Friend.AccountId == Account.Id; });
+									auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&Account](const auto& Friend) { return Friend.GetAccountId() == Account.Id; });
 									if (FriendItr != FriendsData.end()) {
 										FriendItr->Update(Account);
 									}
@@ -231,7 +232,7 @@ namespace EGL3::Modules {
 
 							for (auto& AccountSetting : FriendsKairosResp->Values) {
 								if (AccountSetting.AccountId != LauncherClient->AuthData.AccountId.value()) {
-									auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountSetting](const auto& Friend) { return Friend.AccountId == AccountSetting.AccountId; });
+									auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountSetting](const auto& Friend) { return Friend.GetAccountId() == AccountSetting.AccountId; });
 									if (FriendItr != FriendsData.end()) {
 										FriendItr->Update(AccountSetting);
 									}
@@ -271,7 +272,7 @@ namespace EGL3::Modules {
 
 				for (auto& Friend : FriendsData) {
 					auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(Friend, ImageCache));
-					Friend.Updated = [&, this](const auto& Status) { Widget->Update(); ReSortBoxDispatcher.emit(); };
+					Friend.SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ReSortBoxDispatcher.emit(); });
 					Box.add(*Widget);
 				}
 
@@ -286,7 +287,7 @@ namespace EGL3::Modules {
 				AvatarsWidgets.reserve(AvatarsData.size());
 
 				for (auto& Avatar : AvatarsData) {
-					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Avatar, 64, 64, &Web::Xmpp::Json::KairosProfile::StaticGetAvatarUrl, ImageCache));
+					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Avatar, 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
 					KairosAvatarBox.add(*Widget);
 				}
 
@@ -301,7 +302,7 @@ namespace EGL3::Modules {
 				BackgroundsWidgets.reserve(BackgroundsData.size());
 
 				for (auto& Background : BackgroundsData) {
-					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Background, 64, 64, &Web::Xmpp::Json::KairosProfile::StaticGetBackgroundUrl, ImageCache));
+					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Background, 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
 					KairosBackgroundBox.add(*Widget);
 				}
 
@@ -318,7 +319,7 @@ namespace EGL3::Modules {
 		Gtk::ListBox& Box;
 
 		Gtk::Box& CurrentUserContainer;
-		Storage::Models::Friend CurrentUserModel;
+		Storage::Models::CurrentUser CurrentUserModel;
 		Widgets::FriendItem CurrentUserWidget;
 
 		bool KairosMenuFocused = false;

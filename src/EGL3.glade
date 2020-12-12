@@ -27,6 +27,76 @@ Author: Aleks Margarian
   <!-- interface-name EGL3 -->
   <!-- interface-copyright Aleks Margarian -->
   <!-- interface-authors Aleks Margarian -->
+  <object class="GtkMenu" id="ExtraPlayOpts">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="reserve_toggle_size">False</property>
+    <property name="menu_type_hint">dropdown-menu</property>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">verify game data and make sure no errors occur</property>
+        <property name="label" translatable="yes">Verify Game Data</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="tooltip_text" translatable="yes">do stuff like change compression method or download STW</property>
+        <property name="label" translatable="yes">Change Install</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkMenu" id="WhatsNewPicker">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="reserve_toggle_size">False</property>
+    <property name="menu_type_hint">dropdown-menu</property>
+    <child>
+      <object class="GtkCheckMenuItem" id="WhatsNewBR">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Battle Royale News</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="WhatsNewBlog">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Blog Posts</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="WhatsNewCreative">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Creative News</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="WhatsNewNotice">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Emergency Notices</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="WhatsNewSTW">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Save The World News</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+  </object>
   <object class="GtkApplicationWindow" id="EGL3App">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">EGL3</property>
@@ -306,9 +376,6 @@ Author: Aleks Margarian
                                 <property name="can_focus">False</property>
                                 <property name="selection_mode">none</property>
                                 <property name="activate_on_single_click">False</property>
-                                <child type="placeholder">
-                                  <placeholder/>
-                                </child>
                               </object>
                             </child>
                           </object>
@@ -807,15 +874,39 @@ Author: Aleks Margarian
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="has_focus">True</property>
         <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkHeaderBar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child type="title">
+              <object class="GtkStackSwitcher">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="has_focus">True</property>
+                <property name="homogeneous">True</property>
+                <property name="stack">FriendsKairosStack</property>
+              </object>
+            </child>
+            <style>
+              <class name="font-h5"/>
+            </style>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
         <child>
           <object class="GtkStack" id="FriendsKairosStack">
             <property name="width_request">500</property>
             <property name="height_request">500</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="vhomogeneous">False</property>
             <property name="transition_type">slide-left-right</property>
+            <property name="interpolate_size">True</property>
             <child>
               <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
@@ -848,6 +939,9 @@ Author: Aleks Margarian
                             <property name="fill">True</property>
                             <property name="position">0</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>
@@ -924,35 +1018,12 @@ Author: Aleks Margarian
                 <property name="position">2</property>
               </packing>
             </child>
-            <style>
-              <class name="font-h4"/>
-            </style>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="padding">2</property>
             <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkHeaderBar">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child type="title">
-              <object class="GtkStackSwitcher">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="homogeneous">True</property>
-                <property name="icon_size">0</property>
-                <property name="stack">FriendsKairosStack</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -962,80 +1033,10 @@ Author: Aleks Margarian
       <placeholder/>
     </child>
   </object>
-  <object class="GtkMenu" id="ExtraPlayOpts">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="reserve_toggle_size">False</property>
-    <property name="menu_type_hint">dropdown-menu</property>
-    <child>
-      <object class="GtkMenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="tooltip_text" translatable="yes">verify game data and make sure no errors occur</property>
-        <property name="label" translatable="yes">Verify Game Data</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="tooltip_text" translatable="yes">do stuff like change compression method or download STW</property>
-        <property name="label" translatable="yes">Change Install</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-  </object>
   <object class="GtkSizeGroup" id="RefreshButtonGroup">
     <widgets>
       <widget name="aspectframe1"/>
       <widget name="aspectframe2"/>
     </widgets>
-  </object>
-  <object class="GtkMenu" id="WhatsNewPicker">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="reserve_toggle_size">False</property>
-    <property name="menu_type_hint">dropdown-menu</property>
-    <child>
-      <object class="GtkCheckMenuItem" id="WhatsNewBR">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Battle Royale News</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkCheckMenuItem" id="WhatsNewBlog">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Blog Posts</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkCheckMenuItem" id="WhatsNewCreative">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Creative News</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkCheckMenuItem" id="WhatsNewNotice">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Emergency Notices</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkCheckMenuItem" id="WhatsNewSTW">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Save The World News</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
   </object>
 </interface>

@@ -11,9 +11,13 @@ namespace EGL3::Web::Json {
 	namespace ch = std::chrono;
 
 	typedef ch::system_clock::time_point TimePoint;
+
+	__forceinline std::string GetTimePoint(const TimePoint& Time) {
+		return date::format("%FT%TZ", Time);
+	}
 	
 	__forceinline std::string GetCurrentTimePoint() {
-		return date::format("%FT%TZ", std::chrono::system_clock::now());
+		return GetTimePoint(std::chrono::system_clock::now());
 	}
 
 	__forceinline bool GetTimePoint(const char* Str, size_t StrSize, TimePoint& Obj) {
@@ -91,7 +95,7 @@ namespace EGL3::Web::Json {
 
 #endif
 
-// Set to one to print any json parsing errors
+// Set to not print any json parsing errors
 #ifdef EGL3_DISABLE_JSON_VERBOSITY
 #define PRINT_JSON_ERROR_NOTFOUND
 #define PRINT_JSON_ERROR_PARSE
@@ -116,6 +120,10 @@ namespace EGL3::Web::Json {
 #define PARSE_ITEM_OPT(JsonName, TargetVariable) \
 		Itr = Json.FindMember(JsonName); \
 		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
+
+#define PARSE_ITEM_DEF(JsonName, TargetVariable, Default) \
+		Itr = Json.FindMember(JsonName); \
+		if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
 		if (!ParseObject(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }

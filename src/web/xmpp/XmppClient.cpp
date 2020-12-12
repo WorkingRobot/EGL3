@@ -13,7 +13,7 @@
 #include "../../utils/streams/MemoryStream.h"
 
 namespace EGL3::Web::Xmpp {
-	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, const Json::StatusData&)>& OnPresenceUpdate) :
+	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate) :
 		OnLoggedIn(OnLoggedIn),
 		OnPresenceUpdate(OnPresenceUpdate),
 		State(ClientState::OPENING)
@@ -61,16 +61,16 @@ namespace EGL3::Web::Xmpp {
 		Socket.sendText(OutputString);
 	}
 
-	void XmppClient::SetPresence(const Json::StatusData& Status)
+	void XmppClient::SetPresence(const Json::Presence& NewPresence)
 	{
 		auto CurrentTime = Json::GetCurrentTimePoint();
 		auto Document = CreateDocument();
 		auto RootNode = Document->allocate_node(rapidxml::node_element, "presence");
 		Document->append_node(RootNode);
-		if (Status.ShowStatus != Json::ShowStatus::Online && Status.ShowStatus != Json::ShowStatus::Offline) {
+		if (NewPresence.ShowStatus != Json::ShowStatus::Online && NewPresence.ShowStatus != Json::ShowStatus::Offline) {
 			auto ShowNode = Document->allocate_node(rapidxml::node_element, "show");
 			RootNode->append_node(ShowNode);
-			switch (Status.ShowStatus)
+			switch (NewPresence.ShowStatus)
 			{
 			case EGL3::Web::Xmpp::Json::ShowStatus::Chat:
 				ShowNode->value("chat", 4);
@@ -91,32 +91,32 @@ namespace EGL3::Web::Xmpp {
 		RootNode->append_node(StatusNode);
 		rapidjson::StringBuffer StatusBuffer;
 		{
+			auto& NewStatus = NewPresence.Status;
+
 			rapidjson::Writer<rapidjson::StringBuffer> Writer(StatusBuffer);
 
 			Writer.StartObject();
 
 			Writer.Key("Status");
-			Writer.String(Status.Status.c_str());
+			Writer.String(NewStatus.GetStatus().c_str());
 
 			Writer.Key("bIsPlaying");
-			Writer.Bool(Status.Playing);
+			Writer.Bool(NewStatus.IsPlaying());
 
 			Writer.Key("bIsJoinable");
-			Writer.Bool(Status.Joinable);
+			Writer.Bool(NewStatus.IsJoinable());
 
 			Writer.Key("bHasVoiceSupport");
-			Writer.Bool(Status.HasVoiceSupport.value_or(false));
+			Writer.Bool(NewStatus.HasVoiceSupport());
 
-			if (Status.ProductName.has_value()) {
-				Writer.Key("ProductName");
-				Writer.String(Status.ProductName.value().c_str());
-			}
+			Writer.Key("ProductName");
+			Writer.String(NewStatus.GetProductName().c_str());
 
 			Writer.Key("SessionId");
-			Writer.String(Status.SessionId.c_str());
+			Writer.String(NewStatus.GetSessionId().c_str());
 
 			Writer.Key("Properties");
-			Status.Properties.WriteTo(Writer);
+			NewStatus.GetProperties().WriteTo(Writer);
 
 			Writer.EndObject();
 		}
@@ -458,40 +458,41 @@ namespace EGL3::Web::Xmpp {
 		if (XmlNameEqual(Node, "presence")) {
 			// I've recieved presences without an xmnls (third party games just don't care about em)
 
+			auto ToAttr = Node->first_attribute("to", 2);
+			EGL3_ASSERT(ToAttr, "No to jid recieved with <presence>");
+			EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJidWithoutResource) || XmlValueEqual(ToAttr, CurrentJid), "Bad to attr value with <presence>, expected JID does not match");
+
+			Json::Presence ParsedPresence;
+
 			auto FromAttr = Node->first_attribute("from", 4);
 			EGL3_ASSERT(FromAttr, "No from recieved with <presence>");
 			auto FromJID = std::string(FromAttr->value(), FromAttr->value_size());
 			std::string_view JIDId, JIDDomain, JIDResource;
 			EGL3_ASSERT(ParseJID(FromJID, JIDId, JIDDomain, JIDResource), "Bad from attr value with <presence>, expected valid JID");
-
-			auto ToAttr = Node->first_attribute("to", 2);
-			EGL3_ASSERT(ToAttr, "No to jid recieved with <presence>");
-			EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJidWithoutResource) || XmlValueEqual(ToAttr, CurrentJid), "Bad to attr value with <presence>, expected JID does not match");
-
-			Json::StatusData Status;
+			ParsedPresence.Resource = std::string(JIDResource);
 
 			auto ShowNode = Node->first_node("show", 4);
 			if (ShowNode) {
 				switch (Utils::Crc32(ShowNode->value(), ShowNode->value_size()))
 				{
 				case Utils::Crc32("chat"):
-					Status.ShowStatus = Json::ShowStatus::Chat;
+					ParsedPresence.ShowStatus = Json::ShowStatus::Chat;
 					break;
 				case Utils::Crc32("dnd"):
-					Status.ShowStatus = Json::ShowStatus::DoNotDisturb;
+					ParsedPresence.ShowStatus = Json::ShowStatus::DoNotDisturb;
 					break;
 				case Utils::Crc32("away"):
-					Status.ShowStatus = Json::ShowStatus::Away;
+					ParsedPresence.ShowStatus = Json::ShowStatus::Away;
 					break;
 				case Utils::Crc32("xa"):
-					Status.ShowStatus = Json::ShowStatus::ExtendedAway;
+					ParsedPresence.ShowStatus = Json::ShowStatus::ExtendedAway;
 					break;
 				default:
-					Status.ShowStatus = Json::ShowStatus::Online;
+					ParsedPresence.ShowStatus = Json::ShowStatus::Online;
 				}
 			}
 			else {
-				Status.ShowStatus = Json::ShowStatus::Online;
+				ParsedPresence.ShowStatus = Json::ShowStatus::Online;
 			}
 
 			// https://tools.ietf.org/html/rfc3921#section-2.2.1
@@ -500,7 +501,7 @@ namespace EGL3::Web::Xmpp {
 			auto TypeAttr = Node->first_attribute("type", 4);
 			if (TypeAttr) {
 				if (!XmlValueEqual(TypeAttr, "available")) {
-					Status.ShowStatus = Json::ShowStatus::Offline;
+					ParsedPresence.ShowStatus = Json::ShowStatus::Offline;
 				}
 			}
 
@@ -510,7 +511,7 @@ namespace EGL3::Web::Xmpp {
 
 				rapidjson::Document Json;
 				Json.Parse(StatusNode->value(), StatusNode->value_size());
-				EGL3_ASSERT(Json::StatusData::Parse(Json, Status), "Failed to parse status json from presence");
+				EGL3_ASSERT(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), "Failed to parse status json from presence");
 			}
 
 			{
@@ -522,14 +523,16 @@ namespace EGL3::Web::Xmpp {
 
 					auto StampAttr = DelayNode->first_attribute("stamp", 5);
 					EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
-					EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), Status.UpdatedTime), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
+					EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
 				}
 				else {
-					Status.UpdatedTime = std::chrono::system_clock::now();
+					ParsedPresence.LastUpdated = std::chrono::system_clock::now();
 				}
 			}
 
-			OnPresenceUpdate(std::string(JIDId), Status);
+			printf("Account: %.*s\n", JIDId.size(), JIDId.data());
+			ParsedPresence.Dump();
+			OnPresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
 			return true;
 		}
 		return false;
@@ -567,7 +570,7 @@ namespace EGL3::Web::Xmpp {
 			if (NextTime <= std::chrono::steady_clock::now()) {
 				SendPing(Socket, CurrentJid);
 			}
-			// TODO: add condition variable here (yielding actually uses a lot of cpu you know)
+			// TODO: add condition variable here, i tried yielding, that uses too much cpu time
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 			NextTime = BackgroundPingNextTime;
 		}

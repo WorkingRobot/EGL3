@@ -16,10 +16,7 @@ namespace EGL3::Widgets {
             Construct(GetUrl(Key), Width, Height);
         }
 
-        AsyncImageKeyed(AsyncImageKeyed&&) = default;
-        AsyncImageKeyed& operator=(AsyncImageKeyed&&) = default;
-
-        operator Gtk::Widget& () {
+        operator Gtk::Widget&() {
             return Image;
         }
 

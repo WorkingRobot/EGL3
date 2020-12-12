@@ -55,9 +55,9 @@ namespace EGL3 {
         Web::Epic::EpicClient C;
         auto Resp = C.GetBlogPosts("en-US");*/
 
-        /*if (!getenv("GTK_CSD")) {
+        if (!getenv("GTK_CSD")) {
             _putenv_s("GTK_CSD", "0");
-        }*/
+        }
 
         {
             auto Config = FcConfigCreate();
@@ -82,6 +82,7 @@ namespace EGL3 {
             printf("error oops\n");
         });
         StyleData->load_from_path("J:/Code/Visual Studio 2017/Projects/EGL3/src/EGL3.css");
+        Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         Utils::GladeBuilder Builder("J:/Code/Visual Studio 2017/Projects/EGL3/src/EGL3.glade");
 
@@ -106,16 +107,7 @@ namespace EGL3 {
             App->remove_data("EGL3Storage");
         }, App));
 
-        App->signal_startup().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
-            try {
-                Modules::ModuleList::Attach(App, Builder);
-            }
-            catch (std::exception& e) {
-                printf("%s\n", e.what());
-            }
-        }, App));
-
-        Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        Modules::ModuleList::Attach(App, Builder);
         return App->run(AppWnd, 0, NULL);
     }
 }

@@ -6,6 +6,8 @@
 #include "../modules/ImageCache.h"
 
 namespace EGL3::Widgets {
+    using namespace Web::Xmpp::Json;
+
     class FriendItem {
     public:
         FriendItem(const Storage::Models::Friend& Item, Modules::ImageCacheModule& ImageCache) :
@@ -35,7 +37,7 @@ namespace EGL3::Widgets {
             return BaseContainer;
         }
 
-        std::strong_ordering operator<=>(const FriendItem& that) const {
+        std::weak_ordering operator<=>(const FriendItem& that) const {
             std::scoped_lock DoubleLock(UpdateDataMutex, that.UpdateDataMutex);
             return UpdateData <=> that.UpdateData;
         }
@@ -69,8 +71,8 @@ namespace EGL3::Widgets {
 
             Favorited.set_valign(Gtk::ALIGN_END);
 
-            AvatarBackground.set_async(UpdateData.Kairos.GetBackgroundUrl(), 64, 64, ImageCache);
-            Avatar.set_async(UpdateData.Kairos.GetAvatarUrl(), 64, 64, ImageCache);
+            AvatarBackground.set_async(UpdateData.GetKairosBackgroundUrl(), 64, 64, ImageCache);
+            Avatar.set_async(UpdateData.GetKairosAvatarUrl(), 64, 64, ImageCache);
 
             ColorStatusEventBox.add(ColorStatus);
             ColorStatusEventBox.set_events(Gdk::BUTTON_PRESS_MASK);
@@ -107,44 +109,45 @@ namespace EGL3::Widgets {
         void UpdateDispatch() {
             std::lock_guard UpdateDataLock(UpdateDataMutex);
 
-            Username.set_tooltip_text(UpdateData.AccountId);
-            Username.set_text(UpdateData.Username);
-            Nickname.set_text(UpdateData.Nickname);
+            Username.set_tooltip_text(UpdateData.GetAccountId());
+            Username.set_text(UpdateData.GetDisplayName());
+            Nickname.set_text(UpdateData.GetAlternateName());
             // set_visible or show/hide doesn't work for some reason
-            if (UpdateData.Favorite) {
+            if (UpdateData.IsFavorited()) {
                 Favorited.set_from_icon_name("starred-symbolic", Gtk::ICON_SIZE_BUTTON);
             }
             else {
                 Favorited.clear();
             }
 
-            Avatar.set_async(UpdateData.Kairos.GetAvatarUrl(), 64, 64, ImageCache);
-            AvatarBackground.set_async(UpdateData.Kairos.GetBackgroundUrl(), 64, 64, ImageCache);
+            AvatarBackground.set_async(UpdateData.GetKairosBackgroundUrl(), 64, 64, ImageCache);
+            Avatar.set_async(UpdateData.GetKairosAvatarUrl(), 64, 64, ImageCache);
 
-            switch (UpdateData.OnlineStatus)
+            switch (UpdateData.GetShowStatus())
             {
-            case Web::Xmpp::Json::ShowStatus::Online:
+            case ShowStatus::Online:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/online.png", ImageCache);
                 break;
-            case Web::Xmpp::Json::ShowStatus::Chat:
+            case ShowStatus::Chat:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/chat.png", ImageCache);
                 break;
-            case Web::Xmpp::Json::ShowStatus::DoNotDisturb:
+            case ShowStatus::DoNotDisturb:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/dnd.png", ImageCache);
                 break;
-            case Web::Xmpp::Json::ShowStatus::Away:
+            case ShowStatus::Away:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/away.png", ImageCache);
                 break;
-            case Web::Xmpp::Json::ShowStatus::ExtendedAway:
+            case ShowStatus::ExtendedAway:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/xa.png", ImageCache);
                 break;
-            case Web::Xmpp::Json::ShowStatus::Offline:
+            case ShowStatus::Offline:
                 ColorStatus.set_async("https://fnbot.shop/egl3/status/offline.png", ImageCache);
                 break;
             }
 
-            if (UpdateData.OnlineStatus != Web::Xmpp::Json::ShowStatus::Offline) {
-                switch (Utils::Crc32(UpdateData.ProductId))
+            if (UpdateData.GetShowStatus() != Web::Xmpp::Json::ShowStatus::Offline) {
+                auto& ProductId = UpdateData.GetProductId();
+                switch (Utils::Crc32(ProductId.data(), ProductId.size()))
                 {
                 case Utils::Crc32("EGL3"):
                     PlayImage.set_async("https://fnbot.shop/egl3/status/launcher-icon.png", 64, 64, ImageCache);
@@ -153,19 +156,19 @@ namespace EGL3::Widgets {
                     PlayImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
                     break;
                 default:
-                    PlayImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/launcher/icon.png", 64, 64, ImageCache);
+                    PlayImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
                     break;
                 }
 
-                Status.set_text(UpdateData.DisplayStatus.empty() ? "In the launcher" : UpdateData.DisplayStatus);
+                Status.set_text(UpdateData.GetStatus().empty() ? "In the launcher" : UpdateData.GetStatus());
             }
             else {
                 PlayImage.clear();
 
-                if (UpdateData.Status != Storage::Models::Friend::RelationStatus::ACCEPTED) {
-                    switch (UpdateData.Status) {
+                if (UpdateData.GetRelationStatus() != Storage::Models::Friend::RelationStatus::ACCEPTED) {
+                    switch (UpdateData.GetRelationStatus()) {
                     case Storage::Models::Friend::RelationStatus::PENDING:
-                        switch (UpdateData.Direction)
+                        switch (UpdateData.GetRelationDirection())
                         {
                         case Storage::Models::Friend::RelationDirection::INBOUND:
                             Status.set_text("Incoming Friend Request");

@@ -1,24 +1,26 @@
 #pragma once
 
 #include "../../utils/Crc32.h"
+#include "../../utils/StringCompare.h"
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <charconv>
 
 namespace EGL3::Web::Xmpp::Json {
 	// There's a bunch of enums that this is based off of,
 	// but the most high level one is EOnlinePresenceState
 	// https://github.com/EpicGames/UnrealEngine/blob/f8f4b403eb682ffc055613c7caf9d2ba5df7f319/Engine/Source/Runtime/Online/XMPP/Private/XmppJingle/XmppPresenceJingle.cpp#L170
-	enum class ShowStatus {
-		Online,
+	enum class ShowStatus : uint8_t {
+		DoNotDisturb, // dnd
 		Chat, // chat
+		Online,
 		Away, // away
 		ExtendedAway, // xa
-		DoNotDisturb, // dnd
 		Offline,
 	};
 
-	struct KairosProfile {
+	struct PresenceKairosProfile {
 		static constexpr char* DefaultAvatar = "cid_001_athena_commando_m_default";
 		static constexpr char* DefaultBackground = R"(["#FF81AE","#D8033C","#790625"])";
 
@@ -28,23 +30,15 @@ namespace EGL3::Web::Xmpp::Json {
 
 		std::optional<std::string> AppInstalled;
 
-		static std::string StaticGetAvatarUrl(const std::string& Avatar) {
+		static std::string GetKairosAvatarUrl(const std::string& Avatar) {
 			return "http://cdn2.unrealengine.com/Kairos/portraits/" + Avatar + ".png?preview=1";
 		}
 
-		static std::string StaticGetBackgroundUrl(const std::string& Background) {
+		static std::string GetKairosBackgroundUrl(const std::string& Background) {
 			auto Hash = Utils::Crc32(Background.c_str(), Background.size());
 			char Buf[16];
 			sprintf(Buf, "%04X", Hash);
 			return "https://fnbot.shop/egl3/backgrounds/" + std::string(Buf) + ".png";
-		}
-
-		std::string GetAvatarUrl() const {
-			return StaticGetAvatarUrl(Avatar);
-		}
-
-		std::string GetBackgroundUrl() const {
-			return StaticGetBackgroundUrl(Background);
 		}
 
 		rapidjson::StringBuffer ToProperty() const {
@@ -59,12 +53,9 @@ namespace EGL3::Web::Xmpp::Json {
 			Writer.Key("avatarBackground");
 			Writer.String(Background.c_str());
 
-			Writer.Key("appInstalled");
 			if (AppInstalled.has_value()) {
+				Writer.Key("appInstalled");
 				Writer.String(AppInstalled->c_str(), AppInstalled->size());
-			}
-			else {
-				Writer.String("init");
 			}
 
 			Writer.EndObject();
@@ -72,14 +63,210 @@ namespace EGL3::Web::Xmpp::Json {
 			return Buffer;
 		}
 
-		PARSE_DEFINE(KairosProfile)
-			PARSE_ITEM("avatar", Avatar)
-			PARSE_ITEM("avatarBackground", Background)
+		PARSE_DEFINE(PresenceKairosProfile)
+			PARSE_ITEM_DEF("avatar", Avatar, DefaultAvatar)
+			PARSE_ITEM_DEF("avatarBackground", Background, DefaultBackground)
 			PARSE_ITEM_OPT("appInstalled", AppInstalled)
 		PARSE_END
 	};
 
-	struct StatusProperties {
+	enum class ResourceVersion : uint8_t {
+		Invalid = 0,
+		Initial = 1,
+		AddedPlatformUserId = 2,
+
+		LatestPlusOne,
+		Latest = LatestPlusOne - 1,
+		Ancient = LatestPlusOne
+	};
+
+	struct ResourceId {
+		ResourceId() : Version(ResourceVersion::Invalid) {}
+
+		// https://github.com/EpicGames/UnrealEngine/blob/c1f54c5103e418b88e8b981a6b20da4c88aa3245/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L45
+		ResourceId(std::string&& Data) : Resource(std::make_unique<std::string>(std::move(Data))) {
+			std::string_view ResourceView = *Resource;
+
+			auto NumResources = std::count(ResourceView.begin(), ResourceView.end(), ':');
+			if (!(
+				NumResources ?
+					ParseAsResource(ResourceView, NumResources) : // If any ':' exist, try to parse it as a normal resource
+					ParseAsAncient(ResourceView)
+				)) {
+				Version = ResourceVersion::Invalid;
+			}
+		}
+
+		std::weak_ordering operator<=>(const ResourceId& that) const {
+			if (auto cmp = CompareApps(AppId, that.AppId); cmp != 0)
+				return cmp;
+			if (auto cmp = ComparePlatforms(Platform, that.Platform); cmp != 0)
+				return cmp;
+
+			return std::weak_ordering::equivalent;
+		}
+
+		constexpr static std::weak_ordering ComparePlatforms(const std::string_view& A, const std::string_view& B) {
+			return FavorString(A, B, "WIN");
+		}
+
+		// EGL is worst
+		// EGL3 is better
+		// Other games are even better
+		// Fortnite is best
+		constexpr static std::weak_ordering CompareApps(const std::string_view& A, const std::string_view& B) {
+			if (auto cmp = FavorString(A, B, "Fortnite"); cmp != 0)
+				return cmp;
+			if (auto cmp = FavorStringOver(A, B, "EGL3", "launcher"); cmp != 0)
+				return cmp;
+			return Utils::CompareStrings(A, B);
+		}
+
+		constexpr static std::weak_ordering FavorString(const std::string_view& A, const std::string_view& B, const char* String) {
+			if (A == String && B != String) {
+				return std::weak_ordering::greater;
+			}
+			else if (B != String && B == String) {
+				return std::weak_ordering::less;
+			}
+			return std::weak_ordering::equivalent;
+		}
+
+		// If one is neither of the two given, that string is the better
+		// If they are both either Better or Worse, pick the Better
+		constexpr static std::weak_ordering FavorStringOver(const std::string_view& A, const std::string_view& B, const char* Better, const char* Worse) {
+			bool AOk = A != Better && A != Worse;
+			bool BOk = B != Better && B != Worse;
+			if (auto cmp = AOk <=> BOk; cmp != 0) {
+				return cmp;
+			}
+			if (A == Better && B == Worse) {
+				return std::weak_ordering::greater;
+			}
+			else if (B == Better && A == Worse) {
+				return std::weak_ordering::less;
+			}
+			return std::weak_ordering::equivalent;
+		}
+
+		const std::string& GetString() const {
+			return *Resource;
+		}
+
+		bool IsValid() const {
+			return Version != ResourceVersion::Invalid;
+		}
+
+		ResourceVersion GetResourceVersion() const {
+			return Version;
+		}
+
+		const std::string_view& GetAppId() const {
+			return AppId;
+		}
+
+		const std::string_view& GetPlatform() const {
+			return Platform;
+		}
+
+		const std::string_view& GetPlatformUserId() const {
+			return PlatformUserId;
+		}
+
+		const std::string_view& GetInstanceGUID() const {
+			return InstanceGUID;
+		}
+
+	private:
+		// Easier subsequent find() functions
+		static constexpr std::string_view::size_type FindNext(const std::string_view& View, std::string_view::size_type Start, char Ch) {
+			return Start == std::string_view::npos ? std::string_view::npos : View.find(Ch, Start + 1);
+		}
+
+		// This is a variation of std::basic_string_view::substr where
+		//  - both Start and End are iterators
+		//  - Start can be npos (where it returns default)
+		//  - Start is inclusive, where it advances an extra character compared to the original substr
+		static constexpr std::string_view LazyInclusiveSubstr(const std::string_view& View, std::string_view::size_type Start, std::string_view::size_type End) {
+			if (Start == std::string_view::npos) {
+				return std::string_view();
+			}
+			return View.substr(Start + 1, End - Start - 1);
+		}
+
+		bool ParseAsResource(const std::string_view& ResourceView, int ResourcePartCount) {
+			auto Sep1Itr = ResourceView.find(':');
+
+			auto VersionString = ResourceView.substr(0, Sep1Itr);
+			if (VersionString.size() <= 1 || !VersionString.starts_with('V')) {
+				return false;
+			}
+
+			auto VersionParseResult = std::from_chars(VersionString.data() + 1, VersionString.data() + VersionString.size(), (uint8_t&)Version);
+			if (VersionParseResult.ptr != VersionString.data() + VersionString.size()) { // If everything from the version was not parsed as a valid number
+				return false;
+			}
+
+			if (Version < ResourceVersion::Initial) {
+				return false;
+			}
+
+			if (ResourcePartCount < 3) {
+				return false;
+			}
+
+			auto Sep2Itr = FindNext(ResourceView, Sep1Itr, ':');
+			auto Sep3Itr = FindNext(ResourceView, Sep2Itr, ':');
+
+			AppId = LazyInclusiveSubstr(ResourceView, Sep1Itr, Sep2Itr);
+			Platform = LazyInclusiveSubstr(ResourceView, Sep2Itr, Sep3Itr);
+
+			if (Version >= ResourceVersion::AddedPlatformUserId) {
+				auto Sep4Itr = FindNext(ResourceView, Sep3Itr, ':');
+				// For future compatability, in case extra stuff gets added after the GUID
+				auto Sep5Itr = FindNext(ResourceView, Sep4Itr, ':');
+				PlatformUserId = LazyInclusiveSubstr(ResourceView, Sep3Itr, Sep4Itr);
+				InstanceGUID = LazyInclusiveSubstr(ResourceView, Sep4Itr, Sep5Itr);
+			}
+			return true;
+		}
+
+		bool ParseAsAncient(const std::string_view& ResourceView) {
+			auto ClientSepItr = ResourceView.find('-');
+			if (ClientSepItr != 0 && ClientSepItr == std::string_view::npos) {
+				return false;
+			}
+
+			Version = ResourceVersion::Ancient;
+			AppId = ResourceView.substr(0, ClientSepItr);
+			// Rest after the '-' is marked "unused"
+
+			return true;
+		}
+
+		// When ResourceId is moved, the string_view types get invalidated
+		// Making this a unique ptr fixes that :)
+		std::unique_ptr<std::string> Resource;
+
+		ResourceVersion Version;
+		std::string_view AppId;
+		std::string_view Platform;
+		std::string_view PlatformUserId;
+		std::string_view InstanceGUID;
+	};
+
+	struct PresenceProperties {
+		PresenceProperties() = default;
+
+		PresenceProperties(const PresenceProperties& that) {
+			Properties.CopyFrom(that.Properties, Properties.GetAllocator(), true);
+		}
+
+		PresenceProperties& operator=(const PresenceProperties& that) {
+			Properties.CopyFrom(that.Properties, Properties.GetAllocator(), true);
+			return *this;
+		}
+
 	private:
 		JsonObject Properties;
 
@@ -215,42 +402,136 @@ namespace EGL3::Web::Xmpp::Json {
 			}
 		}
 
-		PARSE_DEFINE(StatusProperties)
+		PARSE_DEFINE(PresenceProperties)
 			PARSE_ITEM_ROOT(Properties)
 		PARSE_END
 	};
 
-	// Everything is optional here, we need to lazy load everything, this data can be essentially anything (user submitted)
-    struct StatusData {
-		// This is not serialized, it's instead given as another node in the xml presence
-		ShowStatus ShowStatus;
+	struct PresenceStatus {
+		const std::string& GetStatus() const {
+			return Status;
+		}
 
-		// This is not serialized, it's instead given as another node in the xml presence
-		TimePoint UpdatedTime;
+		const std::string& GetSessionId() const {
+			return SessionId;
+		}
 
+		const std::string& GetProductName() const {
+			return ProductName;
+		}
+
+		const PresenceProperties& GetProperties() const {
+			return Properties;
+		}
+
+		bool IsPlaying() const {
+			return Playing;
+		}
+
+		bool IsJoinable() const {
+			return Joinable;
+		}
+
+		bool HasVoiceSupport() const {
+			return Joinable;
+		}
+
+		const PresenceKairosProfile* GetKairosProfile() const {
+			if (!KairosProfileParsed) {
+				std::string KairosString;
+				if (Properties.GetValue("KairosProfile", KairosString)) {
+					rapidjson::Document KairosJson;
+					KairosJson.Parse(KairosString.c_str(), KairosString.size());
+					if (!KairosJson.HasParseError()) {
+						if (!PresenceKairosProfile::Parse(KairosJson, KairosProfile.emplace())) {
+							KairosProfile.reset();
+							// TODO: Provide warning here and basically everywhere else with invalid json relating to presences
+						}
+					}
+				}
+				KairosProfileParsed = true;
+			}
+			return KairosProfile.has_value() ? &KairosProfile.value() : nullptr;
+		}
+
+		void SetStatus(const std::string& NewStatus) {
+			Status = NewStatus;
+		}
+
+		void SetKairosProfile(const PresenceKairosProfile& NewProfile) {
+			KairosProfileParsed = true;
+			Properties.SetValue("KairosProfile", KairosProfile.emplace(NewProfile));
+		}
+
+		void Dump() const {
+			rapidjson::StringBuffer Buf;
+			{
+				rapidjson::Writer Writer(Buf);
+				Properties.WriteTo(Writer);
+			}
+
+			printf("Status: %s\nPlaying: %s\nJoinable: %s\nVoice: %s\nSession Id: %s\nProduct: %s\nProperties: %.*s\n",
+				Status.c_str(),
+				Playing ? "Yes" : "No",
+				Joinable ? "Yes" : "No",
+				VoiceSupport ? "Yes" : "No",
+				SessionId.c_str(),
+				ProductName.c_str(),
+				Buf.GetLength(), Buf.GetString()
+			);
+		}
+		
+		PARSE_DEFINE(PresenceStatus)
+			PARSE_ITEM_DEF("Status", Status, "")
+			PARSE_ITEM_DEF("bIsPlaying", Playing, false)
+			PARSE_ITEM_DEF("bIsJoinable", Joinable, false)
+			PARSE_ITEM_DEF("bHasVoiceSupport", VoiceSupport, false)
+			PARSE_ITEM_DEF("ProductName", ProductName, "")
+			PARSE_ITEM_DEF("SessionId", SessionId, "")
+			PARSE_ITEM_DEF("Properties", Properties, PresenceProperties())
+		PARSE_END
+
+	private:
 		std::string Status;
 
 		bool Playing;
 
 		bool Joinable;
 
-		// Rocket League doesn't wanna give it
-		std::optional<bool> HasVoiceSupport;
+		bool VoiceSupport;
 
 		std::string SessionId;
 
-		std::optional<std::string> ProductName;
+		std::string ProductName;
 
-		StatusProperties Properties;
+		PresenceProperties Properties;
+		
+		// Dynamically made
+		mutable bool KairosProfileParsed = false;
+		mutable std::optional<PresenceKairosProfile> KairosProfile;
+	};
 
-		PARSE_DEFINE(StatusData)
-			PARSE_ITEM("Status", Status)
-			PARSE_ITEM("bIsPlaying", Playing)
-			PARSE_ITEM("bIsJoinable", Joinable)
-			PARSE_ITEM_OPT("bHasVoiceSupport", HasVoiceSupport)
-			PARSE_ITEM_OPT("ProductName", ProductName)
-			PARSE_ITEM("SessionId", SessionId)
-			PARSE_ITEM("Properties", Properties)
-		PARSE_END
-    };
+	struct Presence {
+		ResourceId Resource;
+
+		ShowStatus ShowStatus;
+
+		TimePoint LastUpdated;
+
+		PresenceStatus Status;
+
+		std::weak_ordering operator<=>(const Presence& that) const {
+			return Resource <=> that.Resource;
+		}
+
+		void Dump() const {
+			printf("Resource: %s\nStatus: %d\nTime: %s\n",
+				Resource.GetString().c_str(),
+				(int)ShowStatus,
+				GetTimePoint(LastUpdated).c_str()
+			);
+			Status.Dump();
+			printf("\n");
+		}
+	};
 }

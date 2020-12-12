@@ -25,7 +25,7 @@ namespace EGL3::Web::Epic::Responses {
 				PARSE_ITEM("date", Date)
 				PARSE_ITEM_OPT("externalLink", ExternalLink)
 				PARSE_ITEM("slug", Slug)
-				PARSE_ITEM("shareDescription", ShareDescription)
+				PARSE_ITEM_DEF("shareDescription", ShareDescription, "")
 			PARSE_END
 		};
 
