@@ -11,32 +11,37 @@ namespace EGL3::Storage::Models {
 
         std::string KairosBackground;
 
-        std::string DisplayStatus;
+        std::optional<std::string> DisplayStatus;
 
-        ShowStatus OnlineStatus;
+        std::optional<ShowStatus> OnlineStatus;
 
     public:
-        CurrentUser() : OnlineStatus(ShowStatus::Online) {}
+        ShowStatus GetShowStatus() const override {
+            if (OnlineStatus.has_value()) {
+                return OnlineStatus.value();
+            }
+            return Friend::GetShowStatus();
+        }
 
-        const std::string& GetKairosAvatar() const {
+        const std::string& GetStatus() const override {
+            if (DisplayStatus.has_value()) {
+                return DisplayStatus.value();
+            }
+            return Friend::GetStatus();
+        }
+
+        const std::string& GetKairosAvatar() const override {
             if (KairosAvatar.empty()) {
                 return Friend::GetKairosAvatar();
             }
             return KairosAvatar;
         }
 
-        const std::string& GetKairosBackground() const {
+        const std::string& GetKairosBackground() const override {
             if (KairosBackground.empty()) {
                 return Friend::GetKairosBackground();
             }
             return KairosBackground;
-        }
-
-        const std::string& GetStatus() const {
-            if (DisplayStatus.empty()) {
-                return Friend::GetStatus();
-            }
-            return DisplayStatus;
         }
 
         void SetKairosAvatar(const std::string& NewAvatar) {
@@ -51,17 +56,15 @@ namespace EGL3::Storage::Models {
             DisplayStatus = NewStatus;
         }
 
-        void SetOnlineStatus(ShowStatus NewStatus) {
+        void SetShowStatus(ShowStatus NewStatus) {
             OnlineStatus = NewStatus;
         }
 
         Presence BuildPresence() const {
             Presence Ret;
-            Ret.ShowStatus = OnlineStatus;
+            Ret.ShowStatus = GetShowStatus();
             Ret.Status.SetStatus(GetStatus());
-            PresenceKairosProfile NewKairosProfile;
-            NewKairosProfile.Avatar = GetKairosAvatar();
-            NewKairosProfile.Background = GetKairosBackground();
+            PresenceKairosProfile NewKairosProfile(GetKairosAvatar(), GetKairosBackground());
             Ret.Status.SetKairosProfile(NewKairosProfile);
             return Ret;
         }

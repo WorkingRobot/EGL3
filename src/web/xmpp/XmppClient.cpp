@@ -13,8 +13,7 @@
 #include "../../utils/streams/MemoryStream.h"
 
 namespace EGL3::Web::Xmpp {
-	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void()>& OnLoggedIn, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate) :
-		OnLoggedIn(OnLoggedIn),
+	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate) :
 		OnPresenceUpdate(OnPresenceUpdate),
 		State(ClientState::OPENING)
 	{
@@ -63,6 +62,8 @@ namespace EGL3::Web::Xmpp {
 
 	void XmppClient::SetPresence(const Json::Presence& NewPresence)
 	{
+		PresenceSendable.wait(false);
+
 		auto CurrentTime = Json::GetCurrentTimePoint();
 		auto Document = CreateDocument();
 		auto RootNode = Document->allocate_node(rapidxml::node_element, "presence");
@@ -542,7 +543,7 @@ namespace EGL3::Web::Xmpp {
 	std::string GenerateResourceId() {
 		uint8_t Guid[16];
 		Utils::GenerateRandomGuid(Guid);
-		return "V2:launcher:WIN::" + Utils::ToHex<true>(Guid);
+		return "V2:EGL3:WIN::" + Utils::ToHex<true>(Guid);
 	}
 
 	void SendPing(ix::WebSocket& Socket, const std::string& CurrentJid) {
@@ -736,7 +737,9 @@ namespace EGL3::Web::Xmpp {
 			ReadXmppInfoQueryResult<true>(Node, CurrentJid);
 
 			State = ClientState::AUTHENTICATED;
-			OnLoggedIn();
+			printf("sendable!");
+			PresenceSendable = true;
+			PresenceSendable.notify_all();
 			break;
 		}
 		case ClientState::AUTHENTICATED:

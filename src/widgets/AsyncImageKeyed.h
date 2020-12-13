@@ -6,10 +6,11 @@
 #include "../modules/ImageCache.h"
 
 namespace EGL3::Widgets {
+    template<typename KeyType>
     class AsyncImageKeyed {
     public:
         template<typename UrlCallback>
-        AsyncImageKeyed(const std::string& Key, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
+        AsyncImageKeyed(const KeyType& Key, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
             Key(Key),
             ImageCache(ImageCache)
         {
@@ -20,7 +21,7 @@ namespace EGL3::Widgets {
             return Image;
         }
 
-        const std::string& GetKey() const {
+        const KeyType& GetKey() const {
             return Key;
         }
 
@@ -34,7 +35,7 @@ namespace EGL3::Widgets {
         }
 
         Modules::ImageCacheModule& ImageCache;
-        std::string Key;
+        KeyType Key;
 
         AsyncImage Image;
     };

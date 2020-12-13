@@ -24,11 +24,6 @@ namespace EGL3::Widgets {
         FriendItem(FriendItem&&) = default;
         FriendItem& operator=(FriendItem&&) = default;
 
-        void SetAsCurrentUser(Gtk::Window& KairosMenu) {
-            AvatarEventBox.signal_button_press_event().connect([&, this](GdkEventButton* evt) { return DisplayMenu(KairosMenu, evt); });
-            ColorStatusEventBox.signal_button_press_event().connect([&, this](GdkEventButton* evt) { return DisplayMenu(KairosMenu, evt); });
-        }
-
         void Update() {
             UpdateDispatcher.emit();
         }
@@ -57,8 +52,6 @@ namespace EGL3::Widgets {
             Status.set_xalign(0);
             Status.set_yalign(0);
 
-            Nickname.set_margin_left(10);
-
             Status.set_line_wrap(true);
             Status.set_ellipsize(Pango::ELLIPSIZE_END);
             Status.set_lines(1);
@@ -71,17 +64,12 @@ namespace EGL3::Widgets {
 
             Favorited.set_valign(Gtk::ALIGN_END);
 
-            AvatarBackground.set_async(UpdateData.GetKairosBackgroundUrl(), 64, 64, ImageCache);
-            Avatar.set_async(UpdateData.GetKairosAvatarUrl(), 64, 64, ImageCache);
-
             ColorStatusEventBox.add(ColorStatus);
-            ColorStatusEventBox.set_events(Gdk::BUTTON_PRESS_MASK);
 
             ColorStatusEventBox.set_halign(Gtk::ALIGN_END);
             ColorStatusEventBox.set_valign(Gtk::ALIGN_END);
 
             AvatarEventBox.add(Avatar);
-            AvatarEventBox.set_events(Gdk::BUTTON_PRESS_MASK);
 
             AvatarContainer.set_size_request(72, 72);
 
@@ -93,15 +81,23 @@ namespace EGL3::Widgets {
             AvatarContainer.set_overlay_pass_through(ColorStatusEventBox, false);
 
             UsernameContainer.pack_start(Username, false, false, 0);
-            UsernameContainer.pack_start(Nickname, false, false, 10);
+            UsernameContainer.pack_start(Nickname, false, false, 0);
             UsernameContainer.pack_end(Favorited, false, false, 0);
 
             StatusContainer.pack_start(UsernameContainer, true, true, 5);
             StatusContainer.pack_end(Status, true, true, 5);
 
+            PlatformImage.set_halign(Gtk::ALIGN_END);
+            PlatformImage.set_valign(Gtk::ALIGN_END);
+
+            PlatformContainer.set_size_request(72, 72);
+
+            PlatformContainer.add(ProductImage);
+            PlatformContainer.add_overlay(PlatformImage);
+
             BaseContainer.pack_start(AvatarContainer, false, false, 0);
             BaseContainer.pack_start(StatusContainer, true, true, 5);
-            BaseContainer.pack_end(PlayImage, false, false, 0);
+            BaseContainer.pack_end(PlatformContainer, false, false, 0);
 
             BaseContainer.show_all();
         }
@@ -123,47 +119,56 @@ namespace EGL3::Widgets {
             AvatarBackground.set_async(UpdateData.GetKairosBackgroundUrl(), 64, 64, ImageCache);
             Avatar.set_async(UpdateData.GetKairosAvatarUrl(), 64, 64, ImageCache);
 
-            switch (UpdateData.GetShowStatus())
-            {
-            case ShowStatus::Online:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/online.png", ImageCache);
-                break;
-            case ShowStatus::Chat:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/chat.png", ImageCache);
-                break;
-            case ShowStatus::DoNotDisturb:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/dnd.png", ImageCache);
-                break;
-            case ShowStatus::Away:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/away.png", ImageCache);
-                break;
-            case ShowStatus::ExtendedAway:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/xa.png", ImageCache);
-                break;
-            case ShowStatus::Offline:
-                ColorStatus.set_async("https://fnbot.shop/egl3/status/offline.png", ImageCache);
-                break;
-            }
+            ColorStatus.set_async(ShowStatusToUrl(UpdateData.GetShowStatus()), ImageCache);
 
-            if (UpdateData.GetShowStatus() != Web::Xmpp::Json::ShowStatus::Offline) {
-                auto& ProductId = UpdateData.GetProductId();
+            if (UpdateData.GetShowStatus() != ShowStatus::Offline) {
+                auto ProductId = UpdateData.GetProductId();
                 switch (Utils::Crc32(ProductId.data(), ProductId.size()))
                 {
                 case Utils::Crc32("EGL3"):
-                    PlayImage.set_async("https://fnbot.shop/egl3/status/launcher-icon.png", 64, 64, ImageCache);
+                    ProductImage.set_async("https://fnbot.shop/egl3/launcher-icon.png", 64, 64, ImageCache);
                     break;
                 case Utils::Crc32("Fortnite"):
-                    PlayImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
+                    ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
                     break;
                 default:
-                    PlayImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
+                    ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
                     break;
                 }
 
-                Status.set_text(UpdateData.GetStatus().empty() ? "In the launcher" : UpdateData.GetStatus());
+                // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
+                auto Platform = UpdateData.GetPlatform();
+                switch (Utils::Crc32(Platform.data(), Platform.size()))
+                {
+                case Utils::Crc32("PSN"):
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/ps4.png", 24, 24, ImageCache);
+                    break;
+                case Utils::Crc32("XBL"):
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/xbox.png", 24, 24, ImageCache);
+                    break;
+                case Utils::Crc32("WIN"):
+                case Utils::Crc32("MAC"):
+                case Utils::Crc32("LNX"): // In the future? :)
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/pc.png", 24, 24, ImageCache);
+                    break;
+                case Utils::Crc32("IOS"):
+                case Utils::Crc32("AND"):
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/mobile.png", 24, 24, ImageCache);
+                    break;
+                case Utils::Crc32("SWT"):
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/switch.png", 24, 24, ImageCache);
+                    break;
+                case Utils::Crc32("OTHER"):
+                default:
+                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/earth.png", 24, 24, ImageCache);
+                    break;
+                }
+
+                Status.set_text(UpdateData.GetStatus().empty() ? ShowStatusToString(UpdateData.GetShowStatus()) : UpdateData.GetStatus());
             }
             else {
-                PlayImage.clear();
+                ProductImage.clear();
+                PlatformImage.clear();
 
                 if (UpdateData.GetRelationStatus() != Storage::Models::Friend::RelationStatus::ACCEPTED) {
                     switch (UpdateData.GetRelationStatus()) {
@@ -190,22 +195,9 @@ namespace EGL3::Widgets {
                     }
                 }
                 else {
-                    Status.set_text("Offline");
+                    Status.set_text(ShowStatusToString(ShowStatus::Offline));
                 }
             }
-        }
-
-        bool DisplayMenu(Gtk::Window& KairosMenu, GdkEventButton* evt) {
-            KairosMenu.set_attached_to(Avatar);
-            KairosMenu.show();
-            KairosMenu.present();
-
-            auto Alloc = Avatar.get_allocation();
-            int x, y;
-            Avatar.get_window()->get_origin(x, y);
-            // Moved after because get_height returns 1 when hidden (couldn't find other workarounds for that, and I'm not bothered since there's no flashing)
-            KairosMenu.move(x + Alloc.get_x(), y + Alloc.get_y() - KairosMenu.get_height());
-            return true;
         }
 
         Glib::Dispatcher UpdateDispatcher;
@@ -213,6 +205,7 @@ namespace EGL3::Widgets {
         mutable std::mutex UpdateDataMutex;
         const Storage::Models::Friend& UpdateData;
 
+    protected:
         Modules::ImageCacheModule& ImageCache;
         Gtk::Box BaseContainer{ Gtk::ORIENTATION_HORIZONTAL };
         Gtk::Overlay AvatarContainer;
@@ -227,6 +220,8 @@ namespace EGL3::Widgets {
         Gtk::Label Nickname;
         Gtk::Image Favorited;
         Gtk::Label Status;
-        AsyncImage PlayImage;
+        Gtk::Overlay PlatformContainer;
+        AsyncImage ProductImage;
+        AsyncImage PlatformImage;
     };
 }

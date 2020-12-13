@@ -5,6 +5,7 @@
 #include "../utils/GladeBuilder.h"
 #include "../web/xmpp/XmppClient.h"
 #include "../widgets/AsyncImageKeyed.h"
+#include "../widgets/CurrentUserItem.h"
 #include "../widgets/FriendItem.h"
 #include "BaseModule.h"
 #include "ModuleList.h"
@@ -26,7 +27,8 @@ namespace EGL3::Modules {
 			CurrentUserWidget(CurrentUserModel, ImageCache),
 			KairosMenu(Builder.GetWidget<Gtk::Window>("FriendsKairosMenu")),
 			KairosAvatarBox(Builder.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
-			KairosBackgroundBox(Builder.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow"))
+			KairosBackgroundBox(Builder.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
+			KairosStatusBox(Builder.GetWidget<Gtk::FlowBox>("FriendsStatusFlow"))
 		{
 			Box.set_sort_func([](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
 				auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
@@ -44,7 +46,7 @@ namespace EGL3::Modules {
 
 				KairosAvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
 					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-					auto Data = (Widgets::AsyncImageKeyed*)Widget.get_child()->get_data("EGL3_ImageBase");
+					auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
 					if (Data->GetKey() == CurrentUserModel.GetKairosAvatar()) {
 						KairosAvatarBox.select_child(Widget);
 					}
@@ -52,9 +54,17 @@ namespace EGL3::Modules {
 				
 				KairosBackgroundBox.foreach([this](Gtk::Widget& WidgetBase) {
 					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-					auto Data = (Widgets::AsyncImageKeyed*)Widget.get_child()->get_data("EGL3_ImageBase");
+					auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
 					if (Data->GetKey() == CurrentUserModel.GetKairosBackground()) {
 						KairosBackgroundBox.select_child(Widget);
+					}
+				});
+
+				KairosStatusBox.foreach([this](Gtk::Widget& WidgetBase) {
+					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
+					auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)Widget.get_child()->get_data("EGL3_ImageBase");
+					if (Data->GetKey() == CurrentUserModel.GetShowStatus()) {
+						KairosStatusBox.select_child(Widget);
 					}
 				});
 			});
@@ -69,7 +79,7 @@ namespace EGL3::Modules {
 			});
 
 			KairosAvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-				auto Data = (Widgets::AsyncImageKeyed*)child->get_child()->get_data("EGL3_ImageBase");
+				auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
 				if (Data->GetKey() == CurrentUserModel.GetKairosAvatar()) {
 					return;
 				}
@@ -86,7 +96,7 @@ namespace EGL3::Modules {
 			});
 
 			KairosBackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-				auto Data = (Widgets::AsyncImageKeyed*)child->get_child()->get_data("EGL3_ImageBase");
+				auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
 				if (Data->GetKey() == CurrentUserModel.GetKairosBackground()) {
 					return;
 				}
@@ -102,6 +112,16 @@ namespace EGL3::Modules {
 				});
 			});
 
+			KairosStatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+				auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)child->get_child()->get_data("EGL3_ImageBase");
+				if (Data->GetKey() == CurrentUserModel.GetShowStatus()) {
+					return;
+				}
+
+				CurrentUserModel.SetShowStatus(Data->GetKey());
+				XmppClient->SetPresence(CurrentUserModel.BuildPresence());
+			});
+
 			CurrentUserModel.SetUpdateCallback([this](const auto& Status) { CurrentUserWidget.Update(); ReSortBoxDispatcher.emit(); });
 			CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
 			CurrentUserWidget.SetAsCurrentUser(KairosMenu);
@@ -112,7 +132,22 @@ namespace EGL3::Modules {
 			AuthModule.AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
 
 			CurrentUserModel.SetDisplayStatus("Using EGL3");
-			CurrentUserModel.SetOnlineStatus(Web::Xmpp::Json::ShowStatus::Online);
+			CurrentUserModel.SetShowStatus(Json::ShowStatus::Online);
+
+			{
+				KairosStatusBox.foreach([this](Gtk::Widget& Widget) { KairosStatusBox.remove(Widget); });
+
+				StatusWidgets.clear();
+				StatusWidgets.reserve(5);
+
+				static const std::initializer_list<Json::ShowStatus> Statuses{ Json::ShowStatus::Online, Json::ShowStatus::Away, Json::ShowStatus::ExtendedAway, Json::ShowStatus::DoNotDisturb, Json::ShowStatus::Chat };
+				for (auto Status : Statuses) {
+					auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, 48, 48, &Json::ShowStatusToUrl, ImageCache));
+					KairosStatusBox.add(*Widget);
+				}
+
+				KairosStatusBox.show_all_children();
+			}
 		}
 
 		~FriendsModule() {
@@ -142,7 +177,6 @@ namespace EGL3::Modules {
 
 			XmppClient.emplace(
 				LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.AccessToken,
-				[this]() { XmppClient->SetPresence(CurrentUserModel.BuildPresence()); },
 				[this](const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) { OnPresenceUpdate(AccountId, std::move(Presence)); }
 			);
 			this->LauncherClient = &LauncherClient;
@@ -150,7 +184,6 @@ namespace EGL3::Modules {
 			UpdateAsync();
 		}
 
-		// TODO: wait until you get a response from json to set the presence avatar
 		void UpdateAsync() {
 			if (!LauncherClient) {
 				return;
@@ -242,6 +275,7 @@ namespace EGL3::Modules {
 								}
 							}
 							// At this point, you should be able to set a presence
+							XmppClient->SetPresence(CurrentUserModel.BuildPresence());
 						}
 					}
 
@@ -281,13 +315,13 @@ namespace EGL3::Modules {
 
 			// KairosAvatarsResp handling
 			{
-				KairosAvatarBox.foreach([this](Gtk::Widget& Widget) { Box.remove(Widget); });
+				KairosAvatarBox.foreach([this](Gtk::Widget& Widget) { KairosAvatarBox.remove(Widget); });
 
 				AvatarsWidgets.clear();
 				AvatarsWidgets.reserve(AvatarsData.size());
 
 				for (auto& Avatar : AvatarsData) {
-					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Avatar, 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
+					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
 					KairosAvatarBox.add(*Widget);
 				}
 
@@ -296,13 +330,13 @@ namespace EGL3::Modules {
 
 			// KairosBackgroundsResp handling
 			{
-				KairosBackgroundBox.foreach([this](Gtk::Widget& Widget) { Box.remove(Widget); });
+				KairosBackgroundBox.foreach([this](Gtk::Widget& Widget) { KairosBackgroundBox.remove(Widget); });
 
 				BackgroundsWidgets.clear();
 				BackgroundsWidgets.reserve(BackgroundsData.size());
 
 				for (auto& Background : BackgroundsData) {
-					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed>(Background, 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
+					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
 					KairosBackgroundBox.add(*Widget);
 				}
 
@@ -320,12 +354,13 @@ namespace EGL3::Modules {
 
 		Gtk::Box& CurrentUserContainer;
 		Storage::Models::CurrentUser CurrentUserModel;
-		Widgets::FriendItem CurrentUserWidget;
+		Widgets::CurrentUserItem CurrentUserWidget;
 
 		bool KairosMenuFocused = false;
 		Gtk::Window& KairosMenu;
 		Gtk::FlowBox& KairosAvatarBox;
 		Gtk::FlowBox& KairosBackgroundBox;
+		Gtk::FlowBox& KairosStatusBox;
 
 		Web::Epic::EpicClientAuthed* LauncherClient;
 		std::optional<XmppClient> XmppClient;
@@ -345,9 +380,11 @@ namespace EGL3::Modules {
 		std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
 
 		std::vector<std::string> AvatarsData;
-		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed>> AvatarsWidgets;
+		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> AvatarsWidgets;
 
 		std::vector<std::string> BackgroundsData;
-		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed>> BackgroundsWidgets;
+		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> BackgroundsWidgets;
+
+		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<Json::ShowStatus>>> StatusWidgets;
 	};
 }

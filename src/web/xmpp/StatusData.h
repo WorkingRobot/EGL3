@@ -20,21 +20,70 @@ namespace EGL3::Web::Xmpp::Json {
 		Offline,
 	};
 
+	static constexpr const char* ShowStatusToString(ShowStatus Status) {
+		switch (Status)
+		{
+		case ShowStatus::DoNotDisturb:
+			return "Do Not Disturb";
+		case ShowStatus::Chat:
+			return "Chat";
+		case ShowStatus::Online:
+			return "Online";
+		case ShowStatus::Away:
+			return "Away";
+		case ShowStatus::ExtendedAway:
+			return "Extended Away";
+		case ShowStatus::Offline:
+			return "Offline";
+		default:
+			return "Unknown";
+		}
+	}
+
+	static constexpr const char* ShowStatusToUrl(ShowStatus Status) {
+		switch (Status)
+		{
+		case ShowStatus::DoNotDisturb:
+			return "https://fnbot.shop/egl3/status/dnd.png";
+		case ShowStatus::Chat:
+			return "https://fnbot.shop/egl3/status/chat.png";
+		case ShowStatus::Online:
+			return "https://fnbot.shop/egl3/status/online.png";
+		case ShowStatus::Away:
+			return "https://fnbot.shop/egl3/status/away.png";
+		case ShowStatus::ExtendedAway:
+			return "https://fnbot.shop/egl3/status/xa.png";
+		case ShowStatus::Offline:
+		default:
+			return "https://fnbot.shop/egl3/status/offline.png";
+		}
+	}
+
 	struct PresenceKairosProfile {
-		static constexpr char* DefaultAvatar = "cid_001_athena_commando_m_default";
-		static constexpr char* DefaultBackground = R"(["#FF81AE","#D8033C","#790625"])";
+		std::string Avatar;
 
-		std::string Avatar = DefaultAvatar;
-
-		std::string Background = DefaultBackground;
+		std::string Background;
 
 		std::optional<std::string> AppInstalled;
 
+		PresenceKairosProfile(const std::string& Avatar, const std::string& Background) :
+			Avatar(Avatar),
+			Background(Background)
+		{}
+
+		PresenceKairosProfile() = default;
+
 		static std::string GetKairosAvatarUrl(const std::string& Avatar) {
-			return "http://cdn2.unrealengine.com/Kairos/portraits/" + Avatar + ".png?preview=1";
+			if (Avatar.empty()) {
+				return "https://fnbot.shop/egl3/backgrounds/6C564614.png";
+			}
+			return "https://cdn2.unrealengine.com/Kairos/portraits/" + Avatar + ".png?preview=1";
 		}
 
 		static std::string GetKairosBackgroundUrl(const std::string& Background) {
+			if (Background.empty()) {
+				return "https://fnbot.shop/egl3/backgrounds/6C564614.png";
+			}
 			auto Hash = Utils::Crc32(Background.c_str(), Background.size());
 			char Buf[16];
 			sprintf(Buf, "%04X", Hash);
@@ -64,8 +113,8 @@ namespace EGL3::Web::Xmpp::Json {
 		}
 
 		PARSE_DEFINE(PresenceKairosProfile)
-			PARSE_ITEM_DEF("avatar", Avatar, DefaultAvatar)
-			PARSE_ITEM_DEF("avatarBackground", Background, DefaultBackground)
+			PARSE_ITEM_DEF("avatar", Avatar, "")
+			PARSE_ITEM_DEF("avatarBackground", Background, "")
 			PARSE_ITEM_OPT("appInstalled", AppInstalled)
 		PARSE_END
 	};
@@ -107,7 +156,9 @@ namespace EGL3::Web::Xmpp::Json {
 		}
 
 		constexpr static std::weak_ordering ComparePlatforms(const std::string_view& A, const std::string_view& B) {
-			return FavorString(A, B, "WIN");
+			if (auto cmp = FavorString(A, B, "WIN"); cmp != 0)
+				return cmp;
+			return Utils::CompareStringsSensitive(A, B);
 		}
 
 		// EGL is worst
@@ -119,7 +170,7 @@ namespace EGL3::Web::Xmpp::Json {
 				return cmp;
 			if (auto cmp = FavorStringOver(A, B, "EGL3", "launcher"); cmp != 0)
 				return cmp;
-			return Utils::CompareStrings(A, B);
+			return Utils::CompareStringsSensitive(A, B);
 		}
 
 		constexpr static std::weak_ordering FavorString(const std::string_view& A, const std::string_view& B, const char* String) {

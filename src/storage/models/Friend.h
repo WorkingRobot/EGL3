@@ -54,9 +54,9 @@ namespace EGL3::Storage::Models {
 
         // Kairos data (from api calls, not XMPP)
 
-        std::string KairosAvatar = PresenceKairosProfile::DefaultAvatar;
+        std::string KairosAvatar;
 
-        std::string KairosBackground = PresenceKairosProfile::DefaultBackground;
+        std::string KairosBackground;
 
         // Callback when this data is updated
 
@@ -222,7 +222,17 @@ namespace EGL3::Storage::Models {
             return PresItr->Resource.GetAppId();
         }
 
-        ShowStatus GetShowStatus() const {
+        const std::string_view& GetPlatform() const {
+            auto PresItr = this->GetBestPresence();
+            if (PresItr == Presences.end()) {
+                // Allows returning a ref instead of creating a copy
+                static const std::string empty = "";
+                return empty;
+            }
+            return PresItr->Resource.GetPlatform();
+        }
+
+        virtual ShowStatus GetShowStatus() const {
             auto PresItr = GetBestEGL3Presence();
 
             if (PresItr == Presences.end()) {
@@ -231,7 +241,7 @@ namespace EGL3::Storage::Models {
             return PresItr->ShowStatus;
         }
 
-        const std::string& GetStatus() const {
+        virtual const std::string& GetStatus() const {
             auto PresItr = GetBestPresence();
             if (PresItr == Presences.end()) {
                 // Allows returning a ref instead of creating a copy
@@ -239,10 +249,9 @@ namespace EGL3::Storage::Models {
                 return empty;
             }
             return PresItr->Status.GetStatus();
-            //return PresItr->Status.GetStatus() + " (" + std::string(PresItr->Resource.GetPlatform()) + ")"; // Change to return by value, not reference here
         }
 
-        const std::string& GetKairosAvatar() const {
+        virtual const std::string& GetKairosAvatar() const {
             auto Profile = GetValidKairosProfile();
             if (Profile) {
                 return Profile->Avatar;
@@ -250,7 +259,7 @@ namespace EGL3::Storage::Models {
             return KairosAvatar;
         }
 
-        const std::string& GetKairosBackground() const {
+        virtual const std::string& GetKairosBackground() const {
             auto Profile = GetValidKairosProfile();
             if (Profile) {
                 return Profile->Background;
@@ -294,7 +303,7 @@ namespace EGL3::Storage::Models {
                 return cmp;
             if (auto cmp = Utils::CompareStringsInsensitive(GetDisplayName(), GetDisplayName()); cmp != 0)
                 return cmp;
-            return Utils::CompareStrings(Username, that.Username);
+            return Utils::CompareStringsInsensitive(Username, that.Username);
         }
     };
 }
