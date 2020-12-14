@@ -142,7 +142,6 @@ namespace EGL3::Web::Epic::Auth {
 					auto RespJson = Http::ParseJson(Response);
 
 					if (RespJson.HasParseError()) {
-						// printf("polling json error %d @ %zu\n", RespJson.GetParseError(), RespJson.GetErrorOffset());
 						return POLLING_JSON;
 					}
 
@@ -268,7 +267,6 @@ namespace EGL3::Web::Epic::Auth {
 		if (Cancelled) { return CANCELLED; }
 
 		if (RespJson.HasParseError()) {
-			// printf("exch json error %d @ %zu\n", RespJson.GetParseError(), RespJson.GetErrorOffset());
 			return EXCH_REQUEST_JSON;
 		}
 

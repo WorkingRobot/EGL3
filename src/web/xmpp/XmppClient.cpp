@@ -133,6 +133,7 @@ namespace EGL3::Web::Xmpp {
 
 	XmppClient::~XmppClient()
 	{
+		OnPresenceUpdate = [](const std::string&, Json::Presence&&) {};
 		BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
 		BackgroundPingFuture.get();
 		Socket.close();
@@ -543,7 +544,7 @@ namespace EGL3::Web::Xmpp {
 	std::string GenerateResourceId() {
 		uint8_t Guid[16];
 		Utils::GenerateRandomGuid(Guid);
-		return "V2:EGL3:WIN::" + Utils::ToHex<true>(Guid);
+		return "V2:launcher:WIN::" + Utils::ToHex<true>(Guid);
 	}
 
 	void SendPing(ix::WebSocket& Socket, const std::string& CurrentJid) {
@@ -737,7 +738,6 @@ namespace EGL3::Web::Xmpp {
 			ReadXmppInfoQueryResult<true>(Node, CurrentJid);
 
 			State = ClientState::AUTHENTICATED;
-			printf("sendable!");
 			PresenceSendable = true;
 			PresenceSendable.notify_all();
 			break;

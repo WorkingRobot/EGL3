@@ -50,7 +50,7 @@ namespace EGL3::Storage::Models {
 
         // XMPP presence
 
-        std::set<Presence> Presences;
+        std::set<Presence, std::greater<Presence>> Presences;
 
         // Kairos data (from api calls, not XMPP)
 
@@ -287,23 +287,22 @@ namespace EGL3::Storage::Models {
 
         std::weak_ordering operator<=>(const Friend& that) const {
             if (GetShowStatus() != ShowStatus::Offline && that.GetShowStatus() != ShowStatus::Offline) {
-                if (auto cmp = *that.GetBestPresence() <=> *GetBestPresence(); cmp != 0)
+                if (auto cmp = *GetBestPresence() <=> *that.GetBestPresence(); cmp != 0)
                     return cmp;
             }
             if (auto cmp = GetShowStatus() <=> that.GetShowStatus(); cmp != 0)
                 return cmp;
-            if (auto cmp = FriendStatus <=> that.FriendStatus; cmp != 0)
+            if (auto cmp = that.FriendStatus <=> FriendStatus; cmp != 0) // Accepted takes priority over suggested
                 return cmp;
             if (FriendStatus == RelationStatus::PENDING) {
-                if (auto cmp = FriendRequestDirection <=> that.FriendRequestDirection; cmp != 0)
+                if (auto cmp = that.FriendRequestDirection <=> FriendRequestDirection; cmp != 0)
                     return cmp;
             }
-            // Inverse, place favorites first, not last
             if (auto cmp = that.Favorite <=> Favorite; cmp != 0)
                 return cmp;
-            if (auto cmp = Utils::CompareStringsInsensitive(GetDisplayName(), GetDisplayName()); cmp != 0)
+            if (auto cmp = Utils::CompareStringsInsensitive(that.GetDisplayName(), GetDisplayName()); cmp != 0)
                 return cmp;
-            return Utils::CompareStringsInsensitive(Username, that.Username);
+            return Utils::CompareStringsInsensitive(that.Username, Username);
         }
     };
 }

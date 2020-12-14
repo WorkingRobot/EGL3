@@ -12,12 +12,12 @@ namespace EGL3::Web::Xmpp::Json {
 	// but the most high level one is EOnlinePresenceState
 	// https://github.com/EpicGames/UnrealEngine/blob/f8f4b403eb682ffc055613c7caf9d2ba5df7f319/Engine/Source/Runtime/Online/XMPP/Private/XmppJingle/XmppPresenceJingle.cpp#L170
 	enum class ShowStatus : uint8_t {
-		DoNotDisturb, // dnd
-		Chat, // chat
-		Online,
-		Away, // away
-		ExtendedAway, // xa
 		Offline,
+		ExtendedAway, // xa
+		Away, // away
+		DoNotDisturb, // dnd
+		Online,
+		Chat, // chat
 	};
 
 	static constexpr const char* ShowStatusToString(ShowStatus Status) {
@@ -177,7 +177,7 @@ namespace EGL3::Web::Xmpp::Json {
 			if (A == String && B != String) {
 				return std::weak_ordering::greater;
 			}
-			else if (B != String && B == String) {
+			else if (A != String && B == String) {
 				return std::weak_ordering::less;
 			}
 			return std::weak_ordering::equivalent;

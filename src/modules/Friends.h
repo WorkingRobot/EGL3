@@ -7,6 +7,7 @@
 #include "../widgets/AsyncImageKeyed.h"
 #include "../widgets/CurrentUserItem.h"
 #include "../widgets/FriendItem.h"
+#include "../widgets/FriendItemMenu.h"
 #include "BaseModule.h"
 #include "ModuleList.h"
 
@@ -28,7 +29,8 @@ namespace EGL3::Modules {
 			KairosMenu(Builder.GetWidget<Gtk::Window>("FriendsKairosMenu")),
 			KairosAvatarBox(Builder.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
 			KairosBackgroundBox(Builder.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
-			KairosStatusBox(Builder.GetWidget<Gtk::FlowBox>("FriendsStatusFlow"))
+			KairosStatusBox(Builder.GetWidget<Gtk::FlowBox>("FriendsStatusFlow")),
+			FriendMenu([this](auto Action) { OnFriendAction(Action); })
 		{
 			Box.set_sort_func([](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
 				auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
@@ -37,9 +39,16 @@ namespace EGL3::Modules {
 				EGL3_ASSERT(APtr && BPtr, "Widgets aren't of type FriendItem");
 
 				// Undocumented _Value, but honestly, it's fine
-				return (*APtr <=> *BPtr)._Value;
+				return -(*APtr <=> *BPtr)._Value;
 			});
 			ReSortBoxDispatcher.connect([this]() { Box.invalidate_sort(); });
+
+			Box.signal_row_activated().connect([this](Gtk::ListBoxRow* child) {
+				SelectedFriend = (Widgets::FriendItem*)child->get_child()->get_data("EGL3_FriendBase");
+				if (SelectedFriend) {
+					FriendMenu.PopupMenu(SelectedFriend->GetData(), *child);
+				}
+			});
 
 			KairosMenu.signal_show().connect([this]() {
 				KairosMenuFocused = false;
@@ -122,7 +131,7 @@ namespace EGL3::Modules {
 				XmppClient->SetPresence(CurrentUserModel.BuildPresence());
 			});
 
-			CurrentUserModel.SetUpdateCallback([this](const auto& Status) { CurrentUserWidget.Update(); ReSortBoxDispatcher.emit(); });
+			CurrentUserModel.SetUpdateCallback([this](const auto& Status) { CurrentUserWidget.Update(); });
 			CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
 			CurrentUserWidget.SetAsCurrentUser(KairosMenu);
 
@@ -182,6 +191,44 @@ namespace EGL3::Modules {
 			this->LauncherClient = &LauncherClient;
 
 			UpdateAsync();
+		}
+
+		void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action) {
+			if (!SelectedFriend) {
+				return;
+			}
+
+			printf("%s ", SelectedFriend->GetData().GetDisplayName().c_str());
+			switch (Action)
+			{
+			case Widgets::FriendItemMenu::ClickAction::CHAT:
+				printf("chat\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::REMOVE_FRIEND:
+				printf("remove friend\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::ACCEPT_REQUEST:
+				printf("accept req\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::DECLINE_REQUEST:
+				printf("decline req\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::CANCEL_REQUEST:
+				printf("cancel req\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::SEND_REQUEST:
+				printf("send req\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::SET_NICKNAME:
+				printf("set nick\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::BLOCK_USER:
+				printf("block\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::COPY_USER_ID:
+				printf("copy id\n");
+				break;
+			}
 		}
 
 		void UpdateAsync() {
@@ -351,6 +398,9 @@ namespace EGL3::Modules {
 
 		Glib::Dispatcher ReSortBoxDispatcher;
 		Gtk::ListBox& Box;
+
+		Widgets::FriendItemMenu FriendMenu;
+		Widgets::FriendItem* SelectedFriend;
 
 		Gtk::Box& CurrentUserContainer;
 		Storage::Models::CurrentUser CurrentUserModel;

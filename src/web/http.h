@@ -5,8 +5,8 @@
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
-//#define WEB_SUFFIX_DATA cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
 #define WEB_SUFFIX_DATA
+#define WEB_SUFFIX_DATA cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
 
 namespace EGL3::Web {
 	// static wrapper class for handling everything http errors/logging/etc

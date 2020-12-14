@@ -24,17 +24,20 @@ namespace EGL3::Widgets {
         FriendItem(FriendItem&&) = default;
         FriendItem& operator=(FriendItem&&) = default;
 
-        void Update() {
-            UpdateDispatcher.emit();
-        }
-
         operator Gtk::Widget& () {
             return BaseContainer;
         }
 
         std::weak_ordering operator<=>(const FriendItem& that) const {
-            std::scoped_lock DoubleLock(UpdateDataMutex, that.UpdateDataMutex);
             return UpdateData <=> that.UpdateData;
+        }
+
+        void Update() {
+            UpdateDispatcher.emit();
+        }
+
+        const Storage::Models::Friend& GetData() const {
+            return UpdateData;
         }
 
     private:
@@ -103,8 +106,6 @@ namespace EGL3::Widgets {
         }
 
         void UpdateDispatch() {
-            std::lock_guard UpdateDataLock(UpdateDataMutex);
-
             Username.set_tooltip_text(UpdateData.GetAccountId());
             Username.set_text(UpdateData.GetDisplayName());
             Nickname.set_text(UpdateData.GetAlternateName());
@@ -201,8 +202,6 @@ namespace EGL3::Widgets {
         }
 
         Glib::Dispatcher UpdateDispatcher;
-        // Mutable because operator<=> locks it
-        mutable std::mutex UpdateDataMutex;
         const Storage::Models::Friend& UpdateData;
 
     protected:
