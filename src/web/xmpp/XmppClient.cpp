@@ -13,8 +13,8 @@
 #include "../../utils/streams/MemoryStream.h"
 
 namespace EGL3::Web::Xmpp {
-	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate) :
-		OnPresenceUpdate(OnPresenceUpdate),
+	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const Xmpp::Callbacks& Callbacks) :
+		Callbacks(Callbacks),
 		State(ClientState::OPENING)
 	{
 		std::call_once(InitFlag, ix::initNetSystem);
@@ -133,7 +133,7 @@ namespace EGL3::Web::Xmpp {
 
 	XmppClient::~XmppClient()
 	{
-		OnPresenceUpdate = [](const std::string&, Json::Presence&&) {};
+		Callbacks.Clear();
 		BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
 		BackgroundPingFuture.get();
 		Socket.close();
@@ -513,6 +513,7 @@ namespace EGL3::Web::Xmpp {
 
 				rapidjson::Document Json;
 				Json.Parse(StatusNode->value(), StatusNode->value_size());
+				EGL3_ASSERT(!Json.HasParseError(), "Failed to parse status json from presence (invalid json)");
 				EGL3_ASSERT(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), "Failed to parse status json from presence");
 			}
 
@@ -534,10 +535,99 @@ namespace EGL3::Web::Xmpp {
 
 			printf("Account: %.*s\n", JIDId.size(), JIDId.data());
 			ParsedPresence.Dump();
-			OnPresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
+			Callbacks.PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
 			return true;
 		}
 		return false;
+	}
+
+	bool XmppClient::HandleSystemMessage(const rapidjson::Document& Data) {
+		auto& TypeJson = Data["type"];
+		switch (Utils::Crc32(TypeJson.GetString(), TypeJson.GetStringLength())) {
+		case Utils::Crc32("FRIENDSHIP_REQUEST"):
+		{
+			Messages::FriendshipRequest Val;
+			if (Messages::FriendshipRequest::Parse(Data, Val)) {
+				Callbacks.FriendshipRequested(std::move(Val));
+			}
+			break;
+		}
+		case Utils::Crc32("FRIENDSHIP_REMOVE"):
+		{
+			Messages::FriendshipRemove Val;
+			if (Messages::FriendshipRemove::Parse(Data, Val)) {
+				Callbacks.FriendshipRemoved(std::move(Val));
+			}
+			break;
+		}
+		case Utils::Crc32("USER_BLOCKLIST_UPDATE"):
+		{
+			Messages::UserBlocklistUpdate Val;
+			if (Messages::UserBlocklistUpdate::Parse(Data, Val)) {
+				Callbacks.UserBlocklistUpdated(std::move(Val));
+			}
+			break;
+		}
+		case Utils::Crc32("com.epicgames.friends.core.apiobjects.Friend"):
+			// FRIENDSHIP_REQUEST handles it
+			break;
+		case Utils::Crc32("com.epicgames.friends.core.apiobjects.FriendRemoval"):
+			// FRIENDSHIP_REMOVE handles it
+			break;
+		case Utils::Crc32("com.epicgames.friends.core.apiobjects.BlockListEntryAdded"):
+		case Utils::Crc32("com.epicgames.friends.core.apiobjects.BlockListEntryRemoved"):
+			// USER_BLOCKLIST_UPDATE can handle both of these
+			break;
+		case Utils::Crc32("com.epicgames.social.interactions.notification.v1"):
+			// kind of useless (for egl3 anyway)
+			break;
+		default:
+			break;
+		}
+
+		return true;
+	}
+
+	bool XmppClient::HandleSystemMessage(const rapidxml::xml_node<>* Node) {
+		if (XmlNameEqual(Node, "message")) {
+			auto FromAttr = Node->first_attribute("from", 4);
+			if (!FromAttr) {
+				return false;
+			}
+
+			auto FromJID = std::string(FromAttr->value(), FromAttr->value_size());
+			std::string_view JIDId, JIDDomain, JIDResource;
+			if (!ParseJID(FromJID, JIDId, JIDDomain, JIDResource)) {
+				return false;
+			}
+			if (JIDId != "xmpp-admin") {
+				return false;
+			}
+
+			auto XmlnsAttr = Node->first_attribute("xmlns", 5);
+			EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <message>, xmlns=\"jabber:client\" expected");
+			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <message>, xmlns=\"jabber:client\" expected");
+
+			auto ToAttr = Node->first_attribute("to", 2);
+			EGL3_ASSERT(ToAttr, "No to jid recieved with <message>");
+			EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <message>, expected JID does not match");
+
+			auto BodyNode = Node->first_node("body", 4);
+			EGL3_ASSERT(BodyNode, "No body recieved with <message>");
+			
+			rapidjson::Document Json;
+			Json.Parse(BodyNode->value(), BodyNode->value_size());
+			EGL3_ASSERT(!Json.HasParseError(), "Failed to parse body json from message (invalid json)");
+
+			HandleSystemMessage(Json);
+
+			return true;
+		}
+		return false;
+	}
+
+	bool XmppClient::HandleChat(const rapidxml::xml_node<>* Node) {
+
 	}
 
 	// https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88

@@ -63,6 +63,16 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetBlockedUsers> GetBlockedUsers();
 
+        Response<void> AddFriend(const std::string& AccountId);
+
+        Response<void> RemoveFriend(const std::string& AccountId);
+
+        Response<void> SetFriendNickname(const std::string& AccountId, const std::string& Nickname);
+
+        Response<void> ClearFriendNickname(const std::string& AccountId);
+
+        Response<Responses::GetFriendsSummary> GetFriendsSummary(const std::string& AccountId, bool DisplayNames);
+
 
         // Channels service
 

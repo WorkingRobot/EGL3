@@ -181,12 +181,29 @@ namespace EGL3::Modules {
 			}
 		}
 
+		void OnFriendshipRequested(Messages::FriendshipRequest&& NewRequest) {
+
+		}
+
+		void OnFriendshipRemoved(Messages::FriendshipRemove&& NewRemoval) {
+
+		}
+
+		void OnUserBlocklistUpdated(Messages::UserBlocklistUpdate&& NewUpdate) {
+
+		}
+
 		void OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
 			EGL3_ASSERT(LauncherClient.AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
 
 			XmppClient.emplace(
 				LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.AccessToken,
-				[this](const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) { OnPresenceUpdate(AccountId, std::move(Presence)); }
+				Callbacks {
+					[this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); },
+					[this](auto&& A) { OnFriendshipRequested(std::move(A)); },
+					[this](auto&& A) { OnFriendshipRemoved(std::move(A)); },
+					[this](auto&& A) { OnUserBlocklistUpdated(std::move(A)); },
+				}
 			);
 			this->LauncherClient = &LauncherClient;
 
@@ -204,20 +221,16 @@ namespace EGL3::Modules {
 			case Widgets::FriendItemMenu::ClickAction::CHAT:
 				printf("chat\n");
 				break;
-			case Widgets::FriendItemMenu::ClickAction::REMOVE_FRIEND:
-				printf("remove friend\n");
-				break;
 			case Widgets::FriendItemMenu::ClickAction::ACCEPT_REQUEST:
-				printf("accept req\n");
-				break;
-			case Widgets::FriendItemMenu::ClickAction::DECLINE_REQUEST:
-				printf("decline req\n");
-				break;
-			case Widgets::FriendItemMenu::ClickAction::CANCEL_REQUEST:
-				printf("cancel req\n");
-				break;
 			case Widgets::FriendItemMenu::ClickAction::SEND_REQUEST:
+				LauncherClient->AddFriend(SelectedFriend->GetData().GetAccountId());
 				printf("send req\n");
+				break;
+			case Widgets::FriendItemMenu::ClickAction::REMOVE_FRIEND:
+			case Widgets::FriendItemMenu::ClickAction::DECLINE_REQUEST:
+			case Widgets::FriendItemMenu::ClickAction::CANCEL_REQUEST:
+				LauncherClient->RemoveFriend(SelectedFriend->GetData().GetAccountId());
+				printf("cancel req\n");
 				break;
 			case Widgets::FriendItemMenu::ClickAction::SET_NICKNAME:
 				printf("set nick\n");

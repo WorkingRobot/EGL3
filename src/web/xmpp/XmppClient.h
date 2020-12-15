@@ -4,14 +4,29 @@
 #include <rapidxml/rapidxml.hpp>
 
 #include "../BaseClient.h"
+#include "messages/Messages.h"
 #include "Responses.h"
 
 namespace EGL3::Web::Xmpp {
+    struct Callbacks {
+        std::function<void(const std::string& AccountId, Json::Presence&& NewPresence)> PresenceUpdate;
+        std::function<void(Messages::FriendshipRequest&& NewRequest)> FriendshipRequested;
+        std::function<void(Messages::FriendshipRemove&& NewRemoval)> FriendshipRemoved;
+        std::function<void(Messages::UserBlocklistUpdate&& NewUpdate)> UserBlocklistUpdated;
+
+        void Clear() {
+            PresenceUpdate = [](auto, auto) {};
+            FriendshipRequested = [](auto) {};
+            FriendshipRemoved = [](auto) {};
+            UserBlocklistUpdated = [](auto) {};
+        }
+    };
+
     // Standards used are listed in comments inside the cpp file and in asserts
     // TODO: Create constant to easily switch environments (currently only in prod)
     class XmppClient {
     public:
-        XmppClient(const std::string& AccountId, const std::string& AccessToken, const std::function<void(const std::string&, Json::Presence&&)>& OnPresenceUpdate);
+        XmppClient(const std::string& AccountId, const std::string& AccessToken, const Callbacks& Callbacks);
 
         void SetPresence(const Json::Presence& NewPresence);
 
@@ -21,6 +36,12 @@ namespace EGL3::Web::Xmpp {
         bool HandlePong(const rapidxml::xml_node<>* Node);
 
         bool HandlePresence(const rapidxml::xml_node<>* Node);
+
+        bool HandleSystemMessage(const rapidjson::Document& Data);
+
+        bool HandleSystemMessage(const rapidxml::xml_node<>* Node);
+
+        bool HandleChat(const rapidxml::xml_node<>* Node);
 
         void BackgroundPingTask();
 
@@ -43,7 +64,7 @@ namespace EGL3::Web::Xmpp {
             AUTHENTICATED
         };
 
-        std::function<void(const std::string&, Json::Presence&&)> OnPresenceUpdate;
+        Callbacks Callbacks;
         std::atomic<bool> PresenceSendable;
 
         ClientState State;

@@ -514,12 +514,14 @@ namespace EGL3::Web::Epic {
 
 		if (GetCancelled()) { return CANCELLED; }
 
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
 		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
 
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/blocklist/" },
+			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/blocklist/" + AuthData.AccountId.value() },
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -541,6 +543,60 @@ namespace EGL3::Web::Epic {
 		}
 
 		return Resp;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::AddFriend(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Post(
+			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() + "/" + AccountId },
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::RemoveFriend(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Delete(
+			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() + "/" + AccountId },
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
 	}
 
 	BaseClient::Response<Responses::GetAvailableSettingValues> EpicClientAuthed::GetAvailableSettingValues(const std::string& Setting)
