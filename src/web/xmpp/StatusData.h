@@ -43,19 +43,19 @@ namespace EGL3::Web::Xmpp::Json {
 	static constexpr const char* ShowStatusToUrl(ShowStatus Status) {
 		switch (Status)
 		{
-		case ShowStatus::DoNotDisturb:
-			return "https://fnbot.shop/egl3/status/dnd.png";
 		case ShowStatus::Chat:
-			return "https://fnbot.shop/egl3/status/chat.png";
+			return "https://epic.gl/assets/status/chat.png";
+		case ShowStatus::DoNotDisturb:
+			return "https://epic.gl/assets/status/dnd.png";
 		case ShowStatus::Online:
-			return "https://fnbot.shop/egl3/status/online.png";
+			return "https://epic.gl/assets/status/online.png";
 		case ShowStatus::Away:
-			return "https://fnbot.shop/egl3/status/away.png";
+			return "https://epic.gl/assets/status/away.png";
 		case ShowStatus::ExtendedAway:
-			return "https://fnbot.shop/egl3/status/xa.png";
+			return "https://epic.gl/assets/status/xa.png";
 		case ShowStatus::Offline:
 		default:
-			return "https://fnbot.shop/egl3/status/offline.png";
+			return "https://epic.gl/assets/status/offline.png";
 		}
 	}
 
@@ -73,21 +73,19 @@ namespace EGL3::Web::Xmpp::Json {
 
 		PresenceKairosProfile() = default;
 
-		static std::string GetKairosAvatarUrl(const std::string& Avatar) {
+		static cpr::Url GetKairosAvatarUrl(const std::string& Avatar) {
 			if (Avatar.empty()) {
-				return "https://fnbot.shop/egl3/backgrounds/6C564614.png";
+				return "https://epic.gl/assets/backgrounds/6C564614.png";
 			}
-			return "https://cdn2.unrealengine.com/Kairos/portraits/" + Avatar + ".png?preview=1";
+			return Web::BaseClient::FormatUrl("https://cdn2.unrealengine.com/Kairos/portraits/%s.png?preview=1", Avatar.c_str());
 		}
 
-		static std::string GetKairosBackgroundUrl(const std::string& Background) {
+		static cpr::Url GetKairosBackgroundUrl(const std::string& Background) {
 			if (Background.empty()) {
-				return "https://fnbot.shop/egl3/backgrounds/6C564614.png";
+				return "https://epic.gl/assets/backgrounds/6C564614.png";
 			}
 			auto Hash = Utils::Crc32(Background.c_str(), Background.size());
-			char Buf[16];
-			sprintf(Buf, "%04X", Hash);
-			return "https://fnbot.shop/egl3/backgrounds/" + std::string(Buf) + ".png";
+			return Web::BaseClient::FormatUrl("https://epic.gl/assets/backgrounds/%04X.png", Hash);
 		}
 
 		rapidjson::StringBuffer ToProperty() const {
@@ -503,6 +501,10 @@ namespace EGL3::Web::Xmpp::Json {
 				KairosProfileParsed = true;
 			}
 			return KairosProfile.has_value() ? &KairosProfile.value() : nullptr;
+		}
+
+		void SetProductName(const std::string& NewProduct) {
+			ProductName = NewProduct;
 		}
 
 		void SetStatus(const std::string& NewStatus) {

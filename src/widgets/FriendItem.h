@@ -112,55 +112,25 @@ namespace EGL3::Widgets {
             AvatarBackground.set_async(Friend.GetKairosBackgroundUrl(), 64, 64, ImageCache);
             Avatar.set_async(Friend.GetKairosAvatarUrl(), 64, 64, ImageCache);
 
+            Status.set_has_tooltip(false);
+
             if (UpdateData.GetType() == Storage::Models::FriendType::NORMAL || UpdateData.GetType() == Storage::Models::FriendType::CURRENT) {
                 auto& FriendData = UpdateData.Get<Storage::Models::FriendType::NORMAL>();
 
                 ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), ImageCache);
 
                 if (FriendData.GetShowStatus() != ShowStatus::Offline) {
-                    auto ProductId = FriendData.GetProductId();
-                    switch (Utils::Crc32(ProductId.data(), ProductId.size()))
-                    {
-                    case Utils::Crc32("EGL3"):
-                        ProductImage.set_async("https://fnbot.shop/egl3/launcher-icon.png", 64, 64, ImageCache);
-                        break;
-                    case Utils::Crc32("Fortnite"):
-                        ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
-                        break;
-                    default:
-                        ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
-                        break;
-                    }
+                    ProductImage.set_async(GetProductImageUrl(FriendData.GetProductId()), 64, 64, ImageCache);
 
-                    // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
-                    auto Platform = FriendData.GetPlatform();
-                    switch (Utils::Crc32(Platform.data(), Platform.size()))
-                    {
-                    case Utils::Crc32("PSN"):
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/ps4.png", 24, 24, ImageCache);
-                        break;
-                    case Utils::Crc32("XBL"):
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/xbox.png", 24, 24, ImageCache);
-                        break;
-                    case Utils::Crc32("WIN"):
-                    case Utils::Crc32("MAC"):
-                    case Utils::Crc32("LNX"): // In the future? :)
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/pc.png", 24, 24, ImageCache);
-                        break;
-                    case Utils::Crc32("IOS"):
-                    case Utils::Crc32("AND"):
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/mobile.png", 24, 24, ImageCache);
-                        break;
-                    case Utils::Crc32("SWT"):
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/switch.png", 24, 24, ImageCache);
-                        break;
-                    case Utils::Crc32("OTHER"):
-                    default:
-                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/earth.png", 24, 24, ImageCache);
-                        break;
-                    }
+                    PlatformImage.set_async(GetPlatformImageUrl(FriendData.GetPlatform()), 24, 24, ImageCache);
 
-                    Status.set_text(FriendData.GetStatus().empty() ? ShowStatusToString(FriendData.GetShowStatus()) : FriendData.GetStatus());
+                    if (FriendData.GetStatus().empty()) {
+                        Status.set_text(ShowStatusToString(FriendData.GetShowStatus()));
+                    }
+                    else {
+                        Status.set_text(FriendData.GetStatus());
+                        Status.set_tooltip_text(FriendData.GetStatus());
+                    }
                 }
                 else {
                     ProductImage.clear();
@@ -190,6 +160,40 @@ namespace EGL3::Widgets {
                 }
 
                 ColorStatus.set_async(ShowStatusToUrl(ShowStatus::Offline), ImageCache);
+            }
+        }
+
+        static cpr::Url GetProductImageUrl(const std::string_view ProductId) {
+            if (ProductId != "EGL3") {
+                std::string ProductIdLower(ProductId.data(), ProductId.size());
+                std::transform(ProductIdLower.begin(), ProductIdLower.end(), ProductIdLower.begin(), [](const auto& n) { return std::tolower(n); });
+                return Web::BaseClient::FormatUrl("https://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/%s/icon.png", ProductIdLower.c_str());
+            }
+            else {
+                return "https://epic.gl/assets/launcher-icon.png";
+            }
+        }
+
+        // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
+        static constexpr const char* GetPlatformImageUrl(const std::string_view Platform) {
+            switch (Utils::Crc32(Platform.data(), Platform.size()))
+            {
+            case Utils::Crc32("PSN"):
+                return "https://epic.gl/assets/platforms/ps4.png";
+            case Utils::Crc32("XBL"):
+                return "https://epic.gl/assets/platforms/xbox.png";
+            case Utils::Crc32("WIN"):
+            case Utils::Crc32("MAC"):
+            case Utils::Crc32("LNX"): // In the future? :)
+                return "https://epic.gl/assets/platforms/pc.png";
+            case Utils::Crc32("IOS"):
+            case Utils::Crc32("AND"):
+                return "https://epic.gl/assets/platforms/mobile.png";
+            case Utils::Crc32("SWT"):
+                return "https://epic.gl/assets/platforms/switch.png";
+            case Utils::Crc32("OTHER"):
+            default:
+                return "https://epic.gl/assets/platforms/earth.png";
             }
         }
 

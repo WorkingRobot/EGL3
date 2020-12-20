@@ -15,11 +15,11 @@ namespace EGL3::Widgets {
             ConstructDispatcher();
         }
 
-        void set_async(const std::string& Url, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
+        void set_async(const cpr::Url& Url, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
             ImageTask = ImageCache.GetImageAsync(Url, Width, Height, ImageBuf, ImageDispatcher);
         }
 
-        void set_async(const std::string& Url, Modules::ImageCacheModule& ImageCache) {
+        void set_async(const cpr::Url& Url, Modules::ImageCacheModule& ImageCache) {
             set_async(Url, -1, -1, ImageCache);
         }
 

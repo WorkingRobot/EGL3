@@ -210,14 +210,17 @@ namespace EGL3::Storage::Models {
             return PresItr;
         }
 
-        const std::string_view& GetProductId() const {
+        const std::string_view GetProductId() const {
             auto PresItr = GetBestPresence();
             if (PresItr == Presences.end()) {
                 // Allows returning a ref instead of creating a copy
                 static const std::string empty = "";
                 return empty;
             }
-            return PresItr->Resource.GetAppId();
+            if (PresItr->Status.GetProductName().empty()) {
+                return PresItr->Resource.GetAppId();
+            }
+            return PresItr->Status.GetProductName();
         }
 
         const std::string_view& GetPlatform() const {
@@ -311,6 +314,7 @@ namespace EGL3::Storage::Models {
         Presence BuildPresence() const {
             Presence Ret;
             Ret.ShowStatus = GetShowStatus();
+            Ret.Status.SetProductName("EGL3");
             Ret.Status.SetStatus(GetStatus());
             PresenceKairosProfile NewKairosProfile(GetKairosAvatar(), GetKairosBackground());
             Ret.Status.SetKairosProfile(NewKairosProfile);
@@ -322,7 +326,6 @@ namespace EGL3::Storage::Models {
             Web::Epic::Responses::GetFriendsSummary::RealFriend Ret;
             Ret.AccountId = "00000000000000000000000000000000";
             Ret.DisplayName = "You";
-            Ret.MutualFriendCount = 0;
             return Ret;
         }
     };

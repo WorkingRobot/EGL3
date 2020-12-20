@@ -45,7 +45,7 @@ namespace EGL3::Modules {
     public:
         ImageCacheModule() {}
 
-        std::future<void> GetImageAsync(const std::string& Url, int Width, int Height, Glib::RefPtr<Gdk::Pixbuf>& Output, Glib::Dispatcher& Callback) {
+        std::future<void> GetImageAsync(const cpr::Url& Url, int Width, int Height, Glib::RefPtr<Gdk::Pixbuf>& Output, Glib::Dispatcher& Callback) {
             return std::async(std::launch::async, [&, this, Width, Height](const std::string& Url) {
                 auto& Ret = GetImageAsync(Url, Width, Height).get();
                 if (Ret.has_value()) {
@@ -55,23 +55,23 @@ namespace EGL3::Modules {
             }, Url);
         }
 
-        std::future<void> GetImageAsync(const std::string& Url, Glib::RefPtr<Gdk::Pixbuf>& Output, Glib::Dispatcher& Callback) {
+        std::future<void> GetImageAsync(const cpr::Url& Url, Glib::RefPtr<Gdk::Pixbuf>& Output, Glib::Dispatcher& Callback) {
             return GetImageAsync(Url, -1, -1, Output, Callback);
         }
 
-        std::shared_future<std::optional<Glib::RefPtr<Gdk::Pixbuf>>>& GetImageAsync(const std::string& Url, int Width = -1, int Height = -1) {
+        std::shared_future<std::optional<Glib::RefPtr<Gdk::Pixbuf>>>& GetImageAsync(const cpr::Url& Url, int Width = -1, int Height = -1) {
             std::lock_guard Guard(CacheMutex);
 
-            auto CacheItr = Cache.find(CacheKey(Url, Width, Height));
+            auto CacheItr = Cache.find(CacheKey(Url.str(), Width, Height));
             if (CacheItr != Cache.end()) {
                 return CacheItr->second;
             }
 
-            return Cache.emplace(CacheKey(Url, Width, Height), std::move(std::async(std::launch::async, &ImageCacheModule::GetImage, this, Url, Width, Height))).first->second;
+            return Cache.emplace(CacheKey(Url.str(), Width, Height), std::move(std::async(std::launch::async, &ImageCacheModule::GetImage, this, Url, Width, Height))).first->second;
         }
 
-        std::optional<Glib::RefPtr<Gdk::Pixbuf>> GetImage(const std::string& Url, int Width = -1, int Height = -1) {
-            auto Response = Web::Http::Get(cpr::Url{ Url });
+        std::optional<Glib::RefPtr<Gdk::Pixbuf>> GetImage(const cpr::Url& Url, int Width = -1, int Height = -1) {
+            auto Response = Web::Http::Get(Url);
             if (Response.status_code != 200) {
                 return std::nullopt;
             }

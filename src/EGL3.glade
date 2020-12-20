@@ -376,6 +376,7 @@ Author: Aleks Margarian
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkScrolledWindow">
+                        <property name="width_request">550</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">never</property>
@@ -516,8 +517,8 @@ Author: Aleks Margarian
                     </child>
                   </object>
                   <packing>
-                    <property name="resize">False</property>
-                    <property name="shrink">True</property>
+                    <property name="resize">True</property>
+                    <property name="shrink">False</property>
                   </packing>
                 </child>
               </object>
@@ -811,6 +812,7 @@ Author: Aleks Margarian
                     <property name="width_request">50</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="has_focus">True</property>
                     <property name="focus_on_click">False</property>
                     <property name="receives_default">True</property>
                     <property name="popup">ExtraPlayOpts</property>
