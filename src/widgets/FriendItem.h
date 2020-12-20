@@ -65,8 +65,6 @@ namespace EGL3::Widgets {
             Nickname.get_style_context()->add_class("font-h5");
             Status.get_style_context()->add_class("font-h5");
 
-            Favorited.set_valign(Gtk::ALIGN_END);
-
             ColorStatusEventBox.add(ColorStatus);
 
             ColorStatusEventBox.set_halign(Gtk::ALIGN_END);
@@ -85,7 +83,6 @@ namespace EGL3::Widgets {
 
             UsernameContainer.pack_start(Username, false, false, 0);
             UsernameContainer.pack_start(Nickname, false, false, 0);
-            UsernameContainer.pack_end(Favorited, false, false, 0);
 
             StatusContainer.pack_start(UsernameContainer, true, true, 5);
             StatusContainer.pack_end(Status, true, true, 5);
@@ -106,98 +103,93 @@ namespace EGL3::Widgets {
         }
 
         void UpdateDispatch() {
-            Username.set_tooltip_text(UpdateData.GetAccountId());
-            Username.set_text(UpdateData.GetDisplayName());
-            Nickname.set_text(UpdateData.GetAlternateName());
-            // set_visible or show/hide doesn't work for some reason
-            if (UpdateData.IsFavorited()) {
-                Favorited.set_from_icon_name("starred-symbolic", Gtk::ICON_SIZE_BUTTON);
-            }
-            else {
-                Favorited.clear();
-            }
+            auto& Friend = UpdateData.Get();
 
-            AvatarBackground.set_async(UpdateData.GetKairosBackgroundUrl(), 64, 64, ImageCache);
-            Avatar.set_async(UpdateData.GetKairosAvatarUrl(), 64, 64, ImageCache);
+            Username.set_tooltip_text(Friend.GetAccountId());
+            Username.set_text(Friend.GetDisplayName());
+            Nickname.set_text(Friend.GetSecondaryName());
 
-            ColorStatus.set_async(ShowStatusToUrl(UpdateData.GetShowStatus()), ImageCache);
+            AvatarBackground.set_async(Friend.GetKairosBackgroundUrl(), 64, 64, ImageCache);
+            Avatar.set_async(Friend.GetKairosAvatarUrl(), 64, 64, ImageCache);
 
-            if (UpdateData.GetShowStatus() != ShowStatus::Offline) {
-                auto ProductId = UpdateData.GetProductId();
-                switch (Utils::Crc32(ProductId.data(), ProductId.size()))
-                {
-                case Utils::Crc32("EGL3"):
-                    ProductImage.set_async("https://fnbot.shop/egl3/launcher-icon.png", 64, 64, ImageCache);
-                    break;
-                case Utils::Crc32("Fortnite"):
-                    ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
-                    break;
-                default:
-                    ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
-                    break;
-                }
+            if (UpdateData.GetType() == Storage::Models::FriendType::NORMAL || UpdateData.GetType() == Storage::Models::FriendType::CURRENT) {
+                auto& FriendData = UpdateData.Get<Storage::Models::FriendType::NORMAL>();
 
-                // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
-                auto Platform = UpdateData.GetPlatform();
-                switch (Utils::Crc32(Platform.data(), Platform.size()))
-                {
-                case Utils::Crc32("PSN"):
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/ps4.png", 24, 24, ImageCache);
-                    break;
-                case Utils::Crc32("XBL"):
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/xbox.png", 24, 24, ImageCache);
-                    break;
-                case Utils::Crc32("WIN"):
-                case Utils::Crc32("MAC"):
-                case Utils::Crc32("LNX"): // In the future? :)
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/pc.png", 24, 24, ImageCache);
-                    break;
-                case Utils::Crc32("IOS"):
-                case Utils::Crc32("AND"):
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/mobile.png", 24, 24, ImageCache);
-                    break;
-                case Utils::Crc32("SWT"):
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/switch.png", 24, 24, ImageCache);
-                    break;
-                case Utils::Crc32("OTHER"):
-                default:
-                    PlatformImage.set_async("https://fnbot.shop/egl3/platforms/earth.png", 24, 24, ImageCache);
-                    break;
-                }
+                ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), ImageCache);
 
-                Status.set_text(UpdateData.GetStatus().empty() ? ShowStatusToString(UpdateData.GetShowStatus()) : UpdateData.GetStatus());
-            }
-            else {
-                ProductImage.clear();
-                PlatformImage.clear();
-
-                if (UpdateData.GetRelationStatus() != Storage::Models::Friend::RelationStatus::ACCEPTED) {
-                    switch (UpdateData.GetRelationStatus()) {
-                    case Storage::Models::Friend::RelationStatus::PENDING:
-                        switch (UpdateData.GetRelationDirection())
-                        {
-                        case Storage::Models::Friend::RelationDirection::INBOUND:
-                            Status.set_text("Incoming Friend Request");
-                            break;
-                        case Storage::Models::Friend::RelationDirection::OUTBOUND:
-                            Status.set_text("Outgoing Friend Request");
-                            break;
-                        default:
-                            Status.set_text("Pending Friend Request");
-                            break;
-                        }
+                if (FriendData.GetShowStatus() != ShowStatus::Offline) {
+                    auto ProductId = FriendData.GetProductId();
+                    switch (Utils::Crc32(ProductId.data(), ProductId.size()))
+                    {
+                    case Utils::Crc32("EGL3"):
+                        ProductImage.set_async("https://fnbot.shop/egl3/launcher-icon.png", 64, 64, ImageCache);
                         break;
-                    case Storage::Models::Friend::RelationStatus::SUGGESTED:
-                        Status.set_text("Suggested Friend");
+                    case Utils::Crc32("Fortnite"):
+                        ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/fortnite/icon.png", 64, 64, ImageCache);
                         break;
                     default:
-                        Status.set_text("Unknown Friend");
+                        ProductImage.set_async("http://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/" + std::string(ProductId) + "/icon.png", 64, 64, ImageCache);
                         break;
                     }
+
+                    // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
+                    auto Platform = FriendData.GetPlatform();
+                    switch (Utils::Crc32(Platform.data(), Platform.size()))
+                    {
+                    case Utils::Crc32("PSN"):
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/ps4.png", 24, 24, ImageCache);
+                        break;
+                    case Utils::Crc32("XBL"):
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/xbox.png", 24, 24, ImageCache);
+                        break;
+                    case Utils::Crc32("WIN"):
+                    case Utils::Crc32("MAC"):
+                    case Utils::Crc32("LNX"): // In the future? :)
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/pc.png", 24, 24, ImageCache);
+                        break;
+                    case Utils::Crc32("IOS"):
+                    case Utils::Crc32("AND"):
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/mobile.png", 24, 24, ImageCache);
+                        break;
+                    case Utils::Crc32("SWT"):
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/switch.png", 24, 24, ImageCache);
+                        break;
+                    case Utils::Crc32("OTHER"):
+                    default:
+                        PlatformImage.set_async("https://fnbot.shop/egl3/platforms/earth.png", 24, 24, ImageCache);
+                        break;
+                    }
+
+                    Status.set_text(FriendData.GetStatus().empty() ? ShowStatusToString(FriendData.GetShowStatus()) : FriendData.GetStatus());
                 }
                 else {
+                    ProductImage.clear();
+                    PlatformImage.clear();
+
                     Status.set_text(ShowStatusToString(ShowStatus::Offline));
                 }
+            }
+            else {
+                switch (UpdateData.GetType())
+                {
+                case Storage::Models::FriendType::INBOUND:
+                    Status.set_text("Incoming Friend Request");
+                    break;
+                case Storage::Models::FriendType::OUTBOUND:
+                    Status.set_text("Outgoing Friend Request");
+                    break;
+                case Storage::Models::FriendType::SUGGESTED:
+                    Status.set_text("Suggested Friend");
+                    break;
+                case Storage::Models::FriendType::BLOCKED:
+                    Status.set_text("Blocked");
+                    break;
+                default:
+                    Status.set_text("Unknown User");
+                    break;
+                }
+
+                ColorStatus.set_async(ShowStatusToUrl(ShowStatus::Offline), ImageCache);
             }
         }
 
@@ -217,7 +209,6 @@ namespace EGL3::Widgets {
         Gtk::Box UsernameContainer{ Gtk::ORIENTATION_HORIZONTAL };
         Gtk::Label Username;
         Gtk::Label Nickname;
-        Gtk::Image Favorited;
         Gtk::Label Status;
         Gtk::Overlay PlatformContainer;
         AsyncImage ProductImage;

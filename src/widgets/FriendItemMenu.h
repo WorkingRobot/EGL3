@@ -10,12 +10,13 @@ namespace EGL3::Widgets {
         enum class ClickAction : uint8_t {
             CHAT,
             REMOVE_FRIEND,
+            SET_NICKNAME,
             ACCEPT_REQUEST,
             DECLINE_REQUEST,
             CANCEL_REQUEST,
             SEND_REQUEST,
-            SET_NICKNAME,
             BLOCK_USER,
+            UNBLOCK_USER,
             COPY_USER_ID
         };
 
@@ -32,30 +33,34 @@ namespace EGL3::Widgets {
         void PopupMenu(const Storage::Models::Friend& Data, Gtk::Widget& TargetWidget) {
             ItemChat.hide();
             ItemRemove.hide();
+            ItemNickname.hide();
             ItemAccept.hide();
             ItemDecline.hide();
             ItemCancel.hide();
             ItemSend.hide();
-            switch (Data.GetRelationStatus())
+            ItemUnblock.hide();
+            ItemBlock.show();
+
+            switch (Data.GetType())
             {
-            case Storage::Models::Friend::RelationStatus::ACCEPTED:
+            case Storage::Models::FriendType::NORMAL:
                 ItemChat.show();
                 ItemRemove.show();
+                ItemNickname.show();
                 break;
-            case Storage::Models::Friend::RelationStatus::PENDING:
-                switch (Data.GetRelationDirection())
-                {
-                case Storage::Models::Friend::RelationDirection::INBOUND:
-                    ItemAccept.show();
-                    ItemDecline.show();
-                    break;
-                case Storage::Models::Friend::RelationDirection::OUTBOUND:
-                    ItemCancel.show();
-                    break;
-                }
+            case Storage::Models::FriendType::INBOUND:
+                ItemAccept.show();
+                ItemDecline.show();
                 break;
-            case Storage::Models::Friend::RelationStatus::SUGGESTED:
+            case Storage::Models::FriendType::OUTBOUND:
+                ItemCancel.show();
+                break;
+            case Storage::Models::FriendType::SUGGESTED:
                 ItemSend.show();
+                break;
+            case Storage::Models::FriendType::BLOCKED:
+                ItemBlock.hide();
+                ItemUnblock.show();
                 break;
             }
 
@@ -72,30 +77,33 @@ namespace EGL3::Widgets {
             ItemSend.signal_activate().connect([this]() { OnAction(ClickAction::SEND_REQUEST); });
             ItemNickname.signal_activate().connect([this]() { OnAction(ClickAction::SET_NICKNAME); });
             ItemBlock.signal_activate().connect([this]() { OnAction(ClickAction::BLOCK_USER); });
+            ItemUnblock.signal_activate().connect([this]() { OnAction(ClickAction::UNBLOCK_USER); });
             ItemCopyId.signal_activate().connect([this]() { OnAction(ClickAction::COPY_USER_ID); });
 
             ItemChat.set_label("Message");
             ItemRemove.set_label("Remove Friend");
+            ItemNickname.set_label("Set Nickname");
             ItemAccept.set_label("Accept Request");
             ItemDecline.set_label("Decline Request");
             ItemCancel.set_label("Cancel Request");
             ItemSend.set_label("Send Friend Request");
             ItemSeparator.set_label("\xe2\xb8\xbb"); // triple em dash
-            ItemNickname.set_label("Set Nickname");
             ItemBlock.set_label("Block");
+            ItemUnblock.set_label("Unblock");
             ItemCopyId.set_label("Copy Account Id");
 
             Container.get_style_context()->add_class("font-h5");
 
             Container.add(ItemChat);
             Container.add(ItemRemove);
+            Container.add(ItemNickname);
             Container.add(ItemAccept);
             Container.add(ItemDecline);
             Container.add(ItemCancel);
             Container.add(ItemSend);
             Container.add(ItemSeparator);
-            Container.add(ItemNickname);
             Container.add(ItemBlock);
+            Container.add(ItemUnblock);
             Container.add(ItemCopyId);
 
             Container.show_all();
@@ -108,6 +116,7 @@ namespace EGL3::Widgets {
         // Accepted
         Gtk::MenuItem ItemChat;
         Gtk::MenuItem ItemRemove;
+        Gtk::MenuItem ItemNickname;
 
         // Inbound Pending
         Gtk::MenuItem ItemAccept;
@@ -121,8 +130,14 @@ namespace EGL3::Widgets {
 
         // Always
         Gtk::SeparatorMenuItem ItemSeparator;
-        Gtk::MenuItem ItemNickname;
+
+        // Not Blocked
         Gtk::MenuItem ItemBlock;
+
+        // Blocked
+        Gtk::MenuItem ItemUnblock;
+
+        // Always
         Gtk::MenuItem ItemCopyId;
     };
 }

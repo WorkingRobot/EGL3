@@ -1,6 +1,7 @@
 out/
 bin/
 .vs/
+site/
 *.rawdisk
 *.glade~
 *.glade#

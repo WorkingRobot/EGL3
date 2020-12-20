@@ -27,7 +27,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() },
+			FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/public/account/%s", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -64,7 +64,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/externalAuths" },
+			FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/public/account/%s/externalAuths", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -104,7 +104,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/public/account" },
+			FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -142,7 +142,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
+			FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -179,7 +179,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Post(
-			cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/public/account/" + AuthData.AccountId.value() + "/deviceAuth" },
+			FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ "{}" }
 		);
@@ -217,7 +217,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/" + AuthData.AccountId.value() + "/billingaccounts/default" },
+			FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/%s/billingaccounts/default", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -252,7 +252,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/" + Platform },
+			FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/%s", Platform.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "label", Label } }
 		);
@@ -288,7 +288,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Post(
-			cpr::Url{ "https://launcher-public-service-prod-m.ol.epicgames.com/launcher/api/public/assets/v2/platform/" + Platform + "/catalogItem/" + CatalogItemId + "/app/" + AppName + "/label/" + Label },
+			FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/v2/platform/%s/catalogItem/%s/app/%s/label/%s", Platform.c_str(), CatalogItemId.c_str(), AppName.c_str(), Label.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ "{}" }
 		);
@@ -324,7 +324,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/currencies" },
+			FormatUrl("https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/currencies"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
@@ -370,7 +370,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/" + Namespace + "/bulk/items" },
+			FormatUrl("https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/%s/bulk/items", Namespace.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -408,7 +408,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/" + AuthData.AccountId.value() + "/entitlements" },
+			FormatUrl("https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/%s/entitlements", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
@@ -433,7 +433,7 @@ namespace EGL3::Web::Epic {
 		return Resp;
 	}
 
-	BaseClient::Response<Responses::GetExternalSourceSettings> EpicClientAuthed::GetExternalSourceSettings(const std::string& Platform)
+	BaseClient::Response<Responses::GetFriendsSummary> EpicClientAuthed::GetFriendsSummary()
 	{
 		RunningFunctionGuard Guard(*this);
 
@@ -446,8 +446,9 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/v1/" + AuthData.AccountId.value() + "/settings/externalSources/" + Platform },
-			cpr::Header{ { "Authorization", AuthHeader } }
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/summary", AuthData.AccountId->c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
 		);
 
 		if (GetCancelled()) { return CANCELLED; }
@@ -462,15 +463,15 @@ namespace EGL3::Web::Epic {
 			return CODE_NOT_JSON;
 		}
 
-		Responses::GetExternalSourceSettings Resp;
-		if (!Responses::GetExternalSourceSettings::Parse(RespJson, Resp)) {
+		Responses::GetFriendsSummary Resp;
+		if (!Responses::GetFriendsSummary::Parse(RespJson, Resp)) {
 			return CODE_BAD_JSON;
 		}
 
 		return Resp;
 	}
 
-	BaseClient::Response<Responses::GetFriends> EpicClientAuthed::GetFriends(bool IncludePending)
+	BaseClient::Response<Responses::GetFriends> EpicClientAuthed::GetFriends()
 	{
 		RunningFunctionGuard Guard(*this);
 
@@ -483,9 +484,9 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() },
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
-			cpr::Parameters{ { "includePending", "true" } }
+			cpr::Parameters{ { "displayNames", "true" } }
 		);
 
 		if (GetCancelled()) { return CANCELLED; }
@@ -508,6 +509,120 @@ namespace EGL3::Web::Epic {
 		return Resp;
 	}
 
+	BaseClient::Response<Responses::GetFriendsRequested> EpicClientAuthed::GetFriendsInboundRequests()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Get(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/incoming", AuthData.AccountId->c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetFriendsRequested Resp;
+		if (!Responses::GetFriendsRequested::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<Responses::GetFriendsRequested> EpicClientAuthed::GetFriendsOutboundRequests()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Get(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/outgoing", AuthData.AccountId->c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetFriendsRequested Resp;
+		if (!Responses::GetFriendsRequested::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
+	BaseClient::Response<Responses::GetFriendsSuggested> EpicClientAuthed::GetFriendsSuggested()
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Get(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/suggested", AuthData.AccountId->c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetFriendsSuggested Resp;
+		if (!Responses::GetFriendsSuggested::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
 	BaseClient::Response<Responses::GetBlockedUsers> EpicClientAuthed::GetBlockedUsers()
 	{
 		RunningFunctionGuard Guard(*this);
@@ -521,8 +636,9 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/blocklist/" + AuthData.AccountId.value() },
-			cpr::Header{ { "Authorization", AuthHeader } }
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist", AuthData.AccountId->c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
 		);
 
 		if (GetCancelled()) { return CANCELLED; }
@@ -545,6 +661,44 @@ namespace EGL3::Web::Epic {
 		return Resp;
 	}
 
+	BaseClient::Response<Responses::GetFriendsSummary::RealFriend> EpicClientAuthed::GetFriend(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Get(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Parameters{ { "displayNames", "true" } }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 200) {
+			return CODE_NOT_200;
+		}
+
+		auto RespJson = Http::ParseJson(Response);
+
+		if (RespJson.HasParseError()) {
+			return CODE_NOT_JSON;
+		}
+
+		Responses::GetFriendsSummary::RealFriend Resp;
+		if (!Responses::GetFriendsSummary::RealFriend::Parse(RespJson, Resp)) {
+			return CODE_BAD_JSON;
+		}
+
+		return Resp;
+	}
+
 	BaseClient::Response<void> EpicClientAuthed::AddFriend(const std::string& AccountId)
 	{
 		RunningFunctionGuard Guard(*this);
@@ -558,7 +712,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Post(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() + "/" + AccountId },
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -585,7 +739,169 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Delete(
-			cpr::Url{ "https://friends-public-service-prod06.ol.epicgames.com/friends/api/public/friends/" + AuthData.AccountId.value() + "/" + AccountId },
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::SetFriendAlias(const std::string& AccountId, const std::string& Nickname)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Put(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ Nickname }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::ClearFriendAlias(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Delete(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::SetFriendNote(const std::string& AccountId, const std::string& Note)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Put(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ Note }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::ClearFriendNote(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Delete(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::BlockUser(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Post(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Body{ "" }
+		);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (Response.status_code != 204) {
+			return CODE_NOT_200;
+		}
+
+		return SUCCESS;
+	}
+
+	BaseClient::Response<void> EpicClientAuthed::UnblockUser(const std::string& AccountId)
+	{
+		RunningFunctionGuard Guard(*this);
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		if (!AuthData.AccountId.has_value()) { return INVALID_TOKEN; }
+
+		if (!EnsureTokenValidity()) { return INVALID_TOKEN; }
+
+		if (GetCancelled()) { return CANCELLED; }
+
+		auto Response = Http::Delete(
+			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -612,7 +928,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/" + AuthData.AccountId.value() + "/setting/" + Setting + "/available" },
+			FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/%s/setting/%s/available", AuthData.AccountId->c_str(), Setting.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -657,7 +973,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/setting" },
+			FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/setting"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -707,7 +1023,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Put(
-			cpr::Url{ "https://channels-public-service-prod.ol.epicgames.com/api/v1/user/" + AuthData.AccountId.value() + "/setting/" + Setting },
+			FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/%s/setting/%s", AuthData.AccountId->c_str(), Setting.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ Buf.GetString(), Buf.GetSize() }
 		);
@@ -732,7 +1048,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return CANCELLED; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/" + AppName + "/status" },
+			FormatUrl("https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/%s/status", AppName.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -772,7 +1088,7 @@ namespace EGL3::Web::Epic {
 			Parameters.AddParameter({ "serviceId", AppName }, cpr::CurlHolder());
 		}
 		auto Response = Http::Get(
-			cpr::Url{ "https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/bulk/status" },
+			FormatUrl("https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/bulk/status"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -804,7 +1120,7 @@ namespace EGL3::Web::Epic {
 			// This will return a 204
 			// If it fails, it's on epic's blame. We don't really need any handling
 			Http::Delete(
-				cpr::Url{ "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/" + AuthData.AccessToken },
+				FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
 				cpr::Header{ { "Authorization", AuthHeader } }
 			);
 		}
@@ -829,7 +1145,7 @@ namespace EGL3::Web::Epic {
 			}
 
 			Response = Http::Post(
-				cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+				FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token"),
 				AuthClient,
 				cpr::Payload{ { "grant_type", "refresh_token" }, { "refresh_token", AuthData.RefreshToken.value() } }
 			);
@@ -837,7 +1153,7 @@ namespace EGL3::Web::Epic {
 		// Refresh tokens were not given in the oauth response, use client_credentials here
 		else {
 			Response = Http::Post(
-				cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+				FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token"),
 				AuthClient,
 				cpr::Payload{ { "grant_type", "client_credentials" } }
 			);

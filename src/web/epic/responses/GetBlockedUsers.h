@@ -2,11 +2,11 @@
 
 namespace EGL3::Web::Epic::Responses {
 	struct GetBlockedUsers {
-		// List of user ids that the user has blocked
-		std::vector<std::string> BlockedUsers;
+		// List of all blocked users returned
+		std::vector<GetFriendsSummary::BaseUser> Users;
 
 		PARSE_DEFINE(GetBlockedUsers)
-			PARSE_ITEM_ROOT(BlockedUsers)
+			PARSE_ITEM_ROOT(Users)
 		PARSE_END
 	};
 }

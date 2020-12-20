@@ -42,7 +42,7 @@ namespace EGL3::Web {
             std::unique_ptr<T> Data;
         };
 
-        // For 204 responses, or update requests (no real data is returned)
+        // For 204 responses, or update requests (no useful data is returned)
         template<>
         class Response<void> {
         public:
@@ -60,6 +60,18 @@ namespace EGL3::Web {
         private:
             ErrorCode Error;
         };
+
+        static cpr::Url FormatUrl(const char* Input) {
+            return Input;
+        }
+
+        template<typename... Args>
+        static cpr::Url FormatUrl(const char* Input, Args&&... FormatArgs) {
+            auto BufSize = snprintf(nullptr, 0, Input, FormatArgs...) + 1;
+            auto Buf = std::make_unique<char[]>(BufSize);
+            snprintf(Buf.get(), BufSize, Input, FormatArgs...);
+            return cpr::Url(Buf.get(), BufSize - 1);
+        }
 
         ~BaseClient();
 

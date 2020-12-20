@@ -15,8 +15,8 @@ namespace EGL3::Web::Xmpp::Json {
 		Offline,
 		ExtendedAway, // xa
 		Away, // away
-		DoNotDisturb, // dnd
 		Online,
+		DoNotDisturb, // dnd
 		Chat, // chat
 	};
 

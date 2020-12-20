@@ -627,7 +627,7 @@ namespace EGL3::Web::Xmpp {
 	}
 
 	bool XmppClient::HandleChat(const rapidxml::xml_node<>* Node) {
-
+		return true;
 	}
 
 	// https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88

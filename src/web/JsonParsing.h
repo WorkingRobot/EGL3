@@ -163,6 +163,9 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
         return true; \
     }
 
+#define PARSE_BASE(BaseClass) \
+        if (!BaseClass::Parse(Json, Obj)) { PRINT_JSON_ERROR_PARSE; return false; }
+
 #define PARSE_ITEM(JsonName, TargetVariable) \
         Itr = Json.FindMember(JsonName); \
         if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR_NOTFOUND; return false; } \

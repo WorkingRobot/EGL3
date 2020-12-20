@@ -56,22 +56,35 @@ namespace EGL3::Web::Epic {
 
         // Friends service
 
-        // I've only observed "steam" and "default"
-        Response<Responses::GetExternalSourceSettings> GetExternalSourceSettings(const std::string& Platform);
+        Response<Responses::GetFriendsSummary> GetFriendsSummary();
 
-        Response<Responses::GetFriends> GetFriends(bool IncludePending);
+        Response<Responses::GetFriends> GetFriends();
+
+        Response<Responses::GetFriendsRequested> GetFriendsInboundRequests();
+
+        Response<Responses::GetFriendsRequested> GetFriendsOutboundRequests();
+
+        Response<Responses::GetFriendsSuggested> GetFriendsSuggested();
 
         Response<Responses::GetBlockedUsers> GetBlockedUsers();
+
+        Response<Responses::GetFriendsSummary::RealFriend> GetFriend(const std::string& AccountId);
 
         Response<void> AddFriend(const std::string& AccountId);
 
         Response<void> RemoveFriend(const std::string& AccountId);
 
-        Response<void> SetFriendNickname(const std::string& AccountId, const std::string& Nickname);
+        Response<void> SetFriendAlias(const std::string& AccountId, const std::string& Nickname);
 
-        Response<void> ClearFriendNickname(const std::string& AccountId);
+        Response<void> ClearFriendAlias(const std::string& AccountId);
 
-        Response<Responses::GetFriendsSummary> GetFriendsSummary(const std::string& AccountId, bool DisplayNames);
+        Response<void> SetFriendNote(const std::string& AccountId, const std::string& Note);
+
+        Response<void> ClearFriendNote(const std::string& AccountId);
+
+        Response<void> BlockUser(const std::string& AccountId);
+
+        Response<void> UnblockUser(const std::string& AccountId);
 
 
         // Channels service

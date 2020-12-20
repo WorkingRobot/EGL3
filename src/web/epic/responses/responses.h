@@ -8,23 +8,31 @@ namespace EGL3::Web::Epic::Responses {
 
 // Authorized client
 
+#include "OAuthToken.h"
 #include "GetAccount.h"
 #include "GetAccountExternalAuths.h"
 #include "GetAccounts.h"
-#include "GetAssets.h"
-#include "GetAvailableSettingValues.h"
-#include "GetBlockedUsers.h"
-#include "GetCatalogItems.h"
-#include "GetCurrencies.h"
-#include "GetDefaultBillingAccount.h"
 #include "GetDeviceAuths.h"
+
+#include "GetDefaultBillingAccount.h"
+#include "GetAssets.h"
 #include "GetDownloadInfo.h"
+
+#include "GetCurrencies.h"
+#include "GetCatalogItems.h"
+
 #include "GetEntitlements.h"
-#include "GetExternalSourceSettings.h"
+
+#include "GetFriendsSummary.h"
+#include "GetFriendsRequested.h"
+#include "GetFriendsSuggested.h"
 #include "GetFriends.h"
-#include "GetLightswitchStatus.h"
+#include "GetBlockedUsers.h"
+
+#include "GetAvailableSettingValues.h"
 #include "GetSettingsForAccounts.h"
-#include "OAuthToken.h"
+
+#include "GetLightswitchStatus.h"
 
 // Authorized client (MCP)
 
