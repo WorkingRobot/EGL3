@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/Crc32.h"
 #include "../../web/epic/responses/Responses.h"
 
 #include <chrono>
@@ -28,11 +29,13 @@ namespace EGL3::Storage::Models {
 
         ItemSource Source;
 
-        WhatsNew(const decltype(Item) && Item, const decltype(Date) && Date, const decltype(Source) && Source) :
-            Item(Item),
+        WhatsNew(decltype(Item)&& Item, decltype(Date) Date, decltype(Source) Source) :
+            Item(std::move(Item)),
             Date(Date),
             Source(Source)
-        {}
+        {
+
+        }
 
         static constexpr const char* SourceToString(ItemSource Source) {
             switch (Source)
@@ -51,46 +54,41 @@ namespace EGL3::Storage::Models {
         }
 
         static const char* SubGameToString(const std::string& SubGame) {
-            if (SubGame == "br") {
+            switch (Utils::Crc32(SubGame))
+            {
+            case Utils::Crc32("br"):
                 return "Battle Royale";
-            }
-            if (SubGame == "stw") {
+            case Utils::Crc32("stw"):
                 return "Save the World";
-            }
-            if (SubGame == "creative") {
+            case Utils::Crc32("creative"):
                 return "Creative";
+            default:
+                return SubGame.c_str();
             }
-
-            return SubGame.c_str();
         }
 
         static const char* PlatformToString(const std::string& Platform) {
-            if (Platform == "mac") {
+            switch (Utils::Crc32(Platform))
+            {
+            case Utils::Crc32("mac"):
                 return "Mac";
-            }
-            if (Platform == "windows") {
+            case Utils::Crc32("windows"):
                 return "Windows";
-            }
-            if (Platform == "XBoxOne") {
+            case Utils::Crc32("XBoxOne"):
                 return "Xbox One";
-            }
-            if (Platform == "PS4") {
+            case Utils::Crc32("PS4"):
                 return "PS4";
-            }
-            if (Platform == "android") {
+            case Utils::Crc32("android"):
                 return "Android";
-            }
-            if (Platform == "androidGP") {
+            case Utils::Crc32("androidGP"):
                 return "Android Google Play";
-            }
-            if (Platform == "ios") {
+            case Utils::Crc32("ios"):
                 return "iOS";
-            }
-            if (Platform == "switch") {
+            case Utils::Crc32("switch"):
                 return "Switch";
+            default:
+                return Platform.c_str();
             }
-
-            return Platform.c_str();
         }
     };
 }
