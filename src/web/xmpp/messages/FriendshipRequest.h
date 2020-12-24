@@ -7,10 +7,10 @@ namespace EGL3::Web::Xmpp::Messages {
 		// Time of the event
 		TimePoint Timestamp;
 
-		// Account id (always you, even if other user accepted)
+		// Account id (the user who initiated the request)
 		std::string From;
 
-		// Account id (target)
+		// Account id (the other user who got the request)
 		std::string To;
 
 		// "PENDING": Sent request

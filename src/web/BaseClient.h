@@ -29,6 +29,10 @@ namespace EGL3::Web {
                 return Error;
             }
 
+            T& Get() const {
+                return *Data;
+            }
+
             T* operator->() const {
                 return Data.get();
             }

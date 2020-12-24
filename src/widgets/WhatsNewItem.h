@@ -12,9 +12,9 @@ namespace EGL3::Widgets {
     public:
         WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) {
             this->Title.set_text(Title);
+            this->Title.set_tooltip_text(Title);
             this->Source.set_text(Source);
-            auto date = Utils::Humanize(Date);
-            this->Date.set_text(date);
+            this->Date.set_text(Utils::Humanize(Date));
             this->Description.set_text(Description);
             this->MainImage.set_async(ImageUrl, 768, 432, ImageCache);
 

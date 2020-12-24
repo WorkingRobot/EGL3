@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <set>
+#include <shared_mutex>
 #include <variant>
 #include <vector>
 
@@ -21,13 +22,12 @@ namespace EGL3::Storage::Models {
 
         std::string KairosAvatar, KairosBackground;
 
-        void UpdateCallback() const {
-            if (OnUpdate.has_value()) {
-                OnUpdate.value()(*this);
-            }
-        }
+        BaseFriend() = default;
 
     public:
+        BaseFriend(BaseFriend&&) = default;
+        BaseFriend& operator=(BaseFriend&&) = default;
+
         virtual const std::string& GetAccountId() const = 0;
 
         virtual const std::string& GetUsername() const = 0;
@@ -77,6 +77,12 @@ namespace EGL3::Storage::Models {
             OnUpdate.emplace(std::forward<Args>(Callback)...);
         }
 
+        void UpdateCallback() const {
+            if (OnUpdate.has_value()) {
+                OnUpdate.value()(*this);
+            }
+        }
+
         void UpdateAccountSetting(const Web::Epic::Responses::GetSettingsForAccounts::AccountSetting& FriendSetting) {
             switch (Utils::Crc32(FriendSetting.Key))
             {
@@ -100,17 +106,17 @@ namespace EGL3::Storage::Models {
 
         std::string Username;
 
-        FriendBaseUser(const std::string& AccountId, const std::string& Username) :
-            AccountId(AccountId),
-            Username(Username)
-        {
-
-        }
-
     public:
         FriendBaseUser(const Web::Epic::Responses::GetFriendsSummary::BaseUser& User) :
             AccountId(User.AccountId),
             Username(User.DisplayName.value_or(User.AccountId))
+        {
+
+        }
+
+        FriendBaseUser(const std::string& AccountId, const std::string& Username) :
+            AccountId(AccountId),
+            Username(Username)
         {
 
         }
@@ -121,6 +127,10 @@ namespace EGL3::Storage::Models {
 
         const std::string& GetUsername() const override {
             return Username;
+        }
+
+        void SetUsername(const std::string& NewUsername) {
+            Username = NewUsername;
         }
 
         const std::string& GetNickname() const override {
@@ -134,23 +144,27 @@ namespace EGL3::Storage::Models {
         }
     };
 
-    class FriendSuggested : public FriendBaseUser {
+    class FriendRequested : public FriendBaseUser {
     protected:
         // Connections aren't used (yet), so no reason to save them
 
     public:
-        FriendSuggested(const Web::Epic::Responses::GetFriendsSummary::SuggestedFriend& User) :
+        FriendRequested(const Web::Epic::Responses::GetFriendsSummary::RequestedFriend& User) :
             FriendBaseUser(User.AccountId, GetValidUsername(User))
         {
 
         }
 
-        std::weak_ordering operator<=>(const FriendSuggested& that) const {
+        FriendRequested(FriendBaseUser&& other) : FriendBaseUser(std::move(other)) {
+
+        }
+
+        std::weak_ordering operator<=>(const FriendRequested& that) const {
             return FriendBaseUser::operator<=>(that);
         }
 
     private:
-        std::string GetValidUsername(const Web::Epic::Responses::GetFriendsSummary::SuggestedFriend& User) const {
+        std::string GetValidUsername(const Web::Epic::Responses::GetFriendsSummary::RequestedFriend& User) const {
             if (User.DisplayName.has_value()) {
                 return User.DisplayName.value();
             }
@@ -165,9 +179,6 @@ namespace EGL3::Storage::Models {
             }
         }
     };
-
-    // No extra fields, no reason to define another class
-    using FriendRequested = FriendSuggested;
 
     class FriendReal : public FriendRequested {
     protected:
@@ -332,88 +343,261 @@ namespace EGL3::Storage::Models {
 
     enum class FriendType : uint8_t {
         BLOCKED,
-        SUGGESTED,
         OUTBOUND,
         INBOUND,
         NORMAL,
-        CURRENT
+        CURRENT,
+
+        INVALID = 0xFF // If it doesn't belong anywhere, etc.
     };
 
     class Friend {
+        enum DataType : uint8_t {
+            UNKNOWN,
+            BASE_USER, // Same as BLOCKED, but the DisplayName can be invalid/blank
+            BLOCKED,
+            REQUESTED,
+            REAL,
+            CURRENT
+        };
+
+        template<FriendType Type, DataType RealType, class T>
+        struct ConstructType {
+            explicit ConstructType() = default;
+        };
+
+        mutable std::shared_mutex Mutex;
         std::unique_ptr<BaseFriend> Data;
+        DataType RealType;
         FriendType Type;
 
     public:
-        Friend(FriendType Type, const Web::Epic::Responses::GetFriendsSummary::BaseUser& User) :
-            Data(std::make_unique<FriendBaseUser>(User)),
+        Friend(Friend&&) = default;
+        Friend& operator=(Friend&&) = default;
+
+        static inline constexpr ConstructType<FriendType::INVALID, BASE_USER, FriendBaseUser> ConstructInvalid{};
+        static inline constexpr ConstructType<FriendType::BLOCKED, BLOCKED, FriendBaseUser> ConstructBlocked{};
+        static inline constexpr ConstructType<FriendType::OUTBOUND, REQUESTED, FriendRequested> ConstructOutbound{};
+        static inline constexpr ConstructType<FriendType::INBOUND, REQUESTED, FriendRequested> ConstructInbound{};
+        static inline constexpr ConstructType<FriendType::NORMAL, REAL, FriendReal> ConstructNormal{};
+        static inline constexpr ConstructType<FriendType::CURRENT, CURRENT, FriendCurrent> ConstructCurrent{};
+
+        template<FriendType Type, DataType RealType, class T, class... FriendArgs>
+        Friend(ConstructType<Type, RealType, T> ConstructType, FriendArgs&&... Args) :
+            Data(std::make_unique<T>(std::move(Args)...)),
+            RealType(RealType),
             Type(Type)
         {
 
         }
 
-        Friend(FriendType Type, const Web::Epic::Responses::GetFriendsSummary::SuggestedFriend& User) :
-            Data(std::make_unique<FriendSuggested>(User)),
-            Type(Type)
-        {
-
+        // Block user (and reject request or remove as friend)
+        void SetBlocked(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            UpdateInternalData(FriendType::BLOCKED, Client, AsyncFF);
         }
 
-        Friend(FriendType Type, const Web::Epic::Responses::GetFriendsSummary::RealFriend& User) :
-            Data(std::make_unique<FriendReal>(User)),
-            Type(Type)
-        {
-
+        // Unblock user
+        void SetUnblocked(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            if (GetType() == FriendType::BLOCKED) {
+                UpdateInternalData(FriendType::INVALID, Client, AsyncFF);
+            }
         }
 
-        Friend(FriendType Type) :
-            Data(std::make_unique<FriendCurrent>()),
-            Type(Type)
-        {
-
+        // Reject request or remove as friend
+        void SetRemoveFriendship(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            auto Type = GetType();
+            if (Type == FriendType::INBOUND || Type == FriendType::OUTBOUND || Type == FriendType::NORMAL) {
+                UpdateInternalData(FriendType::INVALID, Client, AsyncFF);
+            }
         }
 
+        // Add user as a friend
+        void SetAddFriendship(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            auto Type = GetType();
+            if (Type == FriendType::INBOUND || Type == FriendType::OUTBOUND) {
+                UpdateInternalData(FriendType::NORMAL, Client, AsyncFF);
+            }
+        }
+
+        // User sent a friend request
+        void SetRequestInbound(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            auto Type = GetType();
+            if (Type == FriendType::INVALID || Type == FriendType::BLOCKED) {
+                UpdateInternalData(FriendType::INBOUND, Client, AsyncFF);
+            }
+        }
+
+        // User recieved a friend request
+        void SetRequestOutbound(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            auto Type = GetType();
+            if (Type == FriendType::INVALID || Type == FriendType::BLOCKED) {
+                UpdateInternalData(FriendType::OUTBOUND, Client, AsyncFF);
+            }
+        }
+
+        void InitializeAccountSettings(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            AsyncFF.Enqueue([&Client, this]() {
+                std::unique_lock Lock(Mutex);
+
+                auto AccResp = Client.GetSettingsForAccounts(std::vector<std::string>{ Data->GetAccountId() }, { "avatar", "avatarBackground" });
+                EGL3_ASSERT(!AccResp.HasError(), "Kairos data request returned an error");
+
+                for (auto& AccountSetting : AccResp->Values) {
+                    if (AccountSetting.AccountId == Data->GetAccountId()) {
+                        Data->UpdateAccountSetting(AccountSetting);
+                    }
+                }
+
+                Lock.unlock();
+                Get().UpdateCallback();
+            });
+        }
+
+    private:
+        // This will run asynchronously, but a mutex is used during the operation to prevent any CAS-like issues
+        void UpdateInternalData(FriendType TargetType, Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+            switch (TargetType)
+            {
+            case FriendType::INVALID:
+            {
+                std::unique_lock Lock(Mutex);
+                Type = TargetType;
+
+                Lock.unlock();
+                Get().UpdateCallback();
+                break;
+            }
+            case FriendType::BLOCKED:
+            {
+                if (RealType < BLOCKED) {
+                    AsyncFF.Enqueue([TargetType, &Client, this]() {
+                        std::unique_lock Lock(Mutex);
+
+                        Type = TargetType;
+                        auto AccResp = Client.GetAccounts(std::vector<std::string>{ Data->GetAccountId() });
+                        EGL3_ASSERT(!AccResp.HasError(), "Account request returned an error");
+
+                        EGL3_ASSERT(AccResp->Accounts.size() == 1, "Account reponse does not have exactly 1 user");
+                        GetUnlocked<FriendBaseUser>().SetUsername(AccResp->Accounts.front().GetDisplayName());
+                        RealType = BLOCKED;
+
+                        Lock.unlock();
+                        Get().UpdateCallback();
+                    });
+                }
+                else {
+                    std::unique_lock Lock(Mutex);
+                    Type = TargetType;
+
+                    Lock.unlock();
+                    Get().UpdateCallback();
+                }
+                break;
+            }
+            case FriendType::OUTBOUND:
+            case FriendType::INBOUND:
+            {
+                if (RealType < BLOCKED) {
+                    AsyncFF.Enqueue([TargetType, &Client, this]() {
+                        std::unique_lock Lock(Mutex);
+
+                        Type = TargetType;
+                        Data.reset(new FriendRequested(std::move(GetUnlocked<FriendBaseUser>())));
+                        RealType = REQUESTED;
+
+                        auto AccResp = Client.GetAccounts(std::vector<std::string>{ Data->GetAccountId() });
+                        EGL3_ASSERT(!AccResp.HasError(), "Account request returned an error");
+                        EGL3_ASSERT(AccResp->Accounts.size() == 1, "Account reponse does not have exactly 1 user");
+                        GetUnlocked<FriendRequested>().SetUsername(AccResp->Accounts.front().GetDisplayName());
+
+                        Lock.unlock();
+                        Get().UpdateCallback();
+                    });
+                }
+                else if (RealType < REQUESTED) {
+                    AsyncFF.Enqueue([TargetType, &Client, this]() {
+                        std::unique_lock Lock(Mutex);
+
+                        Type = TargetType;
+                        Data.reset(new FriendRequested(std::move(GetUnlocked<FriendBaseUser>())));
+                        RealType = REQUESTED;
+
+                        Lock.unlock();
+                        Get().UpdateCallback();
+                    });
+                }
+                else {
+                    std::unique_lock Lock(Mutex);
+                    Type = TargetType;
+
+                    Lock.unlock();
+                    Get().UpdateCallback();
+                }
+                break;
+            }
+            case FriendType::NORMAL:
+            {
+                if (RealType < REAL) {
+                    AsyncFF.Enqueue([TargetType, &Client, this]() {
+                        std::unique_lock Lock(Mutex);
+
+                        Type = TargetType;
+
+                        auto AccResp = Client.GetFriend(Data->GetAccountId());
+                        EGL3_ASSERT(!AccResp.HasError(), "Friend info request returned an error");
+
+                        Data.reset(new FriendReal(AccResp.Get()));
+                        RealType = REAL;
+
+                        Lock.unlock();
+                        Get().UpdateCallback();
+                    });
+                }
+                else {
+                    std::unique_lock Lock(Mutex);
+                    Type = TargetType;
+
+                    Lock.unlock();
+                    Get().UpdateCallback();
+                }
+                break;
+            }
+            }
+        }
+
+        template<class T = BaseFriend, std::enable_if_t<std::is_base_of_v<BaseFriend, T>, bool> = true>
+        T& GetUnlocked() const {
+            return (T&)*Data;
+        }
+
+    public:
         FriendType GetType() const {
+            std::shared_lock Lock(Mutex);
             return Type;
         }
 
-        BaseFriend& Get() const {
-            return *Data;
-        }
-
-        template<FriendType TargetType, std::enable_if_t<TargetType == FriendType::BLOCKED, bool> = true>
-        FriendBaseUser& Get() const {
-            return (FriendBaseUser&)Get();
-        }
-
-        template<FriendType TargetType, std::enable_if_t<TargetType == FriendType::SUGGESTED || TargetType == FriendType::OUTBOUND || TargetType == FriendType::INBOUND, bool> = true>
-        FriendSuggested& Get() const {
-            return (FriendSuggested&)Get();
-        }
-
-        template<FriendType TargetType, std::enable_if_t<TargetType == FriendType::NORMAL, bool> = true>
-        FriendReal& Get() const {
-            return (FriendReal&)Get();
-        }
-
-        template<FriendType TargetType, std::enable_if_t<TargetType == FriendType::CURRENT, bool> = true>
-        FriendCurrent& Get() const {
-            return (FriendCurrent&)Get();
+        template<class T = BaseFriend, std::enable_if_t<std::is_base_of_v<BaseFriend, T>, bool> = true>
+        T& Get() const {
+            std::shared_lock Lock(Mutex);
+            return GetUnlocked<T>();
         }
 
         std::weak_ordering operator<=>(const Friend& that) const {
+            std::shared_lock Lock(Mutex);
+
             if (auto cmp = Type <=> that.Type; cmp != 0)
                 return cmp;
 
             switch (Type)
             {
             case FriendType::NORMAL:
-                return Get<FriendType::NORMAL>() <=> that.Get<FriendType::NORMAL>();
+                return GetUnlocked<FriendReal>() <=> that.GetUnlocked<FriendReal>();
             case FriendType::INBOUND:
             case FriendType::OUTBOUND:
-            case FriendType::SUGGESTED:
-                return Get<FriendType::SUGGESTED>() <=> that.Get<FriendType::SUGGESTED>();
+                return GetUnlocked<FriendRequested>() <=> that.GetUnlocked<FriendRequested>();
             case FriendType::BLOCKED:
-                return Get<FriendType::BLOCKED>() <=> that.Get<FriendType::BLOCKED>();
+            case FriendType::INVALID:
+                return GetUnlocked<FriendBaseUser>() <=> that.GetUnlocked<FriendBaseUser>();
             }
 
             return std::weak_ordering::equivalent;

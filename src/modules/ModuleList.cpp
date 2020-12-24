@@ -1,5 +1,6 @@
 #include "ModuleList.h"
 
+#include "AsyncFF.h"
 #include "Authorization.h"
 #include "Friends.h"
 #include "Game.h"
@@ -10,6 +11,7 @@
 
 namespace EGL3::Modules {
 	void ModuleList::AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage) {
+		AddModule<AsyncFFModule>();
 		AddModule<ImageCacheModule>();
 		AddModule<WhatsNewModule>(*this, Storage, Builder);
 		AddModule<StatsGraphModule>(Builder);

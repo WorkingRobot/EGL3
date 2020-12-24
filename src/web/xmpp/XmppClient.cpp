@@ -406,7 +406,7 @@ namespace EGL3::Web::Xmpp {
 			}
 		}
 
-		Domain = std::string_view(JID.data() + (at == std::string::npos ? 0 : at + 1), slash - at - 1);
+		Domain = std::string_view(JID.data() + (at == std::string::npos ? 0 : at + 1), std::min(slash - at - 1, JID.size()));
 		if (Domain.size() >= 1024) {
 			return false;
 		}
@@ -533,8 +533,6 @@ namespace EGL3::Web::Xmpp {
 				}
 			}
 
-			printf("Account: %.*s\n", JIDId.size(), JIDId.data());
-			ParsedPresence.Dump();
 			Callbacks.PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
 			return true;
 		}
@@ -582,6 +580,7 @@ namespace EGL3::Web::Xmpp {
 			// kind of useless (for egl3 anyway)
 			break;
 		default:
+			printf("NEW SYSTEM MESSAGE TYPE: %s\n", TypeJson.GetString());
 			break;
 		}
 
@@ -615,6 +614,8 @@ namespace EGL3::Web::Xmpp {
 			auto BodyNode = Node->first_node("body", 4);
 			EGL3_ASSERT(BodyNode, "No body recieved with <message>");
 			
+			//printf("SYSTEM MESSAGE: %.*s\n", BodyNode->value_size(), BodyNode->value());
+
 			rapidjson::Document Json;
 			Json.Parse(BodyNode->value(), BodyNode->value_size());
 			EGL3_ASSERT(!Json.HasParseError(), "Failed to parse body json from message (invalid json)");
@@ -627,7 +628,7 @@ namespace EGL3::Web::Xmpp {
 	}
 
 	bool XmppClient::HandleChat(const rapidxml::xml_node<>* Node) {
-		return true;
+		return false;
 	}
 
 	// https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88
@@ -717,12 +718,20 @@ namespace EGL3::Web::Xmpp {
 	{
 		EGL3_ASSERT(Node, "No xml recieved?");
 
+		if (HandleSystemMessage(Node)) {
+			return;
+		}
+
 		// XMPP "Pong" response
 		if (HandlePong(Node)) {
 			return;
 		}
 
 		if (HandlePresence(Node)) {
+			return;
+		}
+
+		if (HandleChat(Node)) {
 			return;
 		}
 

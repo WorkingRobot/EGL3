@@ -767,7 +767,7 @@ namespace EGL3::Web::Epic {
 
 		auto Response = Http::Put(
 			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
-			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
 			cpr::Body{ Nickname }
 		);
 
@@ -821,7 +821,7 @@ namespace EGL3::Web::Epic {
 
 		auto Response = Http::Put(
 			FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
-			cpr::Header{ { "Authorization", AuthHeader } },
+			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
 			cpr::Body{ Note }
 		);
 

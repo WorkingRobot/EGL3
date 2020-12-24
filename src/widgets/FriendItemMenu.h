@@ -14,13 +14,14 @@ namespace EGL3::Widgets {
             ACCEPT_REQUEST,
             DECLINE_REQUEST,
             CANCEL_REQUEST,
-            SEND_REQUEST,
             BLOCK_USER,
             UNBLOCK_USER,
             COPY_USER_ID
         };
 
-        FriendItemMenu(const std::function<void(ClickAction)>& OnAction) :
+        using Callback = std::function<void(ClickAction, const Storage::Models::Friend&)>;
+
+        FriendItemMenu(const Callback& OnAction) :
             OnAction(OnAction)
         {
             Construct();
@@ -30,18 +31,19 @@ namespace EGL3::Widgets {
             return Container;
         }
 
-        void PopupMenu(const Storage::Models::Friend& Data, Gtk::Widget& TargetWidget) {
+        void PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget) {
+            SelectedFriend = &Friend;
+
             ItemChat.hide();
             ItemRemove.hide();
             ItemNickname.hide();
             ItemAccept.hide();
             ItemDecline.hide();
             ItemCancel.hide();
-            ItemSend.hide();
             ItemUnblock.hide();
             ItemBlock.show();
 
-            switch (Data.GetType())
+            switch (SelectedFriend->GetType())
             {
             case Storage::Models::FriendType::NORMAL:
                 ItemChat.show();
@@ -55,9 +57,6 @@ namespace EGL3::Widgets {
             case Storage::Models::FriendType::OUTBOUND:
                 ItemCancel.show();
                 break;
-            case Storage::Models::FriendType::SUGGESTED:
-                ItemSend.show();
-                break;
             case Storage::Models::FriendType::BLOCKED:
                 ItemBlock.hide();
                 ItemUnblock.show();
@@ -69,16 +68,15 @@ namespace EGL3::Widgets {
 
     private:
         void Construct() {
-            ItemChat.signal_activate().connect([this]() { OnAction(ClickAction::CHAT); });
-            ItemRemove.signal_activate().connect([this]() { OnAction(ClickAction::REMOVE_FRIEND); });
-            ItemAccept.signal_activate().connect([this]() { OnAction(ClickAction::ACCEPT_REQUEST); });
-            ItemDecline.signal_activate().connect([this]() { OnAction(ClickAction::DECLINE_REQUEST); });
-            ItemCancel.signal_activate().connect([this]() { OnAction(ClickAction::CANCEL_REQUEST); });
-            ItemSend.signal_activate().connect([this]() { OnAction(ClickAction::SEND_REQUEST); });
-            ItemNickname.signal_activate().connect([this]() { OnAction(ClickAction::SET_NICKNAME); });
-            ItemBlock.signal_activate().connect([this]() { OnAction(ClickAction::BLOCK_USER); });
-            ItemUnblock.signal_activate().connect([this]() { OnAction(ClickAction::UNBLOCK_USER); });
-            ItemCopyId.signal_activate().connect([this]() { OnAction(ClickAction::COPY_USER_ID); });
+            ItemChat.signal_activate().connect([this]() { OnAction(ClickAction::CHAT, *SelectedFriend); });
+            ItemRemove.signal_activate().connect([this]() { OnAction(ClickAction::REMOVE_FRIEND, *SelectedFriend); });
+            ItemAccept.signal_activate().connect([this]() { OnAction(ClickAction::ACCEPT_REQUEST, *SelectedFriend); });
+            ItemDecline.signal_activate().connect([this]() { OnAction(ClickAction::DECLINE_REQUEST, *SelectedFriend); });
+            ItemCancel.signal_activate().connect([this]() { OnAction(ClickAction::CANCEL_REQUEST, *SelectedFriend); });
+            ItemNickname.signal_activate().connect([this]() { OnAction(ClickAction::SET_NICKNAME, *SelectedFriend); });
+            ItemBlock.signal_activate().connect([this]() { OnAction(ClickAction::BLOCK_USER, *SelectedFriend); });
+            ItemUnblock.signal_activate().connect([this]() { OnAction(ClickAction::UNBLOCK_USER, *SelectedFriend); });
+            ItemCopyId.signal_activate().connect([this]() { OnAction(ClickAction::COPY_USER_ID, *SelectedFriend); });
 
             ItemChat.set_label("Message");
             ItemRemove.set_label("Remove Friend");
@@ -86,7 +84,6 @@ namespace EGL3::Widgets {
             ItemAccept.set_label("Accept Request");
             ItemDecline.set_label("Decline Request");
             ItemCancel.set_label("Cancel Request");
-            ItemSend.set_label("Send Friend Request");
             ItemSeparator.set_label("\xe2\xb8\xbb"); // triple em dash
             ItemBlock.set_label("Block");
             ItemUnblock.set_label("Unblock");
@@ -100,7 +97,6 @@ namespace EGL3::Widgets {
             Container.add(ItemAccept);
             Container.add(ItemDecline);
             Container.add(ItemCancel);
-            Container.add(ItemSend);
             Container.add(ItemSeparator);
             Container.add(ItemBlock);
             Container.add(ItemUnblock);
@@ -109,7 +105,8 @@ namespace EGL3::Widgets {
             Container.show_all();
         }
 
-        std::function<void(ClickAction)> OnAction;
+        Callback OnAction;
+        const Storage::Models::Friend* SelectedFriend;
 
         Gtk::Menu Container;
 
@@ -124,9 +121,6 @@ namespace EGL3::Widgets {
 
         // Outbound Pending
         Gtk::MenuItem ItemCancel;
-
-        // Suggested
-        Gtk::MenuItem ItemSend;
 
         // Always
         Gtk::SeparatorMenuItem ItemSeparator;

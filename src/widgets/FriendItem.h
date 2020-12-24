@@ -2,8 +2,9 @@
 
 #include <gtkmm.h>
 
-#include "AsyncImage.h"
 #include "../modules/ImageCache.h"
+#include "AsyncImage.h"
+#include "FriendItemMenu.h"
 
 namespace EGL3::Widgets {
     using namespace Web::Xmpp::Json;
@@ -32,6 +33,11 @@ namespace EGL3::Widgets {
             return UpdateData <=> that.UpdateData;
         }
 
+        void SetContextMenu(Widgets::FriendItemMenu& ContextMenu) {
+            BaseContainer.set_events(Gdk::BUTTON_RELEASE_MASK);
+            BaseContainer.signal_button_release_event().connect([&, this](GdkEventButton* evt) { ContextMenu.PopupMenu(GetData(), BaseBox); return true; });
+        }
+
         void Update() {
             UpdateDispatcher.emit();
         }
@@ -44,7 +50,7 @@ namespace EGL3::Widgets {
         void Construct() {
             BaseContainer.set_data("EGL3_FriendBase", this);
 
-            BaseContainer.set_border_width(2);
+            BaseBox.set_border_width(2);
 
             Username.set_xalign(0);
             Username.set_yalign(0);
@@ -95,10 +101,11 @@ namespace EGL3::Widgets {
             PlatformContainer.add(ProductImage);
             PlatformContainer.add_overlay(PlatformImage);
 
-            BaseContainer.pack_start(AvatarContainer, false, false, 0);
-            BaseContainer.pack_start(StatusContainer, true, true, 5);
-            BaseContainer.pack_end(PlatformContainer, false, false, 0);
+            BaseBox.pack_start(AvatarContainer, false, false, 0);
+            BaseBox.pack_start(StatusContainer, true, true, 5);
+            BaseBox.pack_end(PlatformContainer, false, false, 0);
 
+            BaseContainer.add(BaseBox);
             BaseContainer.show_all();
         }
 
@@ -115,7 +122,7 @@ namespace EGL3::Widgets {
             Status.set_has_tooltip(false);
 
             if (UpdateData.GetType() == Storage::Models::FriendType::NORMAL || UpdateData.GetType() == Storage::Models::FriendType::CURRENT) {
-                auto& FriendData = UpdateData.Get<Storage::Models::FriendType::NORMAL>();
+                auto& FriendData = UpdateData.Get<Storage::Models::FriendReal>();
 
                 ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), ImageCache);
 
@@ -148,9 +155,6 @@ namespace EGL3::Widgets {
                 case Storage::Models::FriendType::OUTBOUND:
                     Status.set_text("Outgoing Friend Request");
                     break;
-                case Storage::Models::FriendType::SUGGESTED:
-                    Status.set_text("Suggested Friend");
-                    break;
                 case Storage::Models::FriendType::BLOCKED:
                     Status.set_text("Blocked");
                     break;
@@ -163,14 +167,14 @@ namespace EGL3::Widgets {
             }
         }
 
-        static cpr::Url GetProductImageUrl(const std::string_view ProductId) {
-            if (ProductId != "EGL3") {
-                std::string ProductIdLower(ProductId.data(), ProductId.size());
-                std::transform(ProductIdLower.begin(), ProductIdLower.end(), ProductIdLower.begin(), [](const auto& n) { return std::tolower(n); });
-                return Web::BaseClient::FormatUrl("https://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/%s/icon.png", ProductIdLower.c_str());
-            }
-            else {
+        static cpr::Url GetProductImageUrl(std::string_view ProductId) {
+            switch (Utils::Crc32(ProductId.data(), ProductId.size())) {
+            case Utils::Crc32("EGL3"):
                 return "https://epic.gl/assets/launcher-icon.png";
+            case Utils::Crc32("Fortnite"):
+                ProductId = "fortnite";
+            default:
+                return Web::BaseClient::FormatUrl("https://cdn1.unrealengine.com/launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/%.*s/icon.png", ProductId.size(), ProductId.data());
             }
         }
 
@@ -202,7 +206,8 @@ namespace EGL3::Widgets {
 
     protected:
         Modules::ImageCacheModule& ImageCache;
-        Gtk::Box BaseContainer{ Gtk::ORIENTATION_HORIZONTAL };
+        Gtk::EventBox BaseContainer;
+        Gtk::Box BaseBox{ Gtk::ORIENTATION_HORIZONTAL };
         Gtk::Overlay AvatarContainer;
         AsyncImage AvatarBackground;
         Gtk::EventBox AvatarEventBox;

@@ -2,7 +2,7 @@
 
 namespace EGL3::Web::Xmpp::Messages {
 	struct UserBlocklistUpdate {
-		DEFINE_JSON_ENUM(ReasonEnum, BLOCKED, UNBLOCKED)
+		DEFINE_JSON_ENUM(StatusEnum, BLOCKED, UNBLOCKED)
 
 		// Time of the event
 		TimePoint Timestamp;
@@ -15,7 +15,7 @@ namespace EGL3::Web::Xmpp::Messages {
 
 		// "BLOCKED": Blocked account
 		// "UNBLOCKED": Unblocked account
-		ReasonEnumJson Status;
+		StatusEnumJson Status;
 
 		PARSE_DEFINE(UserBlocklistUpdate)
 			PARSE_ITEM("timestamp", Timestamp)

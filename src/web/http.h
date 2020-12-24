@@ -15,22 +15,22 @@ namespace EGL3::Web {
 	public:
 		template<typename... Ts>
 		static cpr::Response Get(Ts&&... ts) {
-			return cpr::GetAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
+			return cpr::Get(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response Post(Ts&&... ts) {
-			return cpr::PostAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
+			return cpr::Post(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response Delete(Ts&&... ts) {
-			return cpr::DeleteAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
+			return cpr::Delete(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		template<typename... Ts>
 		static cpr::Response Put(Ts&&... ts) {
-			return cpr::PutAsync(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...).get();
+			return cpr::Put(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
 		}
 
 		// Make sure to check validity with Json.HasParseError()
