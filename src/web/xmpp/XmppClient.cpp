@@ -473,33 +473,32 @@ namespace EGL3::Web::Xmpp {
 				}
 			}
 
-			{
-				auto StatusNode = Node->first_node("status", 6);
-				EGL3_ASSERT(StatusNode, "No status recieved with <presence>");
-
-				rapidjson::Document Json;
-				Json.Parse(StatusNode->value(), StatusNode->value_size());
-				EGL3_ASSERT(!Json.HasParseError(), "Failed to parse status json from presence (invalid json)");
-				EGL3_ASSERT(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), "Failed to parse status json from presence");
-			}
-
-			{
-				auto DelayNode = Node->first_node("delay", 5);
-				if (DelayNode) {
-					auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
-					EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected");
-					EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
-
-					auto StampAttr = DelayNode->first_attribute("stamp", 5);
-					EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
-					EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
+			auto StatusNode = Node->first_node("status", 6);
+			if (StatusNode) {
+				{
+					rapidjson::Document Json;
+					Json.Parse(StatusNode->value(), StatusNode->value_size());
+					EGL3_ASSERT(!Json.HasParseError(), "Failed to parse status json from presence (invalid json)");
+					EGL3_ASSERT(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), "Failed to parse status json from presence");
 				}
-				else {
-					ParsedPresence.LastUpdated = std::chrono::system_clock::now();
-				}
-			}
+				{
+					auto DelayNode = Node->first_node("delay", 5);
+					if (DelayNode) {
+						auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
+						EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected");
+						EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
 
-			Callbacks.PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
+						auto StampAttr = DelayNode->first_attribute("stamp", 5);
+						EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
+						EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
+					}
+					else {
+						ParsedPresence.LastUpdated = std::chrono::system_clock::now();
+					}
+				}
+
+				Callbacks.PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
+			}
 			return true;
 		}
 		return false;
@@ -659,9 +658,7 @@ namespace EGL3::Web::Xmpp {
 		case ix::WebSocketMessageType::Open:
 		{
 			SendXmppOpen(Socket);
-			BackgroundPingFuture = std::async(std::launch::async, [this]() {
-				BackgroundPingTask();
-			});
+			BackgroundPingFuture = std::async(std::launch::async, &XmppClient::BackgroundPingTask, this);
 			State = ClientState::BEFORE_OPEN;
 			break;
 		}
@@ -741,7 +738,7 @@ namespace EGL3::Web::Xmpp {
 			EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
 
 			// After recieving success, we restart the xmpp
-			// we can send an auth response back
+			// and we can send an auth response back
 			SendXmppOpen(Socket);
 
 			State = ClientState::BEFORE_AUTHED_OPEN;
