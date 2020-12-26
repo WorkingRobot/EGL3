@@ -1,11 +1,12 @@
 #pragma once
 
-#include <ixwebsocket/IXWebSocket.h>
-#include <rapidxml/rapidxml.hpp>
-
 #include "../BaseClient.h"
 #include "messages/Messages.h"
 #include "Responses.h"
+
+#include <ixwebsocket/IXWebSocket.h>
+#include <rapidxml/rapidxml.hpp>
+#include <shared_mutex>
 
 namespace EGL3::Web::Xmpp {
     struct Callbacks {
@@ -29,8 +30,6 @@ namespace EGL3::Web::Xmpp {
         ~XmppClient();
 
     private:
-        bool HandlePong(const rapidxml::xml_node<>* Node);
-
         bool HandlePresence(const rapidxml::xml_node<>* Node);
 
         bool HandleSystemMessage(const rapidjson::Document& Data);
@@ -70,10 +69,9 @@ namespace EGL3::Web::Xmpp {
         std::string CurrentJidWithoutResource;
         std::string CurrentJid;
 
-        std::atomic<std::chrono::steady_clock::time_point> BackgroundPingNextTime;
-        // Better safe than sorry!
-        std::mutex BackgroundPingIdMutex;
-        std::string BackgroundPingId;
+        std::shared_mutex BackgroundPingMutex;
+        std::condition_variable_any BackgroundPingCV;
+        std::chrono::steady_clock::time_point BackgroundPingNextTime;
         std::future<void> BackgroundPingFuture;
 
         ix::WebSocket Socket;

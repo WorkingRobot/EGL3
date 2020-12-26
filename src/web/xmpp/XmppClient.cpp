@@ -27,14 +27,10 @@ namespace EGL3::Web::Xmpp {
 			// BackgroundPingNextTime is the time until a ping needs to be sent from the client
 			// Any text traffic resets this timeout back to 60s
 			{
-				auto OldValue = BackgroundPingNextTime.load();
-				auto NewValue = std::chrono::steady_clock::now() + std::chrono::seconds(60);
-				do {
-					if (OldValue == std::chrono::steady_clock::time_point::max()) {
-						return false;
-					}
-				} while (!BackgroundPingNextTime.compare_exchange_weak(OldValue, NewValue));
+				std::unique_lock Lock(BackgroundPingMutex);
+				BackgroundPingNextTime = std::chrono::steady_clock::now() + std::chrono::seconds(60);
 			}
+			BackgroundPingCV.notify_all();
 		});
 
 		{
@@ -135,7 +131,11 @@ namespace EGL3::Web::Xmpp {
 	XmppClient::~XmppClient()
 	{
 		Callbacks.Clear();
-		BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
+		{
+			std::unique_lock Lock(BackgroundPingMutex);
+			BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
+		}
+		BackgroundPingCV.notify_all();
 		BackgroundPingFuture.get();
 		Socket.close();
 		// TODO: move this to when gtk is closing the app,
@@ -422,41 +422,6 @@ namespace EGL3::Web::Xmpp {
 		return true;
 	}
 
-	bool XmppClient::HandlePong(const rapidxml::xml_node<>* Node) {
-		if (XmlNameEqual(Node, "iq")) {
-			auto IdAttr = Node->first_attribute("id", 2);
-			if (IdAttr) {
-				bool IsPong;
-				{
-					std::lock_guard IdLock(BackgroundPingIdMutex);
-					IsPong = XmlValueEqual(IdAttr, BackgroundPingId);
-				}
-
-				if (IsPong) {
-					// TODO: maybe mix this in with ReadXmppInfoQueryResult?
-					auto XmlnsAttr = Node->first_attribute("xmlns", 5);
-					EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected");
-					EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
-
-					auto TypeAttr = Node->first_attribute("type", 4);
-					EGL3_ASSERT(TypeAttr, "No type recieved with <iq>, type=\"result\" expected");
-					EGL3_ASSERT(XmlValueEqual(TypeAttr, "result"), "Bad type attr value with <iq>, type=\"result\" expected");
-
-					auto FromAttr = Node->first_attribute("from", 4);
-					EGL3_ASSERT(FromAttr, "No from recieved with <iq>");
-					EGL3_ASSERT(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), "Bad from attr value with <iq>, from=\"prod.ol.epicgames.com\" expected");
-
-					auto ToAttr = Node->first_attribute("to", 2);
-					EGL3_ASSERT(ToAttr, "No to jid recieved with <iq>");
-					EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <iq>, expected JID does not match");
-
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	bool XmppClient::HandlePresence(const rapidxml::xml_node<>* Node) {
 		if (XmlNameEqual(Node, "presence")) {
 			// I've recieved presences without an xmnls (third party games just don't care about em)
@@ -614,8 +579,6 @@ namespace EGL3::Web::Xmpp {
 
 			auto BodyNode = Node->first_node("body", 4);
 			EGL3_ASSERT(BodyNode, "No body recieved with <message>");
-			
-			//printf("SYSTEM MESSAGE: %.*s\n", BodyNode->value_size(), BodyNode->value());
 
 			rapidjson::Document Json;
 			Json.Parse(BodyNode->value(), BodyNode->value_size());
@@ -659,14 +622,22 @@ namespace EGL3::Web::Xmpp {
 
 	void XmppClient::BackgroundPingTask()
 	{
-		auto NextTime = BackgroundPingNextTime.load();
-		while (NextTime != std::chrono::steady_clock::time_point::max()) {
+		while (true) {
+			std::chrono::steady_clock::time_point NextTime;
+			{
+				std::shared_lock Lock(BackgroundPingMutex);
+				NextTime = BackgroundPingNextTime;
+				BackgroundPingCV.wait_until(Lock, NextTime, [&, this]() {
+					return NextTime != BackgroundPingNextTime || BackgroundPingNextTime == std::chrono::steady_clock::time_point::max();
+				});
+				NextTime = BackgroundPingNextTime;
+			}
+			if (NextTime == std::chrono::steady_clock::time_point::max()) {
+				return;
+			}
 			if (NextTime <= std::chrono::steady_clock::now()) {
 				SendPing(Socket, CurrentJid);
 			}
-			// TODO: add condition variable here, i tried yielding, that uses too much cpu time
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-			NextTime = BackgroundPingNextTime;
 		}
 	}
 
@@ -720,11 +691,6 @@ namespace EGL3::Web::Xmpp {
 		EGL3_ASSERT(Node, "No xml recieved?");
 
 		if (HandleSystemMessage(Node)) {
-			return;
-		}
-
-		// XMPP "Pong" response
-		if (HandlePong(Node)) {
 			return;
 		}
 
