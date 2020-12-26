@@ -8,6 +8,8 @@ namespace EGL3::Web::Epic {
     public:
         EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient);
 
+        ~EpicClientAuthed();
+
         // Account service
 
         Response<Responses::GetAccount> GetAccount();
@@ -118,9 +120,6 @@ namespace EGL3::Web::Epic {
         // theater0 = stw world inventory
         // outpost0 = stw storm shield storage
         Response<Responses::QueryProfile> QueryProfile(const std::string& ProfileId, int Revision = -1);
-
-    protected:
-        void KillAuthentication() override;
 
     public:
         bool EnsureTokenValidity();

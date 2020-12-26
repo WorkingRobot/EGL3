@@ -77,16 +77,19 @@ namespace EGL3::Web {
             return cpr::Url(Buf.get(), BufSize - 1);
         }
 
-        ~BaseClient();
-
     protected:
-        // Implementation is offered to derived classes
-        // This is given as an alternative to a destructor
-        // The base client's destructor handles the concurrency,
-        // so we don't want the derived client's destructor to
-        // invalidate its token before we know all of its requests
-        // have ended.
-        virtual void KillAuthentication() {}
+        // Always call this in the destructor before running any "kill token" style tasks!
+        void EnsureCallCompletion() {
+            Cancelled = true;
+
+            // Prevents the client functions from running past the lifetime of itself
+            std::unique_lock<std::mutex> lock(RunningFunctionMutex);
+            RunningFunctionCV.wait(lock, [this] { return RunningFunctionCount <= 0; });
+        }
+
+        ~BaseClient() {
+            EnsureCallCompletion();
+        }
 
         __forceinline const std::atomic_bool& GetCancelled() const {
             return Cancelled;

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2
+<!-- Generated with glade 3.38.2 
 
 Copyright (C) Aleks Margarian
 
@@ -455,7 +455,7 @@ Author: Aleks Margarian
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">page 1</property>
+                        <property name="label" translatable="yes">Locker</property>
                       </object>
                       <packing>
                         <property name="tab-fill">False</property>
@@ -484,7 +484,7 @@ Author: Aleks Margarian
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">page 2</property>
+                        <property name="label" translatable="yes">Battle Pass</property>
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -514,7 +514,7 @@ Author: Aleks Margarian
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">page 3</property>
+                        <property name="label" translatable="yes">Challenges</property>
                       </object>
                       <packing>
                         <property name="position">2</property>
@@ -536,6 +536,7 @@ Author: Aleks Margarian
                       <object class="GtkBox">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="spacing">5</property>
                         <child type="center">
                           <object class="GtkLabel">
                             <property name="visible">True</property>

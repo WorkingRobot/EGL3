@@ -49,10 +49,6 @@ namespace EGL3::Modules {
 			}
 		}
 
-		~AuthorizationModule() {
-			
-		}
-
 		enum class PlayButtonState {
 			SIGN_IN,
 			SIGNING_IN,

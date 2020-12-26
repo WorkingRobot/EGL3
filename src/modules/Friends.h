@@ -235,13 +235,6 @@ namespace EGL3::Modules {
 			}
 		}
 
-		~FriendsModule() {
-			std::scoped_lock Guard(ItemDataMutex);
-			while (UpdateCurrentlyRunning) {
-				UpdateCurrentlyRunning.wait(true);
-			}
-		}
-
 	private:
 		void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) {
 			if (AccountId != LauncherClient->AuthData.AccountId) {
@@ -277,7 +270,7 @@ namespace EGL3::Modules {
 		void OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
 			EGL3_ASSERT(LauncherClient.AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
 
-			printf("Launcher: %s\t\nFortnite: %s\n", LauncherClient.AuthData.AccessToken.c_str(), FNClient.AuthData.AccessToken.c_str());
+			//printf("Launcher: %s\t\nFortnite: %s\n", LauncherClient.AuthData.AccessToken.c_str(), FNClient.AuthData.AccessToken.c_str());
 
 			CurrentUserModel.Get<FriendCurrent>().SetCurrentUserData(LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.DisplayName.value());
 			XmppClient.emplace(
@@ -475,6 +468,7 @@ namespace EGL3::Modules {
 					Box.add(*Widget);
 				}
 
+				Box.invalidate_sort();
 				Box.show_all_children();
 			}
 

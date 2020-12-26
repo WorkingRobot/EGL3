@@ -82,7 +82,7 @@ namespace EGL3::Modules {
 				DrawArea.queue_draw();
 
 				return true;
-			}, 5000, Glib::PRIORITY_HIGH_IDLE);
+			}, 1000, Glib::PRIORITY_HIGH_IDLE);
 		}
 
 		~StatsGraphModule() {

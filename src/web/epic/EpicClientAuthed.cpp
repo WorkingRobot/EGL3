@@ -14,6 +14,21 @@ namespace EGL3::Web::Epic {
 		AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
 	}
 
+	EpicClientAuthed::~EpicClientAuthed()
+	{
+		EnsureCallCompletion();
+
+		// Token isn't expired yet
+		if (AuthData.ExpiresAt > Responses::TimePoint::clock::now()) {
+			// This will return a 204
+			// If it fails, it's on epic's blame. We don't really need any handling
+			Http::Delete(
+				FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
+				cpr::Header{ { "Authorization", AuthHeader } }
+			);
+		}
+	}
+
 	BaseClient::Response<Responses::GetAccount> EpicClientAuthed::GetAccount()
 	{
 		RunningFunctionGuard Guard(*this);
@@ -1111,19 +1126,6 @@ namespace EGL3::Web::Epic {
 		}
 
 		return Resp;
-	}
-
-	void EpicClientAuthed::KillAuthentication()
-	{
-		// Token isn't expired yet
-		if (AuthData.ExpiresAt > Responses::TimePoint::clock::now()) {
-			// This will return a 204
-			// If it fails, it's on epic's blame. We don't really need any handling
-			Http::Delete(
-				FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
-				cpr::Header{ { "Authorization", AuthHeader } }
-			);
-		}
 	}
 
 	bool EpicClientAuthed::EnsureTokenValidity()

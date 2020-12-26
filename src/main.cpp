@@ -16,49 +16,6 @@
 
 namespace EGL3 {
     __forceinline int Start() {
-        static const cpr::Authentication AuthClientSwitch{ "5229dcd3ac3845208b496649092f251b", "e3bd2d3e-bf8c-4857-9e7d-f3d947d220c7" };
-        static const cpr::Authentication AuthClientLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
-        static const cpr::Authentication AuthClientAndroidPortal{ "38dbfc3196024d5980386a37b7c792bb", "a6280b87-e45e-409b-9681-8f15eb7dbcf5" };
-
-        if constexpr (false)
-        {
-            Utils::Mmio::MmioReadonlyFile n(fs::path("test.dat"));
-
-            auto v = n.Get();
-        }
-
-        if constexpr (false)
-        {
-            Web::Epic::Auth::ClientCredentials CredsAuth(AuthClientAndroidPortal);
-            EGL3_ASSERT(CredsAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ClientCredentials::SUCCESS, "Could not get oauth data");
-            Web::Epic::EpicClientAuthed C(CredsAuth.GetOAuthResponse(), AuthClientAndroidPortal);
-
-            auto Resp = C.GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
-            EGL3_ASSERT(!Resp.HasError(), "Could not get download info");
-            auto& El = Resp->Elements;
-        }
-
-        /*Web::Epic::Auth::DeviceCode DevCodeAuth(AuthClientSwitch);
-        auto BrowserUrlResult = DevCodeAuth.GetBrowserUrlFuture().get();
-        EGL3_ASSERT(BrowserUrlResult == Web::Epic::Auth::DeviceCode::ERROR_SUCCESS, "Could not get browser url");
-        Utils::OpenInBrowser(DevCodeAuth.GetBrowserUrl());
-
-        auto OAuthRespResult = DevCodeAuth.GetOAuthResponseFuture().get();
-        EGL3_ASSERT(OAuthRespResult == Web::Epic::Auth::DeviceCode::ERROR_SUCCESS, "Could not get oauth data");
-
-        Web::Epic::Responses::OAuthToken AuthData;
-        EGL3_ASSERT(Web::Epic::Responses::OAuthToken::Parse(DevCodeAuth.GetOAuthResponse(), AuthData), "Could not parse oauth data");
-
-        Storage::Persistent::Store St("storage.stor");
-        auto& ret = St.Get(Storage::Persistent::Key::Hello);
-
-        Web::Epic::EpicClient C;
-        auto Resp = C.GetBlogPosts("en-US");*/
-
-        if (!getenv("GTK_CSD")) {
-            _putenv_s("GTK_CSD", "0");
-        }
-
         {
             auto Config = FcConfigCreate();
             FcConfigSetCurrent(Config);
@@ -70,8 +27,9 @@ namespace EGL3 {
             pango_fc_font_map_set_config(FontMap, Config);
             pango_cairo_font_map_set_default((PangoCairoFontMap*)FontMap);
         }
+
+        //_putenv_s("GTK_CSD", "0");
         //_putenv_s("GTK_DEBUG", "interactive");
-        //_putenv_s("GOBJECT_DEBUG", "instance-count");
 
         auto App = Gtk::Application::create("me.workingrobot.egl3");
 

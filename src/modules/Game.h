@@ -13,10 +13,6 @@ namespace EGL3::Modules {
 
 		}
 
-		~GameModule() {
-
-		}
-
 	private:
 		
 	};
