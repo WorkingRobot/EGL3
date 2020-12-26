@@ -116,20 +116,20 @@ namespace EGL3::Widgets {
             Username.set_text(Friend.GetDisplayName());
             Nickname.set_text(Friend.GetSecondaryName());
 
-            AvatarBackground.set_async(Friend.GetKairosBackgroundUrl(), 64, 64, ImageCache);
-            Avatar.set_async(Friend.GetKairosAvatarUrl(), 64, 64, ImageCache);
+            AvatarBackground.set_async(Friend.GetKairosBackgroundUrl(), PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, ImageCache);
+            Avatar.set_async(Friend.GetKairosAvatarUrl(), PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, ImageCache);
 
             Status.set_has_tooltip(false);
 
             if (UpdateData.GetType() == Storage::Models::FriendType::NORMAL || UpdateData.GetType() == Storage::Models::FriendType::CURRENT) {
                 auto& FriendData = UpdateData.Get<Storage::Models::FriendReal>();
 
-                ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), ImageCache);
+                ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), "", ImageCache);
 
                 if (FriendData.GetShowStatus() != ShowStatus::Offline) {
-                    ProductImage.set_async(GetProductImageUrl(FriendData.GetProductId()), 64, 64, ImageCache);
+                    ProductImage.set_async(GetProductImageUrl(FriendData.GetProductId()), GetProductImageUrl("default"), 64, 64, ImageCache);
 
-                    PlatformImage.set_async(GetPlatformImageUrl(FriendData.GetPlatform()), 24, 24, ImageCache);
+                    PlatformImage.set_async(GetPlatformImageUrl(FriendData.GetPlatform()), GetPlatformImageUrl("OTHER"), 24, 24, ImageCache);
 
                     if (FriendData.GetStatus().empty()) {
                         Status.set_text(ShowStatusToString(FriendData.GetShowStatus()));
@@ -163,7 +163,7 @@ namespace EGL3::Widgets {
                     break;
                 }
 
-                ColorStatus.set_async(ShowStatusToUrl(ShowStatus::Offline), ImageCache);
+                ColorStatus.set_async(ShowStatusToUrl(ShowStatus::Offline), "", ImageCache);
             }
         }
 

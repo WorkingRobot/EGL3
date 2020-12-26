@@ -16,7 +16,7 @@ namespace EGL3::Widgets {
             this->Source.set_text(Source);
             this->Date.set_text(Utils::Humanize(Date));
             this->Description.set_text(Description);
-            this->MainImage.set_async(ImageUrl, 768, 432, ImageCache);
+            this->MainImage.set_async(ImageUrl, "", 768, 432, ImageCache);
 
             Construct();
         }

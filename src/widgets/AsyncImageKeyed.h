@@ -10,11 +10,11 @@ namespace EGL3::Widgets {
     class AsyncImageKeyed {
     public:
         template<typename UrlCallback>
-        AsyncImageKeyed(const KeyType& Key, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
+        AsyncImageKeyed(const KeyType& Key, const std::string& FallbackUrl, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
             Key(Key),
             ImageCache(ImageCache)
         {
-            Construct(GetUrl(Key), Width, Height);
+            Construct(GetUrl(Key), FallbackUrl, Width, Height);
         }
 
         operator Gtk::Widget&() {
@@ -26,10 +26,10 @@ namespace EGL3::Widgets {
         }
 
     private:
-        void Construct(const std::string& Url, int Width, int Height) {
+        void Construct(const std::string& Url, const std::string& FallbackUrl, int Width, int Height) {
             Image.set_data("EGL3_ImageBase", this);
 
-            Image.set_async(Url, Width, Height, ImageCache);
+            Image.set_async(Url, FallbackUrl, Width, Height, ImageCache);
 
             Image.show_all();
         }

@@ -179,6 +179,7 @@ namespace EGL3::Utils::Streams {
         }
 
         Stream& operator>>(std::string& Val) {
+            Val.clear();
             char n;
             do {
                 *this >> n;
@@ -206,6 +207,7 @@ namespace EGL3::Utils::Streams {
 
         template<class K, class V>
         Stream& operator>>(std::unordered_map<K, V>& Val) {
+            Val.clear();
             size_t Size;
             *this >> Size;
             Val.reserve(Size);

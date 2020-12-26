@@ -4,6 +4,7 @@
 #include "../../utils/Crc32.h"
 #include "../../utils/streams/MemoryStream.h"
 #include "../models/Authorization.h"
+#include "../models/StoredFriendData.h"
 
 namespace EGL3::Storage::Persistent {
 	struct IKeyValue {
@@ -47,6 +48,7 @@ namespace EGL3::Storage::Persistent {
 		KEY(WhatsNewTimestamps, std::unordered_map<size_t, std::chrono::system_clock::time_point>);
 		KEY(WhatsNewSelection,  uint8_t);
 		KEY(Auth,				Models::Authorization);
+		KEY(StoredFriendData,	Models::StoredFriendData);
 
 #undef KEY
 
@@ -58,6 +60,7 @@ namespace EGL3::Storage::Persistent {
 				KEY(WhatsNewTimestamps);
 				KEY(WhatsNewSelection);
 				KEY(Auth);
+				KEY(StoredFriendData);
 
 #undef KEY
 			}

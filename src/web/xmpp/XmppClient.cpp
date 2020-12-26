@@ -15,6 +15,7 @@
 namespace EGL3::Web::Xmpp {
 	XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const Xmpp::Callbacks& Callbacks) :
 		Callbacks(Callbacks),
+		CurrentAccountId(AccountId),
 		State(ClientState::OPENING)
 	{
 		std::call_once(InitFlag, ix::initNetSystem);
@@ -546,7 +547,7 @@ namespace EGL3::Web::Xmpp {
 		{
 			Messages::FriendshipRequest Val;
 			if (Messages::FriendshipRequest::Parse(Data, Val)) {
-				Callbacks.FriendshipRequested(std::move(Val));
+				Callbacks.SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
 			}
 			break;
 		}
@@ -554,7 +555,7 @@ namespace EGL3::Web::Xmpp {
 		{
 			Messages::FriendshipRemove Val;
 			if (Messages::FriendshipRemove::Parse(Data, Val)) {
-				Callbacks.FriendshipRemoved(std::move(Val));
+				Callbacks.SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
 			}
 			break;
 		}
@@ -562,7 +563,7 @@ namespace EGL3::Web::Xmpp {
 		{
 			Messages::UserBlocklistUpdate Val;
 			if (Messages::UserBlocklistUpdate::Parse(Data, Val)) {
-				Callbacks.UserBlocklistUpdated(std::move(Val));
+				Callbacks.SystemMessage(std::move(Val));
 			}
 			break;
 		}

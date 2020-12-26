@@ -10,15 +10,11 @@
 namespace EGL3::Web::Xmpp {
     struct Callbacks {
         std::function<void(const std::string& AccountId, Json::Presence&& NewPresence)> PresenceUpdate;
-        std::function<void(Messages::FriendshipRequest&& NewRequest)> FriendshipRequested;
-        std::function<void(Messages::FriendshipRemove&& NewRemoval)> FriendshipRemoved;
-        std::function<void(Messages::UserBlocklistUpdate&& NewUpdate)> UserBlocklistUpdated;
+        std::function<void(Messages::SystemMessage&& NewMessage)> SystemMessage;
 
         void Clear() {
             PresenceUpdate = [](auto, auto) {};
-            FriendshipRequested = [](auto) {};
-            FriendshipRemoved = [](auto) {};
-            UserBlocklistUpdated = [](auto) {};
+            SystemMessage = [](auto) {};
         }
     };
 
@@ -70,6 +66,7 @@ namespace EGL3::Web::Xmpp {
         ClientState State;
         std::string EncodedAuthValue;
         std::string CurrentResource;
+        std::string CurrentAccountId;
         std::string CurrentJidWithoutResource;
         std::string CurrentJid;
 

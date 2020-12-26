@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/Friend.h"
+#include "../storage/models/StoredFriendData.h"
 #include "../utils/GladeBuilder.h"
 #include "../web/epic/EpicClientAuthed.h"
 #include "../web/xmpp/XmppClient.h"
@@ -11,6 +12,7 @@
 #include "BaseModule.h"
 #include "ModuleList.h"
 #include "Authorization.h"
+#include "AsyncFF.h"
 
 #include <gtkmm.h>
 #include <rapidjson/stringbuffer.h>
@@ -22,9 +24,17 @@ namespace EGL3::Modules {
 
 	class FriendsModule : public BaseModule {
 	public:
-		FriendsModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
+		FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
 			ImageCache(Modules.GetModule<ImageCacheModule>()),
 			AsyncFF(Modules.GetModule<AsyncFFModule>()),
+			StorageData(Storage.Get(Storage::Persistent::Key::StoredFriendData)),
+			AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
+			CheckFriendsOffline(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
+			CheckFriendsOutgoing(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
+			CheckFriendsIncoming(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),
+			CheckFriendsBlocked(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsBlockedCheck")),
+			CheckDeclineReqs(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
+			CheckProfanity(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck")),
 			Box(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
 			CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
 			CurrentUserModel(Friend::ConstructCurrent),
@@ -33,127 +43,191 @@ namespace EGL3::Modules {
 			KairosAvatarBox(Builder.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
 			KairosBackgroundBox(Builder.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
 			KairosStatusBox(Builder.GetWidget<Gtk::FlowBox>("FriendsStatusFlow")),
+			KairosStatusEntry(Builder.GetWidget<Gtk::Entry>("FriendsKairosStatusEntry")),
+			KairosStatusEditBtn(Builder.GetWidget<Gtk::Button>("FriendsKairosEditStatusBtn")),
 			FriendMenu([this](auto Action, const auto& Friend) { OnFriendAction(Action, Friend); })
 		{
-			Box.set_sort_func([](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
-				auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
-				auto BPtr = (Widgets::FriendItem*)B->get_child()->get_data("EGL3_FriendBase");
+			{
+				AddFriendBtn.signal_clicked().connect([this]() { AddFriend(); });
 
-				EGL3_ASSERT(APtr && BPtr, "Widgets aren't of type FriendItem");
+				CheckFriendsOffline.set_active(StorageData.HasFlag<StoredFriendData::ShowOffline>());
+				CheckFriendsOutgoing.set_active(StorageData.HasFlag<StoredFriendData::ShowOutgoing>());
+				CheckFriendsIncoming.set_active(StorageData.HasFlag<StoredFriendData::ShowIncoming>());
+				CheckFriendsBlocked.set_active(StorageData.HasFlag<StoredFriendData::ShowBlocked>());
+				CheckDeclineReqs.set_active(StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>());
+				CheckProfanity.set_active(StorageData.HasFlag<StoredFriendData::CensorProfanity>());
 
-				// Undocumented _Value, but honestly, it's fine
-				return (*BPtr <=> *APtr)._Value;
-			});
-			ReSortBoxDispatcher.connect([this]() { Box.invalidate_sort(); });
-
-			KairosMenu.signal_show().connect([this]() {
-				KairosMenuFocused = false;
-
-				KairosAvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
-					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-					auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
-					if (Data->GetKey() == CurrentUserModel.Get().GetKairosAvatar()) {
-						KairosAvatarBox.select_child(Widget);
-					}
-				});
-				
-				KairosBackgroundBox.foreach([this](Gtk::Widget& WidgetBase) {
-					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-					auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
-					if (Data->GetKey() == CurrentUserModel.Get().GetKairosBackground()) {
-						KairosBackgroundBox.select_child(Widget);
-					}
-				});
-
-				KairosStatusBox.foreach([this](Gtk::Widget& WidgetBase) {
-					auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-					auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)Widget.get_child()->get_data("EGL3_ImageBase");
-					if (Data->GetKey() == CurrentUserModel.Get<FriendCurrent>().GetShowStatus()) {
-						KairosStatusBox.select_child(Widget);
-					}
-				});
-			});
-			KairosMenu.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
-				if (!KairosMenuFocused) {
-					// This is always called once for some reason
-					// The first event is a fake
-					KairosMenuFocused = true;
-				}
-				else {
-					KairosMenu.hide();
-				}
-				return false;
-			});
-
-			KairosAvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-				auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
-				if (Data->GetKey() == CurrentUserModel.Get().GetKairosAvatar()) {
-					return;
-				}
-
-				CurrentUserModel.Get().SetKairosAvatar(Data->GetKey());
-				XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
-
-				UpdateKairosAvatarTask = std::async(std::launch::async, [this]() {
-					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatar", CurrentUserModel.Get().GetKairosAvatar());
-					if (UpdateResp.HasError()) {
-						printf("Avatar resp: %d\n", UpdateResp.GetErrorCode());
-					}
-				});
-			});
-
-			KairosBackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-				auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
-				if (Data->GetKey() == CurrentUserModel.Get().GetKairosBackground()) {
-					return;
-				}
-
-				CurrentUserModel.Get().SetKairosBackground(Data->GetKey());
-				XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
-
-				UpdateKairosBackgroundTask = std::async(std::launch::async, [this]() {
-					auto UpdateResp = LauncherClient->UpdateAccountSetting("avatarBackground", CurrentUserModel.Get().GetKairosBackground());
-					if (UpdateResp.HasError()) {
-						printf("Background resp: %d\n", UpdateResp.GetErrorCode());
-					}
-				});
-			});
-
-			KairosStatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-				auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)child->get_child()->get_data("EGL3_ImageBase");
-				if (Data->GetKey() == CurrentUserModel.Get<FriendCurrent>().GetShowStatus()) {
-					return;
-				}
-
-				CurrentUserModel.Get<FriendCurrent>().SetShowStatus(Data->GetKey());
-				XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
-			});
-
-			CurrentUserModel.Get().SetUpdateCallback([this](const auto& Status) { CurrentUserWidget.Update(); });
-			CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
-			CurrentUserWidget.SetAsCurrentUser(KairosMenu);
-
-			UpdateUIDispatcher.connect([this]() { UpdateUI(); });
-			FriendsRealizeDispatcher.connect([this]() { FriendsRealize(); });
-
-			auto& AuthModule = Modules.GetModule<AuthorizationModule>();
-			AuthModule.AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
+				CheckFriendsOffline.signal_toggled().connect([this]() { UpdateSelection(); });
+				CheckFriendsOutgoing.signal_toggled().connect([this]() { UpdateSelection(); });
+				CheckFriendsIncoming.signal_toggled().connect([this]() { UpdateSelection(); });
+				CheckFriendsBlocked.signal_toggled().connect([this]() { UpdateSelection(); });
+				CheckDeclineReqs.signal_toggled().connect([this]() { UpdateSelection(); });
+				CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
+			}
 
 			{
-				CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus("Using EGL3");
-				CurrentUserModel.Get<FriendCurrent>().SetShowStatus(Json::ShowStatus::Online);
+				Box.set_sort_func([](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
+					auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
+					auto BPtr = (Widgets::FriendItem*)B->get_child()->get_data("EGL3_FriendBase");
+
+					EGL3_ASSERT(APtr && BPtr, "Widgets aren't of type FriendItem");
+
+					// Undocumented _Value, but honestly, it's fine
+					return (*BPtr <=> *APtr)._Value;
+				});
+				Box.set_filter_func([this](Gtk::ListBoxRow* Row) {
+					auto Ptr = (Widgets::FriendItem*)Row->get_child()->get_data("EGL3_FriendBase");
+
+					EGL3_ASSERT(Ptr, "Widget isn't of type FriendItem");
+
+					switch (Ptr->GetData().GetType()) {
+					case FriendType::INVALID:
+						return false;
+					case FriendType::BLOCKED:
+						return StorageData.HasFlag<StoredFriendData::ShowBlocked>();
+					case FriendType::OUTBOUND:
+						return StorageData.HasFlag<StoredFriendData::ShowOutgoing>();
+					case FriendType::INBOUND:
+						return StorageData.HasFlag<StoredFriendData::ShowIncoming>();
+					case FriendType::NORMAL:
+						return StorageData.HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != ShowStatus::Offline;
+					default:
+						return true;
+					}
+				});
+			}
+
+			{
+				KairosMenu.signal_show().connect([this]() {
+					KairosMenuFocused = false;
+
+					KairosAvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
+						auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
+						auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
+						if (Data->GetKey() == CurrentUserModel.Get().GetKairosAvatar()) {
+							KairosAvatarBox.select_child(Widget);
+						}
+					});
+
+					KairosBackgroundBox.foreach([this](Gtk::Widget& WidgetBase) {
+						auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
+						auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
+						if (Data->GetKey() == CurrentUserModel.Get().GetKairosBackground()) {
+							KairosBackgroundBox.select_child(Widget);
+						}
+					});
+
+					KairosStatusBox.foreach([this](Gtk::Widget& WidgetBase) {
+						auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
+						auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)Widget.get_child()->get_data("EGL3_ImageBase");
+						if (Data->GetKey() == CurrentUserModel.Get<FriendCurrent>().GetShowStatus()) {
+							KairosStatusBox.select_child(Widget);
+						}
+					});
+
+					KairosStatusEntry.set_placeholder_text(ShowStatusToString(StorageData.GetShowStatus()));
+					KairosStatusEntry.set_text(StorageData.GetStatus());
+					KairosStatusEditBtn.set_sensitive(false);
+				});
+				KairosMenu.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
+					if (!KairosMenuFocused) {
+						// This is always called once for some reason
+						// The first event is a fake
+						KairosMenuFocused = true;
+					}
+					else {
+						KairosMenu.hide();
+					}
+					return false;
+				});
+			}
+
+			{
+				KairosAvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+					auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
+					if (Data->GetKey() == CurrentUserModel.Get().GetKairosAvatar()) {
+						return;
+					}
+
+					CurrentUserModel.Get().SetKairosAvatar(Data->GetKey());
+					XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
+
+					UpdateKairosAvatarTask = std::async(std::launch::async, [this]() {
+						auto UpdateResp = LauncherClient->UpdateAccountSetting("avatar", CurrentUserModel.Get().GetKairosAvatar());
+						if (UpdateResp.HasError()) {
+							printf("Avatar resp: %d\n", UpdateResp.GetErrorCode());
+						}
+					});
+				});
+				KairosBackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+					auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
+					if (Data->GetKey() == CurrentUserModel.Get().GetKairosBackground()) {
+						return;
+					}
+
+					CurrentUserModel.Get().SetKairosBackground(Data->GetKey());
+					XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
+
+					UpdateKairosBackgroundTask = std::async(std::launch::async, [this]() {
+						auto UpdateResp = LauncherClient->UpdateAccountSetting("avatarBackground", CurrentUserModel.Get().GetKairosBackground());
+						if (UpdateResp.HasError()) {
+							printf("Background resp: %d\n", UpdateResp.GetErrorCode());
+						}
+					});
+				});
+				KairosStatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+					auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)child->get_child()->get_data("EGL3_ImageBase");
+					if (Data->GetKey() == CurrentUserModel.Get<FriendCurrent>().GetShowStatus()) {
+						return;
+					}
+
+					StorageData.SetShowStatus(Data->GetKey());
+					KairosStatusEntry.set_placeholder_text(ShowStatusToString(Data->GetKey()));
+					CurrentUserModel.Get<FriendCurrent>().SetShowStatus(Data->GetKey());
+					XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
+				});
+
+				KairosStatusEntry.signal_changed().connect([this]() {
+					KairosStatusEditBtn.set_sensitive(true);
+				});
+
+				KairosStatusEditBtn.signal_clicked().connect([this]() {
+					KairosStatusEditBtn.set_sensitive(false);
+
+					StorageData.SetStatus(KairosStatusEntry.get_text());
+					CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus(KairosStatusEntry.get_text());
+					XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
+				});
+			}
+
+			{
+				CurrentUserModel.Get().SetUpdateCallback([this](const BaseFriend& Status) { CurrentUserWidget.Update(); });
+				CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
+				CurrentUserWidget.SetAsCurrentUser(KairosMenu);
+			}
+
+			{
+				UpdateUIDispatcher.connect([this]() { UpdateUI(); });
+				FriendsRealizeDispatcher.connect([this]() { FriendsRealize(); });
+				ResortBoxDispatcher.connect([this]() { ResortBox(); });
+			}
+
+			Modules.GetModule<AuthorizationModule>().AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
+
+			{
+				CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus(StorageData.GetStatus());
+				CurrentUserModel.Get<FriendCurrent>().SetShowStatus(StorageData.GetShowStatus());
 			}
 
 			{
 				KairosStatusBox.foreach([this](Gtk::Widget& Widget) { KairosStatusBox.remove(Widget); });
-
 
 				static const std::initializer_list<Json::ShowStatus> Statuses{ Json::ShowStatus::Online, Json::ShowStatus::Away, Json::ShowStatus::ExtendedAway, Json::ShowStatus::DoNotDisturb, Json::ShowStatus::Chat };
 
 				StatusWidgets.clear();
 				StatusWidgets.reserve(Statuses.size());
 				for (auto Status : Statuses) {
-					auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, 48, 48, &Json::ShowStatusToUrl, ImageCache));
+					auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, "", 48, 48, &Json::ShowStatusToUrl, ImageCache));
 					KairosStatusBox.add(*Widget);
 				}
 
@@ -188,23 +262,14 @@ namespace EGL3::Modules {
 			}
 		}
 
-		void OnFriendshipRequested(Messages::FriendshipRequest&& NewRequest) {
+		void OnSystemMessage(Messages::SystemMessage&& NewMessage) {
+			if (NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
+				AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
+				return;
+			}
+
 			std::lock_guard Lock(FriendsRealizeMutex);
-			FriendsRealizeData.emplace_back(std::move(NewRequest));
-
-			FriendsRealizeDispatcher.emit();
-		}
-
-		void OnFriendshipRemoved(Messages::FriendshipRemove&& NewRemoval) {
-			std::lock_guard Lock(FriendsRealizeMutex);
-			FriendsRealizeData.emplace_back(std::move(NewRemoval));
-
-			FriendsRealizeDispatcher.emit();
-		}
-
-		void OnUserBlocklistUpdated(Messages::UserBlocklistUpdate&& NewUpdate) {
-			std::lock_guard Lock(FriendsRealizeMutex);
-			FriendsRealizeData.emplace_back(std::move(NewUpdate));
+			FriendsRealizeData.emplace_back(std::move(NewMessage));
 
 			FriendsRealizeDispatcher.emit();
 		}
@@ -212,14 +277,14 @@ namespace EGL3::Modules {
 		void OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
 			EGL3_ASSERT(LauncherClient.AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
 
+			printf("Launcher: %s\t\nFortnite: %s\n", LauncherClient.AuthData.AccessToken.c_str(), FNClient.AuthData.AccessToken.c_str());
+
 			CurrentUserModel.Get<FriendCurrent>().SetCurrentUserData(LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.DisplayName.value());
 			XmppClient.emplace(
 				LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.AccessToken,
 				Callbacks {
 					[this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); },
-					[this](auto&& A) { OnFriendshipRequested(std::move(A)); },
-					[this](auto&& A) { OnFriendshipRemoved(std::move(A)); },
-					[this](auto&& A) { OnUserBlocklistUpdated(std::move(A)); },
+					[this](auto&& A) { OnSystemMessage(std::move(A)); },
 				}
 			);
 			this->LauncherClient = &LauncherClient;
@@ -261,6 +326,30 @@ namespace EGL3::Modules {
 				printf("copy id\n");
 				break;
 			}
+		}
+
+		void AddFriend() {
+			printf("ADD FRIEND MODAL SWITCH\n");
+		}
+
+		void UpdateSelection() {
+			StorageData.SetFlags(StoredFriendData::OptionFlags(
+				(CheckFriendsOffline.get_active() ? (uint8_t)StoredFriendData::ShowOffline : 0) |
+				(CheckFriendsOutgoing.get_active() ? (uint8_t)StoredFriendData::ShowOutgoing : 0) |
+				(CheckFriendsIncoming.get_active() ? (uint8_t)StoredFriendData::ShowIncoming : 0) |
+				(CheckFriendsBlocked.get_active() ? (uint8_t)StoredFriendData::ShowBlocked : 0) |
+				(CheckDeclineReqs.get_active() ? (uint8_t)StoredFriendData::AutoDeclineReqs : 0) |
+				(CheckProfanity.get_active() ? (uint8_t)StoredFriendData::CensorProfanity : 0)
+			));
+			Box.invalidate_filter();
+			Box.invalidate_sort();
+		}
+
+		void ResortWidget(Widgets::FriendItem& Widget) {
+			std::lock_guard Lock(ResortBoxMutex);
+			ResortBoxData.emplace_back(std::ref(Widget));
+
+			ResortBoxDispatcher.emit();
 		}
 
 		void UpdateAsync() {
@@ -382,7 +471,7 @@ namespace EGL3::Modules {
 				for (auto& Friend : FriendsData) {
 					auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(*Friend, ImageCache));
 					Widget->SetContextMenu(FriendMenu);
-					Friend->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ReSortBoxDispatcher.emit(); });
+					Friend->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ResortWidget(*Widget); });
 					Box.add(*Widget);
 				}
 
@@ -397,7 +486,7 @@ namespace EGL3::Modules {
 				AvatarsWidgets.reserve(AvatarsData.size());
 
 				for (auto& Avatar : AvatarsData) {
-					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
+					auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
 					KairosAvatarBox.add(*Widget);
 				}
 
@@ -412,7 +501,7 @@ namespace EGL3::Modules {
 				BackgroundsWidgets.reserve(BackgroundsData.size());
 
 				for (auto& Background : BackgroundsData) {
-					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
+					auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
 					KairosBackgroundBox.add(*Widget);
 				}
 
@@ -426,115 +515,76 @@ namespace EGL3::Modules {
 		void FriendsRealize() {
 			std::lock_guard Guard(FriendsRealizeMutex);
 
-			for (auto& ActionV : FriendsRealizeData) {
-				std::visit([this](auto&& Action) {
-					enum ActionEnum : uint8_t {
-						UNKNOWN,
-						REQUEST_ACCEPT,
-						REQUEST_INBOUND,
-						REQUEST_OUTBOUND,
-						REMOVE,
-						BLOCK,
-						UNBLOCK
-					};
-					ActionEnum ActionType = UNKNOWN;
-					std::string* AccountId;
+			for (auto& Action : FriendsRealizeData) {
+				std::unique_ptr<Friend>* FriendPtr;
+				auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&](auto& Friend) {
+					return Action.GetAccountId() == Friend->Get().GetAccountId();
+				});
+				if (FriendItr != FriendsData.end()) {
+					FriendPtr = &*FriendItr;
+				}
+				else {
+					FriendPtr = &FriendsData.emplace_back(std::make_unique<Friend>(Friend::ConstructInvalid, Action.GetAccountId(), ""));
 
-					using T = std::decay_t<decltype(Action)>;
-					if constexpr (std::is_same_v<T, Messages::FriendshipRequest>) {
-						if (Action.From == LauncherClient->AuthData.AccountId) {
-							AccountId = &Action.To;
-							if (Action.Reason == Messages::FriendshipRequest::ReasonEnum::ACCEPTED) {
-								ActionType = REQUEST_ACCEPT;
-							}
-							else if (Action.Reason == Messages::FriendshipRequest::ReasonEnum::PENDING) {
-								ActionType = REQUEST_OUTBOUND;
-							}
-						}
-						else {
-							AccountId = &Action.From;
-							if (Action.Reason == Messages::FriendshipRequest::ReasonEnum::ACCEPTED) {
-								ActionType = REQUEST_ACCEPT;
-							}
-							else if (Action.Reason == Messages::FriendshipRequest::ReasonEnum::PENDING) {
-								ActionType = REQUEST_INBOUND;
-							}
-						}
-					}
-					else if constexpr (std::is_same_v<T, Messages::FriendshipRemove>) {
-						if (Action.From == LauncherClient->AuthData.AccountId) {
-							AccountId = &Action.To;
-						}
-						else {
-							AccountId = &Action.From;
-						}
-						ActionType = REMOVE;
-					}
-					else if constexpr (std::is_same_v<T, Messages::UserBlocklistUpdate>) {
-						if (Action.Status == Messages::UserBlocklistUpdate::StatusEnum::BLOCKED) {
-							ActionType = BLOCK;
-						}
-						else if (Action.Status == Messages::UserBlocklistUpdate::StatusEnum::UNBLOCKED) {
-							ActionType = UNBLOCK;
-						}
-						AccountId = &Action.Account;
-					}
+					(**FriendPtr).InitializeAccountSettings(*LauncherClient, AsyncFF);
 
-					if (ActionType == UNKNOWN) {
-						return;
-					}
+					auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(**FriendPtr, ImageCache));
+					Widget->SetContextMenu(FriendMenu);
+					(*FriendPtr)->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ResortWidget(*Widget); });
+					Box.add(*Widget);
+				}
 
-					std::unique_ptr<Friend>* FriendPtr;
-					auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&](auto& Friend) {
-						return *AccountId == Friend->Get().GetAccountId();
-					});
-					if (FriendItr != FriendsData.end()) {
-						FriendPtr = &*FriendItr;
-					}
-					else {
-						FriendPtr = &FriendsData.emplace_back(std::make_unique<Friend>(Friend::ConstructInvalid, *AccountId, ""));
+				auto& Friend = **FriendPtr;
 
-						(**FriendPtr).InitializeAccountSettings(*LauncherClient, AsyncFF);
-
-						auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(**FriendPtr, ImageCache));
-						Widget->SetContextMenu(FriendMenu);
-						(*FriendPtr)->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ReSortBoxDispatcher.emit(); });
-						Box.add(*Widget);
-					}
-
-					auto& Friend = **FriendPtr;
-
-					switch (ActionType)
-					{
-					case REQUEST_ACCEPT:
-						Friend.SetAddFriendship(*LauncherClient, AsyncFF);
-						break;
-					case REQUEST_INBOUND:
-						Friend.SetRequestInbound(*LauncherClient, AsyncFF);
-						break;
-					case REQUEST_OUTBOUND:
-						Friend.SetRequestOutbound(*LauncherClient, AsyncFF);
-						break;
-					case REMOVE:
-						Friend.SetRemoveFriendship(*LauncherClient, AsyncFF);
-						break;
-					case BLOCK:
-						Friend.SetBlocked(*LauncherClient, AsyncFF);
-						break;
-					case UNBLOCK:
-						Friend.SetUnblocked(*LauncherClient, AsyncFF);
-						break;
-					}
-				}, ActionV);
+				switch (Action.GetAction())
+				{
+				case Messages::SystemMessage::ActionType::RequestAccept:
+					Friend.SetAddFriendship(*LauncherClient, AsyncFF);
+					break;
+				case Messages::SystemMessage::ActionType::RequestInbound:
+					Friend.SetRequestInbound(*LauncherClient, AsyncFF);
+					break;
+				case Messages::SystemMessage::ActionType::RequestOutbound:
+					Friend.SetRequestOutbound(*LauncherClient, AsyncFF);
+					break;
+				case Messages::SystemMessage::ActionType::Remove:
+					Friend.SetRemoveFriendship(*LauncherClient, AsyncFF);
+					break;
+				case Messages::SystemMessage::ActionType::Block:
+					Friend.SetBlocked(*LauncherClient, AsyncFF);
+					break;
+				case Messages::SystemMessage::ActionType::Unblock:
+					Friend.SetUnblocked(*LauncherClient, AsyncFF);
+					break;
+				}
 			}
 
 			FriendsRealizeData.clear();
 		}
 
+		void ResortBox() {
+			std::lock_guard Guard(ResortBoxMutex);
+
+			for (auto& WidgetInfo : ResortBoxData) {
+				Gtk::Widget& Widget = WidgetInfo.get();
+				((Gtk::ListBoxRow*)Widget.get_parent())->changed();
+			}
+
+			ResortBoxData.clear();
+		}
+
 		ImageCacheModule& ImageCache;
 		AsyncFFModule& AsyncFF;
+		Storage::Models::StoredFriendData& StorageData;
 
-		Glib::Dispatcher ReSortBoxDispatcher;
+		Gtk::Button& AddFriendBtn;
+		Gtk::CheckMenuItem& CheckFriendsOffline;
+		Gtk::CheckMenuItem& CheckFriendsOutgoing;
+		Gtk::CheckMenuItem& CheckFriendsIncoming;
+		Gtk::CheckMenuItem& CheckFriendsBlocked;
+		Gtk::CheckMenuItem& CheckDeclineReqs;
+		Gtk::CheckMenuItem& CheckProfanity;
+
 		Gtk::ListBox& Box;
 
 		Widgets::FriendItemMenu FriendMenu;
@@ -548,6 +598,8 @@ namespace EGL3::Modules {
 		Gtk::FlowBox& KairosAvatarBox;
 		Gtk::FlowBox& KairosBackgroundBox;
 		Gtk::FlowBox& KairosStatusBox;
+		Gtk::Entry& KairosStatusEntry;
+		Gtk::Button& KairosStatusEditBtn;
 
 		Web::Epic::EpicClientAuthed* LauncherClient;
 		std::optional<XmppClient> XmppClient;
@@ -564,8 +616,12 @@ namespace EGL3::Modules {
 		Web::BaseClient::ErrorCode ItemDataError;
 
 		std::mutex FriendsRealizeMutex;
-		std::vector<std::variant<Messages::FriendshipRequest, Messages::FriendshipRemove, Messages::UserBlocklistUpdate>> FriendsRealizeData;
+		std::vector<Messages::SystemMessage> FriendsRealizeData;
 		Glib::Dispatcher FriendsRealizeDispatcher;
+
+		std::mutex ResortBoxMutex;
+		std::vector<std::reference_wrapper<Widgets::FriendItem>> ResortBoxData;
+		Glib::Dispatcher ResortBoxDispatcher;
 
 		std::vector<std::unique_ptr<Friend>> FriendsData;
 		std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;

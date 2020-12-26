@@ -15,23 +15,24 @@ namespace EGL3::Widgets {
             ConstructDispatcher();
         }
 
-        void set_async(const cpr::Url& Url, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
-            ImageTask = ImageCache.GetImageAsync(Url, Width, Height, ImageBuf, ImageDispatcher);
+        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
+            ImageTask = ImageCache.GetImageAsync(Url, FallbackUrl, Width, Height, ImageDispatcher);
         }
 
-        void set_async(const cpr::Url& Url, Modules::ImageCacheModule& ImageCache) {
-            set_async(Url, -1, -1, ImageCache);
+        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, Modules::ImageCacheModule& ImageCache) {
+            set_async(Url, FallbackUrl, -1, -1, ImageCache);
         }
 
     private:
         void ConstructDispatcher() {
             ImageDispatcher.connect([this]() {
-                this->set(ImageBuf);
+                if (ImageTask.valid()) {
+                    this->set(ImageTask.get());
+                }
             });
         }
 
-        Glib::RefPtr<Gdk::Pixbuf> ImageBuf;
-        std::future<void> ImageTask;
+        std::future<Glib::RefPtr<Gdk::Pixbuf>> ImageTask;
         Glib::Dispatcher ImageDispatcher;
     };
 }

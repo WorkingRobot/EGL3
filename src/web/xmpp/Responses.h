@@ -6,7 +6,12 @@ namespace EGL3::Web::Xmpp::Json {
 	using namespace EGL3::Web::Json;
 }
 
-#include "StatusData.h"
+#include "Presence.h"
+#include "PresenceKairosProfile.h"
+#include "PresenceProperties.h"
+#include "PresenceStatus.h"
+#include "ResourceId.h"
+#include "ShowStatus.h"
 
 #undef PARSE_DEFINE
 #undef PARSE_END

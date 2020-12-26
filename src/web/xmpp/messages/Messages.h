@@ -9,6 +9,7 @@ namespace EGL3::Web::Xmpp::Messages {
 #include "FriendshipRemove.h"
 #include "FriendshipRequest.h"
 #include "UserBlocklistUpdate.h"
+#include "SystemMessage.h"
 
 #undef PARSE_DEFINE
 #undef PARSE_END

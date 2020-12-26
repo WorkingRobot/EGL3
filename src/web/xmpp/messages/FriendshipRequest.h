@@ -2,7 +2,7 @@
 
 namespace EGL3::Web::Xmpp::Messages {
 	struct FriendshipRequest {
-		DEFINE_JSON_ENUM(ReasonEnum, PENDING, ACCEPTED)
+		DEFINE_JSON_ENUM(StatusEnum, PENDING, ACCEPTED)
 
 		// Time of the event
 		TimePoint Timestamp;
@@ -15,13 +15,13 @@ namespace EGL3::Web::Xmpp::Messages {
 
 		// "PENDING": Sent request
 		// "ACCEPTED": Accepted request
-		ReasonEnumJson Reason;
+		StatusEnumJson Status;
 
 		PARSE_DEFINE(FriendshipRequest)
 			PARSE_ITEM("timestamp", Timestamp)
 			PARSE_ITEM("from", From)
 			PARSE_ITEM("to", To)
-			PARSE_ITEM("reason", Reason)
+			PARSE_ITEM("status", Status)
 		PARSE_END
 	};
 }

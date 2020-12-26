@@ -36,9 +36,13 @@ namespace EGL3::Web::Epic::Responses {
 			// Any external connections the friend has
 			std::unordered_map<std::string, Connection> Connections;
 
+			// Given sometimes
+			int MutualFriendCount;
+
 			PARSE_DEFINE(SuggestedFriend)
 				PARSE_BASE(BaseUser)
 				PARSE_ITEM_OPT("connections", Connections)
+				PARSE_ITEM_DEF("mutual", MutualFriendCount, 0)
 			PARSE_END
 		};
 
@@ -51,7 +55,7 @@ namespace EGL3::Web::Epic::Responses {
 		};
 
 		// Returned in the explicit (non-summary) endpoints
-		struct BaseFriend : public RequestedFriend {
+		struct RealFriend : public RequestedFriend {
 			// empty groups array
 
 			std::string Alias;
@@ -60,20 +64,11 @@ namespace EGL3::Web::Epic::Responses {
 
 			TimePoint Created;
 
-			PARSE_DEFINE(BaseFriend)
+			PARSE_DEFINE(RealFriend)
 				PARSE_BASE(RequestedFriend)
 				PARSE_ITEM("alias", Note)
 				PARSE_ITEM("note", Alias)
 				PARSE_ITEM("created", Created)
-			PARSE_END
-		};
-
-		struct RealFriend : public BaseFriend {
-			int MutualFriendCount;
-
-			PARSE_DEFINE(RealFriend)
-				PARSE_BASE(BaseFriend)
-				PARSE_ITEM("mutual", MutualFriendCount)
 			PARSE_END
 		};
 

@@ -17,7 +17,7 @@ namespace EGL3::Modules {
 		AddModule<StatsGraphModule>(Builder);
 		AddModule<StatusPageModule>(Builder);
 		AddModule<AuthorizationModule>(Storage, Builder);
-		AddModule<FriendsModule>(*this, Builder);
+		AddModule<FriendsModule>(*this, Storage, Builder);
 		// AddModule<GameModule>(Builder);
 	}
 }
