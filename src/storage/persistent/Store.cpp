@@ -13,7 +13,7 @@ namespace EGL3::Storage::Persistent {
 				Stream >> KeyConstant;
 
 				auto Elem = Data.emplace(KeyConstant, KeyConstant);
-				if (Elem.first->second.Item) {
+				if (Elem.first->second.HasValue()) {
 					EGL3_ASSERT(Elem.second, "Could not emplace new constant to store");
 					Elem.first->second.Deserialize(Stream);
 				}

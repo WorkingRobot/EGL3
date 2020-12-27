@@ -22,6 +22,7 @@ namespace EGL3::Storage::Game {
 
 	Archive::~Archive()
 	{
+
 	}
 
 	// TODO: check if Runlist and RunIndex's sizes can hold an extra element (and resize accordingly somehow or something)

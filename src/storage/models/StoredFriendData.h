@@ -24,62 +24,30 @@ namespace EGL3::Storage::Models {
         std::string Status;
 
     public:
-        StoredFriendData() :
-            Options(OptionFlags(OptionFlags::ShowOffline | OptionFlags::ShowOutgoing | OptionFlags::ShowIncoming | OptionFlags::ShowBlocked | OptionFlags::CensorProfanity)),
-            ShowStatus(Web::Xmpp::Json::ShowStatus::Online),
-            Status("Using EGL3")
-        {
+        StoredFriendData();
 
-        }
+        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, StoredFriendData& Val);
 
-        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, StoredFriendData& Val) {
-            uint8_t Options;
-            Stream >> Options;
-            Val.Options = OptionFlags(Options);
-            uint8_t ShowStatus;
-            Stream >> ShowStatus;
-            Val.ShowStatus = Web::Xmpp::Json::ShowStatus(ShowStatus);
-            Stream >> Val.Status;
-
-            return Stream;
-        }
-
-        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const StoredFriendData& Val) {
-            Stream << uint8_t(Val.Options);
-            Stream << uint8_t(Val.ShowStatus);
-            Stream << Val.Status;
-
-            return Stream;
-        }
+        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const StoredFriendData& Val);
 
         template<OptionFlags Flag>
         bool HasFlag() const {
             return Options & Flag;
         }
 
-        Web::Xmpp::Json::ShowStatus GetShowStatus() const {
-            return ShowStatus;
-        }
+        Web::Xmpp::Json::ShowStatus GetShowStatus() const;
 
-        const std::string& GetStatus() const {
-            return Status;
-        }
+        const std::string& GetStatus() const;
+
+        void SetFlags(OptionFlags NewOptions);
 
         template<OptionFlags Flag>
         void SetFlag(bool Val) {
             Options = OptionFlags(Options ^ ((-int8_t(Val) ^ Options) & Flag));
         }
 
-        void SetFlags(OptionFlags NewOptions) {
-            Options = NewOptions;
-        }
+        void SetShowStatus(Web::Xmpp::Json::ShowStatus NewShowStatus);
 
-        void SetShowStatus(Web::Xmpp::Json::ShowStatus NewShowStatus) {
-            ShowStatus = NewShowStatus;
-        }
-
-        void SetStatus(const std::string& NewStatus) {
-            Status = NewStatus;
-        }
+        void SetStatus(const std::string& NewStatus);
     };
 }

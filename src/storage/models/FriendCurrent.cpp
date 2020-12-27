@@ -1,0 +1,51 @@
+#include "FriendCurrent.h"
+
+namespace EGL3::Storage::Models {
+    using namespace Web::Xmpp::Json;
+
+    FriendCurrent::FriendCurrent() :
+        FriendReal(GetValidDefaultSummaryData())
+    {
+
+    }
+
+    ShowStatus FriendCurrent::GetShowStatus() const {
+        return OnlineStatus;
+    }
+
+    const std::string& FriendCurrent::GetStatus() const {
+        return DisplayStatus;
+    }
+
+    void FriendCurrent::SetCurrentUserData(const std::string& AccountId, const std::string& Username) {
+        this->AccountId = AccountId;
+        this->Username = Username;
+
+        UpdateCallback();
+    }
+
+    void FriendCurrent::SetDisplayStatus(const std::string& NewStatus) {
+        DisplayStatus = NewStatus;
+    }
+
+    void FriendCurrent::SetShowStatus(ShowStatus NewStatus) {
+        OnlineStatus = NewStatus;
+    }
+
+    Presence FriendCurrent::BuildPresence() const {
+        Presence Ret;
+        Ret.ShowStatus = GetShowStatus();
+        Ret.Status.SetProductName("EGL3");
+        Ret.Status.SetStatus(GetStatus());
+        PresenceKairosProfile NewKairosProfile(GetKairosAvatar(), GetKairosBackground());
+        Ret.Status.SetKairosProfile(NewKairosProfile);
+        return Ret;
+    }
+
+    Web::Epic::Responses::GetFriendsSummary::RealFriend FriendCurrent::GetValidDefaultSummaryData() {
+        Web::Epic::Responses::GetFriendsSummary::RealFriend Ret;
+        Ret.AccountId = "00000000000000000000000000000000";
+        Ret.DisplayName = "You";
+        return Ret;
+    }
+}
