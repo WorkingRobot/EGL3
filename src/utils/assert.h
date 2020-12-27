@@ -72,4 +72,4 @@ namespace EGL3 {
 
 #define EGL3_LOG(level, message) (_EGL3_Log<level>(nullptr, message, __FILE__, __LINE__))
 
-#define EGL3_ASSERT(condition, message) static_assert(false, message " - " #condition)
+#define EGL3_ASSERT(condition, message) // static_assert(false, message " - " #condition)

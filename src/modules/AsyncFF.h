@@ -4,6 +4,7 @@
 
 #include <future>
 #include <mutex>
+#include <vector>
 
 namespace EGL3::Modules {
     // Inspiration from https://github.com/chris0x44/detached-task
@@ -12,24 +13,9 @@ namespace EGL3::Modules {
         std::vector<std::future<void>> Futures;
 
     public:
-        AsyncFFModule(size_t Capacity = 30) {
-            Futures.reserve(Capacity);
-        }
+        AsyncFFModule(size_t Capacity = 30);
 
-        void Enqueue(std::future<void>&& Future) {
-            std::lock_guard Guard(FutureMutex);
-
-            Futures.emplace_back(std::move(Future));
-
-            if (Futures.size() == Futures.capacity()) {
-                std::vector<std::future<void>> OldFutures;
-
-                Futures.swap(OldFutures);
-                Futures.reserve(OldFutures.capacity());
-
-                Futures.emplace_back(std::async(std::launch::async, [Olds = std::move(OldFutures)]{ ; }));
-            }
-        }
+        void Enqueue(std::future<void>&& Future);
 
         template<class FunctorType, class... FunctorArgs>
         void Enqueue(FunctorType&& Functor, FunctorArgs&&... Args) {

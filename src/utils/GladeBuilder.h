@@ -1,8 +1,8 @@
 #pragma once
 
-#include <gtkmm.h>
+#include "Assert.h"
 
-#include "assert.h"
+#include <gtkmm.h>
 
 namespace EGL3::Utils {
 	class GladeBuilder {

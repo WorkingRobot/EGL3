@@ -1,8 +1,10 @@
 #pragma once
 
-#include "BaseModule.h"
 #include "../utils/HashCombine.h"
+#include "../web/Http.h"
+#include "BaseModule.h"
 
+#include <future>
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
@@ -38,88 +40,20 @@ namespace EGL3::Modules {
             }
         };
 
-        struct EmitRAII {
-            EmitRAII(Glib::Dispatcher& Dispatcher) :
-                Dispatcher(Dispatcher)
-            {
-
-            }
-
-            ~EmitRAII() {
-                Dispatcher.emit();
-            }
-
-        private:
-            Glib::Dispatcher& Dispatcher;
-        };
-
         std::mutex CacheMutex;
         std::unordered_map<CacheKey, std::shared_future<Glib::RefPtr<Gdk::Pixbuf>>, CacheKeyHasher> Cache;
 
     public:
-        ImageCacheModule() {
+        ImageCacheModule();
 
-        }
+        std::future<Glib::RefPtr<Gdk::Pixbuf>> GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback);
 
-        std::future<Glib::RefPtr<Gdk::Pixbuf>> GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback) {
-            return std::async(std::launch::async, [&, this, Width, Height](const std::string& Url, const std::string& FallbackUrl) {
-                EmitRAII Emitter(Callback);
-                return GetImageAsync(Url, FallbackUrl, Width, Height).get();
-            }, Url, FallbackUrl);
-        }
+        std::future<Glib::RefPtr<Gdk::Pixbuf>> GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, Glib::Dispatcher& Callback);
 
-        std::future<Glib::RefPtr<Gdk::Pixbuf>> GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, Glib::Dispatcher& Callback) {
-            return GetImageAsync(Url, FallbackUrl, -1, -1, Callback);
-        }
+        std::shared_future<Glib::RefPtr<Gdk::Pixbuf>>& GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width = -1, int Height = -1);
 
-        std::shared_future<Glib::RefPtr<Gdk::Pixbuf>>& GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width = -1, int Height = -1) {
-            std::lock_guard Guard(CacheMutex);
+        Glib::RefPtr<Gdk::Pixbuf> GetImage(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width = -1, int Height = -1);
 
-            auto CacheItr = Cache.find(CacheKey(Url.str(), FallbackUrl.str(), Width, Height));
-            if (CacheItr != Cache.end()) {
-                return CacheItr->second;
-            }
-
-            return Cache.emplace(CacheKey(Url.str(), FallbackUrl.str(), Width, Height), std::move(std::async(std::launch::async, &ImageCacheModule::GetImage, this, Url, FallbackUrl, Width, Height))).first->second;
-        }
-
-        Glib::RefPtr<Gdk::Pixbuf> GetImage(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width = -1, int Height = -1) {
-            Glib::RefPtr<Gdk::Pixbuf> Ret;
-
-            if (TryGetImage(Url, Ret, Width, Height)) {
-                return Ret;
-            }
-
-            if (!FallbackUrl.str().empty()){
-                if (TryGetImage(FallbackUrl, Ret, Width, Height)) {
-                    return Ret;
-                }
-            }
-
-            CreateEmptyImage(Ret, Width, Height);
-            return Ret;
-        }
-
-        bool TryGetImage(const cpr::Url& Url, Glib::RefPtr<Gdk::Pixbuf>& Output, int Width = -1, int Height = -1) {
-            auto Response = Web::Http::Get(Url);
-            if (Response.status_code != 200) {
-                return false;
-            }
-            auto Stream = Gio::MemoryInputStream::create();
-            Stream->add_bytes(Glib::Bytes::create(Response.text.data(), Response.text.size()));
-            if (Width == -1 && Height == -1) {
-                Output = Gdk::Pixbuf::create_from_stream(Stream);
-                return true;
-            }
-            else {
-                Output = Gdk::Pixbuf::create_from_stream_at_scale(Stream, Width, Height, true);
-                return true;
-            }
-        }
-
-        void CreateEmptyImage(Glib::RefPtr<Gdk::Pixbuf>& Output, int Width = -1, int Height = -1) {
-            Output = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, true, 8, std::max(Width, 1), std::max(Height, 1));
-            Output->fill(0x00000000); // Fill with transparent black
-        }
+        bool TryGetImage(const cpr::Url& Url, Glib::RefPtr<Gdk::Pixbuf>& Output, int Width = -1, int Height = -1);
     };
 }
