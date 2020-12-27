@@ -9,6 +9,7 @@
 #include "web/xmpp/XmppClient.h"
 #include "storage/persistent/Store.h"
 #include "utils/mmio/MmioFile.h"
+#include "utils/AsyncMessageBox.h"
 #include <Exports/UObject.h>
 
 #include <fontconfig/fontconfig.h>
