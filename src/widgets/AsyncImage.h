@@ -7,30 +7,16 @@
 namespace EGL3::Widgets {
     class AsyncImage : public Gtk::Image {
     public:
-        explicit AsyncImage() {
-            ConstructDispatcher();
-        }
+        explicit AsyncImage();
 
-        explicit AsyncImage(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf) : Gtk::Image(pixbuf) {
-            ConstructDispatcher();
-        }
+        explicit AsyncImage(const Glib::RefPtr<Gdk::Pixbuf>& pixbuf);
 
-        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
-            ImageTask = ImageCache.GetImageAsync(Url, FallbackUrl, Width, Height, ImageDispatcher);
-        }
+        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Modules::ImageCacheModule& ImageCache);
 
-        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, Modules::ImageCacheModule& ImageCache) {
-            set_async(Url, FallbackUrl, -1, -1, ImageCache);
-        }
+        void set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, Modules::ImageCacheModule& ImageCache);
 
     private:
-        void ConstructDispatcher() {
-            ImageDispatcher.connect([this]() {
-                if (ImageTask.valid()) {
-                    this->set(ImageTask.get());
-                }
-            });
-        }
+        void ConstructDispatcher();
 
         std::future<Glib::RefPtr<Gdk::Pixbuf>> ImageTask;
         Glib::Dispatcher ImageDispatcher;

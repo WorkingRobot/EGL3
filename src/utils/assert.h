@@ -52,7 +52,7 @@ namespace EGL3 {
 	}
 
 	template<LogLevel Level>
-	static __forceinline void _EGL3_Log(const char* Condition, const char* Message, const char* Filename, unsigned Line) {
+	static __forceinline bool _EGL3_Log(const char* Condition, const char* Message, const char* Filename, unsigned Line) {
 		_EGL3_LogFunc(Level, Condition, Message, Filename, Line);
 		if constexpr (Level == LogLevel_Critical) {
 			char Text[2048];
@@ -62,7 +62,7 @@ namespace EGL3 {
 				strcat_s(Text, Condition);
 			}
 			strcat_s(Text, "\n\nYou can report this issue at https://epic.gl/discord");
-			Utils::AsyncMessageBox(Text, "EGL3 Critical Error", MB_ICONERROR | MB_SYSTEMMODAL);
+			Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
 			std::abort();
 		}
 	}
@@ -72,4 +72,4 @@ namespace EGL3 {
 
 #define EGL3_LOG(level, message) (_EGL3_Log<level>(nullptr, message, __FILE__, __LINE__))
 
-#define EGL3_ASSERT(condition, message) // static_assert(false, message " - " #condition)
+#define EGL3_ASSERT(condition, message) EGL3_CONDITIONAL_LOG(condition, LogLevel_Critical, message) // static_assert(false, message " - " #condition)

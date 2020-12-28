@@ -54,11 +54,6 @@ namespace EGL3::Web::Xmpp::Json {
         SetValue(Name, std::move(ValueCopy), "_j");
     }
 
-    template<typename Serializable>
-    void PresenceProperties::SetValue(const std::string& Name, const Serializable& Value) {
-        SetValue(Name, Value.ToProperty());
-    }
-
 
     bool PresenceProperties::GetValue(const std::string& Name, int32_t& Value) const {
         return GetValue(Name, Value, "_i");

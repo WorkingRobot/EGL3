@@ -7,7 +7,7 @@ namespace EGL3::Web {
     class Response {
     public:
         bool HasError() const {
-            return Error != SUCCESS;
+            return Error != ErrorCode::Success;
         }
 
         ErrorCode GetErrorCode() const {
@@ -22,9 +22,23 @@ namespace EGL3::Web {
             return Data.get();
         }
 
-        Response() : Response(SUCCESS) {}
-        Response(ErrorCode Error) : Error(Error), Data(nullptr) {}
-        Response(T&& Data) : Error(SUCCESS), Data(std::make_unique<T>(std::forward<T&&>(Data))) {}
+        Response() :
+            Response(ErrorCode::Success)
+        {
+        }
+        Response(ErrorCode Error) :
+            Error(Error),
+            Data(nullptr)
+        {
+
+        }
+
+        Response(T&& Data) :
+            Error(ErrorCode::Success),
+            Data(std::make_unique<T>(std::move(Data)))
+        {
+
+        }
 
     private:
         ErrorCode Error;
@@ -36,15 +50,24 @@ namespace EGL3::Web {
     class Response<void> {
     public:
         bool HasError() const {
-            return Error != SUCCESS;
+            return Error != ErrorCode::Success;
         }
 
         ErrorCode GetErrorCode() const {
             return Error;
         }
 
-        Response() : Response(SUCCESS) {}
-        Response(ErrorCode Error) : Error(Error) {}
+        Response() :
+            Response(ErrorCode::Success)
+        {
+
+        }
+
+        Response(ErrorCode Error) :
+            Error(Error)
+        {
+
+        }
 
     private:
         ErrorCode Error;

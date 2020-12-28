@@ -12,6 +12,6 @@ namespace EGL3::Storage::Game {
 		uint32_t RunCount;							// Number of runs in the list below
 		RunlistElement Runs[];						// List of runs showing where the data can be found
 
-		constexpr bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint32_t& RunByteOffset) const;
+		bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint32_t& RunByteOffset) const;
 	};
 }

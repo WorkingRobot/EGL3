@@ -1,15 +1,17 @@
 #include "XmppClient.h"
 
-#include <ixwebsocket/IXNetSystem.h>
-#include <rapidjson/writer.h>
-#include <rapidxml/rapidxml_print.hpp>
-
 #include "../../utils/streams/MemoryStream.h"
 #include "../../utils/Assert.h"
 #include "../../utils/Base64.h"
 #include "../../utils/Crc32.h"
 #include "../../utils/Hex.h"
 #include "../../utils/RandGuid.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <ixwebsocket/IXNetSystem.h>
+#include <rapidjson/writer.h>
+#include <rapidxml/rapidxml_print.hpp>
 
 namespace EGL3::Web::Xmpp {
     XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const Xmpp::Callbacks& Callbacks) :
@@ -489,7 +491,7 @@ namespace EGL3::Web::Xmpp {
 
                         auto StampAttr = DelayNode->first_attribute("stamp", 5);
                         EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
-                        EGL3_ASSERT(Web::Json::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
+                        EGL3_ASSERT(Web::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
                     }
                     else {
                         ParsedPresence.LastUpdated = std::chrono::system_clock::now();

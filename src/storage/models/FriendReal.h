@@ -30,7 +30,7 @@ namespace EGL3::Storage::Models {
 
         const std::string_view GetProductId() const;
 
-        const std::string_view& GetPlatform() const;
+        const std::string_view GetPlatform() const;
 
         virtual Web::Xmpp::Json::ShowStatus GetShowStatus() const;
 

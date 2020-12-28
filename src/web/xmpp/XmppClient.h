@@ -3,6 +3,9 @@
 #include "Presence.h"
 #include "messages/SystemMessage.h"
 
+#include <future>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <ixwebsocket/IXWebSocket.h>
 #include <rapidxml/rapidxml.hpp>
 #include <shared_mutex>

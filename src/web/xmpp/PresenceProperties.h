@@ -74,7 +74,9 @@ namespace EGL3::Web::Xmpp::Json {
         void SetValue(const std::string& Name, const JsonObject& Value);
 
         template<typename Serializable>
-        void SetValue(const std::string& Name, const Serializable& Value);
+        void SetValue(const std::string& Name, const Serializable& Value) {
+            SetValue(Name, Value.ToProperty());
+        }
 
 
         bool GetValue(const std::string& Name, int32_t& Value) const;

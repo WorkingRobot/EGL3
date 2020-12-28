@@ -17,7 +17,7 @@ namespace EGL3::Widgets {
             Construct(GetUrl(Key), FallbackUrl, Width, Height);
         }
 
-        operator Gtk::Widget&() {
+        operator Gtk::Widget& () {
             return Image;
         }
 

@@ -1,5 +1,7 @@
 #include "FriendReal.h"
 
+#include "../../utils/StringCompare.h"
+
 namespace EGL3::Storage::Models {
     using namespace Web::Xmpp::Json;
 
@@ -47,7 +49,7 @@ namespace EGL3::Storage::Models {
         return PresItr->Status.GetProductName();
     }
 
-    const std::string_view& FriendReal::GetPlatform() const {
+    const std::string_view FriendReal::GetPlatform() const {
         auto PresItr = GetBestPresence();
         if (PresItr == Presences.end()) {
             // Allows returning a ref instead of creating a copy

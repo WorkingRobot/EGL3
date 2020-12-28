@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../utils/Crc32.h"
 #include "../utils/date.h"
 #include "../utils/map.h"
 

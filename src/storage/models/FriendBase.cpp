@@ -1,5 +1,6 @@
 #include "FriendBase.h"
 
+#include "../../utils/Crc32.h"
 #include "../../web/xmpp/PresenceKairosProfile.h"
 
 namespace EGL3::Storage::Models {
