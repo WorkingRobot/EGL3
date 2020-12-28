@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../JsonParsing.h"
+
 namespace EGL3::Web::Epic::Responses {
 	struct GetBlogPosts {
 		// This isn't everything since I'm not going to use all of it unless I add a browser element or html parsing

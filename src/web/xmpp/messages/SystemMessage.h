@@ -1,5 +1,9 @@
 #pragma once
 
+#include "FriendshipRemove.h"
+#include "FriendshipRequest.h"
+#include "UserBlocklistUpdate.h"
+
 namespace EGL3::Web::Xmpp::Messages {
 	class SystemMessage {
 	public:
@@ -18,53 +22,14 @@ namespace EGL3::Web::Xmpp::Messages {
 		std::string AccountId;
 
 	public:
-		SystemMessage(FriendshipRequest&& Message, const std::string& ClientAccountId) {
-			if (Message.From == ClientAccountId) {
-				AccountId = std::move(Message.To);
-				if (Message.Status == FriendshipRequest::StatusEnum::ACCEPTED) {
-					Action = ActionType::RequestAccept;
-				}
-				else if (Message.Status == FriendshipRequest::StatusEnum::PENDING) {
-					Action = ActionType::RequestOutbound;
-				}
-			}
-			else {
-				AccountId = std::move(Message.From);
-				if (Message.Status == FriendshipRequest::StatusEnum::ACCEPTED) {
-					Action = ActionType::RequestAccept;
-				}
-				else if (Message.Status == FriendshipRequest::StatusEnum::PENDING) {
-					Action = ActionType::RequestInbound;
-				}
-			}
-		}
+		SystemMessage(FriendshipRequest&& Message, const std::string& ClientAccountId);
 
-		SystemMessage(FriendshipRemove&& Message, const std::string& ClientAccountId) {
-			if (Message.From == ClientAccountId) {
-				AccountId = std::move(Message.To);
-			}
-			else {
-				AccountId = std::move(Message.From);
-			}
-			Action = ActionType::Remove;
-		}
+		SystemMessage(FriendshipRemove&& Message, const std::string& ClientAccountId);
 
-		SystemMessage(UserBlocklistUpdate&& Message) {
-			if (Message.Status == UserBlocklistUpdate::StatusEnum::BLOCKED) {
-				Action = ActionType::Block;
-			}
-			else if (Message.Status == UserBlocklistUpdate::StatusEnum::UNBLOCKED) {
-				Action = ActionType::Unblock;
-			}
-			AccountId = std::move(Message.Account);
-		}
+		SystemMessage(UserBlocklistUpdate&& Message);
 
-		ActionType GetAction() const {
-			return Action;
-		}
+		ActionType GetAction() const;
 
-		const std::string& GetAccountId() const {
-			return AccountId;
-		}
+		const std::string& GetAccountId() const;
 	};
 }

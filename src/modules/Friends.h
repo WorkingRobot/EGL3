@@ -83,7 +83,7 @@ namespace EGL3::Modules {
 		std::atomic<bool> UpdateCurrentlyRunning = false;
 
 		std::mutex ItemDataMutex;
-		Web::BaseClient::ErrorCode ItemDataError;
+		Web::ErrorCode ItemDataError;
 
 		std::mutex FriendsRealizeMutex;
 		std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;

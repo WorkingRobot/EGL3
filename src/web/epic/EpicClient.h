@@ -1,7 +1,10 @@
 #pragma once
 
 #include "../BaseClient.h"
-#include "responses/Responses.h"
+#include "../Response.h"
+#include "responses/GetPageInfo.h"
+#include "responses/GetBlogPosts.h"
+#include "responses/GetStatuspageSummary.h"
 
 namespace EGL3::Web::Epic {
 	// Since we don't offer *any* authentication (no client_credentials either!), this

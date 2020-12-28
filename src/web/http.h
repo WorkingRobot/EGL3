@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../utils/Format.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <cpr/cpr.h>
@@ -31,6 +33,15 @@ namespace EGL3::Web {
 		template<typename... Ts>
 		static cpr::Response Put(Ts&&... ts) {
 			return cpr::Put(WEB_SUFFIX_DATA std::forward<decltype(ts)>(ts)...);
+		}
+
+		static cpr::Url FormatUrl(const char* Input) {
+			return Input;
+		}
+
+		template<typename... Args>
+		static cpr::Url FormatUrl(const char* Input, Args&&... FormatArgs) {
+			return Utils::Format(Input, std::move(FormatArgs)...);
 		}
 
 		// Make sure to check validity with Json.HasParseError()

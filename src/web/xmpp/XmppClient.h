@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../BaseClient.h"
-#include "messages/Messages.h"
-#include "Responses.h"
+#include "Presence.h"
+#include "messages/SystemMessage.h"
 
 #include <ixwebsocket/IXWebSocket.h>
 #include <rapidxml/rapidxml.hpp>

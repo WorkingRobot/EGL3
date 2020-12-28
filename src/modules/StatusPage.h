@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils/GladeBuilder.h"
-#include "../web/BaseClient.h"
+#include "../web/Response.h"
 #include "../web/epic/responses/GetStatuspageSummary.h"
 #include "BaseModule.h"
 
@@ -29,6 +29,6 @@ namespace EGL3::Modules {
 
 		std::future<void> RefreshTask;
 		Glib::Dispatcher Dispatcher;
-		Web::BaseClient::Response<Web::Epic::Responses::GetStatuspageSummary> Data;
+		Web::Response<Web::Epic::Responses::GetStatuspageSummary> Data;
 	};
 }

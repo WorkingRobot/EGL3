@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../JsonParsing.h"
+
 namespace EGL3::Web::Xmpp::Messages {
 	struct UserBlocklistUpdate {
 		DEFINE_JSON_ENUM(StatusEnum, BLOCKED, UNBLOCKED)

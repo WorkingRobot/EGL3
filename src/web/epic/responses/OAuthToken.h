@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../JsonParsing.h"
+
 namespace EGL3::Web::Epic::Responses {
 	struct OAuthToken {
 		// Access token

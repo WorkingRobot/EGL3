@@ -72,7 +72,7 @@ namespace EGL3::Modules {
                     case FriendType::INBOUND:
                         return StorageData.HasFlag<StoredFriendData::ShowIncoming>();
                     case FriendType::NORMAL:
-                        return StorageData.HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != ShowStatus::Offline;
+                        return StorageData.HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline;
                     default:
                         return true;
                     }
@@ -183,7 +183,7 @@ namespace EGL3::Modules {
             }
 
             {
-                CurrentUserModel.Get().SetUpdateCallback([this](const BaseFriend& Status) { CurrentUserWidget.Update(); });
+                CurrentUserModel.Get().SetUpdateCallback([this](const FriendBase& Status) { CurrentUserWidget.Update(); });
                 CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
                 CurrentUserWidget.SetAsCurrentUser(KairosMenu);
             }
@@ -424,7 +424,7 @@ namespace EGL3::Modules {
                     BackgroundsData = std::move(KairosBackgroundsResp->Values);
                 }
 
-                ItemDataError = Web::BaseClient::SUCCESS;
+                ItemDataError = Web::ErrorCode::Success;
             }
 
             ItemDataGuard.unlock();
@@ -461,7 +461,7 @@ namespace EGL3::Modules {
             AvatarsWidgets.reserve(AvatarsData.size());
 
             for (auto& Avatar : AvatarsData) {
-                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
+                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, Json::PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
                 KairosAvatarBox.add(*Widget);
             }
 
@@ -476,7 +476,7 @@ namespace EGL3::Modules {
             BackgroundsWidgets.reserve(BackgroundsData.size());
 
             for (auto& Background : BackgroundsData) {
-                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
+                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, Json::PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
                 KairosBackgroundBox.add(*Widget);
             }
 

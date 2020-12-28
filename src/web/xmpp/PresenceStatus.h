@@ -5,82 +5,29 @@
 
 namespace EGL3::Web::Xmpp::Json {
 	struct PresenceStatus {
-		const std::string& GetStatus() const {
-			return Status;
-		}
+		const std::string& GetStatus() const;
 
-		const std::string& GetSessionId() const {
-			return SessionId;
-		}
+		const std::string& GetSessionId() const;
 
-		const std::string& GetProductName() const {
-			return ProductName;
-		}
+		const std::string& GetProductName() const;
 
-		const PresenceProperties& GetProperties() const {
-			return Properties;
-		}
+		const PresenceProperties& GetProperties() const;
 
-		bool IsPlaying() const {
-			return Playing;
-		}
+		bool IsPlaying() const;
 
-		bool IsJoinable() const {
-			return Joinable;
-		}
+		bool IsJoinable() const;
 
-		bool HasVoiceSupport() const {
-			return Joinable;
-		}
+		bool HasVoiceSupport() const;
 
-		const PresenceKairosProfile* GetKairosProfile() const {
-			if (!KairosProfileParsed) {
-				std::string KairosString;
-				if (Properties.GetValue("KairosProfile", KairosString)) {
-					rapidjson::Document KairosJson;
-					KairosJson.Parse(KairosString.c_str(), KairosString.size());
-					if (!KairosJson.HasParseError()) {
-						if (!PresenceKairosProfile::Parse(KairosJson, KairosProfile.emplace())) {
-							KairosProfile.reset();
-							// TODO: Provide warning here and basically everywhere else with invalid json relating to presences
-						}
-					}
-				}
-				KairosProfileParsed = true;
-			}
-			return KairosProfile.has_value() ? &KairosProfile.value() : nullptr;
-		}
+		const PresenceKairosProfile* GetKairosProfile() const;
 
-		void SetProductName(const std::string& NewProduct) {
-			ProductName = NewProduct;
-		}
+		void SetProductName(const std::string& NewProduct);
 
-		void SetStatus(const std::string& NewStatus) {
-			Status = NewStatus;
-		}
+		void SetStatus(const std::string& NewStatus);
 
-		void SetKairosProfile(const PresenceKairosProfile& NewProfile) {
-			KairosProfileParsed = true;
-			Properties.SetValue("KairosProfile", KairosProfile.emplace(NewProfile));
-		}
+		void SetKairosProfile(const PresenceKairosProfile& NewProfile);
 
-		void Dump() const {
-			rapidjson::StringBuffer Buf;
-			{
-				rapidjson::Writer Writer(Buf);
-				Properties.WriteTo(Writer);
-			}
-
-			printf("Status: %s\nPlaying: %s\nJoinable: %s\nVoice: %s\nSession Id: %s\nProduct: %s\nProperties: %.*s\n",
-				Status.c_str(),
-				Playing ? "Yes" : "No",
-				Joinable ? "Yes" : "No",
-				VoiceSupport ? "Yes" : "No",
-				SessionId.c_str(),
-				ProductName.c_str(),
-				Buf.GetLength(), Buf.GetString()
-			);
-		}
+		void Dump() const;
 
 		PARSE_DEFINE(PresenceStatus)
 			PARSE_ITEM_DEF("Status", Status, "")

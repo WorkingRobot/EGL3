@@ -1,7 +1,28 @@
 #pragma once
 
 #include "../BaseClient.h"
-#include "responses/Responses.h"
+#include "../Http.h"
+#include "../Response.h"
+#include "responses/GetAccount.h"
+#include "responses/GetAccountExternalAuths.h"
+#include "responses/GetAccounts.h"
+#include "responses/GetDeviceAuths.h"
+#include "responses/GetDefaultBillingAccount.h"
+#include "responses/GetAssets.h"
+#include "responses/GetDownloadInfo.h"
+#include "responses/GetCurrencies.h"
+#include "responses/GetCatalogItems.h"
+#include "responses/GetEntitlements.h"
+#include "responses/GetFriendsSummary.h"
+#include "responses/GetFriends.h"
+#include "responses/GetFriendsRequested.h"
+#include "responses/GetFriendsSuggested.h"
+#include "responses/GetBlockedUsers.h"
+#include "responses/GetAvailableSettingValues.h"
+#include "responses/GetSettingsForAccounts.h"
+#include "responses/GetLightswitchStatus.h"
+#include "responses/QueryProfile.h"
+#include "responses/OAuthToken.h"
 
 namespace EGL3::Web::Epic {
     class EpicClientAuthed : public BaseClient {

@@ -1,90 +1,18 @@
 #pragma once
 
-#include "Http.h"
+#include "RunningFunctionLock.h"
 
 #include <atomic>
-#include <memory>
-#include <mutex>
 
 namespace EGL3::Web {
     class BaseClient {
-    public:
-        enum ErrorCode {
-            SUCCESS,
-            CANCELLED,
-            INVALID_TOKEN,
-            CODE_NOT_200,
-            CODE_NOT_JSON,
-            CODE_BAD_JSON
-        };
-
-        template<class T>
-        class Response {
-        public:
-            bool HasError() const {
-                return Error != SUCCESS;
-            }
-
-            ErrorCode GetErrorCode() const {
-                return Error;
-            }
-
-            T& Get() const {
-                return *Data;
-            }
-
-            T* operator->() const {
-                return Data.get();
-            }
-
-            Response() : Response(SUCCESS) {}
-            Response(ErrorCode Error) : Error(Error), Data(nullptr) {}
-            Response(T&& Data) : Error(SUCCESS), Data(std::make_unique<T>(std::forward<T&&>(Data))) {}
-
-        private:
-            ErrorCode Error;
-            std::unique_ptr<T> Data;
-        };
-
-        // For 204 responses, or update requests (no useful data is returned)
-        template<>
-        class Response<void> {
-        public:
-            bool HasError() const {
-                return Error != SUCCESS;
-            }
-
-            ErrorCode GetErrorCode() const {
-                return Error;
-            }
-
-            Response() : Response(SUCCESS) {}
-            Response(ErrorCode Error) : Error(Error) {}
-
-        private:
-            ErrorCode Error;
-        };
-
-        static cpr::Url FormatUrl(const char* Input) {
-            return Input;
-        }
-
-        template<typename... Args>
-        static cpr::Url FormatUrl(const char* Input, Args&&... FormatArgs) {
-            auto BufSize = snprintf(nullptr, 0, Input, FormatArgs...) + 1;
-            auto Buf = std::make_unique<char[]>(BufSize);
-            snprintf(Buf.get(), BufSize, Input, FormatArgs...);
-            return cpr::Url(Buf.get(), BufSize - 1);
-        }
-
     protected:
         // Always call this in the destructor before running any "kill token" style tasks!
         void EnsureCallCompletion() {
             Cancelled = true;
 
             // Prevents the client functions from running past the lifetime of itself
-            std::unique_lock<std::mutex> lock(RunningFunctionMutex);
-            RunningFunctionCV.wait(lock, [this] { return RunningFunctionCount <= 0; });
+            Lock.EnsureCallCompletion();
         }
 
         ~BaseClient() {
@@ -95,33 +23,10 @@ namespace EGL3::Web {
             return Cancelled;
         }
 
-        class RunningFunctionGuard {
-        public:
-            RunningFunctionGuard(BaseClient& Client) : Client(Client) {
-                {
-                    std::lock_guard lock(Client.RunningFunctionMutex);
-                    Client.RunningFunctionCount++;
-                }
-                Client.RunningFunctionCV.notify_all();
-            }
-
-            ~RunningFunctionGuard() {
-                {
-                    std::lock_guard lock(Client.RunningFunctionMutex);
-                    Client.RunningFunctionCount--;
-                }
-                Client.RunningFunctionCV.notify_all();
-            }
-
-        private:
-            BaseClient& Client;
-        };
+    protected:
+        RunningFunctionLock Lock;
 
     private:
-        std::mutex RunningFunctionMutex;
-        std::condition_variable RunningFunctionCV;
-        int32_t RunningFunctionCount = 0;
-
         std::atomic_bool Cancelled;
     };
 }

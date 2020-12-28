@@ -1,18 +1,18 @@
-#include <chrono>
-#include <optional>
-#include <string>
+#pragma once
 
 #include "../utils/date.h"
 #include "../utils/map.h"
 
-#ifndef EGL3_INCLUDED_JSON
-#define EGL3_INCLUDED_JSON
+#include <chrono>
+#include <optional>
+#include <string>
+#include <rapidjson/document.h>
+#include <vector>
+#include <unordered_map>
 
-namespace EGL3::Web::Json {
-    namespace ch = std::chrono;
-
-    typedef ch::system_clock::time_point TimePoint;
-    typedef rapidjson::Document JsonObject;
+namespace EGL3::Web {
+    using TimePoint = std::chrono::system_clock::time_point;
+    using JsonObject = rapidjson::Document;
 
     template<class Enum, class Converter, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
     struct JsonEnum {
@@ -39,7 +39,7 @@ namespace EGL3::Web::Json {
     }
     
     __forceinline std::string GetCurrentTimePoint() {
-        return GetTimePoint(std::chrono::system_clock::now());
+        return GetTimePoint(TimePoint::clock::now());
     }
 
     __forceinline bool GetTimePoint(const char* Str, size_t StrSize, TimePoint& Obj) {
@@ -118,8 +118,6 @@ namespace EGL3::Web::Json {
         return true;
     }
 }
-
-#endif
 
 #define DEFINE_JSON_ENUM_MAP1(V) case Enum::V: return #V;
 #define DEFINE_JSON_ENUM_MAP2(V) case Utils::Crc32(#V): return Enum::V;
