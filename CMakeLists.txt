@@ -1,8 +1,54 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
+## Project Definition and Options ##
+
 project(EGL3)
 
 option(ENABLE_CONSOLE "Use console subsystem" OFF)
+
+
+## Config ##
+
+set(CONFIG_VERSION_MAJOR 3)
+set(CONFIG_VERSION_MINOR 0)
+set(CONFIG_VERSION_PATCH 1)
+
+# Get Git Info #
+execute_process(COMMAND git log --pretty=format:'%h' -n 1
+                OUTPUT_VARIABLE GIT_REV
+                ERROR_QUIET)
+
+if ("${GIT_REV}" STREQUAL "")
+    # No git info
+    set(GIT_REV "fffffff")
+    set(GIT_DIFF "")
+    set(GIT_BRANCH "orphaned")
+else()
+    execute_process(
+        COMMAND bash -c "git diff --quiet --exit-code || echo +"
+        OUTPUT_VARIABLE GIT_DIFF)
+    execute_process(
+        COMMAND git rev-parse --abbrev-ref HEAD
+        OUTPUT_VARIABLE GIT_BRANCH)
+
+    string(STRIP "${GIT_REV}" GIT_REV)
+    string(SUBSTRING "${GIT_REV}" 1 7 GIT_REV)
+    string(STRIP "${GIT_DIFF}" GIT_DIFF)
+    string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
+endif()
+
+set(CONFIG_VERSION_HASH ${GIT_REV}${GIT_DIFF})
+set(CONFIG_VERSION_BRANCH ${GIT_BRANCH})
+
+add_compile_definitions(
+    CONFIG_VERSION_MAJOR=${CONFIG_VERSION_MAJOR}
+    CONFIG_VERSION_MINOR=${CONFIG_VERSION_MINOR}
+    CONFIG_VERSION_PATCH=${CONFIG_VERSION_PATCH}
+    CONFIG_VERSION_HASH="${CONFIG_VERSION_HASH}"
+    CONFIG_VERSION_BRANCH="${CONFIG_VERSION_BRANCH}"
+    CONFIG_VERSION_SHORT="${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}"
+    CONFIG_VERSION_LONG="${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}-${CONFIG_VERSION_HASH}++EGL3+${CONFIG_VERSION_BRANCH}"
+)
 
 ## Source Files ##
 
@@ -35,6 +81,7 @@ endfunction()
 
 add_dir_recursive(EGL3 src)
 add_file(EGL3 src/main.rc)
+add_file(EGL3 src/main.manifest)
 
 
 ## Subsystem Options ##

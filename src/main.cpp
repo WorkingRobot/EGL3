@@ -10,6 +10,7 @@
 #include "storage/persistent/Store.h"
 #include "utils/mmio/MmioFile.h"
 #include "utils/AsyncMessageBox.h"
+#include "utils/Config.h"
 #include <Exports/UObject.h>
 
 #include <fontconfig/fontconfig.h>
