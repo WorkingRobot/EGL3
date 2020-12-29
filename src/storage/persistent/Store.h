@@ -7,9 +7,9 @@
 #include <filesystem>
 #include <unordered_map>
 
-namespace fs = std::filesystem;
-
 namespace EGL3::Storage::Persistent {
+	namespace fs = std::filesystem;
+
 	class Store {
 	public:
 		Store(const fs::path& Path);
@@ -28,7 +28,7 @@ namespace EGL3::Storage::Persistent {
 				return Itr->second;
 			}
 			auto Elem = Data.emplace(Constant, Constant);
-			EGL3_ASSERT(Elem.second, "Could not emplace nor find new constant in store");
+			EGL3_CONDITIONAL_LOG(Elem.second, LogLevel::Error, "Could not emplace nor find new constant in store.");
 			return Elem.first->second;
 		}
 

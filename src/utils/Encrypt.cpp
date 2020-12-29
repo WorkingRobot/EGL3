@@ -15,10 +15,14 @@ namespace EGL3::Utils {
 		DataIn.cbData = InputSize;
 		DataIn.pbData = (BYTE*)Input;
 
-		EGL3_ASSERT(CryptProtectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), "Could not encrypt data");
-
-		OutputSize = DataOut.cbData;
-		return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
+		if (EGL3_CONDITIONAL_LOG(CryptProtectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not encrypt data")) {
+			OutputSize = DataOut.cbData;
+			return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
+		}
+		else {
+			OutputSize = 0;
+			return nullptr;
+		}
 	}
 
 	std::unique_ptr<char[], std::function<void(char*)>> Decrypt(const char* Input, size_t InputSize, size_t& OutputSize)
@@ -27,9 +31,13 @@ namespace EGL3::Utils {
 		DataIn.cbData = InputSize;
 		DataIn.pbData = (BYTE*)Input;
 
-		EGL3_ASSERT(CryptUnprotectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), "Could not encrypt data");
-
-		OutputSize = DataOut.cbData;
-		return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
+		if (EGL3_CONDITIONAL_LOG(CryptUnprotectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not decrypt data")) {
+			OutputSize = DataOut.cbData;
+			return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
+		}
+		else {
+			OutputSize = 0;
+			return nullptr;
+		}
 	}
 }

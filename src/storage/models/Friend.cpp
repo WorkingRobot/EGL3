@@ -46,7 +46,9 @@ namespace EGL3::Storage::Models {
             std::unique_lock Lock(Mutex);
 
             auto AccResp = Client.GetSettingsForAccounts(std::vector<std::string>{ Data->GetAccountId() }, { "avatar", "avatarBackground" });
-            EGL3_ASSERT(!AccResp.HasError(), "Kairos data request returned an error");
+            if (!EGL3_CONDITIONAL_LOG(!AccResp.HasError(), LogLevel::Error, "Kairos data request returned an error")) {
+                return;
+            }
 
             for (auto& AccountSetting : AccResp->Values) {
                 if (AccountSetting.AccountId == Data->GetAccountId()) {
@@ -79,9 +81,12 @@ namespace EGL3::Storage::Models {
 
                     Type = TargetType;
                     auto AccResp = Client.GetAccounts(std::vector<std::string>{ Data->GetAccountId() });
-                    EGL3_ASSERT(!AccResp.HasError(), "Account request returned an error");
-
-                    EGL3_ASSERT(AccResp->Accounts.size() == 1, "Account reponse does not have exactly 1 user");
+                    if (!EGL3_CONDITIONAL_LOG(!AccResp.HasError(), LogLevel::Error, "Account request returned an error")) {
+                        return;
+                    }
+                    if (!EGL3_CONDITIONAL_LOG(AccResp->Accounts.size() == 1, LogLevel::Error, "Account reponse does not have exactly 1 user")) {
+                        return;
+                    }
                     GetUnlocked<FriendBaseUser>().SetUsername(AccResp->Accounts.front().GetDisplayName());
                     RealType = BLOCKED;
 
@@ -110,8 +115,12 @@ namespace EGL3::Storage::Models {
                     RealType = REQUESTED;
 
                     auto AccResp = Client.GetAccounts(std::vector<std::string>{ Data->GetAccountId() });
-                    EGL3_ASSERT(!AccResp.HasError(), "Account request returned an error");
-                    EGL3_ASSERT(AccResp->Accounts.size() == 1, "Account reponse does not have exactly 1 user");
+                    if (!EGL3_CONDITIONAL_LOG(!AccResp.HasError(), LogLevel::Error, "Account request returned an error")) {
+                        return;
+                    }
+                    if (!EGL3_CONDITIONAL_LOG(AccResp->Accounts.size() == 1, LogLevel::Error, "Account reponse does not have exactly 1 user")) {
+                        return;
+                    }
                     GetUnlocked<FriendRequested>().SetUsername(AccResp->Accounts.front().GetDisplayName());
 
                     Lock.unlock();
@@ -148,7 +157,9 @@ namespace EGL3::Storage::Models {
                     Type = TargetType;
 
                     auto AccResp = Client.GetFriend(Data->GetAccountId());
-                    EGL3_ASSERT(!AccResp.HasError(), "Friend info request returned an error");
+                    if (!EGL3_CONDITIONAL_LOG(!AccResp.HasError(), LogLevel::Error, "Friend info request returned an error")) {
+                        return;
+                    }
 
                     Data.reset(new FriendReal(AccResp.Get()));
                     RealType = REAL;

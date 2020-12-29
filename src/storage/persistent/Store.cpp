@@ -5,7 +5,7 @@ namespace EGL3::Storage::Persistent {
 		if (fs::is_regular_file(Path)) {
 			Utils::Streams::FileStream Stream;
 			Stream.open(Path, "rb+");
-			EGL3_ASSERT(Stream.valid(), "Could not open store file");
+			EGL3_CONDITIONAL_LOG(Stream.valid(), LogLevel::Error, "Could not open store file. Try removing or renaming it.");
 			uint32_t ElementCount;
 			Stream >> ElementCount;
 			for (int i = 0; i < ElementCount; ++i) {
@@ -14,7 +14,7 @@ namespace EGL3::Storage::Persistent {
 
 				auto Elem = Data.emplace(KeyConstant, KeyConstant);
 				if (Elem.first->second.HasValue()) {
-					EGL3_ASSERT(Elem.second, "Could not emplace new constant to store");
+					EGL3_CONDITIONAL_LOG(Elem.second, LogLevel::Error, "Could not emplace new constant to store");
 					Elem.first->second.Deserialize(Stream);
 				}
 				else { // Constant is not defined

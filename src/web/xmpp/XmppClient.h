@@ -29,9 +29,14 @@ namespace EGL3::Web::Xmpp {
 
         void SetPresence(const Json::Presence& NewPresence);
 
+        void Close();
+
         ~XmppClient();
 
     private:
+        void CloseInternal(bool Errored);
+        
+        // True doesn't mean it was a valid presence. Just that it was one so other functions don't try reading it.
         bool HandlePresence(const rapidxml::xml_node<>* Node);
 
         bool HandleSystemMessage(const rapidjson::Document& Data);
@@ -49,7 +54,7 @@ namespace EGL3::Web::Xmpp {
         static inline std::once_flag InitFlag;
 
         // A before value means a server response
-        enum class ClientState {
+        enum class ClientState : uint8_t {
             OPENING,
             BEFORE_OPEN,
             BEFORE_FEATURES,
@@ -58,7 +63,10 @@ namespace EGL3::Web::Xmpp {
             BEFORE_AUTHED_FEATURES,
             BEFORE_AUTHED_BIND,
             BEFORE_AUTHED_SESSION,
-            AUTHENTICATED
+            AUTHENTICATED,
+
+            CLOSED,
+            CLOSED_ERRORED
         };
 
         Callbacks Callbacks;

@@ -130,8 +130,22 @@ namespace EGL3::Web::Xmpp {
         SendXml(Socket, *Document);
     }
 
+    void XmppClient::Close()
+    {
+        CloseInternal(false);
+    }
+
     XmppClient::~XmppClient()
     {
+        Close();
+    }
+
+    void XmppClient::CloseInternal(bool Errored)
+    {
+        if (State == ClientState::CLOSED || State == ClientState::CLOSED_ERRORED) {
+            return;
+        }
+
         Callbacks.Clear();
         {
             std::unique_lock Lock(BackgroundPingMutex);
@@ -143,6 +157,8 @@ namespace EGL3::Web::Xmpp {
         // TODO: move this to when gtk is closing the app,
         // so we can ensure safety when 2+ clients are used
         ix::uninitNetSystem();
+
+        State = Errored ? ClientState::CLOSED_ERRORED : ClientState::CLOSED;
     }
 
     // Subtract 1, we aren't comparing \0 at the end of the source string
@@ -190,43 +206,55 @@ namespace EGL3::Web::Xmpp {
         SendXml(Socket, *Document);
     }
 
-    void ReadXmppOpen(const rapidxml::xml_node<>* Node)
+    bool ReadXmppOpen(const rapidxml::xml_node<>* Node)
     {
         // RFC6120 section 4.7 should be adhered to but I'm just doing whatever works fine
         // https://tools.ietf.org/html/rfc6120#section-4.7
-        EGL3_ASSERT(XmlNameEqual(Node, "open"), "Bad node name, <open> expected");
+
+        if (!EGL3_CONDITIONAL_LOG(XmlNameEqual(Node, "open"), LogLevel::Error, "RFC 7395 3.4 (Page 6) requires first node to be <open>")) {
+            return false; // This is absolutely necessary, the others are just checks for good standing
+        }
 
         auto XmlnsAttr = Node->first_attribute("xmlns", 5);
-        EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
-        EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-framing"), "Bad xmlns attr value with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
+        if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected")) {
+            EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-framing"), LogLevel::Warning, "Bad xmlns attr value with <open>, xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\" expected");
+        }
 
         auto FromAttr = Node->first_attribute("from", 4); // JID
-        EGL3_ASSERT(FromAttr, "RFC 6120 4.7.1 (Page 37) requires from attr to be given by server");
-        EGL3_ASSERT(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), "Bad from attr value with <open>, from=\"prod.ol.epicgames.com\" expected");
+        if (EGL3_CONDITIONAL_LOG(FromAttr, LogLevel::Warning, "RFC 6120 4.7.1 (Page 37) requires from attr to be given by server")) {
+            EGL3_CONDITIONAL_LOG(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), LogLevel::Warning, "Bad from attr value with <open>, from=\"prod.ol.epicgames.com\" expected");
+        }
 
         auto IdAttr = Node->first_attribute("id", 2);
-        EGL3_ASSERT(IdAttr, "RFC 6120 4.7.3 (Page 39) requires id attr to be given by server");
+        EGL3_CONDITIONAL_LOG(IdAttr, LogLevel::Warning, "RFC 6120 4.7.3 (Page 39) requires id attr to be given by server");
 
         auto VersionAttr = Node->first_attribute("version", 7);
-        EGL3_ASSERT(VersionAttr, "RFC 6120 4.7.5 (Page 42) requires version attr to be given by server");
-        EGL3_ASSERT(XmlValueEqual(VersionAttr, "1.0"), "Bad version attr value with <open>, version=\"1.0\" expected");
+        if (EGL3_CONDITIONAL_LOG(VersionAttr, LogLevel::Warning, "RFC 6120 4.7.5 (Page 42) requires version attr to be given by server")) {
+            EGL3_CONDITIONAL_LOG(XmlValueEqual(VersionAttr, "1.0"), LogLevel::Warning, "Bad version attr value with <open>, version=\"1.0\" expected");
+        }
 
         auto LangAttr = Node->first_attribute("xml:lang", 8);
-        EGL3_ASSERT(LangAttr, "RFC 6120 4.7.4 (Page 40) requires xml:lang attr to be given by server");
-        EGL3_ASSERT(XmlValueEqual(LangAttr, "en"), "Bad xml:lang attr value with <open>, xml:lang=\"en\" expected");
+        if (EGL3_CONDITIONAL_LOG(LangAttr, LogLevel::Warning, "RFC 6120 4.7.4 (Page 40) requires xml:lang attr to be given by server")) {
+            EGL3_CONDITIONAL_LOG(XmlValueEqual(LangAttr, "en"), LogLevel::Warning, "Bad xml:lang attr value with <open>, xml:lang=\"en\" expected");
+        }
+
+        return true;
     }
 
     template<bool Authed>
-    void ReadXmppFeatures(const rapidxml::xml_node<>* Node)
+    bool ReadXmppFeatures(const rapidxml::xml_node<>* Node)
     {
         // <stream:features> (root node)
         {
             // I believe this can also be just <features>, but this is able to be kept for backwards compat
-            EGL3_ASSERT(XmlNameEqual(Node, "stream:features"), "Bad node name, <stream:features> expected");
+            if (!EGL3_CONDITIONAL_LOG(XmlNameEqual(Node, "stream:features"), LogLevel::Error, "Bad node name, <stream:features> required")) {
+                return false;
+            }
 
             auto XmlnsAttr = Node->first_attribute("xmlns:stream", 12);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://etherx.jabber.org/streams"), "Bad xmlns:stream attr value with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "http://etherx.jabber.org/streams"), LogLevel::Warning, "Bad xmlns:stream attr value with <stream:features>, xmlns:stream=\"http://etherx.jabber.org/streams\" expected");
+            }
         }
 
         // <ver>
@@ -235,13 +263,11 @@ namespace EGL3::Web::Xmpp {
             // but it's required to be listed as a stream feature if the server supports it
             // RFC 6121 2.6
             auto VerNode = Node->first_node("ver", 3);
-            if (VerNode) {
+            if (EGL3_CONDITIONAL_LOG(VerNode, LogLevel::Warning, "While optional, <ver> is given by Epic's servers")) {
                 auto XmlnsAttr = VerNode->first_attribute("xmlns", 5);
-                EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
-                EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:features:rosterver"), "Bad xmlns attr value with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
-            }
-            else {
-                // WARN: roster versioning node is usually given by epic
+                if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected")) {
+                    EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:xmpp:features:rosterver"), LogLevel::Warning, "Bad xmlns attr value with <ver>, xmlns=\"urn:xmpp:features:rosterver\" expected");
+                }
             }
         }
 
@@ -251,15 +277,15 @@ namespace EGL3::Web::Xmpp {
             // We must assert that <required/> is not a child element
             // We don't know how to manage STARTTLS, and we're already connected via wss anyway
             auto TlsNode = Node->first_node("starttls", 8);
-            if (TlsNode) {
+            if (EGL3_CONDITIONAL_LOG(TlsNode, LogLevel::Warning, "While optional, <starttls> is given by Epic's servers")) {
                 auto XmlnsAttr = TlsNode->first_attribute("xmlns", 5);
-                EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
-                EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-tls"), "Bad xmlns attr value with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
+                if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected")) {
+                    EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-tls"), LogLevel::Warning, "Bad xmlns attr value with <starttls>, xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\" expected");
+                }
 
-                EGL3_ASSERT(TlsNode->first_node("required", 8) == NULL, "STARTTLS is required. We do not support it");
-            }
-            else {
-                // WARN: starttls node is usually given by epic
+                if (!EGL3_CONDITIONAL_LOG(TlsNode->first_node("required", 8) == NULL, LogLevel::Error, "STARTTLS is required. We do not support it")) {
+                    return false;
+                }
             }
         }
 
@@ -269,15 +295,16 @@ namespace EGL3::Web::Xmpp {
             // We aren't required to pick one if we don't support any (we don't)
             // Epic servers offer zlib, but the official launcher doesn't use it anyway
             auto CompressionNode = Node->first_node("compression", 11);
-            if (CompressionNode) {
+            if (EGL3_CONDITIONAL_LOG(CompressionNode, LogLevel::Warning, "While optional, <compression> is given by Epic's servers")) {
                 auto XmlnsAttr = CompressionNode->first_attribute("xmlns", 5);
-                EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
-                EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/compress"), "Bad xmlns attr value with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
+                if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <compression>, xmlns=\"http://jabber.org/features/compress\" expected")) {
+                    EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/compress"), LogLevel::Warning, "Bad xmlns attr value with <compression>, xmlns=\"http://jabber.org/features/compress\" expected");
+                }
 
-                EGL3_ASSERT(CompressionNode->first_node("method", 6), "Compression nodes must have at least one included method");
-            }
-            else {
-                // WARN: compression node is usually given by epic
+                if (!EGL3_CONDITIONAL_LOG(CompressionNode->first_node("method", 6), LogLevel::Error, "Compression nodes must have at least one included method")) {
+                    // We're technically fine without any methods, but XMPP RFC requires at least one method
+                    return false;
+                }
             }
         }
 
@@ -286,11 +313,14 @@ namespace EGL3::Web::Xmpp {
         {
             auto MechanismsNode = Node->first_node("mechanisms", 10);
             // It's not given the next time when the stream is restarted since SASL/auth is already negotiated before that
-            EGL3_ASSERT(MechanismsNode, "RFC 6120 6.4.1 (Page 82) requires mechanisms node to be given on first connection");
+            if (!EGL3_CONDITIONAL_LOG(MechanismsNode, LogLevel::Error, "RFC 6120 6.4.1 (Page 82) requires mechanisms node to be given on first connection")) {
+                return false;
+            }
 
             auto XmlnsAttr = MechanismsNode->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), LogLevel::Warning, "Bad xmlns attr value with <mechanisms>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+            }
 
             bool PlainAuthExists = false;
             for (auto MechanismNode = MechanismsNode->first_node(); MechanismNode; MechanismNode = MechanismNode->next_sibling()) {
@@ -299,7 +329,9 @@ namespace EGL3::Web::Xmpp {
                     break;
                 }
             }
-            EGL3_ASSERT(PlainAuthExists, "Only the PLAIN SASL mechanism is supported");
+            if (!EGL3_CONDITIONAL_LOG(PlainAuthExists, LogLevel::Error, "Only the PLAIN SASL mechanism is supported")) {
+                return false;
+            }
         }
 
         // <auth>
@@ -308,13 +340,11 @@ namespace EGL3::Web::Xmpp {
             // XEP-0078's iq-auth feature is given to us, but we never use it (allows for non-SASL auth)
             // The official launcher uses SASL's PLAIN mechanism to login anyway
             auto IqAuthNode = Node->first_node("auth", 4);
-            if (IqAuthNode) {
+            if (EGL3_CONDITIONAL_LOG(IqAuthNode, LogLevel::Warning, "While optional, <auth> is given by Epic's servers")) {
                 auto XmlnsAttr = IqAuthNode->first_attribute("xmlns", 5);
-                EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
-                EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/iq-auth"), "Bad xmlns attr value with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
-            }
-            else {
-                // WARN: iq auth node is usually given by epic
+                if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected")) {
+                    EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "http://jabber.org/features/iq-auth"), LogLevel::Warning, "Bad xmlns attr value with <auth>, xmlns=\"http://jabber.org/features/iq-auth\" expected");
+                }
             }
         }
 
@@ -324,11 +354,14 @@ namespace EGL3::Web::Xmpp {
             // RFC 6120 7.4
             // If a client gets authenticated, it must be provided a bind feature, and never otherwise
             auto BindNode = Node->first_node("bind", 4);
-            EGL3_ASSERT(BindNode, "Bind node must be present after authenticating");
+            if (!EGL3_CONDITIONAL_LOG(BindNode, LogLevel::Error, "Bind node must be present after authenticating")) {
+                return false;
+            }
 
             auto XmlnsAttr = BindNode->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), LogLevel::Warning, "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+            }
         }
 
         // <session>
@@ -337,42 +370,59 @@ namespace EGL3::Web::Xmpp {
             // RFC 3921 3.
             // Epic servers support sessions, and must be provided to the client
             auto SessionNode = Node->first_node("session", 7);
-            EGL3_ASSERT(SessionNode, "Bind node must be present after authenticating");
+            if (!EGL3_CONDITIONAL_LOG(SessionNode, LogLevel::Error, "Session node must be present after authenticating")) {
+                return false;
+            }
 
             auto XmlnsAttr = SessionNode->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-session"), "Bad xmlns attr value with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-session"), LogLevel::Warning, "Bad xmlns attr value with <session>, xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" expected");
+            }
         }
+
+        return true;
     }
 
     // RFC6120 7.6.1
     template<bool Session>
-    void ReadXmppInfoQueryResult(const rapidxml::xml_node<>* Node, const std::string& CurrentJid)
+    bool ReadXmppInfoQueryResult(const rapidxml::xml_node<>* Node, const std::string& CurrentJid)
     {
         // <iq> (root node)
         {
-            EGL3_ASSERT(XmlNameEqual(Node, "iq"), "Bad node name, <iq> expected");
+            if (!EGL3_CONDITIONAL_LOG(XmlNameEqual(Node, "iq"), LogLevel::Error, "Bad node name, <iq> required")) {
+                return false;
+            }
 
             auto XmlnsAttr = Node->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "jabber:client"), LogLevel::Warning, "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
+            }
 
             auto TypeAttr = Node->first_attribute("type", 4);
-            EGL3_ASSERT(TypeAttr, "No type recieved with <iq>, type=\"result\" expected");
-            EGL3_ASSERT(XmlValueEqual(TypeAttr, "result"), "Bad type attr value with <iq>, type=\"result\" expected");
-
-            auto ToAttr = Node->first_attribute("to", 2);
-            EGL3_ASSERT(ToAttr, "No to jid recieved with <iq>");
-            EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <iq>, expected JID does not match");
+            if (!EGL3_CONDITIONAL_LOG(TypeAttr, LogLevel::Error, "No type recieved (required) with <iq>, type=\"result\" required")) {
+                return false;
+            }
+            if (!EGL3_CONDITIONAL_LOG(XmlValueEqual(TypeAttr, "result"), LogLevel::Error, "Bad type attr value with <iq>, type=\"result\" required")) {
+                return false;
+            }
 
             auto IdAttr = Node->first_attribute("id", 2);
-            if constexpr (!Session) {
-                EGL3_ASSERT(IdAttr, "No id recieved with <iq>, id=\"_xmpp_bind1\" expected");
-                EGL3_ASSERT(XmlValueEqual(IdAttr, "_xmpp_bind1"), "Bad id attr value with <iq>, id=\"_xmpp_bind1\" expected");
+            if constexpr (Session) {
+                if (!EGL3_CONDITIONAL_LOG(IdAttr, LogLevel::Error, "No id recieved (required) with <iq>, id=\"_xmpp_session1\" expected")) {
+                    return false;
+                }
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(IdAttr, "_xmpp_session1"), LogLevel::Warning, "Bad id attr value with <iq>, id=\"_xmpp_session1\" expected");
             }
             else {
-                EGL3_ASSERT(IdAttr, "No id recieved with <iq>, id=\"_xmpp_session1\" expected");
-                EGL3_ASSERT(XmlValueEqual(IdAttr, "_xmpp_session1"), "Bad id attr value with <iq>, id=\"_xmpp_session1\" expected");
+                if (!EGL3_CONDITIONAL_LOG(IdAttr, LogLevel::Error, "No id recieved (required) with <iq>, id=\"_xmpp_bind1\" expected")) {
+                    return false;
+                }
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(IdAttr, "_xmpp_bind1"), LogLevel::Warning, "Bad id attr value with <iq>, id=\"_xmpp_bind1\" expected");
+            }
+
+            auto ToAttr = Node->first_attribute("to", 2);
+            if (EGL3_CONDITIONAL_LOG(ToAttr, LogLevel::Warning, "No to jid recieved with <iq>")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad type attr value with <iq>, expected JID does not match");
             }
         }
 
@@ -381,21 +431,30 @@ namespace EGL3::Web::Xmpp {
             // <bind>
             auto BindNode = Node->first_node("bind", 4);
             {
-                EGL3_ASSERT(BindNode, "Bind node must be present in a binding success result");
+                if (!EGL3_CONDITIONAL_LOG(BindNode, LogLevel::Error, "Bind node must be present in a binding success result")) {
+                    return false;
+                }
 
                 auto XmlnsAttr = BindNode->first_attribute("xmlns", 5);
-                EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
-                EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+                if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected")) {
+                    EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-bind"), LogLevel::Warning, "Bad xmlns attr value with <bind>, xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" expected");
+                }
             }
 
             // <jid>
             {
                 auto JidNode = BindNode->first_node("jid", 3);
-                EGL3_ASSERT(JidNode, "Jid must be given back to the client in a binding success result");
+                if (!EGL3_CONDITIONAL_LOG(JidNode, LogLevel::Error, "Jid must be given back to the client in a binding success result")) {
+                    return false;
+                }
 
-                EGL3_ASSERT(XmlValueEqual(JidNode, CurrentJid), "Jid must be given back to the client in a binding success result");
+                if (!EGL3_CONDITIONAL_LOG(XmlValueEqual(JidNode, CurrentJid), LogLevel::Error, "Jid must be given back to the client in a binding success result")) {
+                    return false;
+                }
             }
         }
+
+        return true;
     }
 
     bool ParseJID(const std::string& JID, std::string_view& Node, std::string_view& Domain, std::string_view& Resource) {
@@ -429,16 +488,21 @@ namespace EGL3::Web::Xmpp {
             // I've recieved presences without an xmnls (third party games just don't care about em)
 
             auto ToAttr = Node->first_attribute("to", 2);
-            EGL3_ASSERT(ToAttr, "No to jid recieved with <presence>");
-            EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJidWithoutResource) || XmlValueEqual(ToAttr, CurrentJid), "Bad to attr value with <presence>, expected JID does not match");
+            if (EGL3_CONDITIONAL_LOG(ToAttr, LogLevel::Warning, "No to jid recieved with <presence>")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(ToAttr, CurrentJidWithoutResource) || XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad to attr value with <presence>, expected JID does not match");
+            }
 
             Json::Presence ParsedPresence;
 
             auto FromAttr = Node->first_attribute("from", 4);
-            EGL3_ASSERT(FromAttr, "No from recieved with <presence>");
+            if (!EGL3_CONDITIONAL_LOG(FromAttr, LogLevel::Warning, "No from recieved with <presence>. Ignoring presence as it is required for parsing.")) {
+                return true;
+            }
             auto FromJID = std::string(FromAttr->value(), FromAttr->value_size());
             std::string_view JIDId, JIDDomain, JIDResource;
-            EGL3_ASSERT(ParseJID(FromJID, JIDId, JIDDomain, JIDResource), "Bad from attr value with <presence>, expected valid JID");
+            if (!EGL3_CONDITIONAL_LOG(ParseJID(FromJID, JIDId, JIDDomain, JIDResource), LogLevel::Warning, "Bad from attr value with <presence>, expected valid JID. Ignoring presence as it is required for parsing.")) {
+                return true;
+            }
             ParsedPresence.Resource = std::string(JIDResource);
 
             auto ShowNode = Node->first_node("show", 4);
@@ -476,26 +540,30 @@ namespace EGL3::Web::Xmpp {
             }
 
             auto StatusNode = Node->first_node("status", 6);
-            if (StatusNode) {
+            if (EGL3_CONDITIONAL_LOG(StatusNode, LogLevel::Debug, "No status recieved from user. This is technically optional and the presence will be ignored.")) {
                 {
                     rapidjson::Document Json;
                     Json.Parse(StatusNode->value(), StatusNode->value_size());
-                    EGL3_ASSERT(!Json.HasParseError(), "Failed to parse status json from presence (invalid json)");
-                    EGL3_ASSERT(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), "Failed to parse status json from presence");
+                    if (!EGL3_CONDITIONAL_LOG(!Json.HasParseError(), LogLevel::Warning, "Failed to parse status json from presence (invalid json). Ignoring presence.")) {
+                        return true;
+                    }
+                    if (!EGL3_CONDITIONAL_LOG(Json::PresenceStatus::Parse(Json, ParsedPresence.Status), LogLevel::Warning, "Failed to parse status json from presence. Ignoring presence.")) {
+                        return true;
+                    }
                 }
                 {
                     auto DelayNode = Node->first_node("delay", 5);
-                    if (DelayNode) {
+                    ParsedPresence.LastUpdated = std::chrono::system_clock::now(); // Set as default
+                    if (EGL3_CONDITIONAL_LOG(DelayNode, LogLevel::Debug, "No delay recieved from presence. This is technically optional, and the current system clock time will be used instead.")) {
                         auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
-                        EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected");
-                        EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
+                        if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected")) {
+                            EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), LogLevel::Warning, "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
+                        }
 
                         auto StampAttr = DelayNode->first_attribute("stamp", 5);
-                        EGL3_ASSERT(StampAttr, "No stamp attr recieved with <delay>");
-                        EGL3_ASSERT(Web::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), "Bad stamp attr value with <delay>, expected valid ISO8601 datetime");
-                    }
-                    else {
-                        ParsedPresence.LastUpdated = std::chrono::system_clock::now();
+                        if (EGL3_CONDITIONAL_LOG(StampAttr, LogLevel::Warning, "No stamp attr recieved with <delay>")) {
+                            EGL3_CONDITIONAL_LOG(Web::GetTimePoint(StampAttr->value(), StampAttr->value_size(), ParsedPresence.LastUpdated), LogLevel::Warning, "Bad stamp attr value with <delay>, expected valid ISO8601 datetime. Presence will use current system clock time instead.");
+                        }
                     }
                 }
 
@@ -571,21 +639,25 @@ namespace EGL3::Web::Xmpp {
             }
 
             auto XmlnsAttr = Node->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <message>, xmlns=\"jabber:client\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "jabber:client"), "Bad xmlns attr value with <message>, xmlns=\"jabber:client\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <message>, xmlns=\"jabber:client\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "jabber:client"), LogLevel::Warning, "Bad xmlns attr value with <message>, xmlns=\"jabber:client\" expected");
+            }
 
             auto ToAttr = Node->first_attribute("to", 2);
-            EGL3_ASSERT(ToAttr, "No to jid recieved with <message>");
-            EGL3_ASSERT(XmlValueEqual(ToAttr, CurrentJid), "Bad type attr value with <message>, expected JID does not match");
+            if (EGL3_CONDITIONAL_LOG(ToAttr, LogLevel::Warning, "No to jid recieved with <message>")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad type attr value with <message>, expected JID does not match");
+            }
 
             auto BodyNode = Node->first_node("body", 4);
-            EGL3_ASSERT(BodyNode, "No body recieved with <message>");
+            if (!EGL3_CONDITIONAL_LOG(BodyNode, LogLevel::Warning, "No body recieved with <message>. Message will be ignored.")) {
+                return true;
+            }
 
             rapidjson::Document Json;
             Json.Parse(BodyNode->value(), BodyNode->value_size());
-            EGL3_ASSERT(!Json.HasParseError(), "Failed to parse body json from message (invalid json)");
-
-            HandleSystemMessage(Json);
+            if (EGL3_CONDITIONAL_LOG(!Json.HasParseError(), LogLevel::Warning, "Failed to parse body json from message (invalid json). Message will be ignored.")) {
+                HandleSystemMessage(Json);
+            }
 
             return true;
         }
@@ -687,7 +759,9 @@ namespace EGL3::Web::Xmpp {
 
     void XmppClient::ParseMessage(const rapidxml::xml_node<>* Node)
     {
-        EGL3_ASSERT(Node, "No xml recieved?");
+        if (!EGL3_CONDITIONAL_LOG(Node, LogLevel::Warning, "XmppClient recieved a non-xml message. Ignoring message.")) {
+            return;
+        }
 
         if (HandleSystemMessage(Node)) {
             return;
@@ -705,14 +779,20 @@ namespace EGL3::Web::Xmpp {
         {
         case ClientState::BEFORE_OPEN:
         {
-            ReadXmppOpen(Node);
+            if (!EGL3_CONDITIONAL_LOG(ReadXmppOpen(Node), LogLevel::Error, "Failed to read XmppClient open node. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             State = ClientState::BEFORE_FEATURES;
             break;
         }
         case ClientState::BEFORE_FEATURES:
         {
-            ReadXmppFeatures<false>(Node);
+            if (!EGL3_CONDITIONAL_LOG(ReadXmppFeatures<false>(Node), LogLevel::Error, "Failed to read XmppClient pre-auth features. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             // After grabbing all the stream features (more so just verifying them honestly)
             // we can send an auth response back
@@ -733,11 +813,15 @@ namespace EGL3::Web::Xmpp {
         case ClientState::BEFORE_AUTH_RESPONSE:
         {
             // Maybe add more error handling? Who knows
-            EGL3_ASSERT(XmlNameEqual(Node, "success"), "Failed to authenticate?");
+            if (!EGL3_CONDITIONAL_LOG(XmlNameEqual(Node, "success"), LogLevel::Error, "Failed to authenticate XmppClient correctly. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             auto XmlnsAttr = Node->first_attribute("xmlns", 5);
-            EGL3_ASSERT(XmlnsAttr, "No xmlns recieved with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
-            EGL3_ASSERT(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), "Bad xmlns attr value with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:ietf:params:xml:ns:xmpp-sasl"), LogLevel::Warning, "Bad xmlns attr value with <success>, xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" expected");
+            }
 
             // After recieving success, we restart the xmpp
             // and we can send an auth response back
@@ -755,7 +839,10 @@ namespace EGL3::Web::Xmpp {
         }
         case ClientState::BEFORE_AUTHED_FEATURES:
         {
-            ReadXmppFeatures<true>(Node);
+            if (!EGL3_CONDITIONAL_LOG(ReadXmppFeatures<true>(Node), LogLevel::Error, "Failed to read XmppClient post-auth features. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             CurrentResource = GenerateResourceId();
             CurrentJid.append("/");
@@ -781,7 +868,10 @@ namespace EGL3::Web::Xmpp {
         }
         case ClientState::BEFORE_AUTHED_BIND:
         {
-            ReadXmppInfoQueryResult<false>(Node, CurrentJid);
+            if (!EGL3_CONDITIONAL_LOG(ReadXmppInfoQueryResult<false>(Node, CurrentJid), LogLevel::Error, "Failed to read XmppClient bind infoquery. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             {
                 auto Document = CreateDocument();
@@ -800,7 +890,10 @@ namespace EGL3::Web::Xmpp {
         }
         case ClientState::BEFORE_AUTHED_SESSION:
         {
-            ReadXmppInfoQueryResult<true>(Node, CurrentJid);
+            if (!EGL3_CONDITIONAL_LOG(ReadXmppInfoQueryResult<true>(Node, CurrentJid), LogLevel::Error, "Failed to read XmppClient session infoquery. Aborting connection.")) {
+                CloseInternal(true);
+                return;
+            }
 
             State = ClientState::AUTHENTICATED;
             PresenceSendable = true;
