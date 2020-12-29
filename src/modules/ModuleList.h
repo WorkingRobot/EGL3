@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/persistent/Store.h"
+#include "../utils/Assert.h"
 #include "../utils/GladeBuilder.h"
 
 #include <any>
@@ -27,6 +28,7 @@ namespace EGL3::Modules {
 					return **Ret;
 				}
 			}
+			EGL3_LOG(LogLevel::Critical, "Could not find module");
 		}
 
 		template<typename T>
@@ -36,6 +38,7 @@ namespace EGL3::Modules {
 					return **Ret;
 				}
 			}
+			EGL3_LOG(LogLevel::Critical, "Could not find module");
 		}
 
 	private:

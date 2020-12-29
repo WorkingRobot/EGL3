@@ -45,9 +45,9 @@ namespace EGL3 {
 		}
 	}
 
-	template<LogLevel Level, size_t ConditionStringSize, size_t MessageSize, size_t FilenameSize>
-	static __forceinline bool _EGL3_Log(bool Condition, const char(&ConditionString)[ConditionStringSize], const char(&Message)[MessageSize], const char(&Filename)[FilenameSize], unsigned Line) {
-		if (ConditionStringSize && Condition) {
+	template<LogLevel Level>
+	static __forceinline bool _EGL3_Log(bool Condition, const char* ConditionString, const char* Message, const char* Filename, unsigned Line) {
+		if (ConditionString && Condition) {
 			return true;
 		}
 		_EGL3_LogFunc(Level, ConditionString, Message, Filename, Line);
@@ -64,4 +64,4 @@ namespace EGL3 {
 // If condition is false, return false and log error
 #define EGL3_CONDITIONAL_LOG(condition, level, message) (_EGL3_Log<level>((condition), #condition, message, __FILE__, __LINE__))
 
-#define EGL3_LOG(level, message) (_EGL3_Log<level, 0>(true, nullptr, message, __FILE__, __LINE__))
+#define EGL3_LOG(level, message) (_EGL3_Log<level>(true, nullptr, message, __FILE__, __LINE__))

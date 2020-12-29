@@ -14,7 +14,7 @@ namespace EGL3::Modules {
             const int width = allocation.get_width();
             const int height = allocation.get_height();
 
-            int i = round((width - x) / 15.f);
+            auto i = (int)round((width - x) / 15.f);
 
             std::lock_guard Guard(SnapshotMutex);
             if (i < 0) {

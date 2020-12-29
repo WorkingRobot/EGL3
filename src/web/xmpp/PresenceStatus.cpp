@@ -76,7 +76,7 @@ namespace EGL3::Web::Xmpp::Json {
 			VoiceSupport ? "Yes" : "No",
 			SessionId.c_str(),
 			ProductName.c_str(),
-			Buf.GetLength(), Buf.GetString()
+			(int)Buf.GetLength(), Buf.GetString()
 		);
 	}
 }
