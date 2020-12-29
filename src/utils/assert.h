@@ -53,7 +53,7 @@ namespace EGL3 {
 		_EGL3_LogFunc(Level, ConditionString, Message, Filename, Line);
 		if constexpr (Level == LogLevel::Critical) {
 			char Text[2048];
-			sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename, Line, Condition ? Condition : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
+			sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename, Line, ConditionString ? ConditionString : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
 			Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
 			std::abort();
 		}
@@ -65,5 +65,3 @@ namespace EGL3 {
 #define EGL3_CONDITIONAL_LOG(condition, level, message) (_EGL3_Log<level>((condition), #condition, message, __FILE__, __LINE__))
 
 #define EGL3_LOG(level, message) (_EGL3_Log<level, 0>(true, nullptr, message, __FILE__, __LINE__))
-
-#define EGL3_ASSERT(condition, message) static_assert(false, message " - " #condition) // EGL3_CONDITIONAL_LOG(condition, LogLevel_Critical, message)

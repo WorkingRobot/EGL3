@@ -20,11 +20,11 @@ namespace EGL3::Utils {
 		return str;
 	}
 
-	std::string B64Decode(const uint8_t* Input, uint32_t InputSize) {
+	std::string B64Decode(const uint8_t* Input, size_t InputSize) {
 		return B64Decode(std::string((char*)Input, InputSize));
 	}
 
-	std::string B64Encode(const uint8_t* Input, uint32_t InputSize) {
+	std::string B64Encode(const uint8_t* Input, size_t InputSize) {
 		return B64Encode(std::string((char*)Input, InputSize));
 	}
 }

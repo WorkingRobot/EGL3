@@ -167,7 +167,7 @@ find_library(SIGC_LIBRARY sigc-2.0)
 target_link_libraries(EGL3 ${SIGC_LIBRARY})
 
 find_path(GTKMM_INCLUDE_DIRS gtkmm.h)
-target_include_directories(EGL3 PRIVATE ${GTKMM_INCLUDE_DIRS})
+target_include_directories(EGL3 SYSTEM PRIVATE ${GTKMM_INCLUDE_DIRS})
 
 
 ## Properties ##
@@ -175,7 +175,7 @@ target_include_directories(EGL3 PRIVATE ${GTKMM_INCLUDE_DIRS})
 # C++20 #
 set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
 
-# Add .pdb for release builds
+# Add .pdb for release builds #
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
    target_compile_options(EGL3 PRIVATE /Zi)
    set_target_properties(EGL3 PROPERTIES
@@ -183,6 +183,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
         COMPILE_PDB_NAME EGL3 
         COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
    )
+endif()
+
+# gtkmm causes a ton of C4250 warnings (only on MSVC) #
+if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+    target_compile_options(EGL3 PRIVATE /wd4250)
 endif()
 
 # Visual Studio 16.8 decided to enable /permissive- without my knowledge, and this is the only fix I know

@@ -60,6 +60,9 @@ namespace EGL3::Web {
 			return "https://status.epicgames.com";
 		case Host::EGL3NonApi:
 			return "https://epic.gl";
+
+		default:
+			return "";
 		}
 	}
 }

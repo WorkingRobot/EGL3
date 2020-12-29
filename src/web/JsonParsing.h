@@ -44,7 +44,7 @@ namespace EGL3::Web {
     }
 
     __forceinline bool GetTimePoint(const char* Str, size_t StrSize, TimePoint& Obj) {
-        std::istringstream istr(Str, StrSize);
+        std::istringstream istr(std::string(Str, StrSize));
         istr >> date::parse("%FT%TZ", Obj);
         return !istr.fail();
     }

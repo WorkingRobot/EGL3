@@ -44,6 +44,8 @@ namespace EGL3::Storage::Models {
                 return "Creative";
             case ItemSource::NOTICE:
                 return "Notice";
+            default:
+                return "Unknown";
             }
         }
 
