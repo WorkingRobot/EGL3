@@ -1,28 +1,15 @@
 #include "ImageCache.h"
 
+#include "../utils/EmitRAII.h"
+
 namespace EGL3::Modules {
-    struct EmitRAII {
-        EmitRAII(Glib::Dispatcher& Dispatcher) :
-            Dispatcher(Dispatcher)
-        {
-
-        }
-
-        ~EmitRAII() {
-            Dispatcher.emit();
-        }
-
-    private:
-        Glib::Dispatcher& Dispatcher;
-    };
-
     ImageCacheModule::ImageCacheModule() {
 
     }
 
     std::future<Glib::RefPtr<Gdk::Pixbuf>> ImageCacheModule::GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback) {
         return std::async(std::launch::async, [&, this, Width, Height](const std::string& Url, const std::string& FallbackUrl) {
-            EmitRAII Emitter(Callback);
+            Utils::EmitRAII Emitter(Callback);
             return GetImageAsync(Url, FallbackUrl, Width, Height).get();
         }, Url, FallbackUrl);
     }

@@ -7,29 +7,29 @@
 #include <stdlib.h>
 
 namespace EGL3 {
-	enum LogLevel {
-		LogLevel_Critical,
-		LogLevel_Error,
-		LogLevel_Warning,
-		LogLevel_Message,
-		LogLevel_Info,
-		LogLevel_Debug
+	enum class LogLevel : uint8_t {
+		Critical,
+		Error,
+		Warning,
+		Message,
+		Info,
+		Debug
 	};
 
 	static constexpr const char* LogLevelToString(LogLevel Level) {
 		switch (Level)
 		{
-		case LogLevel_Critical:
+		case LogLevel::Critical:
 			return "Critical";
-		case LogLevel_Error:
+		case LogLevel::Error:
 			return "Error";
-		case LogLevel_Warning:
+		case LogLevel::Warning:
 			return "Warning";
-		case LogLevel_Message:
+		case LogLevel::Message:
 			return "Message";
-		case LogLevel_Info:
+		case LogLevel::Info:
 			return "Info";
-		case LogLevel_Debug:
+		case LogLevel::Debug:
 			return "Debug";
 		default:
 			return "Unknown";
@@ -52,8 +52,11 @@ namespace EGL3 {
 		_EGL3_LogFunc = NewLogger;
 	}
 
-	template<LogLevel Level>
-	static __forceinline bool _EGL3_Log(const char* Condition, const char* Message, const char* Filename, unsigned Line) {
+	template<LogLevel Level, size_t ConditionStringSize, size_t MessageSize, size_t FilenameSize>
+	static __forceinline bool _EGL3_Log(bool Condition, const char(&ConditionString)[ConditionStringSize], const char(&Message)[MessageSize], const char(&Filename)[FilenameSize], unsigned Line) {
+		if (ConditionStringSize && Condition) {
+			return true;
+		}
 		_EGL3_LogFunc(Level, Condition, Message, Filename, Line);
 		if constexpr (Level == LogLevel_Critical) {
 			char Text[2048];
@@ -61,11 +64,12 @@ namespace EGL3 {
 			Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
 			std::abort();
 		}
+		return Condition;
 	}
 }
 
-#define EGL3_CONDITIONAL_LOG(condition, level, message) (void)((!!(condition)) || (_EGL3_Log<level>(#condition, message, __FILE__, __LINE__)))
+#define EGL3_CONDITIONAL_LOG(condition, level, message) (_EGL3_Log<level>((condition), #condition, message, __FILE__, __LINE__))
 
-#define EGL3_LOG(level, message) (_EGL3_Log<level>(nullptr, message, __FILE__, __LINE__))
+#define EGL3_LOG(level, message) (_EGL3_Log<level, 0>(true, nullptr, message, __FILE__, __LINE__))
 
-#define EGL3_ASSERT(condition, message) EGL3_CONDITIONAL_LOG(condition, LogLevel_Critical, message) // static_assert(false, message " - " #condition)
+#define EGL3_ASSERT(condition, message) static_assert(false, message " - " #condition) // EGL3_CONDITIONAL_LOG(condition, LogLevel_Critical, message)

@@ -52,7 +52,7 @@ namespace EGL3::Modules {
                     auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
                     auto BPtr = (Widgets::FriendItem*)B->get_child()->get_data("EGL3_FriendBase");
 
-                    EGL3_ASSERT(APtr && BPtr, "Widgets aren't of type FriendItem");
+                    EGL3_CONDITIONAL_LOG(APtr && BPtr, LogLevel::Critical, "Widgets aren't of type FriendItem");
 
                     // Undocumented _Value, but honestly, it's fine
                     return (*BPtr <=> *APtr)._Value;
@@ -60,7 +60,7 @@ namespace EGL3::Modules {
                 Box.set_filter_func([this](Gtk::ListBoxRow* Row) {
                     auto Ptr = (Widgets::FriendItem*)Row->get_child()->get_data("EGL3_FriendBase");
 
-                    EGL3_ASSERT(Ptr, "Widget isn't of type FriendItem");
+                    EGL3_CONDITIONAL_LOG(Ptr, LogLevel::Critical, "Widget isn't of type FriendItem");
 
                     switch (Ptr->GetData().GetType()) {
                     case FriendType::INVALID:
@@ -249,9 +249,7 @@ namespace EGL3::Modules {
     }
 
     void FriendsModule::OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
-        EGL3_ASSERT(LauncherClient.AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
-
-        //printf("Launcher: %s\t\nFortnite: %s\n", LauncherClient.AuthData.AccessToken.c_str(), FNClient.AuthData.AccessToken.c_str());
+        EGL3_CONDITIONAL_LOG(LauncherClient.AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
 
         CurrentUserModel.Get<FriendCurrent>().SetCurrentUserData(LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.DisplayName.value());
         XmppClient.emplace(

@@ -1,6 +1,7 @@
 #include "Authorization.h"
 
 #include "../storage/models/Authorization.h"
+#include "../utils/EmitRAII.h"
 #include "../utils/OpenBrowser.h"
 #include "../web/epic/auth/DeviceCode.h"
 #include "../web/epic/auth/DeviceAuth.h"
@@ -21,18 +22,23 @@ namespace EGL3::Modules {
         if (!Auth.GetAccountId().empty()) {
             UpdateButton(PlayButtonState::SIGNING_IN);
             SignInTask = std::async(std::launch::async, [this](decltype(Auth)& Auth) {
+                Utils::EmitRAII Emitter(Dispatcher);
+
                 Web::Epic::Auth::DeviceAuth FNAuth(AuthorizationSwitch, Auth.GetAccountId(), Auth.GetDeviceId(), Auth.GetSecret());
-                EGL3_ASSERT(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceAuth::SUCCESS, "Could not use device auth");
+                if (!EGL3_CONDITIONAL_LOG(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceAuth::SUCCESS, LogLevel::Warning, "Could not use device auth")) {
+                    return false;
+                }
 
                 Web::Epic::Auth::TokenToToken LauncherAuth(AuthorizationLauncher, FNAuth.GetOAuthResponse()["access_token"].GetString());
-                EGL3_ASSERT(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::TokenToToken::SUCCESS, "Could not transfer fn auth to launcher auth");
+                if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::TokenToToken::SUCCESS, LogLevel::Error, "Could not transfer fn auth to launcher auth")) {
+                    return false;
+                }
 
                 AuthChanged.emit(
                     AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch),
                     AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher)
                 );
 
-                Dispatcher.emit();
                 return true;
             }, Auth);
         }
@@ -89,14 +95,22 @@ namespace EGL3::Modules {
         case PlayButtonState::SIGN_IN:
             UpdateButton(PlayButtonState::SIGNING_IN);
             SignInTask = std::async(std::launch::async, [this]() {
+                Utils::EmitRAII Emitter(Dispatcher);
+
                 Web::Epic::Auth::DeviceCode FNAuth(AuthorizationSwitch);
-                EGL3_ASSERT(FNAuth.GetBrowserUrlFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not get browser url");
+                if (!EGL3_CONDITIONAL_LOG(FNAuth.GetBrowserUrlFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, LogLevel::Error, "Could not get browser url")) {
+                    return false;
+                }
                 Utils::OpenInBrowser(FNAuth.GetBrowserUrl());
 
-                EGL3_ASSERT(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, "Could not grab device code");
+                if (!EGL3_CONDITIONAL_LOG(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, LogLevel::Error, "Could not grab device code")) {
+                    return false;
+                }
 
                 Web::Epic::Auth::TokenToToken LauncherAuth(AuthorizationLauncher, FNAuth.GetOAuthResponse()["access_token"].GetString());
-                EGL3_ASSERT(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::TokenToToken::SUCCESS, "Could not transfer fn auth to launcher auth");
+                if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, LogLevel::Error, "Could not transfer fn auth to launcher auth")) {
+                    return false;
+                }
 
                 AuthChanged.emit(
                     AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch),
@@ -104,13 +118,14 @@ namespace EGL3::Modules {
                 );
 
                 auto DevAuthResp = AuthClientFN->CreateDeviceAuth();
-                EGL3_ASSERT(!DevAuthResp.HasError(), "Could not create device auth");
+                if (!EGL3_CONDITIONAL_LOG(!DevAuthResp.HasError(), LogLevel::Error, "Could not create device auth")) {
+                    return false;
+                }
 
                 auto& Auth = Storage.Get(Storage::Persistent::Key::Auth);
                 Auth = Storage::Models::Authorization(DevAuthResp->AccountId, DevAuthResp->DeviceId, DevAuthResp->Secret.value());
                 Storage.Flush();
 
-                Dispatcher.emit();
                 return true;
             });
             break;
