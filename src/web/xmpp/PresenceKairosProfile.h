@@ -21,7 +21,7 @@ namespace EGL3::Web::Xmpp::Json {
 
         static std::string GetKairosAvatarUrl(const std::string& Avatar);
 
-        constexpr static const char* GetDefaultKairosBackgroundUrl();
+        static std::string GetDefaultKairosBackgroundUrl();
 
         static std::string GetKairosBackgroundUrl(const std::string& Background);
 

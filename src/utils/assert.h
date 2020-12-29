@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../web/Hosts.h"
 #include "AsyncMessageBox.h"
 
 #include <stdio.h>
@@ -56,12 +57,7 @@ namespace EGL3 {
 		_EGL3_LogFunc(Level, Condition, Message, Filename, Line);
 		if constexpr (Level == LogLevel_Critical) {
 			char Text[2048];
-			sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u", Message, Filename, Line);
-			if (Condition) {
-				strcat_s(Text, "\nReason: ");
-				strcat_s(Text, Condition);
-			}
-			strcat_s(Text, "\n\nYou can report this issue at https://epic.gl/discord");
+			sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename, Line, Condition ? Condition : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
 			Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
 			std::abort();
 		}

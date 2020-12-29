@@ -40,7 +40,7 @@ namespace EGL3::Web::Epic::Auth {
 	DeviceCode::ErrorCode DeviceCode::RunBrowserUrlTask()
 	{
 		auto ClientCredResponse = Http::Post(
-			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+			Http::FormatUrl<Host::Account>("oauth/token"),
 			AuthClient,
 			cpr::Payload{ { "grant_type", "client_credentials" } }
 		);
@@ -62,7 +62,7 @@ namespace EGL3::Web::Epic::Auth {
 		auto ClientCredAccessToken = std::string(ClientCredAccessTokenValue.GetString(), ClientCredAccessTokenValue.GetStringLength());
 
 		auto DeviceAuthResponse = Http::Post(
-			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/deviceAuthorization" },
+			Http::FormatUrl<Host::Account>("oauth/deviceAuthorization"),
 			cpr::Header{ {"Authorization", "bearer " + ClientCredAccessToken } },
 			cpr::Body{ }
 		);
@@ -109,7 +109,7 @@ namespace EGL3::Web::Epic::Auth {
 			NextSleep += RefreshInterval;
 
 			auto Response = Http::Post(
-				cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+				Http::FormatUrl<Host::Account>("oauth/token"),
 				AuthClient,
 				cpr::Payload{ { "grant_type", "device_code" }, { "device_code", Code } }
 			);

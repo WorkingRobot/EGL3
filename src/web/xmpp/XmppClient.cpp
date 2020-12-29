@@ -6,6 +6,7 @@
 #include "../../utils/Crc32.h"
 #include "../../utils/Hex.h"
 #include "../../utils/RandGuid.h"
+#include "../../web/Hosts.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -21,7 +22,7 @@ namespace EGL3::Web::Xmpp {
     {
         std::call_once(InitFlag, ix::initNetSystem);
 
-        Socket.setUrl("wss://xmpp-service-prod.ol.epicgames.com//");
+        Socket.setUrl(GetHostUrl<Host::XMPP>());
         Socket.addSubProtocol("xmpp");
         Socket.setOnMessageCallback([this](auto& Message) { ReceivedMessage(Message); });
         Socket.setTrafficTrackerCallback([this](size_t size, bool incoming) {

@@ -27,7 +27,7 @@ namespace EGL3::Web::Epic::Auth {
 	DeviceAuth::ErrorCode DeviceAuth::RunOAuthResponseTask()
 	{
 		auto Response = Http::Post(
-			cpr::Url{ "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token" },
+			Http::FormatUrl<Host::Account>("oauth/token"),
 			AuthClient,
 			cpr::Payload{ { "grant_type", "device_auth" }, { "account_id", AccountId }, { "device_id", DeviceId }, { "secret", Secret } }
 		);

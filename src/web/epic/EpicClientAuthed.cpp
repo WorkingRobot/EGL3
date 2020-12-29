@@ -26,7 +26,7 @@ namespace EGL3::Web::Epic {
 			// This will return a 204
 			// If it fails, it's on epic's blame. We don't really need any handling
 			Http::Delete(
-				Http::FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
+				Http::FormatUrl<Host::Account>("oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
 				cpr::Header{ { "Authorization", AuthHeader } }
 			);
 		}
@@ -45,7 +45,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/public/account/%s", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Account>("public/account/%s", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -82,7 +82,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://account-public-service-prod.ol.epicgames.com/account/api/public/account/%s/externalAuths", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Account>("public/account/%s/externalAuths", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -122,7 +122,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account"),
+			Http::FormatUrl<Host::Account>("public/account"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -160,7 +160,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Account>("public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -197,7 +197,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Post(
-			Http::FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Account>("public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ "{}" }
 		);
@@ -235,7 +235,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/payment/accounts/%s/billingaccounts/default", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Launcher>("public/payment/accounts/%s/billingaccounts/default", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -270,7 +270,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/%s", Platform.c_str()),
+			Http::FormatUrl<Host::Launcher>("public/assets/%s", Platform.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "label", Label } }
 		);
@@ -306,7 +306,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Post(
-			Http::FormatUrl("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/v2/platform/%s/catalogItem/%s/app/%s/label/%s", Platform.c_str(), CatalogItemId.c_str(), AppName.c_str(), Label.c_str()),
+			Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/%s/catalogItem/%s/app/%s/label/%s", Platform.c_str(), CatalogItemId.c_str(), AppName.c_str(), Label.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ "{}" }
 		);
@@ -342,7 +342,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/currencies"),
+			Http::FormatUrl<Host::Catalog>("shared/currencies"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
@@ -388,7 +388,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace/%s/bulk/items", Namespace.c_str()),
+			Http::FormatUrl<Host::Catalog>("shared/namespace/%s/bulk/items", Namespace.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -426,7 +426,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://entitlement-public-service-prod08.ol.epicgames.com/entitlement/api/account/%s/entitlements", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Entitlement>("account/%s/entitlements", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
 		);
@@ -464,7 +464,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/summary", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/summary", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -502,7 +502,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -540,7 +540,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/incoming", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/incoming", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -578,7 +578,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/outgoing", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/outgoing", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -616,7 +616,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/suggested", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/suggested", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -654,7 +654,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist", AuthData.AccountId->c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/blocklist", AuthData.AccountId->c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -692,7 +692,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Parameters{ { "displayNames", "true" } }
 		);
@@ -730,7 +730,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Post(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -757,7 +757,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Delete(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -784,7 +784,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Put(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
 			cpr::Body{ Nickname }
 		);
@@ -811,7 +811,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Delete(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -838,7 +838,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Put(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
 			cpr::Body{ Note }
 		);
@@ -865,7 +865,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Delete(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -892,7 +892,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Post(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -919,7 +919,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Delete(
-			Http::FormatUrl("https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+			Http::FormatUrl<Host::Friends>("v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			cpr::Body{ "" }
 		);
@@ -946,7 +946,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/%s/setting/%s/available", AuthData.AccountId->c_str(), Setting.c_str()),
+			Http::FormatUrl<Host::Channels>("v1/user/%s/setting/%s/available", AuthData.AccountId->c_str(), Setting.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -991,7 +991,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/setting"),
+			Http::FormatUrl<Host::Channels>("v1/user/setting"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -1041,7 +1041,7 @@ namespace EGL3::Web::Epic {
 		}
 
 		auto Response = Http::Put(
-			Http::FormatUrl("https://channels-public-service-prod.ol.epicgames.com/api/v1/user/%s/setting/%s", AuthData.AccountId->c_str(), Setting.c_str()),
+			Http::FormatUrl<Host::Channels>("v1/user/%s/setting/%s", AuthData.AccountId->c_str(), Setting.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
 			cpr::Body{ Buf.GetString(), Buf.GetSize() }
 		);
@@ -1066,7 +1066,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			Http::FormatUrl("https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/%s/status", AppName.c_str()),
+			Http::FormatUrl<Host::Lightswitch>("service/%s/status", AppName.c_str()),
 			cpr::Header{ { "Authorization", AuthHeader } }
 		);
 
@@ -1106,7 +1106,7 @@ namespace EGL3::Web::Epic {
 			Parameters.AddParameter({ "serviceId", AppName }, cpr::CurlHolder());
 		}
 		auto Response = Http::Get(
-			Http::FormatUrl("https://lightswitch-public-service-prod06.ol.epicgames.com/lightswitch/api/service/bulk/status"),
+			Http::FormatUrl<Host::Lightswitch>("service/bulk/status"),
 			cpr::Header{ { "Authorization", AuthHeader } },
 			Parameters
 		);
@@ -1150,7 +1150,7 @@ namespace EGL3::Web::Epic {
 			}
 
 			Response = Http::Post(
-				Http::FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token"),
+				Http::FormatUrl<Host::Account>("oauth/token"),
 				AuthClient,
 				cpr::Payload{ { "grant_type", "refresh_token" }, { "refresh_token", AuthData.RefreshToken.value() } }
 			);
@@ -1158,7 +1158,7 @@ namespace EGL3::Web::Epic {
 		// Refresh tokens were not given in the oauth response, use client_credentials here
 		else {
 			Response = Http::Post(
-				Http::FormatUrl("https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token"),
+				Http::FormatUrl<Host::Account>("oauth/token"),
 				AuthClient,
 				cpr::Payload{ { "grant_type", "client_credentials" } }
 			);

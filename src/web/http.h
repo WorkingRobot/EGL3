@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/Format.h"
+#include "Hosts.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -34,15 +35,15 @@ namespace EGL3::Web::Http {
 
 	const cpr::UserAgent& GetUserAgent();
 
+	template<Host SelectedHost>
 	static cpr::Url FormatUrl(const char* Input) {
-		return Input;
+		return Utils::Format("%s%s", GetHostUrl<SelectedHost>(), Input);
 	}
 
-	template<typename... Args>
+	template<Host SelectedHost, typename... Args>
 	static cpr::Url FormatUrl(const char* Input, Args&&... FormatArgs) {
-		return Utils::Format(Input, std::move(FormatArgs)...);
+		return Utils::Format("%s%s", GetHostUrl<SelectedHost>(), Utils::Format(Input, std::move(FormatArgs)...).c_str());
 	}
-
 
 	// Make sure to check validity with Json.HasParseError()
 	// Use something similar to printf("%d @ %zu\n", Json.GetParseError(), Json.GetErrorOffset());

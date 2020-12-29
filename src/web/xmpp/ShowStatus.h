@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include "../../utils/Format.h"
+#include "../../web/Hosts.h"
 
 namespace EGL3::Web::Xmpp::Json {
 	// There's a bunch of enums that this is based off of,
@@ -35,22 +36,22 @@ namespace EGL3::Web::Xmpp::Json {
 		}
 	}
 
-	static constexpr const char* ShowStatusToUrl(ShowStatus Status) {
+	static std::string ShowStatusToUrl(ShowStatus Status) {
 		switch (Status)
 		{
 		case ShowStatus::Chat:
-			return "https://epic.gl/assets/status/chat.png";
+			return Utils::Format("%sstatus/chat.png", Web::GetHostUrl<Web::Host::EGL3>());
 		case ShowStatus::DoNotDisturb:
-			return "https://epic.gl/assets/status/dnd.png";
+			return Utils::Format("%sstatus/dnd.png", Web::GetHostUrl<Web::Host::EGL3>());
 		case ShowStatus::Online:
-			return "https://epic.gl/assets/status/online.png";
+			return Utils::Format("%sstatus/online.png", Web::GetHostUrl<Web::Host::EGL3>());
 		case ShowStatus::Away:
-			return "https://epic.gl/assets/status/away.png";
+			return Utils::Format("%sstatus/away.png", Web::GetHostUrl<Web::Host::EGL3>());
 		case ShowStatus::ExtendedAway:
-			return "https://epic.gl/assets/status/xa.png";
+			return Utils::Format("%sstatus/xa.png", Web::GetHostUrl<Web::Host::EGL3>());
 		case ShowStatus::Offline:
 		default:
-			return "https://epic.gl/assets/status/offline.png";
+			return Utils::Format("%sstatus/offline.png", Web::GetHostUrl<Web::Host::EGL3>());
 		}
 	}
 }

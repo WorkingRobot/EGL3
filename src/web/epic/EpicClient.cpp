@@ -11,7 +11,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://fortnitecontent-website-prod07.ol.epicgames.com/content/api/pages/fortnite-game" },
+			Http::FormatUrl<Host::FortniteContent>("pages/fortnite-game"),
 			cpr::Parameters{ { "lang", Language } }
 		);
 
@@ -42,7 +42,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://www.epicgames.com/fortnite/api/blog/getPosts" },
+			Http::FormatUrl<Host::BaseFortnite>("blog/getPosts"),
 			cpr::Parameters{ { "category", "" }, { "postsPerPage", std::to_string(PostsPerPage) }, { "offset", std::to_string(Offset) }, { "locale", Locale }, { "rootPageSlug", "blog" } }
 		);
 
@@ -73,7 +73,7 @@ namespace EGL3::Web::Epic {
 		if (GetCancelled()) { return ErrorCode::Cancelled; }
 
 		auto Response = Http::Get(
-			cpr::Url{ "https://status.epicgames.com/api/v2/summary.json" }
+			Http::FormatUrl<Host::Statuspage>("v2/summary.json")
 		);
 
 		if (GetCancelled()) { return ErrorCode::Cancelled; }

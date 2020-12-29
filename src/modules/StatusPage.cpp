@@ -2,6 +2,7 @@
 
 #include "../utils/OpenBrowser.h"
 #include "../web/epic/EpicClient.h"
+#include "../web/Hosts.h"
 
 namespace EGL3::Modules {
 	StatusPageModule::StatusPageModule(const Utils::GladeBuilder& Builder) :
@@ -20,7 +21,7 @@ namespace EGL3::Modules {
 			return true;
 		});
 		LabelTitleEventBox.signal_button_release_event().connect([this](GdkEventButton* Evt) {
-			Utils::OpenInBrowser("https://status.epicgames.com");
+			Utils::OpenInBrowser(Web::GetHostUrl<Web::Host::StatuspageNonApi>());
 			return true;
 		});
 
