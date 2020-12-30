@@ -8,13 +8,15 @@
 namespace EGL3::Utils {
 	std::string B64Decode(const std::string& Input) {
 		std::ostringstream Output;
-		base64::decoder().decode(std::istringstream(Input), Output);
+		std::istringstream InpStream(Input);
+		base64::decoder().decode(InpStream, Output);
 		return Output.str();
 	}
 
 	std::string B64Encode(const std::string& Input) {
 		std::ostringstream Output;
-		base64::encoder().encode(std::istringstream(Input), Output);
+		std::istringstream InpStream(Input);
+		base64::encoder().encode(InpStream, Output);
 		auto str = Output.str();
 		str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
 		return str;

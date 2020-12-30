@@ -50,7 +50,7 @@ namespace EGL3::Modules {
                     SplineInput.emplace_back(width - (i * 15), height - Itr->Height * height);
                     i--;
                 }
-                ExecuteBSpline(SplineInput, [Ctx](auto& start, auto& a, auto& b, auto& c) {
+                ExecuteBSpline(SplineInput, [Ctx](const point_t& start, const point_t& a, const point_t& b, const point_t& c) {
                     Ctx->move_to(start.first, start.second);
                     Ctx->curve_to(a.first, a.second, b.first, b.second, c.first, c.second);
                     Ctx->stroke();

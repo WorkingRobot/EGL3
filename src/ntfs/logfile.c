@@ -35,6 +35,7 @@
 
 #include "attrib.h"
 #include "debug.h"
+#include "ffs.h"
 #include "logfile.h"
 #include "volume.h"
 #include "mst.h"
@@ -150,18 +151,6 @@ skip_usa_checks:
 	}
 	ntfs_log_trace("Done.\n");
 	return TRUE;
-}
-
-static int ffs(int i)
-{
-	int bit;
-
-	if (0 == i)
-		return 0;
-
-	for (bit = 1; !(i & 1); ++bit)
-		i >>= 1;
-	return bit;
 }
 
 /**

@@ -31,7 +31,7 @@ namespace EGL3::Storage::Models {
 
         WhatsNew(decltype(Item) && Item, decltype(Date) Date, ItemSource Source);
 
-        static constexpr const char* WhatsNew::SourceToString(ItemSource Source) {
+        static constexpr const char* SourceToString(ItemSource Source) {
             switch (Source)
             {
             case ItemSource::BLOG:
@@ -49,7 +49,7 @@ namespace EGL3::Storage::Models {
             }
         }
 
-        static const char* WhatsNew::SubGameToString(const std::string& SubGame) {
+        static const char* SubGameToString(const std::string& SubGame) {
             switch (Utils::Crc32(SubGame))
             {
             case Utils::Crc32("br"):
@@ -63,7 +63,7 @@ namespace EGL3::Storage::Models {
             }
         }
 
-        static const char* WhatsNew::PlatformToString(const std::string& Platform) {
+        static const char* PlatformToString(const std::string& Platform) {
             switch (Utils::Crc32(Platform))
             {
             case Utils::Crc32("mac"):

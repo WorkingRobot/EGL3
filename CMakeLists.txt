@@ -115,6 +115,7 @@ find_library(WS_LIBRARY ixwebsocket)
 target_link_libraries(EGL3 ${WS_LIBRARY})
 
 # XML (XMPP) #
+# This fix is required for permissive compilers (pre MSVC 16.8, and all others) - https://stackoverflow.com/a/14114300
 find_path(RAPIDXML_INCLUDE_DIRS "rapidxml/rapidxml.hpp")
 target_include_directories(EGL3 PRIVATE ${RAPIDXML_INCLUDE_DIRS})
 
@@ -186,10 +187,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
 endif()
 
 # gtkmm causes a ton of C4250 warnings (only on MSVC) #
-if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(EGL3 PRIVATE /wd4250)
 endif()
 
-# Visual Studio 16.8 decided to enable /permissive- without my knowledge, and this is the only fix I know
-# I'll figure out a way to make my code run without this later on, maybe before release
-list(APPEND CMAKE_CXX20_EXTENSION_COMPILE_OPTION /permissive)
+# gtkmm assumes that the compiler is msvc if it detects MSC #
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_definitions(EGL3 PRIVATE SIGC_GCC_TEMPLATE_SPECIALIZATION_OPERATOR_OVERLOAD)
+endif()

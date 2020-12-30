@@ -4,7 +4,7 @@
 #include "AsyncMessageBox.h"
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace EGL3 {
 	enum class LogLevel : uint8_t {

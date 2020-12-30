@@ -35,9 +35,9 @@ namespace EGL3::Modules {
 
 		RefreshBtn.set_sensitive(false);
 
-		UpdateLabel(LabelFortnite, std::string("Refreshing"));
-		UpdateLabel(LabelEOS, std::string("Refreshing"));
-		UpdateLabel(LabelEGS, std::string("Refreshing"));
+		UpdateLabel(LabelFortnite, "Refreshing");
+		UpdateLabel(LabelEOS, "Refreshing");
+		UpdateLabel(LabelEGS, "Refreshing");
 
 		RefreshTask = std::async(std::launch::async, [this]() {
 			Web::Epic::EpicClient Client;
@@ -66,7 +66,7 @@ namespace EGL3::Modules {
 		RefreshBtn.set_sensitive(true);
 	}
 
-	void StatusPageModule::UpdateLabel(Gtk::Label& Label, std::string& Status) {
+	void StatusPageModule::UpdateLabel(Gtk::Label& Label, const std::string& Status) {
 		if (Status == "operational") {
 			Label.set_text("Operational");
 			Label.get_style_context()->add_class("status-operational");

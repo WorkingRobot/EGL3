@@ -53,7 +53,7 @@ namespace EGL3::Utils {
 
         // A <=> B
         // Workaround until visual studio decides to implement <=> for std::basic_string
-        template<bool Insensitive, class Str, class Traits = std::conditional<Insensitive, ci_char_traits, std::char_traits<char>>::type>
+        template<bool Insensitive, class Str, class Traits = typename std::conditional<Insensitive, ci_char_traits, std::char_traits<char>>::type>
         constexpr static std::strong_ordering CompareStrings(const Str& A, const Str& B) {
             return 0 <=> TraitsCompare<Traits>(A.data(), A.size(), B.data(), B.size());
         }

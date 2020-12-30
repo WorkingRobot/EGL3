@@ -50,10 +50,6 @@
 #define PATH_MAX 4096
 #endif
 
-#ifndef HAVE_FFS
-extern int ffs(int i);
-#endif /* HAVE_FFS */
-
 #ifndef HAVE_DAEMON
 extern int daemon(int nochdir, int noclose);
 #endif /* HAVE_DAEMON */

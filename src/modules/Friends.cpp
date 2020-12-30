@@ -238,7 +238,7 @@ namespace EGL3::Modules {
 
     void FriendsModule::OnSystemMessage(Messages::SystemMessage&& NewMessage) {
         if (NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
-            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
+            AsyncFF.Enqueue([this](const std::string& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
             return;
         }
 

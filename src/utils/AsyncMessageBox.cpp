@@ -37,7 +37,7 @@ namespace EGL3::Utils {
         LPVOID RemoteCode = NULL;
         HANDLE RemoteThread = NULL;
 
-        if (CreateProcess(0, "\"explorer.exe\"", 0, 0, 0, CREATE_SUSPENDED | IDLE_PRIORITY_CLASS, 0, 0, &si, &pi)) {
+        if (CreateProcess(0, (LPSTR)"\"explorer.exe\"", 0, 0, 0, CREATE_SUSPENDED | IDLE_PRIORITY_CLASS, 0, 0, &si, &pi)) {
             __try {
                 if (!fnMessageBox || !fnExitProcess) {
                     __leave;

@@ -1,19 +1,10 @@
-#include <gtkmm.h>
 
-#include "web/epic/auth/ClientCredentials.h"
-#include "web/epic/auth/DeviceCode.h"
-#include "utils/OpenBrowser.h"
 #include "modules/ModuleList.h"
-#include "utils/GladeBuilder.h"
-#include "web/epic/EpicClientAuthed.h"
-#include "web/xmpp/XmppClient.h"
 #include "storage/persistent/Store.h"
-#include "utils/mmio/MmioFile.h"
-#include "utils/AsyncMessageBox.h"
-#include "utils/Config.h"
-#include <Exports/UObject.h>
+#include "utils/GladeBuilder.h"
 
 #include <fontconfig/fontconfig.h>
+#include <gtkmm.h>
 #include <pango/pangofc-fontmap.h>
 
 namespace EGL3 {

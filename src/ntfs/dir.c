@@ -1074,18 +1074,6 @@ err_out:
 	return ERR_MREF(-1);
 }
 
-static int ffs(int i)
-{
-	int bit;
-
-	if (0 == i)
-		return 0;
-
-	for (bit = 1; !(i & 1); ++bit)
-		i >>= 1;
-	return bit;
-}
-
 /**
  * ntfs_readdir - read the contents of an ntfs directory
  * @dir_ni:	ntfs inode of current directory

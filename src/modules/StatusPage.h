@@ -18,7 +18,7 @@ namespace EGL3::Modules {
 	private:
 		void UpdateLabels();
 
-		void UpdateLabel(Gtk::Label& Label, std::string& Status);
+		void UpdateLabel(Gtk::Label& Label, const std::string& Status);
 
 		Gtk::Button& RefreshBtn;
 		Gtk::EventBox& LabelTitleEventBox;

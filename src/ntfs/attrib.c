@@ -27,6 +27,7 @@
 #include <limits.h>
 
 #include "support.h"
+#include "ffs.h"
 #include "param.h"
 #include "compat.h"
 #include "attrib.h"
@@ -310,18 +311,6 @@ static void __ntfs_attr_init(ntfs_attr *na, ntfs_inode *ni,
 		na->name_len = name_len;
 	else
 		na->name_len = 0;
-}
-
-static int ffs(int i)
-{
-	int bit;
-
-	if (0 == i)
-		return 0;
-
-	for (bit = 1; !(i & 1); ++bit)
-		i >>= 1;
-	return bit;
 }
 
 /**

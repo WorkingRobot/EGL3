@@ -49,75 +49,103 @@ namespace EGL3::Web {
         return !istr.fail();
     }
 
-    template<class T>
-    __forceinline bool ParseObject(const rapidjson::Value& Json, T& Obj) {
-        return T::Parse(Json, Obj);
-    }
+    template<typename T>
+    struct Parser {
+        __forceinline bool operator()(const rapidjson::Value& Json, T& Obj) const {
+            return T::Parse(Json, Obj);
+        }
+    };
 
-    template<class T>
-    __forceinline bool ParseObject(const rapidjson::Value& Json, std::optional<T>& Obj) {
-        return ParseObject(Json, Obj.emplace());
-    }
+    template<>
+    struct Parser<std::string> {
+        __forceinline bool operator()(const rapidjson::Value& Json, std::string& Obj) const {
+            Obj = std::string(Json.GetString(), Json.GetStringLength());
+            return true;
+        }
+    };
 
-    __forceinline bool ParseObject(const rapidjson::Value& Json, std::string& Obj) {
-        Obj = std::string(Json.GetString(), Json.GetStringLength());
-        return true;
-    }
+    template<>
+    struct Parser<bool> {
+        __forceinline bool operator()(const rapidjson::Value& Json, bool& Obj) const {
+            Obj = Json.GetBool();
+            return true;
+        }
+    };
 
-    __forceinline bool ParseObject(const rapidjson::Value& Json, bool& Obj) {
-        Obj = Json.GetBool();
-        return true;
-    }
+    template<>
+    struct Parser<int> {
+        __forceinline bool operator()(const rapidjson::Value& Json, int& Obj) const {
+            Obj = Json.GetInt();
+            return true;
+        }
+    };
 
-    __forceinline bool ParseObject(const rapidjson::Value& Json, int& Obj) {
-        Obj = Json.GetInt();
-        return true;
-    }
+    template<>
+    struct Parser<float> {
+        __forceinline bool operator()(const rapidjson::Value& Json, float& Obj) const {
+            Obj = Json.GetFloat();
+            return true;
+        }
+    };
 
-    __forceinline bool ParseObject(const rapidjson::Value& Json, float& Obj) {
-        Obj = Json.GetFloat();
-        return true;
-    }
+    template<>
+    struct Parser<JsonObject> {
+        __forceinline bool operator()(const rapidjson::Value& Json, JsonObject& Obj) const {
+            Obj.CopyFrom(Json, Obj.GetAllocator(), true);
+            return true;
+        }
+    };
+
+    template<>
+    struct Parser<TimePoint> {
+        __forceinline bool operator()(const rapidjson::Value& Json, TimePoint& Obj) const {
+            return GetTimePoint(Json.GetString(), Json.GetStringLength(), Obj);
+        }
+    };
 
     template<typename T, typename C>
-    __forceinline bool ParseObject(const rapidjson::Value& Json, JsonEnum<T, C>& Obj) {
-        Obj = JsonEnum<T, C>::ToEnum(Json.GetString(), Json.GetStringLength());
-        return true;
-    }
-
-    __forceinline bool ParseObject(const rapidjson::Value& Json, JsonObject& Obj) {
-        Obj.CopyFrom(Json, Obj.GetAllocator(), true);
-        return true;
-    }
-
-    __forceinline bool ParseObject(const rapidjson::Value& Json, TimePoint& Obj) {
-        return GetTimePoint(Json.GetString(), Json.GetStringLength(), Obj);
-    }
-
-    template<class T>
-    __forceinline bool ParseObject(const rapidjson::Value& Json, std::vector<T>& Obj) {
-        Obj.reserve(Json.GetArray().Size());
-        for (auto& Value : Json.GetArray()) {
-            auto& Item = Obj.emplace_back();
-            if (!ParseObject(Value, Item)) { return false; }
+    struct Parser<JsonEnum<T, C>> {
+        __forceinline bool operator()(const rapidjson::Value& Json, JsonEnum<T, C>& Obj) const {
+            Obj = JsonEnum<T, C>::ToEnum(Json.GetString(), Json.GetStringLength());
+            return true;
         }
-        return true;
-    }
+    };
 
-    template<class T>
-    __forceinline bool ParseObject(const rapidjson::Value& Json, std::unordered_map<std::string, T>& Obj) {
-        Obj.reserve(Json.GetObject().MemberCount());
-        for (auto& Value : Json.GetObject()) {
-            auto Item = Obj.emplace(
-                std::piecewise_construct,
-                std::forward_as_tuple(Value.name.GetString(), Value.name.GetStringLength()),
-                std::forward_as_tuple()
-            );
-            if (!Item.second) { return false; }
-            if (!ParseObject(Value.value, Item.first->second)) { return false; }
+    template<typename T>
+    struct Parser<std::optional<T>> {
+        __forceinline bool operator()(const rapidjson::Value& Json, std::optional<T>& Obj) const {
+            return Parser<T>{}(Json, Obj.emplace());
         }
-        return true;
-    }
+    };
+
+    template<typename T>
+    struct Parser<std::vector<T>> {
+        __forceinline bool operator()(const rapidjson::Value& Json, std::vector<T>& Obj) const {
+            Obj.reserve(Json.GetArray().Size());
+            for (auto& Value : Json.GetArray()) {
+                auto& Item = Obj.emplace_back();
+                if (!Parser<T>{}(Value, Item)) { return false; }
+            }
+            return true;
+        }
+    };
+
+    template<typename T>
+    struct Parser<std::unordered_map<std::string, T>> {
+        __forceinline bool operator()(const rapidjson::Value& Json, std::unordered_map<std::string, T>& Obj) const {
+            Obj.reserve(Json.GetObject().MemberCount());
+            for (auto& Value : Json.GetObject()) {
+                auto Item = Obj.emplace(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(Value.name.GetString(), Value.name.GetStringLength()),
+                    std::forward_as_tuple()
+                );
+                if (!Item.second) { return false; }
+                if (!Parser<T>{}(Value.value, Item.first->second)) { return false; }
+            }
+            return true;
+        }
+    };
 }
 
 #define DEFINE_JSON_ENUM_MAP1(V) case Enum::V: return #V;
@@ -168,15 +196,15 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
 #define PARSE_ITEM(JsonName, TargetVariable) \
         Itr = Json.FindMember(JsonName); \
         if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR_NOTFOUND; return false; } \
-        if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
+        if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 #define PARSE_ITEM_OPT(JsonName, TargetVariable) \
         Itr = Json.FindMember(JsonName); \
-        if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
+        if (Itr != Json.MemberEnd()) { if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
 
 #define PARSE_ITEM_DEF(JsonName, TargetVariable, Default) \
         Itr = Json.FindMember(JsonName); \
-        if (Itr != Json.MemberEnd()) { if (!ParseObject(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
+        if (Itr != Json.MemberEnd()) { if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
-        if (!ParseObject(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
+        if (!Parser<decltype(Obj.TargetVariable)>{}(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }

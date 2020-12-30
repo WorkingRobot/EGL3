@@ -17,9 +17,6 @@
         <windowsSettings xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
             <longPathAware>true</longPathAware>
         </windowsSettings>
-        <windowsSettings xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">
-            <heapType>SegmentHeap</heapType>
-        </windowsSettings>
     </application>
     <trustInfo>
         <security>

@@ -21,10 +21,10 @@ namespace EGL3::Modules {
         auto& Auth = Storage.Get(Storage::Persistent::Key::Auth);
         if (!Auth.GetAccountId().empty()) {
             UpdateButton(PlayButtonState::SIGNING_IN);
-            SignInTask = std::async(std::launch::async, [this](decltype(Auth)& Auth) {
+            SignInTask = std::async(std::launch::async, [this](std::reference_wrapper<const Storage::Models::Authorization> Auth) {
                 Utils::EmitRAII Emitter(Dispatcher);
 
-                Web::Epic::Auth::DeviceAuth FNAuth(AuthorizationSwitch, Auth.GetAccountId(), Auth.GetDeviceId(), Auth.GetSecret());
+                Web::Epic::Auth::DeviceAuth FNAuth(AuthorizationSwitch, Auth.get().GetAccountId(), Auth.get().GetDeviceId(), Auth.get().GetSecret());
                 if (!EGL3_CONDITIONAL_LOG(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceAuth::SUCCESS, LogLevel::Warning, "Could not use device auth")) {
                     return false;
                 }
@@ -40,7 +40,7 @@ namespace EGL3::Modules {
                 );
 
                 return true;
-            }, Auth);
+            }, std::cref(Auth));
         }
         else {
             UpdateButton(PlayButtonState::SIGN_IN);

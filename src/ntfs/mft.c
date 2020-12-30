@@ -414,18 +414,6 @@ out:
 
 static const char *es = "  Leaving inconsistent metadata.  Run chkdsk.";
 
-static int ffs(int i)
-{
-	int bit;
-
-	if (0 == i)
-		return 0;
-
-	for (bit = 1; !(i & 1); ++bit)
-		i >>= 1;
-	return bit;
-}
-
 /**
  * ntfs_ffz - Find the first unset (zero) bit in a word
  * @word:

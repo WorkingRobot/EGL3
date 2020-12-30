@@ -90,7 +90,7 @@ typedef sle64 leLSN;
  * Cygwin has a collision between our BOOL and <windef.h>'s
  * As long as this file will be included after <windows.h> were fine.
  */
-#ifndef _WINDEF_H
+#ifndef _MINWINDEF_
 /**
  * enum BOOL - These are just to make the code more readable...
  */
@@ -114,7 +114,7 @@ typedef enum {
 	ONE = 1,
 #endif
 } BOOL;
-#endif /* defined _WINDEF_H */
+#endif /* defined _MINWINDEF_ */
 
 /**
  * enum IGNORE_CASE_BOOL -

@@ -12,6 +12,8 @@
 #define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
 
 namespace EGL3::Web::Http {
+	const cpr::UserAgent& GetUserAgent();
+
 	// for handling everything http errors/logging/etc
 	template<typename... Ts>
 	static cpr::Response Get(Ts&&... ts) {
@@ -32,8 +34,6 @@ namespace EGL3::Web::Http {
 	static cpr::Response Put(Ts&&... ts) {
 		return cpr::Put(GetUserAgent(), SUFFFIX_SSL std::move(ts)...);
 	}
-
-	const cpr::UserAgent& GetUserAgent();
 
 	template<Host SelectedHost>
 	static cpr::Url FormatUrl(const char* Input) {

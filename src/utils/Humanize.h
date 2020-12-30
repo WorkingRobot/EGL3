@@ -11,25 +11,6 @@ namespace EGL3::Utils {
         typedef std::chrono::duration<int, std::ratio<31556952>> ChronoYears;
 
         template<class T>
-        std::string ConvertDate(bool IsFutureTense, const std::chrono::system_clock::duration& Date) {
-            auto Amount = std::chrono::duration_cast<T>(Date);
-            return ConvertDate<T>(IsFutureTense, Amount.count());
-        }
-
-        template<class T>
-        std::string ConvertDate(bool IsFutureTense, const T& Amount) {
-            return ConvertDate<T>(IsFutureTense, Amount.count());
-        }
-
-        template<class T>
-        std::string ConvertDate(bool IsFutureTense, int64_t Amount) {
-            if (Amount == 0) {
-                return "now";
-            }
-            return ConvertDate<T>(IsFutureTense, Amount == 1, Amount);
-        }
-
-        template<class T>
         std::string ConvertDate(bool IsFutureTense, bool IsSingular, int64_t Amount) {
 
         }
@@ -172,6 +153,25 @@ namespace EGL3::Utils {
                     return std::to_string(Amount) + " years ago";
                 }
             }
+        }
+
+        template<class T>
+        std::string ConvertDate(bool IsFutureTense, int64_t Amount) {
+            if (Amount == 0) {
+                return "now";
+            }
+            return ConvertDate<T>(IsFutureTense, Amount == 1, Amount);
+        }
+
+        template<class T>
+        std::string ConvertDate(bool IsFutureTense, const std::chrono::system_clock::duration& Date) {
+            auto Amount = std::chrono::duration_cast<T>(Date);
+            return ConvertDate<T>(IsFutureTense, Amount.count());
+        }
+
+        template<class T>
+        std::string ConvertDate(bool IsFutureTense, const T& Amount) {
+            return ConvertDate<T>(IsFutureTense, Amount.count());
         }
     }
 

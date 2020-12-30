@@ -15,9 +15,9 @@ namespace EGL3::Storage::Persistent {
 		virtual void* Get() const = 0;
 	};
 
-	template<uint32_t Constant, class T>
+	template<uint32_t ConstantTemplate, class T>
 	struct KeyType {
-		static constexpr uint32_t Constant = Constant;
+		static inline constexpr uint32_t Constant = ConstantTemplate;
 		using ValueType = T;
 	};
 
@@ -39,7 +39,7 @@ namespace EGL3::Storage::Persistent {
 			return (void*)&Value;
 		}
 
-		ValueType Value;
+		KeyType<Constant, T>::ValueType Value;
 	};
 
 	class Key {
@@ -59,7 +59,8 @@ namespace EGL3::Storage::Persistent {
 		Key(uint32_t Constant) {
 			switch (Constant)
 			{
-#define KEY(Name) case Name.Constant: Item = std::make_unique<KeyContainer<Name.Constant, decltype(Name)::ValueType>>(); break;
+
+#define KEY(Name) case Name.Constant: static_assert(Name.Constant); Item = std::make_unique<KeyContainer<Name.Constant, decltype(Name)::ValueType>>(); break;
 				
 				KEY(WhatsNewTimestamps);
 				KEY(WhatsNewSelection);

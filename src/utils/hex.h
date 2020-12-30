@@ -4,7 +4,7 @@
 
 namespace EGL3::Utils {
     template<bool Uppercase, uint32_t Size>
-    constexpr std::string ToHex(uint8_t(&Data)[Size]) {
+    static std::string ToHex(uint8_t(&Data)[Size]) {
         constexpr char HexMapLower[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
         constexpr char HexMapUpper[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
