@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FriendshipEntryUpdate.h"
 #include "FriendshipRemove.h"
 #include "FriendshipRequest.h"
 #include "UserBlocklistUpdate.h"
@@ -14,7 +15,8 @@ namespace EGL3::Web::Xmpp::Messages {
 			RequestOutbound,
 			Remove,
 			Block,
-			Unblock
+			Unblock,
+			Update
 		};
 
 	private:
@@ -25,6 +27,8 @@ namespace EGL3::Web::Xmpp::Messages {
 		SystemMessage(FriendshipRequest&& Message, const std::string& ClientAccountId);
 
 		SystemMessage(FriendshipRemove&& Message, const std::string& ClientAccountId);
+
+		SystemMessage(FriendshipEntryUpdate&& Message);
 
 		SystemMessage(UserBlocklistUpdate&& Message);
 

@@ -32,6 +32,11 @@ namespace EGL3::Web::Xmpp::Messages {
 		Action = ActionType::Remove;
 	}
 
+	SystemMessage::SystemMessage(FriendshipEntryUpdate&& Message) {
+		Action = ActionType::Update;
+		AccountId = std::move(Message.FriendId);
+	}
+
 	SystemMessage::SystemMessage(UserBlocklistUpdate&& Message) {
 		if (Message.Status == UserBlocklistUpdate::StatusEnum::BLOCKED) {
 			Action = ActionType::Block;

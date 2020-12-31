@@ -593,6 +593,14 @@ namespace EGL3::Web::Xmpp {
             }
             break;
         }
+        case Utils::Crc32("FRIENDSHIP_ENTRY_UPDATE"):
+        {
+            Messages::FriendshipEntryUpdate Val;
+            if (Messages::FriendshipEntryUpdate::Parse(Data, Val)) {
+                Callbacks.SystemMessage(std::move(Val));
+            }
+            break;
+        }
         case Utils::Crc32("USER_BLOCKLIST_UPDATE"):
         {
             Messages::UserBlocklistUpdate Val;

@@ -3,6 +3,10 @@
 #include "../../utils/Assert.h"
 
 namespace EGL3::Storage::Models {
+    void Friend::QueueUpdate(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
+        EGL3_LOG(LogLevel::Error, "Friend update is queued. Not implemented yet");
+    }
+
     void Friend::SetBlocked(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
         UpdateInternalData(FriendType::BLOCKED, Client, AsyncFF);
     }

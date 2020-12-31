@@ -57,6 +57,9 @@ namespace EGL3::Storage::Models {
 
         }
 
+        // Update nickname, etc.
+        void QueueUpdate(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF);
+
         // Block user (and reject request or remove as friend)
         void SetBlocked(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF);
 
