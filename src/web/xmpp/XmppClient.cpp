@@ -615,7 +615,7 @@ namespace EGL3::Web::Xmpp {
             // kind of useless (for egl3 anyway)
             break;
         default:
-            printf("NEW SYSTEM MESSAGE TYPE: %s\n", TypeJson.GetString());
+            EGL3_LOG(LogLevel::Warning, "Unknown xmpp system message type found, ignoring");
             break;
         }
 
@@ -737,22 +737,22 @@ namespace EGL3::Web::Xmpp {
             break;
         }
         case ix::WebSocketMessageType::Close:
-            printf("Recieved close\n");
+            EGL3_LOG(LogLevel::Info, "Recieved close");
             break;
         case ix::WebSocketMessageType::Error:
-            printf("Recieved error\n");
+            EGL3_LOG(LogLevel::Info, "Recieved error");
             break;
         case ix::WebSocketMessageType::Ping:
-            printf("Recieved ping\n");
+            EGL3_LOG(LogLevel::Info, "Recieved ping");
             break;
         case ix::WebSocketMessageType::Pong:
-            printf("Recieved pong\n");
+            EGL3_LOG(LogLevel::Info, "Recieved pong");
             break;
         case ix::WebSocketMessageType::Fragment:
-            printf("Recieved fragment\n");
+            EGL3_LOG(LogLevel::Info, "Recieved fragment");
             break;
         default:
-            printf("Recieved unknown\n");
+            EGL3_LOG(LogLevel::Info, "Recieved unknown");
             break;
         }
     }

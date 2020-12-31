@@ -1,6 +1,7 @@
 
 #include "modules/ModuleList.h"
 #include "storage/persistent/Store.h"
+#include "utils/Assert.h"
 #include "utils/GladeBuilder.h"
 
 #include <fontconfig/fontconfig.h>
@@ -30,7 +31,7 @@ namespace EGL3 {
 
         auto StyleData = Gtk::CssProvider::create();
         StyleData->signal_parsing_error().connect([&](const Glib::RefPtr<const Gtk::CssSection>& section, const Glib::Error& error) {
-            printf("error oops\n");
+            EGL3_LOG(LogLevel::Critical, "Failed to parse style data properly");
         });
         StyleData->load_from_path("J:/Code/Visual Studio 2017/Projects/EGL3/src/EGL3.css");
         Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);

@@ -137,7 +137,7 @@ namespace EGL3::Modules {
                     UpdateKairosAvatarTask = std::async(std::launch::async, [this]() {
                         auto UpdateResp = LauncherClient->UpdateAccountSetting("avatar", CurrentUserModel.Get().GetKairosAvatar());
                         if (UpdateResp.HasError()) {
-                            printf("Avatar resp: %d\n", UpdateResp.GetErrorCode());
+                            EGL3_LOG(LogLevel::Error, "Updating kairos avatar encountered an error");
                         }
                     });
                 });
@@ -153,7 +153,7 @@ namespace EGL3::Modules {
                     UpdateKairosBackgroundTask = std::async(std::launch::async, [this]() {
                         auto UpdateResp = LauncherClient->UpdateAccountSetting("avatarBackground", CurrentUserModel.Get().GetKairosBackground());
                         if (UpdateResp.HasError()) {
-                            printf("Background resp: %d\n", UpdateResp.GetErrorCode());
+                            EGL3_LOG(LogLevel::Error, "Updating kairos background encountered an error");
                         }
                     });
                 });
@@ -266,36 +266,30 @@ namespace EGL3::Modules {
 
     void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Friend& FriendData) {
         auto& Friend = FriendData.Get();
-        printf("%s ", Friend.GetDisplayName().c_str());
         switch (Action)
         {
         case Widgets::FriendItemMenu::ClickAction::CHAT:
-            printf("chat\n");
+            EGL3_LOG(LogLevel::Info, "Chatting button pressed");
             break;
         case Widgets::FriendItemMenu::ClickAction::ACCEPT_REQUEST:
-            AsyncFF.EnqueueCallback([this](auto& AccountId) { LauncherClient->AddFriend(AccountId); }, []() {printf("Added User!\n"); }, Friend.GetAccountId());
-            printf("send req\n");
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->AddFriend(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::REMOVE_FRIEND:
         case Widgets::FriendItemMenu::ClickAction::DECLINE_REQUEST:
         case Widgets::FriendItemMenu::ClickAction::CANCEL_REQUEST:
-            AsyncFF.EnqueueCallback([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, []() {printf("Removed User!\n"); }, Friend.GetAccountId());
-            printf("cancel req\n");
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::SET_NICKNAME:
-            AsyncFF.EnqueueCallback([this](auto& AccountId) { LauncherClient->SetFriendAlias(AccountId, "yo"); }, []() {printf("Nicknamed User!\n"); }, Friend.GetAccountId());
-            printf("set nick\n");
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->SetFriendAlias(AccountId, "yoo"); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::BLOCK_USER:
-            AsyncFF.EnqueueCallback([this](auto& AccountId) { LauncherClient->BlockUser(AccountId); }, []() {printf("Blocked User!\n"); }, Friend.GetAccountId());
-            printf("block\n");
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->BlockUser(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::UNBLOCK_USER:
-            AsyncFF.EnqueueCallback([this](auto& AccountId) { LauncherClient->UnblockUser(AccountId); }, []() {printf("Unblocked User!\n"); }, Friend.GetAccountId());
-            printf("unblock\n");
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->UnblockUser(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::COPY_USER_ID:
-            printf("copy id\n");
+            EGL3_LOG(LogLevel::Info, "Copy id button pressed");
             break;
         }
     }

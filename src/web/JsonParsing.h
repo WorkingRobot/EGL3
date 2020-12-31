@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../utils/Assert.h"
 #include "../utils/Crc32.h"
 #include "../utils/date.h"
 #include "../utils/map.h"
@@ -178,8 +179,8 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
 #define PRINT_JSON_ERROR_NOTFOUND
 #define PRINT_JSON_ERROR_PARSE
 #else
-#define PRINT_JSON_ERROR_NOTFOUND printf("JSON parsing error (not found) at %d @ %s\n", __LINE__, __FILE__)
-#define PRINT_JSON_ERROR_PARSE printf("JSON parsing error (bad parse) at %d @ %s\n", __LINE__, __FILE__)
+#define PRINT_JSON_ERROR_NOTFOUND EGL3_LOG(LogLevel::Error, "JSON parsing error (not found)")
+#define PRINT_JSON_ERROR_PARSE EGL3_LOG(LogLevel::Error, "JSON parsing error (bad parse)")
 #endif
 
 #define PARSE_DEFINE(ClassName) \

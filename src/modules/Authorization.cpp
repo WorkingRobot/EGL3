@@ -130,10 +130,10 @@ namespace EGL3::Modules {
             });
             break;
         case PlayButtonState::PLAY:
-            printf("PLAY BUTTON\n");
+            EGL3_LOG(LogLevel::Info, "Play button pressed");
             break;
         case PlayButtonState::UPDATE:
-            printf("UPDATE BUTTON\n");
+            EGL3_LOG(LogLevel::Info, "Update button pressed");
             break;
         }
     }
