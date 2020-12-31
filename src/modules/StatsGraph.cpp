@@ -108,6 +108,6 @@ namespace EGL3::Modules {
     }
 
     StatsGraphModule::point_t StatsGraphModule::Interpolate(const point_t& A, const point_t& B, float ratio) {
-        return { A.first * (1.0 - ratio) + B.first * ratio, A.second * (1.0 - ratio) + B.second * ratio };
+        return { std::lerp(A.first, B.first, ratio), std::lerp(A.second, B.second, ratio) };
     }
 }
