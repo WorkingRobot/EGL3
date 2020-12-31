@@ -16,6 +16,34 @@ namespace EGL3::Storage::Models {
         return Nickname;
     }
 
+    const std::string& FriendReal::GetKairosAvatar() const {
+        auto PresItr = GetBestEGL3Presence();
+        if (PresItr == Presences.end()) {
+            return FriendRequested::GetKairosAvatar();
+        }
+
+        auto Profile = PresItr->Status.GetKairosProfile();
+        if (!Profile) {
+            return FriendRequested::GetKairosAvatar();
+        }
+
+        return Profile->Avatar;
+    }
+
+    const std::string& FriendReal::GetKairosBackground() const {
+        auto PresItr = GetBestEGL3Presence();
+        if (PresItr == Presences.end()) {
+            return FriendRequested::GetKairosBackground();
+        }
+
+        auto Profile = PresItr->Status.GetKairosProfile();
+        if (!Profile) {
+            return FriendRequested::GetKairosBackground();
+        }
+
+        return Profile->Background;
+    }
+
     decltype(FriendReal::Presences)::const_iterator FriendReal::GetBestPresence() const {
         return Presences.begin();
     }

@@ -21,6 +21,10 @@ namespace EGL3::Storage::Models {
 
         const std::string& GetNickname() const override;
 
+        const std::string& GetKairosAvatar() const override;
+
+        const std::string& GetKairosBackground() const override;
+
         decltype(Presences)::const_iterator GetBestPresence() const;
 
         decltype(Presences)::const_iterator GetEGL3Presence() const;
