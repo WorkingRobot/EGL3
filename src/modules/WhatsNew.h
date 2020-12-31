@@ -3,7 +3,7 @@
 #include "../storage/models/WhatsNew.h"
 #include "../storage/persistent/Store.h"
 #include "../utils/GladeBuilder.h"
-#include "../web/ErrorCode.h"
+#include "../web/ErrorData.h"
 #include "../widgets/WhatsNewItem.h"
 #include "BaseModule.h"
 #include "ModuleList.h"
@@ -52,7 +52,7 @@ namespace EGL3::Modules {
 
         std::future<void> RefreshTask;
         Glib::Dispatcher Dispatcher;
-        Web::ErrorCode ItemDataError;
+        Web::ErrorData::Status ItemDataError;
         std::vector<Storage::Models::WhatsNew> ItemData;
         std::mutex ItemDataMutex;
         std::vector<std::unique_ptr<Widgets::WhatsNewItem>> Widgets;

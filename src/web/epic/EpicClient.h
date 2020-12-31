@@ -23,5 +23,9 @@ namespace EGL3::Web::Epic {
 		// Statuspage Info
 
 		Response<Responses::GetStatuspageSummary> GetStatuspageSummary();
+
+	private:
+		template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>
+		Response<ResponseType> Call(CallFunctorType&& CallFunctor);
 	};
 }

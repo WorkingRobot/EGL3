@@ -29,7 +29,21 @@ namespace EGL3::Modules {
 
 		void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
 
-		void AddFriend();
+		void OnOpenViewFriends();
+
+		void OnOpenAddFriendPage();
+
+		void OnSendFriendRequest();
+
+		void SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account);
+
+		enum class FriendRequestStatusType : uint8_t {
+			Success,
+			Ratelimited,
+			Failure
+		};
+
+		void DisplaySendFriendRequestStatus();
 
 		void UpdateSelection();
 
@@ -47,6 +61,7 @@ namespace EGL3::Modules {
 		AsyncFFModule& AsyncFF;
 		Storage::Models::StoredFriendData& StorageData;
 
+		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;
 		Gtk::CheckMenuItem& CheckFriendsOffline;
 		Gtk::CheckMenuItem& CheckFriendsOutgoing;
@@ -54,6 +69,14 @@ namespace EGL3::Modules {
 		Gtk::CheckMenuItem& CheckFriendsBlocked;
 		Gtk::CheckMenuItem& CheckDeclineReqs;
 		Gtk::CheckMenuItem& CheckProfanity;
+
+		Gtk::Button& AddFriendSendBtn;
+		Gtk::Entry& AddFriendEntry;
+		Gtk::Label& AddFriendStatus;
+
+		Gtk::Stack& SwitchStack;
+		Gtk::Widget& SwitchStackPage0;
+		Gtk::Widget& SwitchStackPage1;
 
 		Gtk::ListBox& Box;
 
@@ -83,7 +106,7 @@ namespace EGL3::Modules {
 		std::atomic<bool> UpdateCurrentlyRunning = false;
 
 		std::mutex ItemDataMutex;
-		Web::ErrorCode ItemDataError;
+		Web::ErrorData::Status ItemDataError;
 
 		std::mutex FriendsRealizeMutex;
 		std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;
@@ -95,6 +118,11 @@ namespace EGL3::Modules {
 
 		std::vector<std::unique_ptr<Storage::Models::Friend>> FriendsData;
 		std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
+
+		std::future<void> FriendRequestTask;
+		FriendRequestStatusType FriendRequestStatus;
+		std::string FriendRequestStatusText;
+		Glib::Dispatcher FriendRequestDispatcher;
 
 		std::vector<std::string> AvatarsData;
 		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> AvatarsWidgets;

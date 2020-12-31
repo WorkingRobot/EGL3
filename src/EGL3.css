@@ -1,3 +1,4 @@
+/* Use for titles, etc. */
 .font-huge {
     font-size: 300%;
 }
@@ -30,6 +31,7 @@
     opacity: 0.5;
 }
 
+/* Statuspage Colors */
 .status-major {
     color: #e74c3c;
 }
@@ -50,6 +52,20 @@
     color: #2fcc66;
 }
 
+/* Add friend colors (taken from statuspage colors atm) */
+.friendstatus-success {
+    color: #2fcc66;
+}
+
+.friendstatus-ratelimit {
+    color: #e67e22;
+}
+
+.friendstatus-failure {
+    color: #e74c3c;
+}
+
+/* For headerbars */
 .main-headerbar entry,
 .main-headerbar spinbutton,
 .main-headerbar button,

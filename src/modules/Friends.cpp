@@ -1,6 +1,10 @@
 #include "Friends.h"
 
+#include "../utils/EmitRAII.h"
 #include "Authorization.h"
+
+#include <array>
+#include <regex>
 
 namespace EGL3::Modules {
     using namespace Web::Xmpp;
@@ -10,13 +14,20 @@ namespace EGL3::Modules {
             ImageCache(Modules.GetModule<ImageCacheModule>()),
             AsyncFF(Modules.GetModule<AsyncFFModule>()),
             StorageData(Storage.Get(Storage::Persistent::Key::StoredFriendData)),
-            AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
+            ViewFriendsBtn(Builder.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
+            AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
             CheckFriendsOffline(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
             CheckFriendsOutgoing(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
             CheckFriendsIncoming(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),
             CheckFriendsBlocked(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsBlockedCheck")),
             CheckDeclineReqs(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
             CheckProfanity(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck")),
+            AddFriendSendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
+            AddFriendEntry(Builder.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
+            AddFriendStatus(Builder.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
+            SwitchStack(Builder.GetWidget<Gtk::Stack>("FriendsStack")),
+            SwitchStackPage0(Builder.GetWidget<Gtk::Widget>("FriendsStackPage0")),
+            SwitchStackPage1(Builder.GetWidget<Gtk::Widget>("FriendsStackPage1")),
             Box(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
             CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
             CurrentUserModel(Friend::ConstructCurrent),
@@ -30,7 +41,9 @@ namespace EGL3::Modules {
             FriendMenu([this](auto Action, const auto& Friend) { OnFriendAction(Action, Friend); })
         {
             {
-                AddFriendBtn.signal_clicked().connect([this]() { AddFriend(); });
+                ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
+
+                AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
 
                 CheckFriendsOffline.set_active(StorageData.HasFlag<StoredFriendData::ShowOffline>());
                 CheckFriendsOutgoing.set_active(StorageData.HasFlag<StoredFriendData::ShowOutgoing>());
@@ -45,6 +58,12 @@ namespace EGL3::Modules {
                 CheckFriendsBlocked.signal_toggled().connect([this]() { UpdateSelection(); });
                 CheckDeclineReqs.signal_toggled().connect([this]() { UpdateSelection(); });
                 CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
+            }
+
+            {
+                AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
+
+                FriendRequestDispatcher.connect([this]() { DisplaySendFriendRequestStatus(); });
             }
 
             {
@@ -218,7 +237,7 @@ namespace EGL3::Modules {
         }
 
     void FriendsModule::OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) {
-        if (AccountId != LauncherClient->AuthData.AccountId) {
+        if (AccountId != LauncherClient->GetAuthData().AccountId) {
             std::lock_guard Guard(ItemDataMutex);
 
             auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountId](const auto& Friend) {
@@ -249,17 +268,19 @@ namespace EGL3::Modules {
     }
 
     void FriendsModule::OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
-        EGL3_CONDITIONAL_LOG(LauncherClient.AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
+        auto& AuthData = LauncherClient.GetAuthData();
+        EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
 
-        CurrentUserModel.Get<FriendCurrent>().SetCurrentUserData(LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.DisplayName.value());
+        this->LauncherClient = &LauncherClient;
+        CurrentUserModel.Get<FriendCurrent>().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
         XmppClient.emplace(
-            LauncherClient.AuthData.AccountId.value(), LauncherClient.AuthData.AccessToken,
+            AuthData.AccountId.value(), AuthData.AccessToken,
             Callbacks{
                 [this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); },
                 [this](auto&& A) { OnSystemMessage(std::move(A)); },
             }
         );
-        this->LauncherClient = &LauncherClient;
+        AddFriendBtn.set_sensitive(true);
 
         UpdateAsync();
     }
@@ -294,8 +315,159 @@ namespace EGL3::Modules {
         }
     }
 
-    void FriendsModule::AddFriend() {
-        printf("ADD FRIEND MODAL SWITCH\n");
+    void FriendsModule::OnOpenViewFriends() {
+        ViewFriendsBtn.set_visible(false);
+        SwitchStack.set_visible_child(SwitchStackPage0);
+    }
+
+    void FriendsModule::OnOpenAddFriendPage() {
+        AddFriendStatus.set_text("");
+
+        ViewFriendsBtn.set_visible(true);
+        SwitchStack.set_visible_child(SwitchStackPage1);
+    }
+
+    void FriendsModule::OnSendFriendRequest() {
+        if (!AddFriendSendBtn.get_sensitive()) {
+            return;
+        }
+
+        if (!LauncherClient) {
+            return;
+        }
+
+        AddFriendSendBtn.set_sensitive(false);
+        FriendRequestTask = std::async(std::launch::async, [this](std::string Text) {
+            Utils::EmitRAII Emitter(FriendRequestDispatcher);
+
+            if (Text.empty()) {
+                FriendRequestStatus = FriendRequestStatusType::Failure;
+                FriendRequestStatusText = "Enter a display name, email address, or an account id";
+                return;
+            }
+
+            std::array<std::optional<Web::Response<Web::Epic::Responses::GetAccounts::Account>>, 3> Resps;
+
+            const static std::regex IdRegex("[0-9a-f]{32}");
+            if (std::regex_match(Text, IdRegex)) {
+                if (Text == LauncherClient->GetAuthData().AccountId.value()) {
+                    FriendRequestStatus = FriendRequestStatusType::Failure;
+                    FriendRequestStatusText = "You can't send a friend request to yourself!";
+                    return;
+                }
+
+                auto Resp = LauncherClient->GetAccountById(Text);
+                if (!Resp.HasError()) {
+                    SendFriendRequest(Resp.Get());
+                    return;
+                }
+                Resps[0].emplace(std::move(Resp));
+            }
+
+            {
+                if (Text == LauncherClient->GetAuthData().DisplayName.value()) {
+                    FriendRequestStatus = FriendRequestStatusType::Failure;
+                    FriendRequestStatusText = "You can't send a friend request to yourself!";
+                    return;
+                }
+
+                auto Resp = LauncherClient->GetAccountByDisplayName(Text);
+                if (!Resp.HasError()) {
+                    SendFriendRequest(Resp.Get());
+                    return;
+                }
+                Resps[2].emplace(std::move(Resp));
+            }
+
+            const static std::regex EmailRegex("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
+            if (std::regex_match(Text, EmailRegex)) {
+                auto Resp = LauncherClient->GetAccountByEmail(Text);
+                if (!Resp.HasError()) {
+                    if (Resp->Id == LauncherClient->GetAuthData().AccountId.value()) {
+                        FriendRequestStatus = FriendRequestStatusType::Failure;
+                        FriendRequestStatusText = "You can't send a friend request to yourself!";
+                        return;
+                    }
+
+                    SendFriendRequest(Resp.Get());
+                    return;
+                }
+                Resps[1].emplace(std::move(Resp));             
+            }
+
+            for (auto& Resp : Resps) {
+                if (!Resp.has_value()) {
+                    continue;
+                }
+
+                if (Resp->GetError().GetHttpCode() == 429) {
+                    FriendRequestStatus = FriendRequestStatusType::Ratelimited;
+                    FriendRequestStatusText = "You've been ratelimited. Try again later?";
+                    return;
+                }
+            }
+
+            FriendRequestStatus = FriendRequestStatusType::Failure;
+            FriendRequestStatusText = "Not sure who that is, check what you wrote and try again.";
+        }, AddFriendEntry.get_text());
+    }
+
+    void FriendsModule::SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account)
+    {
+        auto Resp = LauncherClient->AddFriend(Account.Id);
+        if (!Resp.HasError()) {
+            FriendRequestStatus = FriendRequestStatusType::Success;
+            FriendRequestStatusText = Utils::Format("Sent %s a friend request!", Account.GetDisplayName().c_str());
+        }
+        else {
+            FriendRequestStatus = FriendRequestStatusType::Failure;
+            switch (Utils::Crc32(Resp.GetError().GetErrorCode()))
+            {
+            case Utils::Crc32("errors.com.epicgames.friends.duplicate_friendship"):
+                FriendRequestStatusText = Utils::Format("You're already friends with %s!", Account.GetDisplayName().c_str());
+                break;
+            case Utils::Crc32("errors.com.epicgames.friends.friend_request_already_sent"):
+                FriendRequestStatusText = Utils::Format("You've already sent a friend request to %s!", Account.GetDisplayName().c_str());
+                break;
+            case Utils::Crc32("errors.com.epicgames.friends.inviter_friendships_limit_exceeded"):
+                FriendRequestStatusText = Utils::Format("You have too many friends!", Account.GetDisplayName().c_str());
+                break;
+            case Utils::Crc32("errors.com.epicgames.friends.invitee_friendships_limit_exceeded"):
+                FriendRequestStatusText = Utils::Format("%s has too many friends!", Account.GetDisplayName().c_str());
+                break;
+            case Utils::Crc32("errors.com.epicgames.friends.incoming_friendships_limit_exceeded"):
+                FriendRequestStatusText = Utils::Format("%s has too many friend requests!", Account.GetDisplayName().c_str());
+                break;
+            case Utils::Crc32("errors.com.epicgames.friends.cannot_friend_due_to_target_settings"):
+                FriendRequestStatusText = Utils::Format("%s has disabled friend requests!", Account.GetDisplayName().c_str());
+                break;
+            default:
+                FriendRequestStatusText = Utils::Format("An error occurred: %s", Resp.GetError().GetErrorCode().c_str());
+                break;
+            }
+        }
+    }
+
+    void FriendsModule::DisplaySendFriendRequestStatus() {
+        AddFriendStatus.get_style_context()->remove_class("friendstatus-success");
+        AddFriendStatus.get_style_context()->remove_class("friendstatus-ratelimit");
+        AddFriendStatus.get_style_context()->remove_class("friendstatus-failure");
+        switch (FriendRequestStatus)
+        {
+        case FriendRequestStatusType::Success:
+            AddFriendStatus.get_style_context()->add_class("friendstatus-success");
+            AddFriendEntry.set_text("");
+            break;
+        case FriendRequestStatusType::Ratelimited:
+            AddFriendStatus.get_style_context()->add_class("friendstatus-ratelimit");
+            break;
+        case FriendRequestStatusType::Failure:
+            AddFriendStatus.get_style_context()->add_class("friendstatus-failure");
+            break;
+        }
+        AddFriendStatus.set_text(FriendRequestStatusText);
+
+        AddFriendSendBtn.set_sensitive(true);
     }
 
     void FriendsModule::UpdateSelection() {
@@ -357,7 +529,7 @@ namespace EGL3::Modules {
                     std::vector<std::string> AccountIds;
                     AccountIds.reserve(FriendsResp->Friends.size() + 1);
                     // We've already asserted that LauncherClient has an account id
-                    AccountIds.emplace_back(LauncherClient->AuthData.AccountId.value());
+                    AccountIds.emplace_back(LauncherClient->GetAuthData().AccountId.value());
                     for (auto& Friend : FriendsResp->Friends) {
                         FriendsData.emplace_back(std::make_unique<Storage::Models::Friend>(Friend::ConstructNormal, Friend));
                         AccountIds.emplace_back(Friend.AccountId);
@@ -393,7 +565,7 @@ namespace EGL3::Modules {
                         }
 
                         for (auto& AccountSetting : FriendsKairosResp->Values) {
-                            if (AccountSetting.AccountId != LauncherClient->AuthData.AccountId.value()) {
+                            if (AccountSetting.AccountId != LauncherClient->GetAuthData().AccountId.value()) {
                                 auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountSetting](const auto& Friend) { return Friend->Get().GetAccountId() == AccountSetting.AccountId; });
                                 if (FriendItr != FriendsData.end()) {
                                     (*FriendItr)->Get().UpdateAccountSetting(AccountSetting);
@@ -416,7 +588,7 @@ namespace EGL3::Modules {
                     BackgroundsData = std::move(KairosBackgroundsResp->Values);
                 }
 
-                ItemDataError = Web::ErrorCode::Success;
+                ItemDataError = Web::ErrorData::Status::Success;
             }
 
             ItemDataGuard.unlock();
@@ -437,7 +609,7 @@ namespace EGL3::Modules {
             for (auto& Friend : FriendsData) {
                 auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(*Friend, ImageCache));
                 Widget->SetContextMenu(FriendMenu);
-                Friend->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ResortWidget(*Widget); });
+                Friend->Get().SetUpdateCallback([Widget = std::ref(*Widget), this](const auto& Status) { Widget.get().Update(); ResortWidget(Widget.get()); });
                 Box.add(*Widget);
             }
 
@@ -493,11 +665,11 @@ namespace EGL3::Modules {
             else {
                 FriendPtr = &FriendsData.emplace_back(std::make_unique<Friend>(Friend::ConstructInvalid, Action.GetAccountId(), ""));
 
-                (**FriendPtr).InitializeAccountSettings(*LauncherClient, AsyncFF);
+                (*FriendPtr)->InitializeAccountSettings(*LauncherClient, AsyncFF);
 
                 auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(**FriendPtr, ImageCache));
                 Widget->SetContextMenu(FriendMenu);
-                (*FriendPtr)->Get().SetUpdateCallback([&, this](const auto& Status) { Widget->Update(); ResortWidget(*Widget); });
+                (*FriendPtr)->Get().SetUpdateCallback([Widget = std::ref(*Widget), this](const auto& Status) { Widget.get().Update(); ResortWidget(Widget.get()); });
                 Box.add(*Widget);
             }
 

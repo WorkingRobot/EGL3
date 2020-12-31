@@ -1,16 +1,20 @@
 #pragma once
 
-#include "ErrorCode.h"
+#include "ErrorData.h"
 
 namespace EGL3::Web {
     template<class T>
     class Response {
     public:
         bool HasError() const {
-            return Error != ErrorCode::Success;
+            return GetErrorCode() != ErrorData::Status::Success;
         }
 
-        ErrorCode GetErrorCode() const {
+        ErrorData::Status GetErrorCode() const {
+            return Error.GetStatusCode();
+        }
+
+        const ErrorData& GetError() const {
             return Error;
         }
 
@@ -23,25 +27,40 @@ namespace EGL3::Web {
         }
 
         Response() :
-            Response(ErrorCode::Success)
+            Response(ErrorData::Status::Success)
         {
+
         }
-        Response(ErrorCode Error) :
-            Error(Error),
+
+        Response(ErrorData::Status Status) :
+            Error(Status),
+            Data(nullptr)
+        {
+
+        }
+
+        Response(int HttpCode) :
+            Response(HttpCode, "")
+        {
+
+        }
+
+        Response(int HttpCode, const std::string& ErrorCode) :
+            Error(HttpCode, ErrorCode),
             Data(nullptr)
         {
 
         }
 
         Response(T&& Data) :
-            Error(ErrorCode::Success),
+            Error(ErrorData::Status::Success),
             Data(std::make_unique<T>(std::move(Data)))
         {
 
         }
 
     private:
-        ErrorCode Error;
+        ErrorData Error;
         std::unique_ptr<T> Data;
     };
 
@@ -50,26 +69,42 @@ namespace EGL3::Web {
     class Response<void> {
     public:
         bool HasError() const {
-            return Error != ErrorCode::Success;
+            return GetErrorCode() != ErrorData::Status::Success;
         }
 
-        ErrorCode GetErrorCode() const {
+        ErrorData::Status GetErrorCode() const {
+            return Error.GetStatusCode();
+        }
+
+        const ErrorData& GetError() const {
             return Error;
         }
 
         Response() :
-            Response(ErrorCode::Success)
+            Response(ErrorData::Status::Success)
         {
 
         }
 
-        Response(ErrorCode Error) :
-            Error(Error)
+        Response(ErrorData::Status Status) :
+            Error(Status)
+        {
+
+        }
+
+        Response(int HttpCode) :
+            Response(HttpCode, "")
+        {
+
+        }
+
+        Response(int HttpCode, const std::string& ErrorCode) :
+            Error(HttpCode, ErrorCode)
         {
 
         }
 
     private:
-        ErrorCode Error;
+        ErrorData Error;
     };
 }

@@ -41,6 +41,12 @@ namespace EGL3::Web::Epic {
         // Fortnite uses 50 at a time, so it's recommended to do the same
         Response<Responses::GetAccounts> GetAccounts(const std::vector<std::string>& Accounts);
 
+        Response<Responses::GetAccounts::Account> GetAccountById(const std::string& Id);
+
+        Response<Responses::GetAccounts::Account> GetAccountByDisplayName(const std::string& DisplayName);
+
+        Response<Responses::GetAccounts::Account> GetAccountByEmail(const std::string& Email);
+
         Response<Responses::GetDeviceAuths> GetDeviceAuths();
 
         // You can optionally add a X-Epic-Device-Info header with JSON {"type": "Google","model":"Pixel 3","os":"10"}
@@ -142,8 +148,13 @@ namespace EGL3::Web::Epic {
         // outpost0 = stw storm shield storage
         Response<Responses::QueryProfile> QueryProfile(const std::string& ProfileId, int Revision = -1);
 
-    public:
+        const Responses::OAuthToken& GetAuthData() const;
+
+    private:
         bool EnsureTokenValidity();
+
+        template<typename ResponseType, int SuccessStatusCode, bool RequiresAccount, class CallFunctorType>
+        Response<ResponseType> Call(CallFunctorType&& CallFunctor);
 
         std::mutex TokenValidityMutex;
         

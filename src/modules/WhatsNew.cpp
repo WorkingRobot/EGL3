@@ -60,7 +60,7 @@ namespace EGL3::Modules {
                 ItemDataError = News.GetErrorCode();
             }
             else {
-                ItemDataError = Web::ErrorCode::Success;
+                ItemDataError = Web::ErrorData::Status::Success;
 
                 auto& Store = Storage.Get(Storage::Persistent::Key::WhatsNewTimestamps);
 
