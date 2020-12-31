@@ -256,8 +256,8 @@ namespace EGL3::Modules {
     }
 
     void FriendsModule::OnSystemMessage(Messages::SystemMessage&& NewMessage) {
-        if (NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
-            AsyncFF.Enqueue([this](const std::string& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
+        if (StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>() && NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
+            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
             return;
         }
 
@@ -694,6 +694,9 @@ namespace EGL3::Modules {
                 break;
             case Messages::SystemMessage::ActionType::Unblock:
                 Friend.SetUnblocked(*LauncherClient, AsyncFF);
+                break;
+            case Messages::SystemMessage::ActionType::Update:
+                Friend.QueueUpdate(*LauncherClient, AsyncFF);
                 break;
             }
         }
