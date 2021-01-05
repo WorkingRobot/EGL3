@@ -12,6 +12,10 @@ namespace EGL3::Storage::Models {
             
     }
 
+    FriendReal::FriendReal(FriendBaseUser&& other) : FriendRequested(std::move(other)) {
+
+    }
+
     const std::string& FriendReal::GetNickname() const {
         return Nickname;
     }
@@ -115,6 +119,11 @@ namespace EGL3::Storage::Models {
         }
 
         UpdateCallback();
+    }
+
+    void FriendReal::UpdateInfo(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User) {
+        // Nothing else can be updated atm
+        Nickname = User.Alias;
     }
 
     std::weak_ordering FriendReal::operator<=>(const FriendReal& that) const {

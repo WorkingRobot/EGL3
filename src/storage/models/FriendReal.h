@@ -19,6 +19,8 @@ namespace EGL3::Storage::Models {
     public:
         FriendReal(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User);
 
+        FriendReal(FriendBaseUser&& other);
+
         const std::string& GetNickname() const override;
 
         const std::string& GetKairosAvatar() const override;
@@ -41,6 +43,9 @@ namespace EGL3::Storage::Models {
         virtual const std::string& GetStatus() const;
 
         void UpdatePresence(Web::Xmpp::Json::Presence&& Presence);
+
+        // Unlike UpdatePresence, this won't request for a callback!
+        void UpdateInfo(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User);
 
         std::weak_ordering operator<=>(const FriendReal& that) const;
     };

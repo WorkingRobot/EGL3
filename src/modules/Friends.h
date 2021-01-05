@@ -33,17 +33,23 @@ namespace EGL3::Modules {
 
 		void OnOpenAddFriendPage();
 
+		void OnOpenSetNicknamePage(const Storage::Models::Friend& FriendData);
+
 		void OnSendFriendRequest();
 
 		void SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account);
 
-		enum class FriendRequestStatusType : uint8_t {
+		enum class AsyncWebRequestStatusType : uint8_t {
 			Success,
 			Ratelimited,
 			Failure
 		};
 
 		void DisplaySendFriendRequestStatus();
+
+		void OnSetNickname();
+
+		void DisplaySetNicknameStatus();
 
 		void UpdateSelection();
 
@@ -74,9 +80,16 @@ namespace EGL3::Modules {
 		Gtk::Entry& AddFriendEntry;
 		Gtk::Label& AddFriendStatus;
 
+		Gtk::Label& SetNicknameLabel;
+		Gtk::Button& SetNicknameBtn;
+		Gtk::Entry& SetNicknameEntry;
+		Gtk::Label& SetNicknameStatusLabel;
+
 		Gtk::Stack& SwitchStack;
 		Gtk::Widget& SwitchStackPage0;
 		Gtk::Widget& SwitchStackPage1;
+		Gtk::Widget& SwitchStackPage2;
+		Gtk::Widget& SwitchStackPage3;
 
 		Gtk::ListBox& Box;
 
@@ -120,9 +133,15 @@ namespace EGL3::Modules {
 		std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
 
 		std::future<void> FriendRequestTask;
-		FriendRequestStatusType FriendRequestStatus;
+		AsyncWebRequestStatusType FriendRequestStatus;
 		std::string FriendRequestStatusText;
 		Glib::Dispatcher FriendRequestDispatcher;
+
+		std::string SetNicknameAccountId;
+		std::future<void> SetNicknameTask;
+		AsyncWebRequestStatusType SetNicknameStatus;
+		std::string SetNicknameStatusText;
+		Glib::Dispatcher SetNicknameDispatcher;
 
 		std::vector<std::string> AvatarsData;
 		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> AvatarsWidgets;

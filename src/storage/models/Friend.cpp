@@ -4,7 +4,21 @@
 
 namespace EGL3::Storage::Models {
     void Friend::QueueUpdate(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
-        EGL3_LOG(LogLevel::Error, "Friend update is queued. Not implemented yet");
+        if (EGL3_CONDITIONAL_LOG(GetType() == FriendType::NORMAL, LogLevel::Warning, "Friend update is requested for a non-normal relationship")) {
+            AsyncFF.Enqueue([&Client, this]() {
+                std::unique_lock Lock(Mutex);
+
+                auto AccResp = Client.GetFriend(Data->GetAccountId());
+                if (!EGL3_CONDITIONAL_LOG(!AccResp.HasError(), LogLevel::Error, "Friend info request returned an error")) {
+                    return;
+                }
+
+                GetUnlocked<FriendReal>().UpdateInfo(AccResp.Get());
+
+                Lock.unlock();
+                Get().UpdateCallback();
+            });
+        }
     }
 
     void Friend::SetBlocked(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
@@ -165,8 +179,10 @@ namespace EGL3::Storage::Models {
                         return;
                     }
 
-                    Data.reset(new FriendReal(AccResp.Get()));
+                    Data.reset(new FriendReal(std::move(GetUnlocked<FriendBaseUser>())));
                     RealType = REAL;
+
+                    GetUnlocked<FriendReal>().UpdateInfo(AccResp.Get());
 
                     Lock.unlock();
                     Get().UpdateCallback();

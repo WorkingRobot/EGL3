@@ -68,8 +68,8 @@ namespace EGL3::Web::Epic::Responses {
 
 			PARSE_DEFINE(RealFriend)
 				PARSE_BASE(RequestedFriend)
-				PARSE_ITEM("alias", Note)
-				PARSE_ITEM("note", Alias)
+				PARSE_ITEM("alias", Alias)
+				PARSE_ITEM("note", Note)
 				PARSE_ITEM("created", Created)
 			PARSE_END
 		};

@@ -25,9 +25,15 @@ namespace EGL3::Modules {
             AddFriendSendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
             AddFriendEntry(Builder.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
             AddFriendStatus(Builder.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
+            SetNicknameLabel(Builder.GetWidget<Gtk::Label>("FriendsSetNicknameLabel")),
+            SetNicknameBtn(Builder.GetWidget<Gtk::Button>("FriendsSetNicknameBtn")),
+            SetNicknameEntry(Builder.GetWidget<Gtk::Entry>("FriendsSetNicknameEntry")),
+            SetNicknameStatusLabel(Builder.GetWidget<Gtk::Label>("FriendsSetNicknameStatus")),
             SwitchStack(Builder.GetWidget<Gtk::Stack>("FriendsStack")),
             SwitchStackPage0(Builder.GetWidget<Gtk::Widget>("FriendsStackPage0")),
             SwitchStackPage1(Builder.GetWidget<Gtk::Widget>("FriendsStackPage1")),
+            SwitchStackPage2(Builder.GetWidget<Gtk::Widget>("FriendsStackPage2")),
+            SwitchStackPage3(Builder.GetWidget<Gtk::Widget>("FriendsStackPage3")),
             Box(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
             CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
             CurrentUserModel(Friend::ConstructCurrent),
@@ -64,6 +70,12 @@ namespace EGL3::Modules {
                 AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
 
                 FriendRequestDispatcher.connect([this]() { DisplaySendFriendRequestStatus(); });
+            }
+
+            {
+                SetNicknameBtn.signal_clicked().connect([this]() { OnSetNickname(); });
+
+                SetNicknameDispatcher.connect([this]() { DisplaySetNicknameStatus(); });
             }
 
             {
@@ -301,7 +313,7 @@ namespace EGL3::Modules {
             AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::SET_NICKNAME:
-            AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->SetFriendAlias(AccountId, "yoo"); }, Friend.GetAccountId());
+            OnOpenSetNicknamePage(FriendData);
             break;
         case Widgets::FriendItemMenu::ClickAction::BLOCK_USER:
             AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->BlockUser(AccountId); }, Friend.GetAccountId());
@@ -327,6 +339,17 @@ namespace EGL3::Modules {
         SwitchStack.set_visible_child(SwitchStackPage1);
     }
 
+    void FriendsModule::OnOpenSetNicknamePage(const Friend& FriendData) {
+        SetNicknameAccountId = FriendData.Get().GetAccountId();
+        SetNicknameLabel.set_text(Utils::Format("Set Nickname for %s", FriendData.Get().GetDisplayName().c_str()));
+        SetNicknameEntry.set_placeholder_text(FriendData.Get().GetUsername());
+        SetNicknameEntry.set_text(FriendData.Get().GetNickname());
+        SetNicknameStatusLabel.set_text("");
+
+        ViewFriendsBtn.set_visible(true);
+        SwitchStack.set_visible_child(SwitchStackPage3);
+    }
+
     void FriendsModule::OnSendFriendRequest() {
         if (!AddFriendSendBtn.get_sensitive()) {
             return;
@@ -341,7 +364,7 @@ namespace EGL3::Modules {
             Utils::EmitRAII Emitter(FriendRequestDispatcher);
 
             if (Text.empty()) {
-                FriendRequestStatus = FriendRequestStatusType::Failure;
+                FriendRequestStatus = AsyncWebRequestStatusType::Failure;
                 FriendRequestStatusText = "Enter a display name, email address, or an account id";
                 return;
             }
@@ -351,7 +374,7 @@ namespace EGL3::Modules {
             const static std::regex IdRegex("[0-9a-f]{32}");
             if (std::regex_match(Text, IdRegex)) {
                 if (Text == LauncherClient->GetAuthData().AccountId.value()) {
-                    FriendRequestStatus = FriendRequestStatusType::Failure;
+                    FriendRequestStatus = AsyncWebRequestStatusType::Failure;
                     FriendRequestStatusText = "You can't send a friend request to yourself!";
                     return;
                 }
@@ -366,7 +389,7 @@ namespace EGL3::Modules {
 
             {
                 if (Text == LauncherClient->GetAuthData().DisplayName.value()) {
-                    FriendRequestStatus = FriendRequestStatusType::Failure;
+                    FriendRequestStatus = AsyncWebRequestStatusType::Failure;
                     FriendRequestStatusText = "You can't send a friend request to yourself!";
                     return;
                 }
@@ -384,7 +407,7 @@ namespace EGL3::Modules {
                 auto Resp = LauncherClient->GetAccountByEmail(Text);
                 if (!Resp.HasError()) {
                     if (Resp->Id == LauncherClient->GetAuthData().AccountId.value()) {
-                        FriendRequestStatus = FriendRequestStatusType::Failure;
+                        FriendRequestStatus = AsyncWebRequestStatusType::Failure;
                         FriendRequestStatusText = "You can't send a friend request to yourself!";
                         return;
                     }
@@ -401,13 +424,13 @@ namespace EGL3::Modules {
                 }
 
                 if (Resp->GetError().GetHttpCode() == 429) {
-                    FriendRequestStatus = FriendRequestStatusType::Ratelimited;
+                    FriendRequestStatus = AsyncWebRequestStatusType::Ratelimited;
                     FriendRequestStatusText = "You've been ratelimited. Try again later?";
                     return;
                 }
             }
 
-            FriendRequestStatus = FriendRequestStatusType::Failure;
+            FriendRequestStatus = AsyncWebRequestStatusType::Failure;
             FriendRequestStatusText = "Not sure who that is, check what you wrote and try again.";
         }, AddFriendEntry.get_text());
     }
@@ -416,11 +439,11 @@ namespace EGL3::Modules {
     {
         auto Resp = LauncherClient->AddFriend(Account.Id);
         if (!Resp.HasError()) {
-            FriendRequestStatus = FriendRequestStatusType::Success;
+            FriendRequestStatus = AsyncWebRequestStatusType::Success;
             FriendRequestStatusText = Utils::Format("Sent %s a friend request!", Account.GetDisplayName().c_str());
         }
         else {
-            FriendRequestStatus = FriendRequestStatusType::Failure;
+            FriendRequestStatus = AsyncWebRequestStatusType::Failure;
             switch (Utils::Crc32(Resp.GetError().GetErrorCode()))
             {
             case Utils::Crc32("errors.com.epicgames.friends.duplicate_friendship"):
@@ -454,20 +477,64 @@ namespace EGL3::Modules {
         AddFriendStatus.get_style_context()->remove_class("friendstatus-failure");
         switch (FriendRequestStatus)
         {
-        case FriendRequestStatusType::Success:
+        case AsyncWebRequestStatusType::Success:
             AddFriendStatus.get_style_context()->add_class("friendstatus-success");
             AddFriendEntry.set_text("");
             break;
-        case FriendRequestStatusType::Ratelimited:
+        case AsyncWebRequestStatusType::Ratelimited:
             AddFriendStatus.get_style_context()->add_class("friendstatus-ratelimit");
             break;
-        case FriendRequestStatusType::Failure:
+        case AsyncWebRequestStatusType::Failure:
             AddFriendStatus.get_style_context()->add_class("friendstatus-failure");
             break;
         }
         AddFriendStatus.set_text(FriendRequestStatusText);
 
         AddFriendSendBtn.set_sensitive(true);
+    }
+
+    void FriendsModule::OnSetNickname() {
+        if (!SetNicknameBtn.get_sensitive()) {
+            return;
+        }
+
+        if (!LauncherClient) {
+            return;
+        }
+
+        SetNicknameBtn.set_sensitive(false);
+        SetNicknameTask = std::async(std::launch::async, [this](std::string AccountId, std::string Text) {
+            Utils::EmitRAII Emitter(SetNicknameDispatcher);
+
+            auto Resp = !Text.empty() ? LauncherClient->SetFriendAlias(AccountId, Text) : LauncherClient->ClearFriendAlias(AccountId);
+
+            if (!Resp.HasError()) {
+                SetNicknameStatus = AsyncWebRequestStatusType::Success;
+            }
+            else {
+                SetNicknameStatus = AsyncWebRequestStatusType::Failure;
+                switch (Utils::Crc32(Resp.GetError().GetErrorCode()))
+                {
+                case Utils::Crc32("errors.com.epicgames.validation.validation_failed"):
+                    SetNicknameStatusText = "The nickname must be 3 to 16 letters, digits, spaces, -, _, . or emoji.";
+                    break;
+                default:
+                    SetNicknameStatusText = Utils::Format("An error occurred: %s", Resp.GetError().GetErrorCode().c_str());
+                    break;
+                }
+            }
+        }, SetNicknameAccountId, SetNicknameEntry.get_text());
+    }
+
+    void FriendsModule::DisplaySetNicknameStatus() {
+        if (SetNicknameStatus != AsyncWebRequestStatusType::Success) {
+            SetNicknameStatusLabel.set_text(SetNicknameStatusText);
+        }
+        else {
+            OnOpenViewFriends();
+        }
+
+        SetNicknameBtn.set_sensitive(true);
     }
 
     void FriendsModule::UpdateSelection() {
