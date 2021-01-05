@@ -13,15 +13,9 @@ namespace EGL3::Modules {
     FriendsModule::FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
             ImageCache(Modules.GetModule<ImageCacheModule>()),
             AsyncFF(Modules.GetModule<AsyncFFModule>()),
-            StorageData(Storage.Get(Storage::Persistent::Key::StoredFriendData)),
+            Options(Modules.GetModule<FriendsOptionsModule>()),
             ViewFriendsBtn(Builder.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
             AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
-            CheckFriendsOffline(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
-            CheckFriendsOutgoing(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
-            CheckFriendsIncoming(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),
-            CheckFriendsBlocked(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsBlockedCheck")),
-            CheckDeclineReqs(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
-            CheckProfanity(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck")),
             AddFriendSendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
             AddFriendEntry(Builder.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
             AddFriendStatus(Builder.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
@@ -51,19 +45,10 @@ namespace EGL3::Modules {
 
                 AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
 
-                CheckFriendsOffline.set_active(StorageData.HasFlag<StoredFriendData::ShowOffline>());
-                CheckFriendsOutgoing.set_active(StorageData.HasFlag<StoredFriendData::ShowOutgoing>());
-                CheckFriendsIncoming.set_active(StorageData.HasFlag<StoredFriendData::ShowIncoming>());
-                CheckFriendsBlocked.set_active(StorageData.HasFlag<StoredFriendData::ShowBlocked>());
-                CheckDeclineReqs.set_active(StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>());
-                CheckProfanity.set_active(StorageData.HasFlag<StoredFriendData::CensorProfanity>());
-
-                CheckFriendsOffline.signal_toggled().connect([this]() { UpdateSelection(); });
-                CheckFriendsOutgoing.signal_toggled().connect([this]() { UpdateSelection(); });
-                CheckFriendsIncoming.signal_toggled().connect([this]() { UpdateSelection(); });
-                CheckFriendsBlocked.signal_toggled().connect([this]() { UpdateSelection(); });
-                CheckDeclineReqs.signal_toggled().connect([this]() { UpdateSelection(); });
-                CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
+                Options.SetUpdateCallback([this]() {
+                    Box.invalidate_filter();
+                    Box.invalidate_sort();
+                });
             }
 
             {
@@ -97,13 +82,13 @@ namespace EGL3::Modules {
                     case FriendType::INVALID:
                         return false;
                     case FriendType::BLOCKED:
-                        return StorageData.HasFlag<StoredFriendData::ShowBlocked>();
+                        return Options.GetStorageData().HasFlag<StoredFriendData::ShowBlocked>();
                     case FriendType::OUTBOUND:
-                        return StorageData.HasFlag<StoredFriendData::ShowOutgoing>();
+                        return Options.GetStorageData().HasFlag<StoredFriendData::ShowOutgoing>();
                     case FriendType::INBOUND:
-                        return StorageData.HasFlag<StoredFriendData::ShowIncoming>();
+                        return Options.GetStorageData().HasFlag<StoredFriendData::ShowIncoming>();
                     case FriendType::NORMAL:
-                        return StorageData.HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline;
+                        return Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline;
                     default:
                         return true;
                     }
@@ -138,8 +123,8 @@ namespace EGL3::Modules {
                         }
                     });
 
-                    KairosStatusEntry.set_placeholder_text(ShowStatusToString(StorageData.GetShowStatus()));
-                    KairosStatusEntry.set_text(StorageData.GetStatus());
+                    KairosStatusEntry.set_placeholder_text(ShowStatusToString(Options.GetStorageData().GetShowStatus()));
+                    KairosStatusEntry.set_text(Options.GetStorageData().GetStatus());
                     KairosStatusEditBtn.set_sensitive(false);
                 });
                 KairosMenu.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
@@ -194,7 +179,7 @@ namespace EGL3::Modules {
                         return;
                     }
 
-                    StorageData.SetShowStatus(Data->GetKey());
+                    Options.GetStorageData().SetShowStatus(Data->GetKey());
                     KairosStatusEntry.set_placeholder_text(ShowStatusToString(Data->GetKey()));
                     CurrentUserModel.Get<FriendCurrent>().SetShowStatus(Data->GetKey());
                     XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
@@ -207,7 +192,7 @@ namespace EGL3::Modules {
                 KairosStatusEditBtn.signal_clicked().connect([this]() {
                     KairosStatusEditBtn.set_sensitive(false);
 
-                    StorageData.SetStatus(KairosStatusEntry.get_text());
+                    Options.GetStorageData().SetStatus(KairosStatusEntry.get_text());
                     CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus(KairosStatusEntry.get_text());
                     XmppClient->SetPresence(CurrentUserModel.Get<FriendCurrent>().BuildPresence());
                 });
@@ -228,8 +213,8 @@ namespace EGL3::Modules {
             Modules.GetModule<AuthorizationModule>().AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
 
             {
-                CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus(StorageData.GetStatus());
-                CurrentUserModel.Get<FriendCurrent>().SetShowStatus(StorageData.GetShowStatus());
+                CurrentUserModel.Get<FriendCurrent>().SetDisplayStatus(Options.GetStorageData().GetStatus());
+                CurrentUserModel.Get<FriendCurrent>().SetShowStatus(Options.GetStorageData().GetShowStatus());
             }
 
             {
@@ -268,7 +253,7 @@ namespace EGL3::Modules {
     }
 
     void FriendsModule::OnSystemMessage(Messages::SystemMessage&& NewMessage) {
-        if (StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>() && NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
+        if (Options.GetStorageData().HasFlag<StoredFriendData::AutoDeclineReqs>() && NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
             AsyncFF.Enqueue([this](auto& AccountId) { LauncherClient->RemoveFriend(AccountId); }, NewMessage.GetAccountId());
             return;
         }
@@ -535,19 +520,6 @@ namespace EGL3::Modules {
         }
 
         SetNicknameBtn.set_sensitive(true);
-    }
-
-    void FriendsModule::UpdateSelection() {
-        StorageData.SetFlags(StoredFriendData::OptionFlags(
-            (CheckFriendsOffline.get_active() ? (uint8_t)StoredFriendData::ShowOffline : 0) |
-            (CheckFriendsOutgoing.get_active() ? (uint8_t)StoredFriendData::ShowOutgoing : 0) |
-            (CheckFriendsIncoming.get_active() ? (uint8_t)StoredFriendData::ShowIncoming : 0) |
-            (CheckFriendsBlocked.get_active() ? (uint8_t)StoredFriendData::ShowBlocked : 0) |
-            (CheckDeclineReqs.get_active() ? (uint8_t)StoredFriendData::AutoDeclineReqs : 0) |
-            (CheckProfanity.get_active() ? (uint8_t)StoredFriendData::CensorProfanity : 0)
-        ));
-        Box.invalidate_filter();
-        Box.invalidate_sort();
     }
 
     void FriendsModule::ResortWidget(Widgets::FriendItem& Widget) {

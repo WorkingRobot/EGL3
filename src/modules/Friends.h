@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../storage/models/Friend.h"
-#include "../storage/models/StoredFriendData.h"
 #include "../utils/GladeBuilder.h"
 #include "../web/epic/EpicClientAuthed.h"
 #include "../web/xmpp/XmppClient.h"
@@ -12,6 +11,7 @@
 #include "BaseModule.h"
 #include "ModuleList.h"
 #include "AsyncFF.h"
+#include "FriendsOptions.h"
 
 #include <gtkmm.h>
 
@@ -51,8 +51,6 @@ namespace EGL3::Modules {
 
 		void DisplaySetNicknameStatus();
 
-		void UpdateSelection();
-
 		void ResortWidget(Widgets::FriendItem& Widget);
 
 		void UpdateAsync();
@@ -65,16 +63,10 @@ namespace EGL3::Modules {
 
 		ImageCacheModule& ImageCache;
 		AsyncFFModule& AsyncFF;
-		Storage::Models::StoredFriendData& StorageData;
+		FriendsOptionsModule& Options;
 
 		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;
-		Gtk::CheckMenuItem& CheckFriendsOffline;
-		Gtk::CheckMenuItem& CheckFriendsOutgoing;
-		Gtk::CheckMenuItem& CheckFriendsIncoming;
-		Gtk::CheckMenuItem& CheckFriendsBlocked;
-		Gtk::CheckMenuItem& CheckDeclineReqs;
-		Gtk::CheckMenuItem& CheckProfanity;
 
 		Gtk::Button& AddFriendSendBtn;
 		Gtk::Entry& AddFriendEntry;
