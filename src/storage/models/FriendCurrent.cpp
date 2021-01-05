@@ -17,6 +17,14 @@ namespace EGL3::Storage::Models {
         return DisplayStatus;
     }
 
+    const std::string& FriendCurrent::GetKairosAvatar() const {
+        return FriendRequested::GetKairosAvatar();
+    }
+
+    const std::string& FriendCurrent::GetKairosBackground() const {
+        return FriendRequested::GetKairosBackground();
+    }
+
     void FriendCurrent::SetCurrentUserData(const std::string& AccountId, const std::string& Username) {
         this->AccountId = AccountId;
         this->Username = Username;

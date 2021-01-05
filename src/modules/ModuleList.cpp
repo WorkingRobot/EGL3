@@ -6,6 +6,7 @@
 #include "FriendsOptions.h"
 #include "Game.h"
 #include "ImageCache.h"
+#include "KairosMenu.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
 #include "WhatsNew.h"
@@ -32,6 +33,7 @@ namespace EGL3::Modules {
 		AddModule<WhatsNewModule>(*this, Storage, Builder);
 
 		AddModule<FriendsOptionsModule>(*this, Storage, Builder);
+		AddModule<KairosMenuModule>(*this, Builder);
 		AddModule<FriendsModule>(*this, Storage, Builder);
 
 		// AddModule<GameModule>(Builder);

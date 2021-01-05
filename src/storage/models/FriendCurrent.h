@@ -15,6 +15,10 @@ namespace EGL3::Storage::Models {
 
         const std::string& GetStatus() const override;
 
+        const std::string& GetKairosAvatar() const override;
+
+        const std::string& GetKairosBackground() const override;
+
         void SetCurrentUserData(const std::string& AccountId, const std::string& Username);
 
         void SetDisplayStatus(const std::string& NewStatus);

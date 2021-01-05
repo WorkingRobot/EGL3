@@ -47,6 +47,23 @@ namespace EGL3::Modules {
         }
     }
 
+    bool AuthorizationModule::IsLoggedIn() const
+    {
+        return AuthClientFN.has_value() && AuthClientLauncher.has_value();
+    }
+
+    Web::Epic::EpicClientAuthed& AuthorizationModule::GetClientFN()
+    {
+        EGL3_CONDITIONAL_LOG(AuthClientFN.has_value(), LogLevel::Critical, "Expected to be logged in. No FN client found.");
+        return AuthClientFN.value();
+    }
+
+    Web::Epic::EpicClientAuthed& AuthorizationModule::GetClientLauncher()
+    {
+        EGL3_CONDITIONAL_LOG(AuthClientLauncher.has_value(), LogLevel::Critical, "Expected to be logged in. No launcher client found.");
+        return AuthClientLauncher.value();
+    }
+
     void AuthorizationModule::UpdateButton(PlayButtonState TargetState) {
         ButtonState = TargetState;
         switch (ButtonState)

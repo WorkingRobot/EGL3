@@ -10,11 +10,11 @@ namespace EGL3::Widgets {
     void CurrentUserItem::SetAsCurrentUser(Gtk::Window& KairosMenu) {
         AvatarEventBox.set_events(Gdk::BUTTON_RELEASE_MASK);
         ColorStatusEventBox.set_events(Gdk::BUTTON_RELEASE_MASK);
-        AvatarEventBox.signal_button_release_event().connect([&, this](GdkEventButton* evt) { DisplayMenu(KairosMenu, evt); return true; });
-        ColorStatusEventBox.signal_button_release_event().connect([&, this](GdkEventButton* evt) { DisplayMenu(KairosMenu, evt); return true; });
+        AvatarEventBox.signal_button_release_event().connect([&, this](GdkEventButton* evt) { DisplayMenu(KairosMenu); return true; });
+        ColorStatusEventBox.signal_button_release_event().connect([&, this](GdkEventButton* evt) { DisplayMenu(KairosMenu); return true; });
     }
 
-    void CurrentUserItem::DisplayMenu(Gtk::Window& KairosMenu, GdkEventButton* evt) {
+    void CurrentUserItem::DisplayMenu(Gtk::Window& KairosMenu) {
         KairosMenu.set_attached_to(Avatar);
         KairosMenu.show();
         KairosMenu.present();

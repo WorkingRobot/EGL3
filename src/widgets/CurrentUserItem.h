@@ -10,6 +10,6 @@ namespace EGL3::Widgets {
         void SetAsCurrentUser(Gtk::Window& KairosMenu);
 
     protected:
-        void DisplayMenu(Gtk::Window& KairosMenu, GdkEventButton* evt);
+        void DisplayMenu(Gtk::Window& KairosMenu);
     };
 }

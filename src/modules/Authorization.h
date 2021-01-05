@@ -14,6 +14,13 @@ namespace EGL3::Modules {
 	public:
 		AuthorizationModule(Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
+		bool IsLoggedIn() const;
+
+		// Will crash if not logged in! Take care.
+		Web::Epic::EpicClientAuthed& GetClientFN();
+
+		Web::Epic::EpicClientAuthed& GetClientLauncher();
+
 		enum class PlayButtonState {
 			SIGN_IN,
 			SIGNING_IN,

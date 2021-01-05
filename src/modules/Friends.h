@@ -4,7 +4,6 @@
 #include "../utils/GladeBuilder.h"
 #include "../web/epic/EpicClientAuthed.h"
 #include "../web/xmpp/XmppClient.h"
-#include "../widgets/AsyncImageKeyed.h"
 #include "../widgets/CurrentUserItem.h"
 #include "../widgets/FriendItem.h"
 #include "../widgets/FriendItemMenu.h"
@@ -12,6 +11,7 @@
 #include "ModuleList.h"
 #include "AsyncFF.h"
 #include "FriendsOptions.h"
+#include "KairosMenu.h"
 
 #include <gtkmm.h>
 
@@ -61,9 +61,11 @@ namespace EGL3::Modules {
 
 		void ResortBox();
 
+		AuthorizationModule& Auth;
 		ImageCacheModule& ImageCache;
 		AsyncFFModule& AsyncFF;
 		FriendsOptionsModule& Options;
+		KairosMenuModule& KairosMenu;
 
 		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;
@@ -91,20 +93,7 @@ namespace EGL3::Modules {
 		Storage::Models::Friend CurrentUserModel;
 		Widgets::CurrentUserItem CurrentUserWidget;
 
-		bool KairosMenuFocused = false;
-		Gtk::Window& KairosMenu;
-		Gtk::FlowBox& KairosAvatarBox;
-		Gtk::FlowBox& KairosBackgroundBox;
-		Gtk::FlowBox& KairosStatusBox;
-		Gtk::Entry& KairosStatusEntry;
-		Gtk::Button& KairosStatusEditBtn;
-
-		Web::Epic::EpicClientAuthed* LauncherClient;
 		std::optional<Web::Xmpp::XmppClient> XmppClient;
-
-
-		std::future<void> UpdateKairosAvatarTask;
-		std::future<void> UpdateKairosBackgroundTask;
 
 		std::future<void> UpdateTask;
 		Glib::Dispatcher UpdateUIDispatcher;
@@ -134,13 +123,5 @@ namespace EGL3::Modules {
 		AsyncWebRequestStatusType SetNicknameStatus;
 		std::string SetNicknameStatusText;
 		Glib::Dispatcher SetNicknameDispatcher;
-
-		std::vector<std::string> AvatarsData;
-		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> AvatarsWidgets;
-
-		std::vector<std::string> BackgroundsData;
-		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> BackgroundsWidgets;
-
-		std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<Web::Xmpp::Json::ShowStatus>>> StatusWidgets;
 	};
 }

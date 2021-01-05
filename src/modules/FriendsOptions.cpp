@@ -46,5 +46,9 @@ namespace EGL3::Modules {
             (CheckDeclineReqs.get_active() ? (uint8_t)StoredFriendData::AutoDeclineReqs : 0) |
             (CheckProfanity.get_active() ? (uint8_t)StoredFriendData::CensorProfanity : 0)
         ));
+
+        if (OnUpdate.has_value()) {
+            OnUpdate.value()();
+        }
     }
 }
