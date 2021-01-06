@@ -2,6 +2,7 @@
 
 #include "../web/Hosts.h"
 #include "AsyncMessageBox.h"
+#include "StackTrace.h"
 
 #include <stdio.h>
 #include <cstdlib>
@@ -42,6 +43,10 @@ namespace EGL3 {
 		}
 		else {
 			printf("%s: %s (%s @ %u)\n", LogLevelToString(Level), Message, Filename, Line);
+		}
+
+		if (Level == LogLevel::Critical) {
+			printf("\n%s\n", Utils::GetStackTrace().c_str());
 		}
 	}
 
