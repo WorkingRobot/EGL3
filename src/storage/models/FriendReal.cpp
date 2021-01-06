@@ -118,7 +118,7 @@ namespace EGL3::Storage::Models {
             Presences.emplace(std::move(Presence));
         }
 
-        UpdateCallback();
+        OnUpdate();
     }
 
     void FriendReal::UpdateInfo(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User) {

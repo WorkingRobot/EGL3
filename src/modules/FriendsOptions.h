@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/StoredFriendData.h"
+#include "../utils/Callback.h"
 #include "../utils/GladeBuilder.h"
 #include "BaseModule.h"
 #include "ModuleList.h"
@@ -14,19 +15,14 @@ namespace EGL3::Modules {
     public:
         FriendsOptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
-        template<typename... Args>
-        void SetUpdateCallback(Args&&... Callback) {
-            OnUpdate.emplace(std::forward<Args>(Callback)...);
-        }
-
         const Storage::Models::StoredFriendData& GetStorageData() const;
 
         Storage::Models::StoredFriendData& GetStorageData();
 
+        Utils::Callback<void()> OnUpdate;
+
     private:
         void UpdateSelection();
-
-        std::optional<std::function<void()>> OnUpdate;
 
         Storage::Models::StoredFriendData& StorageData;
 

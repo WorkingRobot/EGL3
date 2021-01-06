@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../storage/models/Friend.h"
+#include "../utils/Callback.h"
 
 #include <gtkmm.h>
 
@@ -19,18 +20,15 @@ namespace EGL3::Widgets {
             COPY_USER_ID
         };
 
-        using Callback = std::function<void(ClickAction, const Storage::Models::Friend&)>;
+        explicit FriendItemMenu();
 
-        FriendItemMenu(const Callback& OnAction);
-
-        operator Gtk::Menu& ();
+        operator Gtk::Menu&();
 
         void PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget);
 
-    private:
-        void Construct();
+        Utils::Callback<void(ClickAction, const Storage::Models::Friend&)> OnAction;
 
-        Callback OnAction;
+    private:
         const Storage::Models::Friend* SelectedFriend;
 
         Gtk::Menu Container;

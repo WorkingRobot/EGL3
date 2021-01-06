@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/Callback.h"
 #include "../../web/epic/responses/GetSettingsForAccounts.h"
 
 #include <functional>
@@ -8,10 +9,6 @@
 namespace EGL3::Storage::Models {
     class FriendBase {
     protected:
-        using CallbackFunc = std::function<void(const FriendBase&)>;
-
-        std::optional<CallbackFunc> OnUpdate;
-
         std::string KairosAvatar, KairosBackground;
 
         FriendBase() = default;
@@ -42,13 +39,8 @@ namespace EGL3::Storage::Models {
 
         const std::string& GetSecondaryName() const;
 
-        template<typename... Args>
-        void SetUpdateCallback(Args&&... Callback) {
-            OnUpdate.emplace(std::forward<Args>(Callback)...);
-        }
-
-        void UpdateCallback() const;
-
         void UpdateAccountSetting(const Web::Epic::Responses::GetSettingsForAccounts::AccountSetting& FriendSetting);
+
+        Utils::Callback<void()> OnUpdate;
     };
 }

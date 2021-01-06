@@ -44,12 +44,6 @@ namespace EGL3::Storage::Models {
         return GetUsername();
     }
 
-    void FriendBase::UpdateCallback() const {
-        if (OnUpdate.has_value()) {
-            OnUpdate.value()(*this);
-        }
-    }
-
     void FriendBase::UpdateAccountSetting(const Web::Epic::Responses::GetSettingsForAccounts::AccountSetting& FriendSetting) {
         switch (Utils::Crc32(FriendSetting.Key))
         {
@@ -63,6 +57,6 @@ namespace EGL3::Storage::Models {
             return;
         }
 
-        UpdateCallback();
+        OnUpdate();
     }
 }

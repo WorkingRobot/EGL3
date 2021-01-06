@@ -28,8 +28,8 @@ namespace EGL3::Storage::Models {
     void FriendCurrent::SetCurrentUserData(const std::string& AccountId, const std::string& Username) {
         this->AccountId = AccountId;
         this->Username = Username;
-
-        UpdateCallback();
+        
+        OnUpdate();
     }
 
     void FriendCurrent::SetDisplayStatus(const std::string& NewStatus) {

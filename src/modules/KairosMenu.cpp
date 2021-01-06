@@ -179,17 +179,4 @@ namespace EGL3::Modules {
             BackgroundBox.show_all_children();
         }
     }
-
-    Storage::Models::FriendCurrent& KairosMenuModule::GetCurrentUser() const
-    {
-        EGL3_CONDITIONAL_LOG(RequestCurrentUser.has_value(), LogLevel::Critical, "Unable to get current user");
-        return RequestCurrentUser.value()();
-    }
-
-    void KairosMenuModule::UpdateXmppPresence() const
-    {
-        if (OnUpdateXmppPresence.has_value()) {
-            OnUpdateXmppPresence.value()();
-        }
-    }
 }

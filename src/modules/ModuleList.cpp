@@ -3,6 +3,7 @@
 #include "AsyncFF.h"
 #include "Authorization.h"
 #include "Friends.h"
+#include "FriendsList.h"
 #include "FriendsOptions.h"
 #include "Game.h"
 #include "ImageCache.h"
@@ -34,6 +35,7 @@ namespace EGL3::Modules {
 
 		AddModule<FriendsOptionsModule>(*this, Storage, Builder);
 		AddModule<KairosMenuModule>(*this, Builder);
+		AddModule<FriendsListModule>(*this, Builder);
 		AddModule<FriendsModule>(*this, Storage, Builder);
 
 		// AddModule<GameModule>(Builder);

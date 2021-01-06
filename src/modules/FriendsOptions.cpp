@@ -47,8 +47,6 @@ namespace EGL3::Modules {
             (CheckProfanity.get_active() ? (uint8_t)StoredFriendData::CensorProfanity : 0)
         ));
 
-        if (OnUpdate.has_value()) {
-            OnUpdate.value()();
-        }
+        OnUpdate();
     }
 }

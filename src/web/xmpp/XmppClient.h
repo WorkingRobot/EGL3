@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/Callback.h"
 #include "Presence.h"
 #include "messages/SystemMessage.h"
 
@@ -11,27 +12,20 @@
 #include <shared_mutex>
 
 namespace EGL3::Web::Xmpp {
-    struct Callbacks {
-        std::function<void(const std::string& AccountId, Json::Presence&& NewPresence)> PresenceUpdate;
-        std::function<void(Messages::SystemMessage&& NewMessage)> SystemMessage;
-
-        void Clear() {
-            PresenceUpdate = [](auto, auto) {};
-            SystemMessage = [](auto) {};
-        }
-    };
-
     // Standards used are listed in comments inside the cpp file and in asserts
     // TODO: Create constant to easily switch environments (currently only in prod)
     class XmppClient {
     public:
-        XmppClient(const std::string& AccountId, const std::string& AccessToken, const Callbacks& Callbacks);
+        XmppClient(const std::string& AccountId, const std::string& AccessToken);
 
         void SetPresence(const Json::Presence& NewPresence);
 
         void Close();
 
         ~XmppClient();
+
+        Utils::Callback<void(const std::string& AccountId, Json::Presence&& NewPresence)> PresenceUpdate;
+        Utils::Callback<void(Messages::SystemMessage&& NewMessage)> SystemMessage;
 
     private:
         void CloseInternal(bool Errored);
@@ -69,7 +63,6 @@ namespace EGL3::Web::Xmpp {
             CLOSED_ERRORED
         };
 
-        Callbacks Callbacks;
         std::atomic<bool> PresenceSendable;
 
         ClientState State;

@@ -10,6 +10,7 @@
 #include "BaseModule.h"
 #include "ModuleList.h"
 #include "AsyncFF.h"
+#include "FriendsList.h"
 #include "FriendsOptions.h"
 #include "KairosMenu.h"
 
@@ -51,21 +52,18 @@ namespace EGL3::Modules {
 
 		void DisplaySetNicknameStatus();
 
-		void ResortWidget(Widgets::FriendItem& Widget);
-
 		void UpdateAsync();
 		
 		void UpdateUI();
 
 		void FriendsRealize();
 
-		void ResortBox();
-
 		AuthorizationModule& Auth;
 		ImageCacheModule& ImageCache;
 		AsyncFFModule& AsyncFF;
 		FriendsOptionsModule& Options;
 		KairosMenuModule& KairosMenu;
+		FriendsListModule& FriendsList;
 
 		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;
@@ -85,14 +83,6 @@ namespace EGL3::Modules {
 		Gtk::Widget& SwitchStackPage2;
 		Gtk::Widget& SwitchStackPage3;
 
-		Gtk::ListBox& Box;
-
-		Widgets::FriendItemMenu FriendMenu;
-
-		Gtk::Box& CurrentUserContainer;
-		Storage::Models::Friend CurrentUserModel;
-		Widgets::CurrentUserItem CurrentUserWidget;
-
 		std::optional<Web::Xmpp::XmppClient> XmppClient;
 
 		std::future<void> UpdateTask;
@@ -105,13 +95,6 @@ namespace EGL3::Modules {
 		std::mutex FriendsRealizeMutex;
 		std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;
 		Glib::Dispatcher FriendsRealizeDispatcher;
-
-		std::mutex ResortBoxMutex;
-		std::vector<std::reference_wrapper<Widgets::FriendItem>> ResortBoxData;
-		Glib::Dispatcher ResortBoxDispatcher;
-
-		std::vector<std::unique_ptr<Storage::Models::Friend>> FriendsData;
-		std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
 
 		std::future<void> FriendRequestTask;
 		AsyncWebRequestStatusType FriendRequestStatus;

@@ -15,8 +15,7 @@
 #include <rapidxml/rapidxml_print.hpp>
 
 namespace EGL3::Web::Xmpp {
-    XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken, const Xmpp::Callbacks& Callbacks) :
-        Callbacks(Callbacks),
+    XmppClient::XmppClient(const std::string& AccountId, const std::string& AccessToken) :
         CurrentAccountId(AccountId),
         State(ClientState::OPENING)
     {
@@ -146,7 +145,9 @@ namespace EGL3::Web::Xmpp {
             return;
         }
 
-        Callbacks.Clear();
+        PresenceUpdate.Clear();
+        SystemMessage.Clear();
+
         {
             std::unique_lock Lock(BackgroundPingMutex);
             BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
@@ -567,7 +568,7 @@ namespace EGL3::Web::Xmpp {
                     }
                 }
 
-                Callbacks.PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
+                PresenceUpdate(std::string(JIDId), std::move(ParsedPresence));
             }
             return true;
         }
@@ -581,7 +582,7 @@ namespace EGL3::Web::Xmpp {
         {
             Messages::FriendshipRequest Val;
             if (Messages::FriendshipRequest::Parse(Data, Val)) {
-                Callbacks.SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
+                SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
             }
             break;
         }
@@ -589,7 +590,7 @@ namespace EGL3::Web::Xmpp {
         {
             Messages::FriendshipRemove Val;
             if (Messages::FriendshipRemove::Parse(Data, Val)) {
-                Callbacks.SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
+                SystemMessage(Messages::SystemMessage(std::move(Val), CurrentAccountId));
             }
             break;
         }
@@ -597,7 +598,7 @@ namespace EGL3::Web::Xmpp {
         {
             Messages::FriendshipEntryUpdate Val;
             if (Messages::FriendshipEntryUpdate::Parse(Data, Val)) {
-                Callbacks.SystemMessage(std::move(Val));
+                SystemMessage(std::move(Val));
             }
             break;
         }
@@ -605,7 +606,7 @@ namespace EGL3::Web::Xmpp {
         {
             Messages::UserBlocklistUpdate Val;
             if (Messages::UserBlocklistUpdate::Parse(Data, Val)) {
-                Callbacks.SystemMessage(std::move(Val));
+                SystemMessage(std::move(Val));
             }
             break;
         }

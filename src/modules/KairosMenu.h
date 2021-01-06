@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/FriendCurrent.h"
+#include "../utils/Callback.h"
 #include "../utils/GladeBuilder.h"
 #include "../web/xmpp/ShowStatus.h"
 #include "../widgets/AsyncImageKeyed.h"
@@ -22,31 +23,17 @@ namespace EGL3::Modules {
 
         Gtk::Window& GetWindow() const;
 
-        template<typename... Args>
-        void SetCurrentUserCallback(Args&&... Callback) {
-            RequestCurrentUser.emplace(std::forward<Args>(Callback)...);
-        }
-
-        template<typename... Args>
-        void SetUpdateXmppPresenceCallback(Args&&... Callback) {
-            OnUpdateXmppPresence.emplace(std::forward<Args>(Callback)...);
-        }
-
         void SetAvailableSettings(std::vector<std::string>&& Avatars, std::vector<std::string>&& Backgrounds);
 
         void UpdateAvailableSettings();
 
+        Utils::Callback<Storage::Models::FriendCurrent&()> GetCurrentUser;
+        Utils::Callback<void()> UpdateXmppPresence;
+
     private:
-        Storage::Models::FriendCurrent& GetCurrentUser() const;
-
-        void UpdateXmppPresence() const;
-
         AuthorizationModule& Auth;
         ImageCacheModule& ImageCache;
         FriendsOptionsModule& Options;
-
-        std::optional<std::function<Storage::Models::FriendCurrent&()>> RequestCurrentUser;
-        std::optional<std::function<void()>> OnUpdateXmppPresence;
 
         bool Focused;
         Gtk::Window& Window;
