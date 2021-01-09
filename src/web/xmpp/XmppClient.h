@@ -20,11 +20,14 @@ namespace EGL3::Web::Xmpp {
 
         void SetPresence(const Json::Presence& NewPresence);
 
+        void SendChat(const std::string& AccountId, const std::string& Content);
+
         void Close();
 
         ~XmppClient();
 
         Utils::Callback<void(const std::string& AccountId, Json::Presence&& NewPresence)> PresenceUpdate;
+        Utils::Callback<void(const std::string& AccountId, std::string&& NewMessage)> ChatRecieved;
         Utils::Callback<void(Messages::SystemMessage&& NewMessage)> SystemMessage;
 
     private:

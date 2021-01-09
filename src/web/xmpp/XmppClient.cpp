@@ -129,6 +129,23 @@ namespace EGL3::Web::Xmpp {
         SendXml(Socket, *Document);
     }
 
+    void XmppClient::SendChat(const std::string& AccountId, const std::string& Content)
+    {
+        auto ToJid = AccountId + "@prod.ol.epicgames.com";
+
+        auto Document = CreateDocument();
+        auto RootNode = Document->allocate_node(rapidxml::node_element, "message");
+        RootNode->append_attribute(Document->allocate_attribute("to", ToJid.c_str(), 2, ToJid.size()));
+        RootNode->append_attribute(Document->allocate_attribute("type", "chat", 4, 4));
+        Document->append_node(RootNode);
+
+        auto BodyNode = Document->allocate_node(rapidxml::node_element, "body");
+        RootNode->append_node(BodyNode);
+        BodyNode->value(Content.c_str(), Content.size());
+
+        SendXml(Socket, *Document);
+    }
+
     void XmppClient::Close()
     {
         CloseInternal(false);
@@ -674,6 +691,44 @@ namespace EGL3::Web::Xmpp {
     }
 
     bool XmppClient::HandleChat(const rapidxml::xml_node<>* Node) {
+        if (XmlNameEqual(Node, "message")) {
+            auto TypeAttr = Node->first_attribute("type", 4);
+            if (!TypeAttr) {
+                return false;
+            }
+            if (!XmlValueEqual(TypeAttr, "chat")) {
+                return false;
+            }
+
+            auto FromAttr = Node->first_attribute("from", 4);
+            if (!FromAttr) {
+                return false;
+            }
+
+            auto FromJID = std::string(FromAttr->value(), FromAttr->value_size());
+            std::string_view JIDId, JIDDomain, JIDResource;
+            if (!ParseJID(FromJID, JIDId, JIDDomain, JIDResource)) {
+                return false;
+            }
+
+            auto XmlnsAttr = Node->first_attribute("xmlns", 5);
+            if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <message>, xmlns=\"jabber:client\" expected")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "jabber:client"), LogLevel::Warning, "Bad xmlns attr value with <message>, xmlns=\"jabber:client\" expected");
+            }
+
+            auto ToAttr = Node->first_attribute("to", 2);
+            if (EGL3_CONDITIONAL_LOG(ToAttr, LogLevel::Warning, "No to jid recieved with <message>")) {
+                EGL3_CONDITIONAL_LOG(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad type attr value with <message>, expected JID does not match");
+            }
+
+            auto BodyNode = Node->first_node("body", 4);
+            if (!EGL3_CONDITIONAL_LOG(BodyNode, LogLevel::Warning, "No body recieved with <message>. Message will be ignored.")) {
+                return true;
+            }
+
+            ChatRecieved(std::string(JIDId), std::string(BodyNode->value(), BodyNode->value_size()));
+            return true;
+        }
         return false;
     }
 
