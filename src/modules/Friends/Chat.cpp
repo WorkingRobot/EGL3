@@ -10,22 +10,19 @@ namespace EGL3::Modules::Friends {
         ChatBox(Builder.GetWidget<Gtk::ListBox>("FriendsChatBox")),
         ChatEntryContainer(Builder.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
         ChatEntry(Builder.GetWidget<Gtk::Entry>("FriendsChatEntry")),
-        ChatSendBtn(Builder.GetWidget<Gtk::Button>("FriendsChatSendBtn")),
         SelectedFriendContainer(Builder.GetWidget<Gtk::Box>("FriendsChatSelectedUserContainer")),
         SelectedFriendWidget(ImageCache),
         SelectedFriend(nullptr)
     {
         SelectedFriendContainer.pack_start(SelectedFriendWidget, true, true);
 
-        ChatSendBtn.signal_clicked().connect([this]() { OnSendMessageClicked(); });
         ChatEntryContainer.set_events(Gdk::KEY_PRESS_MASK);
         ChatEntry.signal_key_press_event().connect([this](GdkEventKey* evt) {
             // https://gitlab.gnome.org/GNOME/gtk/blob/master/gdk/gdkkeysyms.h
-            // Enter/Return isn't pressed or shift is pressed
-            if (evt->keyval != GDK_KEY_Return || evt->state & GdkModifierType::GDK_SHIFT_MASK) {
+            if (evt->keyval != GDK_KEY_Return) {
                 return false;
             }
-            ChatSendBtn.clicked();
+            OnSendMessageClicked();
             return true;
         }, false);
 

@@ -45,7 +45,6 @@ namespace EGL3::Modules::Friends {
 
         Gtk::EventBox& ChatEntryContainer;
         Gtk::Entry& ChatEntry;
-        Gtk::Button& ChatSendBtn;
 
         const Storage::Models::Friend* SelectedFriend;
         Gtk::Box& SelectedFriendContainer;
