@@ -785,14 +785,15 @@ Author: Aleks Margarian
                             <property name="orientation">vertical</property>
                             <property name="spacing">10</property>
                             <child>
-                              <object class="GtkLabel" id="FriendsChatTitle">
+                              <object class="GtkBox" id="FriendsChatSelectedUserContainer">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Chat with (User)</property>
-                                <style>
-                                  <class name="font-bold"/>
-                                  <class name="font-h2"/>
-                                </style>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="orientation">vertical</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -806,10 +807,16 @@ Author: Aleks Margarian
                                 <property name="can-focus">False</property>
                                 <property name="spacing">5</property>
                                 <child>
-                                  <object class="GtkEntry" id="FriendsChatEntry">
+                                  <object class="GtkEventBox" id="FriendsChatEntryContainer">
                                     <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="placeholder-text" translatable="yes">Message (User)</property>
+                                    <property name="can-focus">False</property>
+                                    <child>
+                                      <object class="GtkEntry" id="FriendsChatEntry">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">True</property>
+                                        <property name="placeholder-text" translatable="yes">Message (User)</property>
+                                      </object>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -856,19 +863,22 @@ Author: Aleks Margarian
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkScrolledWindow">
+                              <object class="GtkScrolledWindow" id="FriendsChatScrollWindow">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
+                                <property name="hscrollbar-policy">never</property>
                                 <property name="shadow-type">in</property>
+                                <property name="propagate-natural-width">True</property>
                                 <child>
                                   <object class="GtkViewport">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <child>
-                                      <object class="GtkListBox" id="FriendsChatListBox">
+                                      <object class="GtkListBox" id="FriendsChatBox">
                                         <property name="visible">True</property>
                                         <property name="can-focus">False</property>
                                         <property name="selection-mode">none</property>
+                                        <property name="activate-on-single-click">False</property>
                                       </object>
                                     </child>
                                   </object>

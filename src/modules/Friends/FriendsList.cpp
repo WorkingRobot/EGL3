@@ -50,7 +50,7 @@ namespace EGL3::Modules {
         }
 
         {
-            CurrentUserModel.Get().OnUpdate.Set([this]() { CurrentUserWidget.Update(); });
+            CurrentUserModel.Get().OnUpdate.connect([this]() { CurrentUserWidget.Update(); });
             CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
             CurrentUserWidget.SetAsCurrentUser(Modules.GetModule<KairosMenuModule>().GetWindow());
         }
@@ -109,7 +109,7 @@ namespace EGL3::Modules {
     {
         auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(Friend, ImageCache));
         Widget->SetContextMenu(FriendMenu);
-        Friend.Get().OnUpdate.Set([Widget = std::ref(*Widget), this]() { Widget.get().Update(); ResortWidget(Widget.get()); });
+        Friend.Get().OnUpdate.connect([Widget = std::ref(*Widget), this]() { Widget.get().Update(); ResortWidget(Widget.get()); });
         List.add(*Widget);
     }
 

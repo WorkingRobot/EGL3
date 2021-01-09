@@ -8,7 +8,7 @@ namespace EGL3::Widgets {
     using namespace Web::Xmpp::Json;
 
     FriendItem::FriendItem(const Storage::Models::Friend& Item, Modules::ImageCacheModule& ImageCache) :
-        UpdateData(Item),
+        UpdateData(&Item),
         ImageCache(ImageCache)
     {
         UpdateDispatcher.connect([this]() { UpdateDispatch(); });
@@ -18,12 +18,21 @@ namespace EGL3::Widgets {
         UpdateDispatch();
     }
 
+    FriendItem::FriendItem(Modules::ImageCacheModule& ImageCache) :
+        UpdateData(nullptr),
+        ImageCache(ImageCache)
+    {
+        UpdateDispatcher.connect([this]() { UpdateDispatch(); });
+
+        Construct();
+    }
+
     FriendItem::operator Gtk::Widget& () {
         return BaseContainer;
     }
 
     std::weak_ordering FriendItem::operator<=>(const FriendItem& that) const {
-        return UpdateData <=> that.UpdateData;
+        return GetData() <=> that.GetData();
     }
 
     void FriendItem::SetContextMenu(Widgets::FriendItemMenu& ContextMenu) {
@@ -36,7 +45,12 @@ namespace EGL3::Widgets {
     }
 
     const Storage::Models::Friend& FriendItem::GetData() const {
-        return UpdateData;
+        return *UpdateData;
+    }
+
+    void FriendItem::SetData(const Storage::Models::Friend& NewItem)
+    {
+        UpdateData = &NewItem;
     }
 
     void FriendItem::Construct() {
@@ -102,7 +116,11 @@ namespace EGL3::Widgets {
     }
 
     void FriendItem::UpdateDispatch() {
-        auto& Friend = UpdateData.Get();
+        if (!UpdateData) {
+            return;
+        }
+
+        auto& Friend = UpdateData->Get();
 
         Username.set_tooltip_text(Friend.GetAccountId());
         Username.set_text(Friend.GetDisplayName());
@@ -113,8 +131,8 @@ namespace EGL3::Widgets {
 
         Status.set_has_tooltip(false);
 
-        if (UpdateData.GetType() == Storage::Models::FriendType::NORMAL || UpdateData.GetType() == Storage::Models::FriendType::CURRENT) {
-            auto& FriendData = UpdateData.Get<Storage::Models::FriendReal>();
+        if (UpdateData->GetType() == Storage::Models::FriendType::NORMAL || UpdateData->GetType() == Storage::Models::FriendType::CURRENT) {
+            auto& FriendData = UpdateData->Get<Storage::Models::FriendReal>();
 
             ColorStatus.set_async(ShowStatusToUrl(FriendData.GetShowStatus()), "", ImageCache);
 
@@ -139,7 +157,7 @@ namespace EGL3::Widgets {
             }
         }
         else {
-            switch (UpdateData.GetType())
+            switch (UpdateData->GetType())
             {
             case Storage::Models::FriendType::INBOUND:
                 Status.set_text("Incoming Friend Request");

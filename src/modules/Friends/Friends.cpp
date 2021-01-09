@@ -1,7 +1,7 @@
 #include "Friends.h"
 
-#include "../utils/EmitRAII.h"
-#include "Authorization.h"
+#include "../../utils/EmitRAII.h"
+#include "../Authorization.h"
 
 #include <array>
 #include <regex>
@@ -17,6 +17,7 @@ namespace EGL3::Modules {
             Options(Modules.GetModule<FriendsOptionsModule>()),
             KairosMenu(Modules.GetModule<KairosMenuModule>()),
             FriendsList(Modules.GetModule<FriendsListModule>()),
+            FriendsChat(Modules.GetModule<FriendsChatModule>()),
 
             ViewFriendsBtn(Builder.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
             AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
@@ -47,12 +48,17 @@ namespace EGL3::Modules {
             KairosMenu.GetCurrentUser.Set([this]() { return std::ref(FriendsList.GetCurrentUser()); });
             KairosMenu.UpdateXmppPresence.Set([this]() {
                 if (XmppClient.has_value()) {
-                    printf("updating presence!\n");
                     XmppClient->SetPresence(FriendsList.GetCurrentUser().BuildPresence());
                 }
             });
 
             FriendsList.FriendMenuAction.Set([this](auto Action, const auto& Friend) { OnFriendAction(Action, Friend); });
+
+            FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Content) {
+                if (EGL3_CONDITIONAL_LOG(XmppClient.has_value(), LogLevel::Critical, "Didn't send user message. Xmpp client isn't created yet")) {
+                    XmppClient->SendChat(AccountId, Content);
+                }
+            });
 
             {
                 AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
@@ -95,6 +101,11 @@ namespace EGL3::Modules {
         }
     }
 
+    void FriendsModule::OnChatMessage(const std::string& AccountId, std::string&& Message)
+    {
+        FriendsChat.RecieveChatMessage(AccountId, std::forward<std::string>(Message));
+    }
+
     void FriendsModule::OnSystemMessage(Messages::SystemMessage&& NewMessage) {
         if (Options.GetStorageData().HasFlag<StoredFriendData::AutoDeclineReqs>() && NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
             AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().RemoveFriend(AccountId); }, NewMessage.GetAccountId());
@@ -115,6 +126,7 @@ namespace EGL3::Modules {
 
         auto& Client = XmppClient.emplace(AuthData.AccountId.value(), AuthData.AccessToken);
         Client.PresenceUpdate.Set([this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); });
+        Client.ChatRecieved.Set([this](const auto& A, auto&& B) { OnChatMessage(A, std::move(B)); });
         Client.SystemMessage.Set([this](auto&& A) { OnSystemMessage(std::move(A)); });
 
         AddFriendBtn.set_sensitive(true);
@@ -127,7 +139,7 @@ namespace EGL3::Modules {
         switch (Action)
         {
         case Widgets::FriendItemMenu::ClickAction::CHAT:
-            EGL3_LOG(LogLevel::Info, "Chatting button pressed");
+            OnOpenChatPage(FriendData);
             break;
         case Widgets::FriendItemMenu::ClickAction::ACCEPT_REQUEST:
             AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().AddFriend(AccountId); }, Friend.GetAccountId());
@@ -153,6 +165,8 @@ namespace EGL3::Modules {
     }
 
     void FriendsModule::OnOpenViewFriends() {
+        FriendsChat.ClearUser();
+
         ViewFriendsBtn.set_visible(false);
         SwitchStack.set_visible_child(SwitchStackPage0);
     }
@@ -173,6 +187,14 @@ namespace EGL3::Modules {
 
         ViewFriendsBtn.set_visible(true);
         SwitchStack.set_visible_child(SwitchStackPage3);
+    }
+
+    void FriendsModule::OnOpenChatPage(const Friend& FriendData)
+    {
+        FriendsChat.SetUser(FriendData);
+
+        ViewFriendsBtn.set_visible(true);
+        SwitchStack.set_visible_child(SwitchStackPage2);
     }
 
     void FriendsModule::OnSendFriendRequest() {

@@ -1,6 +1,6 @@
 #include "StatsGraph.h"
 
-#include <iomanip>
+#include "../utils/Format.h"
 
 namespace EGL3::Modules {
     StatsGraphModule::StatsGraphModule(const Utils::GladeBuilder& Builder) :
@@ -23,7 +23,7 @@ namespace EGL3::Modules {
             else if (i >= Snapshots.size()) {
                 i = Snapshots.size() - 1;
             }
-            tooltip->set_text(Glib::ustring::compose("%1, %2", i, Glib::ustring::format(std::setprecision(2), Snapshots[i].Height)));
+            tooltip->set_text(Utils::Format("%d, %.2f", i, Snapshots[i].Height));
 
             return true;
         });

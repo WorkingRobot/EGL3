@@ -3,8 +3,7 @@
 #include "../../utils/Callback.h"
 #include "../../web/epic/responses/GetSettingsForAccounts.h"
 
-#include <functional>
-#include <optional>
+#include <sigc++/sigc++.h>
 
 namespace EGL3::Storage::Models {
     class FriendBase {
@@ -41,6 +40,6 @@ namespace EGL3::Storage::Models {
 
         void UpdateAccountSetting(const Web::Epic::Responses::GetSettingsForAccounts::AccountSetting& FriendSetting);
 
-        Utils::Callback<void()> OnUpdate;
+        sigc::signal<void()> OnUpdate;
     };
 }

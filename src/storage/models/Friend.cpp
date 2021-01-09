@@ -16,7 +16,7 @@ namespace EGL3::Storage::Models {
                 GetUnlocked<FriendReal>().UpdateInfo(AccResp.Get());
 
                 Lock.unlock();
-                Get().OnUpdate();
+                Get().OnUpdate.emit();
             });
         }
     }
@@ -75,7 +75,7 @@ namespace EGL3::Storage::Models {
             }
 
             Lock.unlock();
-            Get().OnUpdate();
+            Get().OnUpdate.emit();
         });
     }
 
@@ -88,7 +88,7 @@ namespace EGL3::Storage::Models {
             Type = TargetType;
 
             Lock.unlock();
-            Get().OnUpdate();
+            Get().OnUpdate.emit();
             break;
         }
         case FriendType::BLOCKED:
@@ -109,7 +109,7 @@ namespace EGL3::Storage::Models {
                     RealType = BLOCKED;
 
                     Lock.unlock();
-                    Get().OnUpdate();
+                    Get().OnUpdate.emit();
                 });
             }
             else {
@@ -117,7 +117,7 @@ namespace EGL3::Storage::Models {
                 Type = TargetType;
 
                 Lock.unlock();
-                Get().OnUpdate();
+                Get().OnUpdate.emit();
             }
             break;
         }
@@ -142,7 +142,7 @@ namespace EGL3::Storage::Models {
                     GetUnlocked<FriendRequested>().SetUsername(AccResp->Accounts.front().GetDisplayName());
 
                     Lock.unlock();
-                    Get().OnUpdate();
+                    Get().OnUpdate.emit();
                 });
             }
             else if (RealType < REQUESTED) {
@@ -154,7 +154,7 @@ namespace EGL3::Storage::Models {
                     RealType = REQUESTED;
 
                     Lock.unlock();
-                    Get().OnUpdate();
+                    Get().OnUpdate.emit();
                 });
             }
             else {
@@ -162,7 +162,7 @@ namespace EGL3::Storage::Models {
                 Type = TargetType;
 
                 Lock.unlock();
-                Get().OnUpdate();
+                Get().OnUpdate.emit();
             }
             break;
         }
@@ -185,7 +185,7 @@ namespace EGL3::Storage::Models {
                     GetUnlocked<FriendReal>().UpdateInfo(AccResp.Get());
 
                     Lock.unlock();
-                    Get().OnUpdate();
+                    Get().OnUpdate.emit();
                 });
             }
             else {
@@ -193,7 +193,7 @@ namespace EGL3::Storage::Models {
                 Type = TargetType;
 
                 Lock.unlock();
-                Get().OnUpdate();
+                Get().OnUpdate.emit();
             }
             break;
         }

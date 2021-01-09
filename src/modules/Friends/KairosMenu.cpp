@@ -1,6 +1,6 @@
 #include "KairosMenu.h"
 
-#include "../web/xmpp/PresenceKairosProfile.h"
+#include "../../web/xmpp/PresenceKairosProfile.h"
 
 namespace EGL3::Modules {
     using namespace Web::Xmpp;

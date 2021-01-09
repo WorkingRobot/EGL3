@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../storage/models/FriendCurrent.h"
-#include "../utils/Callback.h"
-#include "../utils/GladeBuilder.h"
-#include "../web/xmpp/ShowStatus.h"
-#include "../widgets/AsyncImageKeyed.h"
-#include "BaseModule.h"
-#include "ModuleList.h"
-#include "Authorization.h"
-#include "ImageCache.h"
+#include "../../storage/models/FriendCurrent.h"
+#include "../../utils/Callback.h"
+#include "../../utils/GladeBuilder.h"
+#include "../../web/xmpp/ShowStatus.h"
+#include "../../widgets/AsyncImageKeyed.h"
+#include "../BaseModule.h"
+#include "../ModuleList.h"
+#include "../Authorization.h"
+#include "../ImageCache.h"
 #include "FriendsOptions.h"
 
 #include <functional>

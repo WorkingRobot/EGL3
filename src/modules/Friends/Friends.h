@@ -1,15 +1,16 @@
 #pragma once
 
-#include "../storage/models/Friend.h"
-#include "../utils/GladeBuilder.h"
-#include "../web/epic/EpicClientAuthed.h"
-#include "../web/xmpp/XmppClient.h"
-#include "../widgets/CurrentUserItem.h"
-#include "../widgets/FriendItem.h"
-#include "../widgets/FriendItemMenu.h"
-#include "BaseModule.h"
-#include "ModuleList.h"
-#include "AsyncFF.h"
+#include "../../storage/models/Friend.h"
+#include "../../utils/GladeBuilder.h"
+#include "../../web/epic/EpicClientAuthed.h"
+#include "../../web/xmpp/XmppClient.h"
+#include "../../widgets/CurrentUserItem.h"
+#include "../../widgets/FriendItem.h"
+#include "../../widgets/FriendItemMenu.h"
+#include "../BaseModule.h"
+#include "../ModuleList.h"
+#include "../AsyncFF.h"
+#include "FriendsChat.h"
 #include "FriendsList.h"
 #include "FriendsOptions.h"
 #include "KairosMenu.h"
@@ -24,6 +25,8 @@ namespace EGL3::Modules {
 	private:
 		void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence);
 
+		void OnChatMessage(const std::string& AccountId, std::string&& Message);
+
 		void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
 
 		void OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient);
@@ -35,6 +38,8 @@ namespace EGL3::Modules {
 		void OnOpenAddFriendPage();
 
 		void OnOpenSetNicknamePage(const Storage::Models::Friend& FriendData);
+
+		void OnOpenChatPage(const Storage::Models::Friend& FriendData);
 
 		void OnSendFriendRequest();
 
@@ -64,6 +69,7 @@ namespace EGL3::Modules {
 		FriendsOptionsModule& Options;
 		KairosMenuModule& KairosMenu;
 		FriendsListModule& FriendsList;
+		FriendsChatModule& FriendsChat;
 
 		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;

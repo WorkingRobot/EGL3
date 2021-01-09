@@ -57,6 +57,6 @@ namespace EGL3::Storage::Models {
             return;
         }
 
-        OnUpdate();
+        OnUpdate.emit();
     }
 }

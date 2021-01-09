@@ -113,8 +113,8 @@ namespace EGL3::Widgets {
         Title.set_xalign(0);
         Title.set_yalign(0);
 
-        Description.set_margin_left(10);
-        Description.set_margin_right(10);
+        Description.set_margin_start(10);
+        Description.set_margin_end(10);
 
         Title.set_line_wrap(true);
         Title.set_ellipsize(Pango::ELLIPSIZE_END);

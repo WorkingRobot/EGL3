@@ -9,6 +9,7 @@
 namespace EGL3::Widgets {
     class FriendItem {
     public:
+        FriendItem(Modules::ImageCacheModule& ImageCache);
         FriendItem(const Storage::Models::Friend& Item, Modules::ImageCacheModule& ImageCache);
 
         FriendItem(FriendItem&&) = default;
@@ -24,6 +25,8 @@ namespace EGL3::Widgets {
 
         const Storage::Models::Friend& GetData() const;
 
+        void SetData(const Storage::Models::Friend& NewItem);
+
     private:
         void Construct();
 
@@ -35,7 +38,7 @@ namespace EGL3::Widgets {
         static std::string GetPlatformImageUrl(const std::string_view Platform);
 
         Glib::Dispatcher UpdateDispatcher;
-        const Storage::Models::Friend& UpdateData;
+        const Storage::Models::Friend* UpdateData;
 
     protected:
         Modules::ImageCacheModule& ImageCache;

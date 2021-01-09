@@ -1,20 +1,18 @@
 #pragma once
 
-#include "../storage/models/Friend.h"
-#include "../utils/Callback.h"
-#include "../utils/GladeBuilder.h"
-#include "../widgets/CurrentUserItem.h"
-#include "../widgets/FriendItem.h"
-#include "../widgets/FriendItemMenu.h"
-#include "BaseModule.h"
-#include "ModuleList.h"
-#include "ImageCache.h"
+#include "../../storage/models/Friend.h"
+#include "../../utils/Callback.h"
+#include "../../utils/GladeBuilder.h"
+#include "../../widgets/CurrentUserItem.h"
+#include "../../widgets/FriendItem.h"
+#include "../../widgets/FriendItemMenu.h"
+#include "../BaseModule.h"
+#include "../ModuleList.h"
+#include "../ImageCache.h"
 #include "FriendsOptions.h"
 
-#include <functional>
 #include <future>
 #include <gtkmm.h>
-#include <optional>
 
 namespace EGL3::Modules {
     class FriendsListModule : public BaseModule {

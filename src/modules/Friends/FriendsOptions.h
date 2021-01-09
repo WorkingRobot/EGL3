@@ -1,14 +1,12 @@
 #pragma once
 
-#include "../storage/models/StoredFriendData.h"
-#include "../utils/Callback.h"
-#include "../utils/GladeBuilder.h"
-#include "BaseModule.h"
-#include "ModuleList.h"
+#include "../../storage/models/StoredFriendData.h"
+#include "../../utils/Callback.h"
+#include "../../utils/GladeBuilder.h"
+#include "../BaseModule.h"
+#include "../ModuleList.h"
 
-#include <functional>
 #include <gtkmm.h>
-#include <optional>
 
 namespace EGL3::Modules {
     class FriendsOptionsModule : public BaseModule {

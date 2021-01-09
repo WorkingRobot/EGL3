@@ -2,15 +2,17 @@
 
 #include "AsyncFF.h"
 #include "Authorization.h"
-#include "Friends.h"
-#include "FriendsList.h"
-#include "FriendsOptions.h"
 #include "Game.h"
 #include "ImageCache.h"
-#include "KairosMenu.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
 #include "WhatsNew.h"
+
+#include "Friends/Friends.h"
+#include "Friends/FriendsChat.h"
+#include "Friends/FriendsList.h"
+#include "Friends/FriendsOptions.h"
+#include "Friends/KairosMenu.h"
 
 namespace EGL3::Modules {
 	ModuleList::ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
@@ -36,6 +38,7 @@ namespace EGL3::Modules {
 		AddModule<FriendsOptionsModule>(*this, Storage, Builder);
 		AddModule<KairosMenuModule>(*this, Builder);
 		AddModule<FriendsListModule>(*this, Builder);
+		AddModule<FriendsChatModule>(*this, Builder);
 		AddModule<FriendsModule>(*this, Storage, Builder);
 
 		// AddModule<GameModule>(Builder);

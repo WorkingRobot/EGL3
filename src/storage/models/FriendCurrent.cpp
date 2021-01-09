@@ -29,7 +29,7 @@ namespace EGL3::Storage::Models {
         this->AccountId = AccountId;
         this->Username = Username;
         
-        OnUpdate();
+        OnUpdate.emit();
     }
 
     void FriendCurrent::SetDisplayStatus(const std::string& NewStatus) {
