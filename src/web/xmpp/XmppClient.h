@@ -32,6 +32,9 @@ namespace EGL3::Web::Xmpp {
 
     private:
         void CloseInternal(bool Errored);
+
+        // Consider the authentication process finished
+        void FinishAuthentication();
         
         // True doesn't mean it was a valid presence. Just that it was one so other functions don't try reading it.
         bool HandlePresence(const rapidxml::xml_node<>* Node);
@@ -46,7 +49,7 @@ namespace EGL3::Web::Xmpp {
 
         void ReceivedMessage(const ix::WebSocketMessagePtr& Message);
 
-        void ParseMessage(const rapidxml::xml_node<>* Node);
+        bool ParseMessage(const rapidxml::xml_node<>* Node);
 
         static inline std::once_flag InitFlag;
 
@@ -66,7 +69,7 @@ namespace EGL3::Web::Xmpp {
             CLOSED_ERRORED
         };
 
-        std::atomic<bool> PresenceSendable;
+        std::atomic<bool> Authenticated;
 
         ClientState State;
         std::string EncodedAuthValue;

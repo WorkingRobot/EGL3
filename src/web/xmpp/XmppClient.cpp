@@ -60,7 +60,7 @@ namespace EGL3::Web::Xmpp {
 
     void XmppClient::SetPresence(const Json::Presence& NewPresence)
     {
-        PresenceSendable.wait(false);
+        Authenticated.wait(false);
 
         auto CurrentTime = GetCurrentTimePoint();
         auto Document = CreateDocument();
@@ -177,6 +177,13 @@ namespace EGL3::Web::Xmpp {
         ix::uninitNetSystem();
 
         State = Errored ? ClientState::CLOSED_ERRORED : ClientState::CLOSED;
+    }
+
+    void XmppClient::FinishAuthentication()
+    {
+        State = ClientState::AUTHENTICATED;
+        Authenticated = true;
+        Authenticated.notify_all();
     }
 
     // Subtract 1, we aren't comparing \0 at the end of the source string
@@ -784,13 +791,15 @@ namespace EGL3::Web::Xmpp {
         {
         case ix::WebSocketMessageType::Message:
         {
-            printf("%s\n", Message->str.c_str());
             auto Document = CreateDocument();
             auto Data = std::make_unique<char[]>(Message->str.size() + 1);
             memcpy(Data.get(), Message->str.c_str(), Message->str.size() + 1); // c_str is required to have a \0 at the end
-            Document->parse<0>(Data.get());
+            // I'd use rapidxml::parse_fastest, but entity translation is pretty necessary
+            Document->parse<rapidxml::parse_no_string_terminators | rapidxml::parse_no_data_nodes>(Data.get());
 
-            ParseMessage(Document->first_node());
+            if (!ParseMessage(Document->first_node())) {
+                EGL3_LOG(LogLevel::Warning, Message->str.c_str());
+            }
             break;
         }
         case ix::WebSocketMessageType::Open:
@@ -821,22 +830,29 @@ namespace EGL3::Web::Xmpp {
         }
     }
 
-    void XmppClient::ParseMessage(const rapidxml::xml_node<>* Node)
+    bool XmppClient::ParseMessage(const rapidxml::xml_node<>* Node)
     {
         if (!EGL3_CONDITIONAL_LOG(Node, LogLevel::Warning, "XmppClient recieved a non-xml message. Ignoring message.")) {
-            return;
+            return false;
         }
 
         if (HandleSystemMessage(Node)) {
-            return;
+            return true;
         }
 
         if (HandlePresence(Node)) {
-            return;
+            if (State != ClientState::AUTHENTICATED) {
+                FinishAuthentication();
+            }
+            return true;
         }
 
         if (HandleChat(Node)) {
-            return;
+            return true;
+        }
+
+        if (State == ClientState::AUTHENTICATED) {
+            return false;
         }
 
         switch (State)
@@ -845,7 +861,7 @@ namespace EGL3::Web::Xmpp {
         {
             if (!EGL3_CONDITIONAL_LOG(ReadXmppOpen(Node), LogLevel::Error, "Failed to read XmppClient open node. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
             State = ClientState::BEFORE_FEATURES;
@@ -855,7 +871,7 @@ namespace EGL3::Web::Xmpp {
         {
             if (!EGL3_CONDITIONAL_LOG(ReadXmppFeatures<false>(Node), LogLevel::Error, "Failed to read XmppClient pre-auth features. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
             // After grabbing all the stream features (more so just verifying them honestly)
@@ -879,7 +895,7 @@ namespace EGL3::Web::Xmpp {
             // Maybe add more error handling? Who knows
             if (!EGL3_CONDITIONAL_LOG(XmlNameEqual(Node, "success"), LogLevel::Error, "Failed to authenticate XmppClient correctly. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
             auto XmlnsAttr = Node->first_attribute("xmlns", 5);
@@ -905,7 +921,7 @@ namespace EGL3::Web::Xmpp {
         {
             if (!EGL3_CONDITIONAL_LOG(ReadXmppFeatures<true>(Node), LogLevel::Error, "Failed to read XmppClient post-auth features. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
             CurrentResource = GenerateResourceId();
@@ -934,7 +950,7 @@ namespace EGL3::Web::Xmpp {
         {
             if (!EGL3_CONDITIONAL_LOG(ReadXmppInfoQueryResult<false>(Node, CurrentJid), LogLevel::Error, "Failed to read XmppClient bind infoquery. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
             {
@@ -956,18 +972,16 @@ namespace EGL3::Web::Xmpp {
         {
             if (!EGL3_CONDITIONAL_LOG(ReadXmppInfoQueryResult<true>(Node, CurrentJid), LogLevel::Error, "Failed to read XmppClient session infoquery. Aborting connection.")) {
                 CloseInternal(true);
-                return;
+                return false;
             }
 
-            State = ClientState::AUTHENTICATED;
-            PresenceSendable = true;
-            PresenceSendable.notify_all();
+            FinishAuthentication();
             break;
         }
-        case ClientState::AUTHENTICATED:
-        {
-            break;
+        default:
+            return false;
         }
-        }
+
+        return true;
     }
 }
