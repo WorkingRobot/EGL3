@@ -2,13 +2,13 @@
 
 #include "../../web/xmpp/PresenceKairosProfile.h"
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
 
     KairosMenuModule::KairosMenuModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
         Auth(Modules.GetModule<AuthorizationModule>()),
         ImageCache(Modules.GetModule<ImageCacheModule>()),
-        Options(Modules.GetModule<FriendsOptionsModule>()),
+        Options(Modules.GetModule<OptionsModule>()),
         Focused(false),
         Window(Builder.GetWidget<Gtk::Window>("FriendsKairosMenu")),
         AvatarBox(Builder.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),

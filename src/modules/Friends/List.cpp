@@ -1,14 +1,14 @@
-#include "FriendsList.h"
+#include "List.h"
 
 #include "KairosMenu.h"
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
 
-    FriendsListModule::FriendsListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
+    ListModule::ListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
         ImageCache(Modules.GetModule<ImageCacheModule>()),
-        Options(Modules.GetModule<FriendsOptionsModule>()),
+        Options(Modules.GetModule<OptionsModule>()),
         List(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
         CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
         CurrentUserModel(Friend::ConstructCurrent),
@@ -60,13 +60,13 @@ namespace EGL3::Modules {
         }
     }
 
-    void FriendsListModule::ResortEntireList()
+    void ListModule::ResortEntireList()
     {
         List.invalidate_filter();
         List.invalidate_sort();
     }
 
-    void FriendsListModule::RefreshList()
+    void ListModule::RefreshList()
     {
         // FriendsResp handling
         {
@@ -84,7 +84,7 @@ namespace EGL3::Modules {
         }
     }
 
-    Storage::Models::Friend* FriendsListModule::GetUser(const std::string& AccountId)
+    Storage::Models::Friend* ListModule::GetUser(const std::string& AccountId)
     {
         auto FriendItr = std::find_if(FriendsData.begin(), FriendsData.end(), [&AccountId](const auto& Friend) {
             return Friend->Get().GetAccountId() == AccountId;
@@ -95,17 +95,17 @@ namespace EGL3::Modules {
         return nullptr;
     }
 
-    FriendCurrent& FriendsListModule::GetCurrentUser()
+    FriendCurrent& ListModule::GetCurrentUser()
     {
         return CurrentUserModel.Get<FriendCurrent>();
     }
 
-    void FriendsListModule::ClearFriends()
+    void ListModule::ClearFriends()
     {
         FriendsData.clear();
     }
 
-    void FriendsListModule::DisplayFriend(Storage::Models::Friend& Friend)
+    void ListModule::DisplayFriend(Storage::Models::Friend& Friend)
     {
         auto& Widget = FriendsWidgets.emplace_back(std::make_unique<Widgets::FriendItem>(Friend, ImageCache));
         Widget->SetContextMenu(FriendMenu);
@@ -113,7 +113,7 @@ namespace EGL3::Modules {
         List.add(*Widget);
     }
 
-    void FriendsListModule::ResortList()
+    void ListModule::ResortList()
     {
         std::lock_guard Guard(ResortListMutex);
 
@@ -125,7 +125,7 @@ namespace EGL3::Modules {
         ResortListData.clear();
     }
 
-    void FriendsListModule::ResortWidget(Widgets::FriendItem& Widget)
+    void ListModule::ResortWidget(Widgets::FriendItem& Widget)
     {
         std::lock_guard Lock(ResortListMutex);
         ResortListData.emplace_back(std::ref(Widget));

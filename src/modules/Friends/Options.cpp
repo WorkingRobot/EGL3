@@ -1,9 +1,9 @@
-#include "FriendsOptions.h"
+#include "Options.h"
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
-    FriendsOptionsModule::FriendsOptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
+    OptionsModule::OptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
         StorageData(Storage.Get(Storage::Persistent::Key::StoredFriendData)),
         CheckFriendsOffline(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
         CheckFriendsOutgoing(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
@@ -27,17 +27,17 @@ namespace EGL3::Modules {
         CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
     }
 
-    const StoredFriendData& FriendsOptionsModule::GetStorageData() const
+    const StoredFriendData& OptionsModule::GetStorageData() const
     {
         return StorageData;
     }
 
-    StoredFriendData& FriendsOptionsModule::GetStorageData()
+    StoredFriendData& OptionsModule::GetStorageData()
     {
         return StorageData;
     }
 
-    void FriendsOptionsModule::UpdateSelection() {
+    void OptionsModule::UpdateSelection() {
         StorageData.SetFlags(StoredFriendData::OptionFlags(
             (CheckFriendsOffline.get_active() ? (uint8_t)StoredFriendData::ShowOffline : 0) |
             (CheckFriendsOutgoing.get_active() ? (uint8_t)StoredFriendData::ShowOutgoing : 0) |

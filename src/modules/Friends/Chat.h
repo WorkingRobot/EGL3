@@ -13,10 +13,10 @@
 
 #include <gtkmm.h>
 
-namespace EGL3::Modules {
-    class FriendsChatModule : public BaseModule {
+namespace EGL3::Modules::Friends {
+    class ChatModule : public BaseModule {
     public:
-        FriendsChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
+        ChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
 
         void SetUser(const Storage::Models::Friend& Friend);
 

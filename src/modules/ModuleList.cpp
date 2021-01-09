@@ -9,9 +9,9 @@
 #include "WhatsNew.h"
 
 #include "Friends/Friends.h"
-#include "Friends/FriendsChat.h"
-#include "Friends/FriendsList.h"
-#include "Friends/FriendsOptions.h"
+#include "Friends/Chat.h"
+#include "Friends/List.h"
+#include "Friends/Options.h"
 #include "Friends/KairosMenu.h"
 
 namespace EGL3::Modules {
@@ -35,11 +35,11 @@ namespace EGL3::Modules {
 
 		AddModule<WhatsNewModule>(*this, Storage, Builder);
 
-		AddModule<FriendsOptionsModule>(*this, Storage, Builder);
-		AddModule<KairosMenuModule>(*this, Builder);
-		AddModule<FriendsListModule>(*this, Builder);
-		AddModule<FriendsChatModule>(*this, Builder);
-		AddModule<FriendsModule>(*this, Storage, Builder);
+		AddModule<Friends::OptionsModule>(*this, Storage, Builder);
+		AddModule<Friends::KairosMenuModule>(*this, Builder);
+		AddModule<Friends::ListModule>(*this, Builder);
+		AddModule<Friends::ChatModule>(*this, Builder);
+		AddModule<Friends::FriendsModule>(*this, Storage, Builder);
 
 		// AddModule<GameModule>(Builder);
 	}

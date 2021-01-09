@@ -9,15 +9,15 @@
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../ImageCache.h"
-#include "FriendsOptions.h"
+#include "Options.h"
 
 #include <future>
 #include <gtkmm.h>
 
-namespace EGL3::Modules {
-    class FriendsListModule : public BaseModule {
+namespace EGL3::Modules::Friends {
+    class ListModule : public BaseModule {
     public:
-        FriendsListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
+        ListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
 
         void ResortEntireList();
 
@@ -44,7 +44,7 @@ namespace EGL3::Modules {
         void ResortWidget(Widgets::FriendItem& Widget);
 
         ImageCacheModule& ImageCache;
-        FriendsOptionsModule& Options;
+        OptionsModule& Options;
 
         Gtk::ListBox& List;
 

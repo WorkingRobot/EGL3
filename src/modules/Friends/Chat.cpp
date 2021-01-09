@@ -1,9 +1,9 @@
-#include "FriendsChat.h"
+#include "Chat.h"
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
-    FriendsChatModule::FriendsChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
+    ChatModule::ChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
         ImageCache(Modules.GetModule<ImageCacheModule>()),
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
         ChatScrollWindow(Builder.GetWidget<Gtk::ScrolledWindow>("FriendsChatScrollWindow")),
@@ -38,7 +38,7 @@ namespace EGL3::Modules {
         NewChatDispatcher.connect([this]() { OnNewChatUpdate(); });
     }
 
-    void FriendsChatModule::SetUser(const Friend& Friend)
+    void ChatModule::SetUser(const Friend& Friend)
     {
         if (!EGL3_CONDITIONAL_LOG(!SelectedFriend, LogLevel::Warning, "Trying to set selected friend before clearing. Clearing now.")) {
             ClearUser();
@@ -67,7 +67,7 @@ namespace EGL3::Modules {
         OnSelectedFriendUpdate();
     }
 
-    void FriendsChatModule::ClearUser()
+    void ChatModule::ClearUser()
     {
         if (!SelectedFriend) {
             return;
@@ -77,18 +77,18 @@ namespace EGL3::Modules {
         SelectedFriend = nullptr;
     }
 
-    void FriendsChatModule::RecieveChatMessage(const std::string& AccountId, std::string&& NewMessage)
+    void ChatModule::RecieveChatMessage(const std::string& AccountId, std::string&& NewMessage)
     {
         OnRecieveChatMessage(AccountId, std::forward<std::string>(NewMessage), true);
     }
 
-    void FriendsChatModule::OnSelectedFriendUpdate()
+    void ChatModule::OnSelectedFriendUpdate()
     {
         SelectedFriendWidget.Update();
         ChatEntry.set_placeholder_text(Utils::Format("Message %s", SelectedFriend->Get().GetDisplayName().c_str()));
     }
 
-    void FriendsChatModule::OnNewChatUpdate()
+    void ChatModule::OnNewChatUpdate()
     {
         std::lock_guard Guard(NewChatMutex);
 
@@ -100,7 +100,7 @@ namespace EGL3::Modules {
         NewChatData.clear();
     }
 
-    void FriendsChatModule::OnSendMessageClicked()
+    void ChatModule::OnSendMessageClicked()
     {
         auto Content = ChatEntry.get_text();
         ChatEntry.set_text("");
@@ -113,7 +113,7 @@ namespace EGL3::Modules {
         SendChatMessage(AccountId, Content);
     }
 
-    void FriendsChatModule::OnRecieveChatMessage(const std::string& AccountId, std::string&& NewMessage, bool Recieved)
+    void ChatModule::OnRecieveChatMessage(const std::string& AccountId, std::string&& NewMessage, bool Recieved)
     {
         auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = std::chrono::system_clock::now(), .Recieved = Recieved });
 
@@ -125,7 +125,7 @@ namespace EGL3::Modules {
         }
     }
 
-    ChatConversation& FriendsChatModule::GetOrCreateConversation(const std::string& AccountId)
+    ChatConversation& ChatModule::GetOrCreateConversation(const std::string& AccountId)
     {
         auto Itr = std::find_if(Conversations.begin(), Conversations.end(), [&](const auto& Conv) {
             return Conv.AccountId == AccountId;

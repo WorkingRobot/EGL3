@@ -8,10 +8,10 @@
 
 #include <gtkmm.h>
 
-namespace EGL3::Modules {
-    class FriendsOptionsModule : public BaseModule {
+namespace EGL3::Modules::Friends {
+    class OptionsModule : public BaseModule {
     public:
-        FriendsOptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+        OptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
         const Storage::Models::StoredFriendData& GetStorageData() const;
 

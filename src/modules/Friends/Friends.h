@@ -10,14 +10,14 @@
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
-#include "FriendsChat.h"
-#include "FriendsList.h"
-#include "FriendsOptions.h"
+#include "Chat.h"
+#include "List.h"
+#include "Options.h"
 #include "KairosMenu.h"
 
 #include <gtkmm.h>
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
 	class FriendsModule : public BaseModule {
 	public:
 		FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
@@ -66,10 +66,11 @@ namespace EGL3::Modules {
 		AuthorizationModule& Auth;
 		ImageCacheModule& ImageCache;
 		AsyncFFModule& AsyncFF;
-		FriendsOptionsModule& Options;
+
+		OptionsModule& Options;
 		KairosMenuModule& KairosMenu;
-		FriendsListModule& FriendsList;
-		FriendsChatModule& FriendsChat;
+		ListModule& FriendsList;
+		ChatModule& FriendsChat;
 
 		Gtk::Button& ViewFriendsBtn;
 		Gtk::Button& AddFriendBtn;

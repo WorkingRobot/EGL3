@@ -6,7 +6,7 @@
 #include <array>
 #include <regex>
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
 
@@ -14,10 +14,11 @@ namespace EGL3::Modules {
             Auth(Modules.GetModule<AuthorizationModule>()),
             ImageCache(Modules.GetModule<ImageCacheModule>()),
             AsyncFF(Modules.GetModule<AsyncFFModule>()),
-            Options(Modules.GetModule<FriendsOptionsModule>()),
+
+            Options(Modules.GetModule<OptionsModule>()),
             KairosMenu(Modules.GetModule<KairosMenuModule>()),
-            FriendsList(Modules.GetModule<FriendsListModule>()),
-            FriendsChat(Modules.GetModule<FriendsChatModule>()),
+            FriendsList(Modules.GetModule<ListModule>()),
+            FriendsChat(Modules.GetModule<ChatModule>()),
 
             ViewFriendsBtn(Builder.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
             AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),

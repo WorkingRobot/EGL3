@@ -9,14 +9,14 @@
 #include "../ModuleList.h"
 #include "../Authorization.h"
 #include "../ImageCache.h"
-#include "FriendsOptions.h"
+#include "Options.h"
 
 #include <functional>
 #include <future>
 #include <gtkmm.h>
 #include <optional>
 
-namespace EGL3::Modules {
+namespace EGL3::Modules::Friends {
     class KairosMenuModule : public BaseModule {
     public:
         KairosMenuModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
@@ -33,7 +33,8 @@ namespace EGL3::Modules {
     private:
         AuthorizationModule& Auth;
         ImageCacheModule& ImageCache;
-        FriendsOptionsModule& Options;
+
+        OptionsModule& Options;
 
         bool Focused;
         Gtk::Window& Window;
