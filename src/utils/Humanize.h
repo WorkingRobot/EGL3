@@ -11,12 +11,12 @@ namespace EGL3::Utils {
         typedef std::chrono::duration<int, std::ratio<31556952>> ChronoYears;
 
         template<class T>
-        std::string ConvertDate(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate(bool IsFutureTense, bool IsSingular, int64_t Amount) {
 
         }
 
         template<>
-        std::string ConvertDate<std::chrono::milliseconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<std::chrono::milliseconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 millisecond from now";
@@ -36,7 +36,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<std::chrono::seconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<std::chrono::seconds>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 second from now";
@@ -56,7 +56,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<std::chrono::minutes>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<std::chrono::minutes>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 minute from now";
@@ -76,7 +76,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<std::chrono::hours>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<std::chrono::hours>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 hour from now";
@@ -96,7 +96,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<ChronoDays>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<ChronoDays>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "tomorrow";
@@ -116,7 +116,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<ChronoMonths>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<ChronoMonths>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 month from now";
@@ -136,7 +136,7 @@ namespace EGL3::Utils {
         }
 
         template<>
-        std::string ConvertDate<ChronoYears>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
+        static std::string ConvertDate<ChronoYears>(bool IsFutureTense, bool IsSingular, int64_t Amount) {
             if (IsFutureTense) {
                 if (IsSingular) {
                     return "1 year from now";
@@ -156,7 +156,7 @@ namespace EGL3::Utils {
         }
 
         template<class T>
-        std::string ConvertDate(bool IsFutureTense, int64_t Amount) {
+        static std::string ConvertDate(bool IsFutureTense, int64_t Amount) {
             if (Amount == 0) {
                 return "now";
             }
@@ -164,19 +164,19 @@ namespace EGL3::Utils {
         }
 
         template<class T>
-        std::string ConvertDate(bool IsFutureTense, const std::chrono::system_clock::duration& Date) {
+        static std::string ConvertDate(bool IsFutureTense, const std::chrono::system_clock::duration& Date) {
             auto Amount = std::chrono::duration_cast<T>(Date);
             return ConvertDate<T>(IsFutureTense, Amount.count());
         }
 
         template<class T>
-        std::string ConvertDate(bool IsFutureTense, const T& Amount) {
+        static std::string ConvertDate(bool IsFutureTense, const T& Amount) {
             return ConvertDate<T>(IsFutureTense, Amount.count());
         }
     }
 
     // Sparsely based off of https://github.com/Humanizr/Humanizer/blob/2e45bca3d4bfc8c9ff651a32490c8e7676558f14/src/Humanizer/DateTimeHumanizeStrategy/DateTimeHumanizeAlgorithms.cs#L110
-    std::string Humanize(const std::chrono::system_clock::time_point& Date) {
+    static std::string Humanize(const std::chrono::system_clock::time_point& Date) {
         // Primarily used by GetPageInfo::EmergencyNotice so people don't see 23434 years from now or something
         if (Date == Date.max()) {
             return "";
