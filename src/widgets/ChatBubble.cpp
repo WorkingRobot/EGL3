@@ -23,13 +23,6 @@ namespace EGL3::Widgets {
     {
         Content.set_line_wrap(true);
         Content.set_line_wrap_mode(Pango::WRAP_WORD_CHAR);
-        //Content.set_max_width_chars(1);
-        //Content.set_hexpand(false);
-        /*
-        Content.signal_size_allocate().connect([this](Gtk::Allocation& Alloc) {
-            printf("Alloc\n");
-            Alloc.set_width(BaseContainer.get_allocation().get_width() * .75f);
-        });*/
 
         BubbleContainer.set_has_tooltip(true);
         BubbleContainer.signal_query_tooltip().connect([this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
@@ -59,8 +52,6 @@ namespace EGL3::Widgets {
             return false;
         }, false);
 
-        auto HAlign = Message.Recieved ? Gtk::ALIGN_START : Gtk::ALIGN_END;
-
         Content.set_halign(Gtk::ALIGN_CENTER);
         Content.set_xalign(0);
         Content.set_yalign(0);
@@ -69,7 +60,7 @@ namespace EGL3::Widgets {
         Content.set_margin_top(7);
         Content.set_margin_bottom(7);
 
-        BubbleContainer.set_halign(HAlign);
+        BubbleContainer.set_halign(Message.Recieved ? Gtk::ALIGN_START : Gtk::ALIGN_END);
 
         BubbleContainer.pack_start(Content, true, true, 0);
 
@@ -84,8 +75,6 @@ namespace EGL3::Widgets {
         double width = Alloc.get_width();
         double height = Alloc.get_height();
         double radius = std::min(std::min(width, height), 40.) / 2;
-
-        double degrees = M_PI / 180.0;
 
         Ctx->arc(x + width - radius, y + radius, radius, -.5 * M_PI, 0);
         if (Recieved) {
