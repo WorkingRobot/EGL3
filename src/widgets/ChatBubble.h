@@ -17,7 +17,9 @@ namespace EGL3::Widgets {
         static void DrawBubble(const Cairo::RefPtr<Cairo::Context>& Ctx, Gtk::Allocation Alloc, bool Recieved);
 
         Gtk::Box BaseContainer{ Gtk::ORIENTATION_VERTICAL };
-        Gtk::Box BubbleContainer;
+        Gtk::Overlay BubbleContainer;
+        Gtk::Box TextContainer;
+        Gtk::DrawingArea Background;
         Gtk::Label Content;
 
         Storage::Models::ChatMessage& Message;

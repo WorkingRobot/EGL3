@@ -29,6 +29,8 @@ namespace EGL3::Widgets {
         Utils::Callback<void(ClickAction, const Storage::Models::Friend&)> OnAction;
 
     private:
+        void Construct();
+
         const Storage::Models::Friend* SelectedFriend;
 
         Gtk::Menu Container;

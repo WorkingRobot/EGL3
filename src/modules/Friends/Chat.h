@@ -41,7 +41,7 @@ namespace EGL3::Modules::Friends {
         Modules::AsyncFFModule& AsyncFF;
 
         Gtk::ScrolledWindow& ChatScrollWindow;
-        Gtk::ListBox& ChatBox;
+        Gtk::Box& ChatBox;
 
         Gtk::EventBox& ChatEntryContainer;
         Gtk::Entry& ChatEntry;

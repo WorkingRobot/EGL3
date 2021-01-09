@@ -7,7 +7,7 @@ namespace EGL3::Modules::Friends {
         ImageCache(Modules.GetModule<ImageCacheModule>()),
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
         ChatScrollWindow(Builder.GetWidget<Gtk::ScrolledWindow>("FriendsChatScrollWindow")),
-        ChatBox(Builder.GetWidget<Gtk::ListBox>("FriendsChatBox")),
+        ChatBox(Builder.GetWidget<Gtk::Box>("FriendsChatBox")),
         ChatEntryContainer(Builder.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
         ChatEntry(Builder.GetWidget<Gtk::Entry>("FriendsChatEntry")),
         SelectedFriendContainer(Builder.GetWidget<Gtk::Box>("FriendsChatSelectedUserContainer")),
@@ -91,7 +91,7 @@ namespace EGL3::Modules::Friends {
 
         for (auto& NewChat : NewChatData) {
             auto& Widget = ChatBubbles.emplace_back(std::make_unique<Widgets::ChatBubble>(NewChat.get()));
-            ChatBox.add(*Widget);
+            ChatBox.pack_start(*Widget);
         }
 
         NewChatData.clear();

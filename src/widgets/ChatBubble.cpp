@@ -24,45 +24,44 @@ namespace EGL3::Widgets {
         Content.set_line_wrap(true);
         Content.set_line_wrap_mode(Pango::WRAP_WORD_CHAR);
 
+        Content.set_halign(Gtk::ALIGN_CENTER);
+        Content.set_xalign(0);
+        Content.set_yalign(0);
+        Content.set_margin_start(12);
+        Content.set_margin_end(12);
+        Content.set_margin_top(7);
+        Content.set_margin_bottom(7);
+
+        BubbleContainer.set_margin_bottom(5);
+        BubbleContainer.set_halign(Message.Recieved ? Gtk::ALIGN_START : Gtk::ALIGN_END);
+
+        if (Message.Recieved) {
+            BubbleContainer.get_style_context()->add_class("chatbubble-recieved");
+        }
+        else {
+            BubbleContainer.get_style_context()->add_class("chatbubble-sent");
+        }
+
         BubbleContainer.set_has_tooltip(true);
         BubbleContainer.signal_query_tooltip().connect([this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
             tooltip->set_text(Utils::Humanize(Message.Time));
             return true;
         });
+
         BubbleContainer.signal_draw().connect([this](const Cairo::RefPtr<Cairo::Context>& Ctx) {
-            Gdk::RGBA Color;
-            if (EGL3_CONDITIONAL_LOG(BaseContainer.get_style_context()->lookup_color(Message.Recieved ? "fg_color" : "selected_bg_color", Color), LogLevel::Warning, "Failed to get chat background color")) {
-                // It's a foreground color, don't make it so apparent
-                if (Message.Recieved) {
-                    Color.set_alpha(Color.get_alpha() * .1);
-                }
-            }
-            else {
-                Color = BaseContainer.get_style_context()->get_color(Gtk::STATE_FLAG_NORMAL);
-                Color.set_alpha(Color.get_alpha() * .1);
-            }
+            auto Alloc = BubbleContainer.get_allocation();
 
-            Ctx->save();
+            DrawBubble(Ctx, Alloc, Message.Recieved);
+            Ctx->clip();
+            BubbleContainer.get_style_context()->render_background(Ctx, 0, 0, Alloc.get_width(), Alloc.get_height());
 
-            Ctx->set_source_rgba(Color.get_red(), Color.get_green(), Color.get_blue(), Color.get_alpha());
-            DrawBubble(Ctx, BubbleContainer.get_allocation(), Message.Recieved);
-            Ctx->fill();
-
-            Ctx->restore();
             return false;
         }, false);
 
-        Content.set_halign(Gtk::ALIGN_CENTER);
-        Content.set_xalign(0);
-        Content.set_yalign(0);
-        Content.set_margin_start(5);
-        Content.set_margin_end(12);
-        Content.set_margin_top(7);
-        Content.set_margin_bottom(7);
+        TextContainer.pack_start(Content, true, true, 0);
 
-        BubbleContainer.set_halign(Message.Recieved ? Gtk::ALIGN_START : Gtk::ALIGN_END);
-
-        BubbleContainer.pack_start(Content, true, true, 0);
+        BubbleContainer.add(TextContainer);
+        BubbleContainer.add_overlay(Background);
 
         BaseContainer.pack_start(BubbleContainer, false, false, 0);
 

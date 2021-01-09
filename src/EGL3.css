@@ -78,3 +78,14 @@
 .main-headerbar {
     min-height: 24px;
 }
+
+/* Friend chat bubbles */
+.chatbubble-sent {
+    background-color: @selected_bg_color;
+    color: @selected_fg_color;
+}
+
+.chatbubble-recieved {
+    background-color: mix(@bg_color, @fg_color, .1);
+    color: shade(@fg_color, 1.1);
+}

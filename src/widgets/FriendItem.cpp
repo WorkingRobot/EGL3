@@ -93,6 +93,7 @@ namespace EGL3::Widgets {
         AvatarContainer.set_overlay_pass_through(AvatarEventBox, false);
         AvatarContainer.set_overlay_pass_through(ColorStatusEventBox, false);
 
+        UsernameContainer.set_spacing(5);
         UsernameContainer.pack_start(Username, false, false, 0);
         UsernameContainer.pack_start(Nickname, false, false, 0);
 
