@@ -3,7 +3,7 @@
 #include <chrono>
 
 namespace EGL3::Utils {
-    namespace {
+    namespace Detail {
         // Added in c++20, but msvc hasn't added this yet
         typedef std::chrono::duration<int, std::ratio<86400>> ChronoDays;
         typedef std::chrono::duration<int, std::ratio<604800>> ChronoWeeks;
@@ -187,41 +187,41 @@ namespace EGL3::Utils {
         auto Distance = std::chrono::abs(CurrentTime - Date);
 
         if (Distance < std::chrono::milliseconds(500)) {
-            return ConvertDate<std::chrono::milliseconds>(IsFutureTense, 0);
+            return Detail::ConvertDate<std::chrono::milliseconds>(IsFutureTense, 0);
         }
 
         if (Distance < std::chrono::seconds(60)) {
-            return ConvertDate<std::chrono::seconds>(IsFutureTense, Distance);
+            return Detail::ConvertDate<std::chrono::seconds>(IsFutureTense, Distance);
         }
 
         if (Distance < std::chrono::seconds(120)) {
-            return ConvertDate<std::chrono::minutes>(IsFutureTense, 1);
+            return Detail::ConvertDate<std::chrono::minutes>(IsFutureTense, 1);
         }
 
         if (Distance < std::chrono::minutes(60)) {
-            return ConvertDate<std::chrono::minutes>(IsFutureTense, Distance);
+            return Detail::ConvertDate<std::chrono::minutes>(IsFutureTense, Distance);
         }
 
         if (Distance < std::chrono::minutes(90)) {
-            return ConvertDate<std::chrono::hours>(IsFutureTense, 1);
+            return Detail::ConvertDate<std::chrono::hours>(IsFutureTense, 1);
         }
 
         if (Distance < std::chrono::hours(24)) {
-            return ConvertDate<std::chrono::hours>(IsFutureTense, Distance);
+            return Detail::ConvertDate<std::chrono::hours>(IsFutureTense, Distance);
         }
 
-        if (Distance < ChronoMonths(1)) {
-            return ConvertDate<ChronoDays>(IsFutureTense, Distance);
+        if (Distance < Detail::ChronoMonths(1)) {
+            return Detail::ConvertDate<Detail::ChronoDays>(IsFutureTense, Distance);
         }
 
-        if (Distance < ChronoDays(345)) {
-            return ConvertDate<ChronoMonths>(IsFutureTense, Distance);
+        if (Distance < Detail::ChronoDays(345)) {
+            return Detail::ConvertDate<Detail::ChronoMonths>(IsFutureTense, Distance);
         }
 
-        if (Distance < ChronoYears(1)) {
-            return ConvertDate<ChronoYears>(IsFutureTense, 1);
+        if (Distance < Detail::ChronoYears(1)) {
+            return Detail::ConvertDate<Detail::ChronoYears>(IsFutureTense, 1);
         }
 
-        return ConvertDate<ChronoYears>(IsFutureTense, Distance);
+        return Detail::ConvertDate<Detail::ChronoYears>(IsFutureTense, Distance);
     }
 }

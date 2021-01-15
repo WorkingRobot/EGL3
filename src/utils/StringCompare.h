@@ -5,7 +5,7 @@
 #include <string>
 
 namespace EGL3::Utils {
-    namespace {
+    namespace Detail {
         struct ci_char_traits : public std::char_traits<char> {
             static char to_upper(char ch) {
                 return std::toupper((unsigned char)ch);
@@ -61,12 +61,12 @@ namespace EGL3::Utils {
 
     template<class Str>
     constexpr static std::strong_ordering CompareStringsSensitive(const Str& A, const Str& B) {
-        return CompareStrings<false>(A, B);
+        return Detail::CompareStrings<false>(A, B);
     }
 
     template<class Str>
     constexpr static std::weak_ordering CompareStringsInsensitive(const Str& A, const Str& B) {
-        return CompareStrings<true>(A, B);
+        return Detail::CompareStrings<true>(A, B);
     }
 
     template<class Clock>
