@@ -61,7 +61,7 @@ namespace EGL3::Web::Epic::Responses {
 		// Whether MFA is enabled (TFA = two factor authentication, not sure why it's not called MFA)
 		bool TFAEnabled;
 
-		// Headless? no idea what this is
+		// This isn't a "real full fledged" account. It's tied directly to a console account or something else
 		bool Headless;
 
 		PARSE_DEFINE(GetAccount)

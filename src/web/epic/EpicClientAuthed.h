@@ -20,6 +20,7 @@
 #include "responses/GetBlockedUsers.h"
 #include "responses/GetAvailableSettingValues.h"
 #include "responses/GetSettingsForAccounts.h"
+#include "responses/GetLauncherDownloadInfo.h"
 #include "responses/GetLightswitchStatus.h"
 #include "responses/QueryProfile.h"
 #include "responses/OAuthToken.h"
@@ -64,6 +65,12 @@ namespace EGL3::Web::Epic {
         // All platforms are technically valid, but they'll return an empty list
         // Some that I know for sure that work are "Windows", "Mac", "IOS"
         Response<Responses::GetAssets> GetAssets(const std::string& Platform, const std::string& Label);
+
+        // Version is in format like "11.0.1-14907503+++Portal+Release-Live-Windows"
+        Response<Responses::GetLauncherDownloadInfo::BuildStatus> CheckLauncherVersion(const std::string& CurrentVersion);
+
+        // Label used to be Live-DurrBurger up until 10.18.11, now it's Live-EternalKnight
+        Response<Responses::GetLauncherDownloadInfo> GetLauncherDownloadInfo(const std::string& Platform, const std::string& Label, const std::optional<std::string>& ClientVersion = std::nullopt, const std::optional<std::string>& MachineId = std::nullopt);
 
         Response<Responses::GetDownloadInfo> GetDownloadInfo(const std::string& Platform, const std::string& Label, const std::string& CatalogItemId, const std::string& AppName);
 

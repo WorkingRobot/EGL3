@@ -1,83 +1,90 @@
 #pragma once
 
 #include "../../JsonParsing.h"
+#include "../../../utils/Random.h"
 
 namespace EGL3::Web::Epic::Responses {
-	struct GetDownloadInfo {
-		struct Metadata {
-			// Not too sure what this is, I've only seen Android have this metadata
-			std::optional<std::string> AndroidSigningFingerprintSHA1;
+    struct GetDownloadInfo {
+        struct QueryParameter {
+            std::string Name;
 
-			std::optional<std::string> AndroidPackageVersionCode;
+            std::string Value;
 
-			std::optional<std::string> AndroidSigningFingerprintSHA256;
+            PARSE_DEFINE(QueryParameter)
+                PARSE_ITEM("name", Name)
+                PARSE_ITEM("value", Value)
+            PARSE_END
+        };
 
-			std::optional<std::string> AndroidPackageName;
+        struct Manifest {
+            std::string Uri;
 
-			PARSE_DEFINE(Metadata)
-				PARSE_ITEM_OPT("androidSigningFingerprintSHA1", AndroidSigningFingerprintSHA1)
-				PARSE_ITEM_OPT("androidPackageVersionCode", AndroidPackageVersionCode)
-				PARSE_ITEM_OPT("androidSigningFingerprintSHA256", AndroidSigningFingerprintSHA256)
-				PARSE_ITEM_OPT("androidPackageName", AndroidPackageName)
-			PARSE_END
-		};
+            std::vector<QueryParameter> QueryParams;
 
-		struct QueryParameter {
-			std::string Name;
+            std::vector<QueryParameter> Headers;
 
-			std::string Value;
+            PARSE_DEFINE(Manifest)
+                PARSE_ITEM("uri", Uri)
+                PARSE_ITEM_OPT("queryParams", QueryParams)
+                PARSE_ITEM_OPT("headers", Headers)
+            PARSE_END
+        };
 
-			PARSE_DEFINE(QueryParameter)
-				PARSE_ITEM("name", Name)
-				PARSE_ITEM("value", Value)
-			PARSE_END
-		};
+        struct Element {
+            // Name of the app
+            std::string AppName;
 
-		struct Manifest {
-			std::string URI;
+            // Label of the app
+            std::string LabelName;
 
-			std::optional<std::vector<QueryParameter>> QueryParams;
+            // Version of the app
+            std::string BuildVersion;
 
-			PARSE_DEFINE(Manifest)
-				PARSE_ITEM("uri", URI)
-				PARSE_ITEM_OPT("queryParams", QueryParams)
-			PARSE_END
-		};
+            // SHA1 of manifest file
+            std::string Hash;
 
-		struct Element {
-			// Name of the app
-			std::string AppName;
+            // Any metadata for the element (optional)
+            // Here are some possible keys:
+            // androidSigningFingerprintSHA1
+            // androidPackageVersionCode
+            // androidSigningFingerprintSHA256
+            // androidPackageName
+            // status
+            std::unordered_map<std::string, std::string> Metadata;
 
-			// Label of the app
-			std::string LabelName;
+            // Manifest URLs
+            std::vector<Manifest> Manifests;
 
-			// Version of the app
-			std::string BuildVersion;
+            PARSE_DEFINE(Element)
+                PARSE_ITEM("appName", AppName)
+                PARSE_ITEM("labelName", LabelName)
+                PARSE_ITEM("buildVersion", BuildVersion)
+                PARSE_ITEM("hash", Hash)
+                PARSE_ITEM_OPT("metadata", Metadata)
+                PARSE_ITEM("manifests", Manifests)
+            PARSE_END
 
-			// SHA1 of manifest file
-			std::string Hash;
+            const Manifest& PickManifest() const {
+                return *Utils::RandomChoice(Manifests.begin(), Manifests.end());
+            }
+        };
 
-			// Any metadata for the element (optional)
-			std::optional<Metadata> Metadata;
+        // A list of all assets available to the user
+        std::vector<Element> Elements;
 
-			// Manifest URLs
-			std::vector<Manifest> Manifests;
+        PARSE_DEFINE(GetDownloadInfo)
+            PARSE_ITEM("elements", Elements)
+        PARSE_END
 
-			PARSE_DEFINE(Element)
-				PARSE_ITEM("appName", AppName)
-				PARSE_ITEM("labelName", LabelName)
-				PARSE_ITEM("buildVersion", BuildVersion)
-				PARSE_ITEM("hash", Hash)
-				PARSE_ITEM_OPT("metadata", Metadata)
-				PARSE_ITEM("manifests", Manifests)
-			PARSE_END
-		};
+        const Element* GetElement(const std::string& AppName) const {
+            auto Itr = std::find_if(Elements.begin(), Elements.end(), [&AppName](const Element& Element) {
+                return Element.AppName == AppName;
+            });
 
-		// A list of all assets available to the user
-		std::vector<Element> Elements;
-
-		PARSE_DEFINE(GetDownloadInfo)
-			PARSE_ITEM("elements", Elements)
-		PARSE_END
-	};
+            if (Itr != Elements.end()) {
+                return &*Itr;
+            }
+            return nullptr;
+        }
+    };
 }

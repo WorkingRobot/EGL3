@@ -159,6 +159,31 @@ namespace EGL3::Web::Epic {
         );
     }
 
+    Response<Responses::GetLauncherDownloadInfo::BuildStatus> EpicClientAuthed::CheckLauncherVersion(const std::string& CurrentVersion)
+    {
+        return Call<Responses::GetLauncherDownloadInfo::BuildStatus, 200, false>(
+            [&, this]() {
+                return Http::Get(
+                    Http::FormatUrl<Host::Launcher>("public/assets/info/launcher/%s", CurrentVersion.c_str()),
+                    cpr::Header{ { "Authorization", AuthHeader } }
+                );
+            }
+        );
+    }
+
+    Response<Responses::GetLauncherDownloadInfo> EpicClientAuthed::GetLauncherDownloadInfo(const std::string& Platform, const std::string& Label, const std::optional<std::string>& ClientVersion, const std::optional<std::string>& MachineId)
+    {
+        return Call<Responses::GetLauncherDownloadInfo, 200, false>(
+            [&, this]() {
+                return Http::Get(
+                    Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/%s/launcher", Platform.c_str()),
+                    cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
+                    cpr::Parameters{ { "label", Label }, { "clientVersion", ClientVersion.value_or("") }, { "machineId", MachineId.value_or("") } }
+                );
+            }
+        );
+    }
+
     Response<Responses::GetDownloadInfo> EpicClientAuthed::GetDownloadInfo(const std::string& Platform, const std::string& Label, const std::string& CatalogItemId, const std::string& AppName)
     {
         return Call<Responses::GetDownloadInfo, 200, false>(
