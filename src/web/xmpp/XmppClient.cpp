@@ -5,7 +5,7 @@
 #include "../../utils/Base64.h"
 #include "../../utils/Crc32.h"
 #include "../../utils/Hex.h"
-#include "../../utils/RandGuid.h"
+#include "../../utils/Random.h"
 #include "../../web/Hosts.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -162,8 +162,8 @@ namespace EGL3::Web::Xmpp {
             return;
         }
 
-        PresenceUpdate.Clear();
-        SystemMessage.Clear();
+        PresenceUpdate.Set();
+        SystemMessage.Set();
 
         {
             std::unique_lock Lock(BackgroundPingMutex);
