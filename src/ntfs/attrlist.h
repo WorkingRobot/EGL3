@@ -1,6 +1,6 @@
 /*
  * attrlist.h - Exports for attribute list attribute handling.  
- * 		Originated from Linux-NTFS project.
+ *      Originated from Linux-NTFS project.
  *
  * Copyright (c) 2004 Anton Altaparmakov
  * Copyright (c) 2004 Yura Pakhuchiy
@@ -33,7 +33,7 @@ extern int ntfs_attrlist_entry_rm(ntfs_attr_search_ctx *ctx);
 
 /**
  * ntfs_attrlist_mark_dirty - set the attribute list dirty
- * @ni:		ntfs inode which base inode contain dirty attribute list
+ * @ni:     ntfs inode which base inode contain dirty attribute list
  *
  * Set the attribute list dirty so it is written out later (at the latest at
  * ntfs_inode_close() time).
@@ -42,10 +42,10 @@ extern int ntfs_attrlist_entry_rm(ntfs_attr_search_ctx *ctx);
  */
 static __inline void ntfs_attrlist_mark_dirty(ntfs_inode *ni)
 {
-	if (ni->nr_extents == -1)
-		NInoAttrListSetDirty(ni->base_ni);
-	else
-		NInoAttrListSetDirty(ni);
+    if (ni->nr_extents == -1)
+        NInoAttrListSetDirty(ni->base_ni);
+    else
+        NInoAttrListSetDirty(ni);
 }
 
 #endif /* defined _NTFS_ATTRLIST_H */

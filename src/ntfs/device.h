@@ -33,36 +33,36 @@
  * Defined bits for the state field in the ntfs_device structure.
  */
 typedef enum {
-	ND_Open,	/* 1: Device is open. */
-	ND_ReadOnly,	/* 1: Device is read-only. */
-	ND_Dirty,	/* 1: Device is dirty, needs sync. */
-	ND_Block,	/* 1: Device is a block device. */
-	ND_Sync,	/* 1: Device is mounted with "-o sync" */
+    ND_Open,    /* 1: Device is open. */
+    ND_ReadOnly,    /* 1: Device is read-only. */
+    ND_Dirty,   /* 1: Device is dirty, needs sync. */
+    ND_Block,   /* 1: Device is a block device. */
+    ND_Sync,    /* 1: Device is mounted with "-o sync" */
 } ntfs_device_state_bits;
 
-#define  test_ndev_flag(nd, flag)	   test_bit(ND_##flag, (nd)->d_state)
-#define   set_ndev_flag(nd, flag)	    set_bit(ND_##flag, (nd)->d_state)
-#define clear_ndev_flag(nd, flag)	  clear_bit(ND_##flag, (nd)->d_state)
+#define  test_ndev_flag(nd, flag)      test_bit(ND_##flag, (nd)->d_state)
+#define   set_ndev_flag(nd, flag)       set_bit(ND_##flag, (nd)->d_state)
+#define clear_ndev_flag(nd, flag)     clear_bit(ND_##flag, (nd)->d_state)
 
-#define NDevOpen(nd)		 test_ndev_flag(nd, Open)
-#define NDevSetOpen(nd)		  set_ndev_flag(nd, Open)
-#define NDevClearOpen(nd)	clear_ndev_flag(nd, Open)
+#define NDevOpen(nd)         test_ndev_flag(nd, Open)
+#define NDevSetOpen(nd)       set_ndev_flag(nd, Open)
+#define NDevClearOpen(nd)   clear_ndev_flag(nd, Open)
 
-#define NDevReadOnly(nd)	 test_ndev_flag(nd, ReadOnly)
-#define NDevSetReadOnly(nd)	  set_ndev_flag(nd, ReadOnly)
-#define NDevClearReadOnly(nd)	clear_ndev_flag(nd, ReadOnly)
+#define NDevReadOnly(nd)     test_ndev_flag(nd, ReadOnly)
+#define NDevSetReadOnly(nd)   set_ndev_flag(nd, ReadOnly)
+#define NDevClearReadOnly(nd)   clear_ndev_flag(nd, ReadOnly)
 
-#define NDevDirty(nd)		 test_ndev_flag(nd, Dirty)
-#define NDevSetDirty(nd)	  set_ndev_flag(nd, Dirty)
-#define NDevClearDirty(nd)	clear_ndev_flag(nd, Dirty)
+#define NDevDirty(nd)        test_ndev_flag(nd, Dirty)
+#define NDevSetDirty(nd)      set_ndev_flag(nd, Dirty)
+#define NDevClearDirty(nd)  clear_ndev_flag(nd, Dirty)
 
-#define NDevBlock(nd)		 test_ndev_flag(nd, Block)
-#define NDevSetBlock(nd)	  set_ndev_flag(nd, Block)
-#define NDevClearBlock(nd)	clear_ndev_flag(nd, Block)
+#define NDevBlock(nd)        test_ndev_flag(nd, Block)
+#define NDevSetBlock(nd)      set_ndev_flag(nd, Block)
+#define NDevClearBlock(nd)  clear_ndev_flag(nd, Block)
 
-#define NDevSync(nd)		 test_ndev_flag(nd, Sync)
-#define NDevSetSync(nd)		  set_ndev_flag(nd, Sync)
-#define NDevClearSync(nd)	clear_ndev_flag(nd, Sync)
+#define NDevSync(nd)         test_ndev_flag(nd, Sync)
+#define NDevSetSync(nd)       set_ndev_flag(nd, Sync)
+#define NDevClearSync(nd)   clear_ndev_flag(nd, Sync)
 
 /**
  * struct ntfs_device -
@@ -76,15 +76,15 @@ typedef enum {
  * -1).
  */
 struct ntfs_device {
-	struct ntfs_device_operations *d_ops;	/* Device operations. */
-	unsigned long d_state;			/* State of the device. */
-	char *d_name;				/* Name of device. */
-	void *d_private;			/* Private data used by the
-						   device operations. */
-	int d_heads;				/* Disk geometry: number of
-						   heads or -1. */
-	int d_sectors_per_track;		/* Disk geometry: number of
-						   sectors per track or -1. */
+    struct ntfs_device_operations *d_ops;   /* Device operations. */
+    unsigned long d_state;          /* State of the device. */
+    char *d_name;               /* Name of device. */
+    void *d_private;            /* Private data used by the
+                           device operations. */
+    int d_heads;                /* Disk geometry: number of
+                           heads or -1. */
+    int d_sectors_per_track;        /* Disk geometry: number of
+                           sectors per track or -1. */
 };
 
 struct stat;
@@ -96,29 +96,29 @@ struct stat;
  * the low level device described by an ntfs device structure.
  */
 struct ntfs_device_operations {
-	int (*open)(struct ntfs_device *dev, int flags);
-	int (*close)(struct ntfs_device *dev);
-	s64 (*seek)(struct ntfs_device *dev, s64 offset, int whence);
-	s64 (*read)(struct ntfs_device *dev, void *buf, s64 count);
-	s64 (*write)(struct ntfs_device *dev, const void *buf, s64 count);
-	s64 (*pread)(struct ntfs_device *dev, void *buf, s64 count, s64 offset);
-	s64 (*pwrite)(struct ntfs_device *dev, const void *buf, s64 count,
-			s64 offset);
-	int (*sync)(struct ntfs_device *dev);
-	int (*stat)(struct ntfs_device *dev, struct stat *buf);
-	int (*ioctl)(struct ntfs_device *dev, unsigned long request,
-			void *argp);
+    int (*open)(struct ntfs_device *dev, int flags);
+    int (*close)(struct ntfs_device *dev);
+    s64 (*seek)(struct ntfs_device *dev, s64 offset, int whence);
+    s64 (*read)(struct ntfs_device *dev, void *buf, s64 count);
+    s64 (*write)(struct ntfs_device *dev, const void *buf, s64 count);
+    s64 (*pread)(struct ntfs_device *dev, void *buf, s64 count, s64 offset);
+    s64 (*pwrite)(struct ntfs_device *dev, const void *buf, s64 count,
+            s64 offset);
+    int (*sync)(struct ntfs_device *dev);
+    int (*stat)(struct ntfs_device *dev, struct stat *buf);
+    int (*ioctl)(struct ntfs_device *dev, unsigned long request,
+            void *argp);
 };
 
 extern struct ntfs_device *ntfs_device_alloc(const char *name, const long state,
-		struct ntfs_device_operations *dops, void *priv_data);
+        struct ntfs_device_operations *dops, void *priv_data);
 extern int ntfs_device_free(struct ntfs_device *dev);
 
 extern s64 ntfs_pread(struct ntfs_device *dev, const s64 pos, s64 count,
-		void *b);
+        void *b);
 extern s64 ntfs_pwrite(struct ntfs_device *dev, const s64 pos, s64 count,
-		const void *b);
+        const void *b);
 extern s64 ntfs_cluster_write(const ntfs_volume *vol, const s64 lcn,
-		const s64 count, const void *b);
+        const s64 count, const void *b);
 
 #endif /* defined _NTFS_DEVICE_H */

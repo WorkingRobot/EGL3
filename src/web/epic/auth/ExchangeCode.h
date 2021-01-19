@@ -6,32 +6,32 @@
 #include <string>
 
 namespace EGL3::Web::Epic::Auth {
-	class ExchangeCode {
-	public:
-		enum ErrorCode {
-			SUCCESS,
-			CANCELLED,
-			EXCH_CODE_NOT_200,
-			EXCH_CODE_JSON
-		};
+    class ExchangeCode {
+    public:
+        enum ErrorCode {
+            SUCCESS,
+            CANCELLED,
+            EXCH_CODE_NOT_200,
+            EXCH_CODE_JSON
+        };
 
-		ExchangeCode(const cpr::Authentication& AuthClient, const std::string& Code);
+        ExchangeCode(const cpr::Authentication& AuthClient, const std::string& Code);
 
-		~ExchangeCode();
+        ~ExchangeCode();
 
-		const std::shared_future<ErrorCode>& GetOAuthResponseFuture() const;
+        const std::shared_future<ErrorCode>& GetOAuthResponseFuture() const;
 
-		const rapidjson::Document& GetOAuthResponse() const;
+        const rapidjson::Document& GetOAuthResponse() const;
 
-	private:
-		ErrorCode RunOAuthResponseTask();
+    private:
+        ErrorCode RunOAuthResponseTask();
 
-		std::atomic_bool Cancelled;
+        std::atomic_bool Cancelled;
 
-		std::shared_future<ErrorCode> OAuthResponseFuture;
-		rapidjson::Document OAuthResponse;
+        std::shared_future<ErrorCode> OAuthResponseFuture;
+        rapidjson::Document OAuthResponse;
 
-		cpr::Authentication AuthClient;
-		std::string Code;
-	};
+        cpr::Authentication AuthClient;
+        std::string Code;
+    };
 }

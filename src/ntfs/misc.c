@@ -1,6 +1,6 @@
 /**
  * misc.c : miscellaneous :
- *		- dealing with errors in memory allocation
+ *      - dealing with errors in memory allocation
  *
  * Copyright (c) 2008 Jean-Pierre Andre
  *
@@ -33,20 +33,20 @@
  */
 void *ntfs_calloc(size_t size)
 {
-	void *p;
-	
-	p = calloc(1, size);
-	if (!p)
-		ntfs_log_perror("Failed to calloc %lld bytes", (long long)size);
-	return p;
+    void *p;
+    
+    p = calloc(1, size);
+    if (!p)
+        ntfs_log_perror("Failed to calloc %lld bytes", (long long)size);
+    return p;
 }
 
 void *ntfs_malloc(size_t size)
 {
-	void *p;
-	
-	p = malloc(size);
-	if (!p)
-		ntfs_log_perror("Failed to malloc %lld bytes", (long long)size);
-	return p;
+    void *p;
+    
+    p = malloc(size);
+    if (!p)
+        ntfs_log_perror("Failed to malloc %lld bytes", (long long)size);
+    return p;
 }

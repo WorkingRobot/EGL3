@@ -52,17 +52,17 @@
  */
 int utils_set_locale(void)
 {
-	const char *locale;
+    const char *locale;
 
-	locale = setlocale(LC_ALL, "");
-	if (!locale) {
-		locale = setlocale(LC_ALL, NULL);
-		ntfs_log_error("Failed to set locale, using default '%s'.\n",
-				locale);
-		return 1;
-	} else {
-		return 0;
-	}
+    locale = setlocale(LC_ALL, "");
+    if (!locale) {
+        locale = setlocale(LC_ALL, NULL);
+        ntfs_log_error("Failed to set locale, using default '%s'.\n",
+                locale);
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 /**
@@ -70,108 +70,108 @@ int utils_set_locale(void)
  * ntfs-3g's.
  */
 int ntfs_mbstoucs_libntfscompat(const char *ins,
-		ntfschar **outs, int outs_len)
+        ntfschar **outs, int outs_len)
 {
-	if(!outs) {
-		errno = EINVAL;
-		return -1;
-	}
-	else if(*outs != NULL) {
-		/* Note: libntfs's mbstoucs implementation allows the caller to
-		 * specify a preallocated buffer while libntfs-3g's always
-		 * allocates the output buffer.
-		 */
-		ntfschar *tmpstr = NULL;
-		int tmpstr_len;
+    if(!outs) {
+        errno = EINVAL;
+        return -1;
+    }
+    else if(*outs != NULL) {
+        /* Note: libntfs's mbstoucs implementation allows the caller to
+         * specify a preallocated buffer while libntfs-3g's always
+         * allocates the output buffer.
+         */
+        ntfschar *tmpstr = NULL;
+        int tmpstr_len;
 
-		tmpstr_len = ntfs_mbstoucs(ins, &tmpstr);
-		if(tmpstr_len >= 0) {
-			if((tmpstr_len + 1) > outs_len) {
-				/* Doing a realloc instead of reusing tmpstr
-				 * because it emulates libntfs's mbstoucs more
-				 * closely. */
-				ntfschar *re_outs = realloc(*outs,
-					sizeof(ntfschar)*(tmpstr_len + 1));
-				if(!re_outs)
-					tmpstr_len = -1;
-				else
-					*outs = re_outs;
-			}
+        tmpstr_len = ntfs_mbstoucs(ins, &tmpstr);
+        if(tmpstr_len >= 0) {
+            if((tmpstr_len + 1) > outs_len) {
+                /* Doing a realloc instead of reusing tmpstr
+                 * because it emulates libntfs's mbstoucs more
+                 * closely. */
+                ntfschar *re_outs = realloc(*outs,
+                    sizeof(ntfschar)*(tmpstr_len + 1));
+                if(!re_outs)
+                    tmpstr_len = -1;
+                else
+                    *outs = re_outs;
+            }
 
-			if(tmpstr_len >= 0) {
-				/* The extra character is the \0 terminator. */
-				memcpy(*outs, tmpstr,
-					sizeof(ntfschar)*(tmpstr_len + 1));
-			}
+            if(tmpstr_len >= 0) {
+                /* The extra character is the \0 terminator. */
+                memcpy(*outs, tmpstr,
+                    sizeof(ntfschar)*(tmpstr_len + 1));
+            }
 
-			free(tmpstr);
-		}
+            free(tmpstr);
+        }
 
-		return tmpstr_len;
-	}
-	else
-		return ntfs_mbstoucs(ins, outs);
+        return tmpstr_len;
+    }
+    else
+        return ntfs_mbstoucs(ins, outs);
 }
 
 #ifdef HAVE_WINDOWS_H
 
 /*
- *		Translate formats for older Windows
+ *      Translate formats for older Windows
  *
- *	Up to Windows XP, msvcrt.dll does not support long long format
- *	specifications (%lld, %llx, etc). We have to translate them
- *	to %I64.
+ *  Up to Windows XP, msvcrt.dll does not support long long format
+ *  specifications (%lld, %llx, etc). We have to translate them
+ *  to %I64.
  */
 
 char *ntfs_utils_reformat(char *out, int sz, const char *fmt)
 {
-	const char *f;
-	char *p;
-	int i;
-	enum { F_INIT, F_PERCENT, F_FIRST } state;
+    const char *f;
+    char *p;
+    int i;
+    enum { F_INIT, F_PERCENT, F_FIRST } state;
 
-	i = 0;
-	f = fmt;
-	p = out;
-	state = F_INIT;
-	while (*f && ((i + 3) < sz)) {
-		switch (state) {
-		case F_INIT :
-			if (*f == '%')
-				state = F_PERCENT;
-			*p++ = *f++;
-			i++;
-			break;
-		case F_PERCENT :
-			if (*f == 'l') {
-				state = F_FIRST;
-				f++;
-			} else {
-				if (((*f < '0') || (*f > '9'))
-				    && (*f != '*') && (*f != '-'))
-					state = F_INIT;
-				*p++ = *f++;
-				i++;
-			}
-			break;
-		case F_FIRST :
-			if (*f == 'l') {
-				*p++ = 'I';
-				*p++ = '6';
-				*p++ = '4';
-				f++;
-				i += 3;
-			} else {
-				*p++ = 'l';
-				*p++ = *f++;
-				i += 2;
-			}
-			state = F_INIT;
-			break;
-		}
-	}
-	*p++ = 0;
-	return (out);
+    i = 0;
+    f = fmt;
+    p = out;
+    state = F_INIT;
+    while (*f && ((i + 3) < sz)) {
+        switch (state) {
+        case F_INIT :
+            if (*f == '%')
+                state = F_PERCENT;
+            *p++ = *f++;
+            i++;
+            break;
+        case F_PERCENT :
+            if (*f == 'l') {
+                state = F_FIRST;
+                f++;
+            } else {
+                if (((*f < '0') || (*f > '9'))
+                    && (*f != '*') && (*f != '-'))
+                    state = F_INIT;
+                *p++ = *f++;
+                i++;
+            }
+            break;
+        case F_FIRST :
+            if (*f == 'l') {
+                *p++ = 'I';
+                *p++ = '6';
+                *p++ = '4';
+                f++;
+                i += 3;
+            } else {
+                *p++ = 'l';
+                *p++ = *f++;
+                i += 2;
+            }
+            state = F_INIT;
+            break;
+        }
+    }
+    *p++ = 0;
+    return (out);
 }
 
 #endif

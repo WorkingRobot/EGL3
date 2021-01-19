@@ -8,7 +8,7 @@ typedef int(WINAPI* FUNC_MESSAGEBOX)(HWND, LPCTSTR, LPCTSTR, UINT);
 typedef void(WINAPI* FUNC_EXITPROCESS)(UINT);
 
 struct INJDATA {
-    FUNC_MESSAGEBOX	fnMessageBox;
+    FUNC_MESSAGEBOX fnMessageBox;
     FUNC_EXITPROCESS fnExitProcess;
 
     UINT uType;
@@ -26,7 +26,7 @@ static DWORD WINAPI ThreadFunc(INJDATA* pData) {
 namespace EGL3::Utils {
     void AsyncMessageBox(const char Text[2048], const char Title[256], uint32_t Type)
     {
-        STARTUPINFO	si = { sizeof(si) };
+        STARTUPINFO si = { sizeof(si) };
         PROCESS_INFORMATION pi;
 
         static HMODULE hUser32 = LoadLibrary("user32");

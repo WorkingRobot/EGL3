@@ -4,58 +4,58 @@
 #include "PresenceProperties.h"
 
 namespace EGL3::Web::Xmpp::Json {
-	struct PresenceStatus {
-		const std::string& GetStatus() const;
+    struct PresenceStatus {
+        const std::string& GetStatus() const;
 
-		const std::string& GetSessionId() const;
+        const std::string& GetSessionId() const;
 
-		const std::string& GetProductName() const;
+        const std::string& GetProductName() const;
 
-		const PresenceProperties& GetProperties() const;
+        const PresenceProperties& GetProperties() const;
 
-		bool IsPlaying() const;
+        bool IsPlaying() const;
 
-		bool IsJoinable() const;
+        bool IsJoinable() const;
 
-		bool HasVoiceSupport() const;
+        bool HasVoiceSupport() const;
 
-		const PresenceKairosProfile* GetKairosProfile() const;
+        const PresenceKairosProfile* GetKairosProfile() const;
 
-		void SetProductName(const std::string& NewProduct);
+        void SetProductName(const std::string& NewProduct);
 
-		void SetStatus(const std::string& NewStatus);
+        void SetStatus(const std::string& NewStatus);
 
-		void SetKairosProfile(const PresenceKairosProfile& NewProfile);
+        void SetKairosProfile(const PresenceKairosProfile& NewProfile);
 
-		void Dump() const;
+        void Dump() const;
 
-		PARSE_DEFINE(PresenceStatus)
-			PARSE_ITEM_DEF("Status", Status, "")
-			PARSE_ITEM_DEF("bIsPlaying", Playing, false)
-			PARSE_ITEM_DEF("bIsJoinable", Joinable, false)
-			PARSE_ITEM_DEF("bHasVoiceSupport", VoiceSupport, false)
-			PARSE_ITEM_DEF("ProductName", ProductName, "")
-			PARSE_ITEM_DEF("SessionId", SessionId, "")
-			PARSE_ITEM_DEF("Properties", Properties, PresenceProperties())
-		PARSE_END
+        PARSE_DEFINE(PresenceStatus)
+            PARSE_ITEM_DEF("Status", Status, "")
+            PARSE_ITEM_DEF("bIsPlaying", Playing, false)
+            PARSE_ITEM_DEF("bIsJoinable", Joinable, false)
+            PARSE_ITEM_DEF("bHasVoiceSupport", VoiceSupport, false)
+            PARSE_ITEM_DEF("ProductName", ProductName, "")
+            PARSE_ITEM_DEF("SessionId", SessionId, "")
+            PARSE_ITEM_DEF("Properties", Properties, PresenceProperties())
+        PARSE_END
 
-	private:
-		std::string Status;
+    private:
+        std::string Status;
 
-		bool Playing;
+        bool Playing;
 
-		bool Joinable;
+        bool Joinable;
 
-		bool VoiceSupport;
+        bool VoiceSupport;
 
-		std::string SessionId;
+        std::string SessionId;
 
-		std::string ProductName;
+        std::string ProductName;
 
-		PresenceProperties Properties;
+        PresenceProperties Properties;
 
-		// Dynamically made
-		mutable bool KairosProfileParsed = false;
-		mutable std::optional<PresenceKairosProfile> KairosProfile;
-	};
+        // Dynamically made
+        mutable bool KairosProfileParsed = false;
+        mutable std::optional<PresenceKairosProfile> KairosProfile;
+    };
 }

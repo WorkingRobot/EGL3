@@ -18,100 +18,100 @@
 #include <gtkmm.h>
 
 namespace EGL3::Modules::Friends {
-	class FriendsModule : public BaseModule {
-	public:
-		FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+    class FriendsModule : public BaseModule {
+    public:
+        FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
-	private:
-		void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence);
+    private:
+        void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence);
 
-		void OnChatMessage(const std::string& AccountId, std::string&& Message);
+        void OnChatMessage(const std::string& AccountId, std::string&& Message);
 
-		void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
+        void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
 
-		void OnAuthChanged();
+        void OnAuthChanged();
 
-		void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
+        void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
 
-		void OnOpenViewFriends();
+        void OnOpenViewFriends();
 
-		void OnOpenAddFriendPage();
+        void OnOpenAddFriendPage();
 
-		void OnOpenSetNicknamePage(const Storage::Models::Friend& FriendData);
+        void OnOpenSetNicknamePage(const Storage::Models::Friend& FriendData);
 
-		void OnOpenChatPage(const Storage::Models::Friend& FriendData);
+        void OnOpenChatPage(const Storage::Models::Friend& FriendData);
 
-		void OnSendFriendRequest();
+        void OnSendFriendRequest();
 
-		void SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account);
+        void SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account);
 
-		enum class AsyncWebRequestStatusType : uint8_t {
-			Success,
-			Ratelimited,
-			Failure
-		};
+        enum class AsyncWebRequestStatusType : uint8_t {
+            Success,
+            Ratelimited,
+            Failure
+        };
 
-		void DisplaySendFriendRequestStatus();
+        void DisplaySendFriendRequestStatus();
 
-		void OnSetNickname();
+        void OnSetNickname();
 
-		void DisplaySetNicknameStatus();
+        void DisplaySetNicknameStatus();
 
-		void UpdateAsync();
-		
-		void UpdateUI();
+        void UpdateAsync();
+        
+        void UpdateUI();
 
-		void FriendsRealize();
+        void FriendsRealize();
 
-		AuthorizationModule& Auth;
-		ImageCacheModule& ImageCache;
-		AsyncFFModule& AsyncFF;
+        AuthorizationModule& Auth;
+        ImageCacheModule& ImageCache;
+        AsyncFFModule& AsyncFF;
 
-		OptionsModule& Options;
-		KairosMenuModule& KairosMenu;
-		ListModule& FriendsList;
-		ChatModule& FriendsChat;
+        OptionsModule& Options;
+        KairosMenuModule& KairosMenu;
+        ListModule& FriendsList;
+        ChatModule& FriendsChat;
 
-		Gtk::Button& ViewFriendsBtn;
-		Gtk::Button& AddFriendBtn;
+        Gtk::Button& ViewFriendsBtn;
+        Gtk::Button& AddFriendBtn;
 
-		Gtk::Button& AddFriendSendBtn;
-		Gtk::Entry& AddFriendEntry;
-		Gtk::Label& AddFriendStatus;
+        Gtk::Button& AddFriendSendBtn;
+        Gtk::Entry& AddFriendEntry;
+        Gtk::Label& AddFriendStatus;
 
-		Gtk::Label& SetNicknameLabel;
-		Gtk::Button& SetNicknameBtn;
-		Gtk::Entry& SetNicknameEntry;
-		Gtk::Label& SetNicknameStatusLabel;
+        Gtk::Label& SetNicknameLabel;
+        Gtk::Button& SetNicknameBtn;
+        Gtk::Entry& SetNicknameEntry;
+        Gtk::Label& SetNicknameStatusLabel;
 
-		Gtk::Stack& SwitchStack;
-		Gtk::Widget& SwitchStackPage0;
-		Gtk::Widget& SwitchStackPage1;
-		Gtk::Widget& SwitchStackPage2;
-		Gtk::Widget& SwitchStackPage3;
+        Gtk::Stack& SwitchStack;
+        Gtk::Widget& SwitchStackPage0;
+        Gtk::Widget& SwitchStackPage1;
+        Gtk::Widget& SwitchStackPage2;
+        Gtk::Widget& SwitchStackPage3;
 
-		std::optional<Web::Xmpp::XmppClient> XmppClient;
+        std::optional<Web::Xmpp::XmppClient> XmppClient;
 
-		std::future<void> UpdateTask;
-		Glib::Dispatcher UpdateUIDispatcher;
-		std::atomic<bool> UpdateCurrentlyRunning = false;
+        std::future<void> UpdateTask;
+        Glib::Dispatcher UpdateUIDispatcher;
+        std::atomic<bool> UpdateCurrentlyRunning = false;
 
-		std::mutex ItemDataMutex;
-		Web::ErrorData::Status ItemDataError;
+        std::mutex ItemDataMutex;
+        Web::ErrorData::Status ItemDataError;
 
-		std::mutex FriendsRealizeMutex;
-		std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;
-		Glib::Dispatcher FriendsRealizeDispatcher;
+        std::mutex FriendsRealizeMutex;
+        std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;
+        Glib::Dispatcher FriendsRealizeDispatcher;
 
-		std::future<void> FriendRequestTask;
-		AsyncWebRequestStatusType FriendRequestStatus;
-		std::string FriendRequestStatusText;
-		Glib::Dispatcher FriendRequestDispatcher;
+        std::future<void> FriendRequestTask;
+        AsyncWebRequestStatusType FriendRequestStatus;
+        std::string FriendRequestStatusText;
+        Glib::Dispatcher FriendRequestDispatcher;
 
-		std::string SetNicknameAccountId;
-		std::future<void> SetNicknameTask;
-		AsyncWebRequestStatusType SetNicknameStatus;
-		std::string SetNicknameStatusText;
-		Glib::Dispatcher SetNicknameDispatcher;
-	};
+        std::string SetNicknameAccountId;
+        std::future<void> SetNicknameTask;
+        AsyncWebRequestStatusType SetNicknameStatus;
+        std::string SetNicknameStatusText;
+        Glib::Dispatcher SetNicknameDispatcher;
+    };
 }

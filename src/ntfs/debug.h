@@ -36,12 +36,12 @@ extern void ntfs_debug_runlist_dump(const struct _runlist_element *rl);
 static __inline void ntfs_debug_runlist_dump(const struct _runlist_element *rl) {}
 #endif
 
-#define NTFS_BUG(msg)							\
-{									\
-	int ___i = 1;							\
-	ntfs_log_critical("Bug in %s(): %s\n", __FUNCTION__, msg);	\
-	ntfs_log_debug("Forcing segmentation fault!");			\
-	___i = ((int*)NULL)[___i];					\
+#define NTFS_BUG(msg)                           \
+{                                   \
+    int ___i = 1;                           \
+    ntfs_log_critical("Bug in %s(): %s\n", __FUNCTION__, msg);  \
+    ntfs_log_debug("Forcing segmentation fault!");          \
+    ___i = ((int*)NULL)[___i];                  \
 }
 
 #endif /* defined _NTFS_DEBUG_H */

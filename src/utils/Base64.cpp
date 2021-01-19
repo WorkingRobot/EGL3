@@ -6,27 +6,27 @@
 #include <sstream>
 
 namespace EGL3::Utils {
-	std::string B64Decode(const std::string& Input) {
-		std::ostringstream Output;
-		std::istringstream InpStream(Input);
-		base64::decoder().decode(InpStream, Output);
-		return Output.str();
-	}
+    std::string B64Decode(const std::string& Input) {
+        std::ostringstream Output;
+        std::istringstream InpStream(Input);
+        base64::decoder().decode(InpStream, Output);
+        return Output.str();
+    }
 
-	std::string B64Encode(const std::string& Input) {
-		std::ostringstream Output;
-		std::istringstream InpStream(Input);
-		base64::encoder().encode(InpStream, Output);
-		auto str = Output.str();
-		str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
-		return str;
-	}
+    std::string B64Encode(const std::string& Input) {
+        std::ostringstream Output;
+        std::istringstream InpStream(Input);
+        base64::encoder().encode(InpStream, Output);
+        auto str = Output.str();
+        str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+        return str;
+    }
 
-	std::string B64Decode(const uint8_t* Input, size_t InputSize) {
-		return B64Decode(std::string((char*)Input, InputSize));
-	}
+    std::string B64Decode(const uint8_t* Input, size_t InputSize) {
+        return B64Decode(std::string((char*)Input, InputSize));
+    }
 
-	std::string B64Encode(const uint8_t* Input, size_t InputSize) {
-		return B64Encode(std::string((char*)Input, InputSize));
-	}
+    std::string B64Encode(const uint8_t* Input, size_t InputSize) {
+        return B64Encode(std::string((char*)Input, InputSize));
+    }
 }

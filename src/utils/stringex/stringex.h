@@ -4,5 +4,5 @@
 
 class StringEx {
 public:
-	static bool Evaluate(std::string&& input, std::string&& expression);
+    static bool Evaluate(std::string&& input, std::string&& expression);
 };

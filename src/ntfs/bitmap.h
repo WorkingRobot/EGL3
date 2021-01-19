@@ -44,8 +44,8 @@ extern int  ntfs_bitmap_clear_run(ntfs_attr *na, s64 start_bit, s64 count);
 
 /**
  * ntfs_bitmap_set_bit - set a bit in a bitmap
- * @na:		attribute containing the bitmap
- * @bit:	bit to set
+ * @na:     attribute containing the bitmap
+ * @bit:    bit to set
  *
  * Set the @bit in the bitmap described by the attribute @na.
  *
@@ -53,13 +53,13 @@ extern int  ntfs_bitmap_clear_run(ntfs_attr *na, s64 start_bit, s64 count);
  */
 static __inline int ntfs_bitmap_set_bit(ntfs_attr *na, s64 bit)
 {
-	return ntfs_bitmap_set_run(na, bit, 1);
+    return ntfs_bitmap_set_run(na, bit, 1);
 }
 
 /**
  * ntfs_bitmap_clear_bit - clear a bit in a bitmap
- * @na:		attribute containing the bitmap
- * @bit:	bit to clear
+ * @na:     attribute containing the bitmap
+ * @bit:    bit to clear
  *
  * Clear @bit in the bitmap described by the attribute @na.
  *
@@ -67,7 +67,7 @@ static __inline int ntfs_bitmap_set_bit(ntfs_attr *na, s64 bit)
  */
 static __inline int ntfs_bitmap_clear_bit(ntfs_attr *na, s64 bit)
 {
-	return ntfs_bitmap_clear_run(na, bit, 1);
+    return ntfs_bitmap_clear_run(na, bit, 1);
 }
 
 /*

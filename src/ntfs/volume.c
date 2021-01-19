@@ -54,33 +54,33 @@
  */
 ntfs_volume *ntfs_volume_alloc(void)
 {
-	return ntfs_calloc(sizeof(ntfs_volume));
+    return ntfs_calloc(sizeof(ntfs_volume));
 }
 
 static void ntfs_attr_free(ntfs_attr **na)
 {
-	if (na && *na) {
-		ntfs_attr_close(*na);
-		*na = NULL;
-	}
+    if (na && *na) {
+        ntfs_attr_close(*na);
+        *na = NULL;
+    }
 }
 
 static int ntfs_inode_free(ntfs_inode **ni)
 {
-	int ret = -1;
+    int ret = -1;
 
-	if (ni && *ni) {
-		ret = ntfs_inode_close(*ni);
-		*ni = NULL;
-	} 
-	
-	return ret;
+    if (ni && *ni) {
+        ret = ntfs_inode_close(*ni);
+        *ni = NULL;
+    } 
+    
+    return ret;
 }
 
 static void ntfs_error_set(int *err)
 {
-	if (!*err)
-		*err = errno;
+    if (!*err)
+        *err = errno;
 }
 
 /**
@@ -93,54 +93,54 @@ static void ntfs_error_set(int *err)
  */
 static int __ntfs_volume_release(ntfs_volume *v)
 {
-	int err = 0;
+    int err = 0;
 
-	if (ntfs_close_secure(v))
-		ntfs_error_set(&err);
+    if (ntfs_close_secure(v))
+        ntfs_error_set(&err);
 
-	if (ntfs_inode_free(&v->vol_ni))
-		ntfs_error_set(&err);
-	/* 
-	 * FIXME: Inodes must be synced before closing
-	 * attributes, otherwise unmount could fail.
-	 */
-	if (v->lcnbmp_ni && NInoDirty(v->lcnbmp_ni))
-		ntfs_inode_sync(v->lcnbmp_ni);
-	ntfs_attr_free(&v->lcnbmp_na);
-	if (ntfs_inode_free(&v->lcnbmp_ni))
-		ntfs_error_set(&err);
-	
-	if (v->mft_ni && NInoDirty(v->mft_ni))
-		ntfs_inode_sync(v->mft_ni);
-	ntfs_attr_free(&v->mftbmp_na);
-	ntfs_attr_free(&v->mft_na);
-	if (ntfs_inode_free(&v->mft_ni))
-		ntfs_error_set(&err);
-	
-	if (v->mftmirr_ni && NInoDirty(v->mftmirr_ni))
-		ntfs_inode_sync(v->mftmirr_ni);
-	ntfs_attr_free(&v->mftmirr_na);
-	if (ntfs_inode_free(&v->mftmirr_ni))
-		ntfs_error_set(&err);
-	
-	if (v->dev) {
-		struct ntfs_device *dev = v->dev;
+    if (ntfs_inode_free(&v->vol_ni))
+        ntfs_error_set(&err);
+    /* 
+     * FIXME: Inodes must be synced before closing
+     * attributes, otherwise unmount could fail.
+     */
+    if (v->lcnbmp_ni && NInoDirty(v->lcnbmp_ni))
+        ntfs_inode_sync(v->lcnbmp_ni);
+    ntfs_attr_free(&v->lcnbmp_na);
+    if (ntfs_inode_free(&v->lcnbmp_ni))
+        ntfs_error_set(&err);
+    
+    if (v->mft_ni && NInoDirty(v->mft_ni))
+        ntfs_inode_sync(v->mft_ni);
+    ntfs_attr_free(&v->mftbmp_na);
+    ntfs_attr_free(&v->mft_na);
+    if (ntfs_inode_free(&v->mft_ni))
+        ntfs_error_set(&err);
+    
+    if (v->mftmirr_ni && NInoDirty(v->mftmirr_ni))
+        ntfs_inode_sync(v->mftmirr_ni);
+    ntfs_attr_free(&v->mftmirr_na);
+    if (ntfs_inode_free(&v->mftmirr_ni))
+        ntfs_error_set(&err);
+    
+    if (v->dev) {
+        struct ntfs_device *dev = v->dev;
 
-		if (dev->d_ops->sync(dev))
-			ntfs_error_set(&err);
-		if (dev->d_ops->close(dev))
-			ntfs_error_set(&err);
-	}
+        if (dev->d_ops->sync(dev))
+            ntfs_error_set(&err);
+        if (dev->d_ops->close(dev))
+            ntfs_error_set(&err);
+    }
 
-	ntfs_free_lru_caches(v);
-	free(v->vol_name);
-	free(v->upcase);
-	if (v->locase) free(v->locase);
-	free(v->attrdef);
-	free(v);
+    ntfs_free_lru_caches(v);
+    free(v->vol_name);
+    free(v->upcase);
+    if (v->locase) free(v->locase);
+    free(v->attrdef);
+    free(v);
 
-	errno = err;
-	return errno ? -1 : 0;
+    errno = err;
+    return errno ? -1 : 0;
 }
 
 /**
@@ -167,15 +167,15 @@ static int __ntfs_volume_release(ntfs_volume *v)
  */
 int ntfs_umount(ntfs_volume *vol, const BOOL force)
 {
-	struct ntfs_device *dev;
-	int ret;
+    struct ntfs_device *dev;
+    int ret;
 
-	if (!vol) {
-		errno = EINVAL;
-		return -1;
-	}
-	dev = vol->dev;
-	ret = __ntfs_volume_release(vol);
-	ntfs_device_free(dev);
-	return ret;
+    if (!vol) {
+        errno = EINVAL;
+        return -1;
+    }
+    dev = vol->dev;
+    ret = __ntfs_volume_release(vol);
+    ntfs_device_free(dev);
+    return ret;
 }

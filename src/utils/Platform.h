@@ -3,9 +3,9 @@
 #include <string>
 
 namespace EGL3::Utils::Platform {
-	constexpr const char* GetOSName() {
-		return "Windows";
-	}
+    constexpr const char* GetOSName() {
+        return "Windows";
+    }
 
-	const std::string& GetOSVersion();
+    const std::string& GetOSVersion();
 }

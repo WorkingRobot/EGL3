@@ -9,26 +9,26 @@
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
-	class StatusPageModule : public BaseModule {
-	public:
-		StatusPageModule(const Utils::GladeBuilder& Builder);
+    class StatusPageModule : public BaseModule {
+    public:
+        StatusPageModule(const Utils::GladeBuilder& Builder);
 
-		void Refresh();
+        void Refresh();
 
-	private:
-		void UpdateLabels();
+    private:
+        void UpdateLabels();
 
-		void UpdateLabel(Gtk::Label& Label, const std::string& Status);
+        void UpdateLabel(Gtk::Label& Label, const std::string& Status);
 
-		Gtk::Button& RefreshBtn;
-		Gtk::EventBox& LabelTitleEventBox;
-		Gtk::Label& LabelTitle;
-		Gtk::Label& LabelFortnite;
-		Gtk::Label& LabelEOS;
-		Gtk::Label& LabelEGS;
+        Gtk::Button& RefreshBtn;
+        Gtk::EventBox& LabelTitleEventBox;
+        Gtk::Label& LabelTitle;
+        Gtk::Label& LabelFortnite;
+        Gtk::Label& LabelEOS;
+        Gtk::Label& LabelEGS;
 
-		std::future<void> RefreshTask;
-		Glib::Dispatcher Dispatcher;
-		Web::Response<Web::Epic::Responses::GetStatuspageSummary> Data;
-	};
+        std::future<void> RefreshTask;
+        Glib::Dispatcher Dispatcher;
+        Web::Response<Web::Epic::Responses::GetStatuspageSummary> Data;
+    };
 }

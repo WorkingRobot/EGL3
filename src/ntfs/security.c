@@ -28,81 +28,81 @@
 #include "inode.h"
 #include "index.h"
 
-struct SII {		/* this is an image of an $SII index entry */
-	le16 offs;
-	le16 size;
-	le32 fill1;
-	le16 indexsz;
-	le16 indexksz;
-	le16 flags;
-	le16 fill2;
-	le32 keysecurid;
+struct SII {        /* this is an image of an $SII index entry */
+    le16 offs;
+    le16 size;
+    le32 fill1;
+    le16 indexsz;
+    le16 indexksz;
+    le16 flags;
+    le16 fill2;
+    le32 keysecurid;
 
-	/* did not find official description for the following */
-	le32 hash;
-	le32 securid;
-	le32 dataoffsl;	/* documented as badly aligned */
-	le32 dataoffsh;
-	le32 datasize;
+    /* did not find official description for the following */
+    le32 hash;
+    le32 securid;
+    le32 dataoffsl; /* documented as badly aligned */
+    le32 dataoffsh;
+    le32 datasize;
 } ;
 
-struct SDH {		/* this is an image of an $SDH index entry */
-	le16 offs;
-	le16 size;
-	le32 fill1;
-	le16 indexsz;
-	le16 indexksz;
-	le16 flags;
-	le16 fill2;
-	le32 keyhash;
-	le32 keysecurid;
+struct SDH {        /* this is an image of an $SDH index entry */
+    le16 offs;
+    le16 size;
+    le32 fill1;
+    le16 indexsz;
+    le16 indexksz;
+    le16 flags;
+    le16 fill2;
+    le32 keyhash;
+    le32 keysecurid;
 
-	/* did not find official description for the following */
-	le32 hash;
-	le32 securid;
-	le32 dataoffsl;
-	le32 dataoffsh;
-	le32 datasize;
-	le32 fill3;
+    /* did not find official description for the following */
+    le32 hash;
+    le32 securid;
+    le32 dataoffsl;
+    le32 dataoffsh;
+    le32 datasize;
+    le32 fill3;
 } ;
 
 /**
  * ntfs_generate_guid - generatates a random current guid.
- * @guid:	[OUT]   pointer to a GUID struct to hold the generated guid.
+ * @guid:   [OUT]   pointer to a GUID struct to hold the generated guid.
  *
  * perhaps not a very good random number generator though...
  */
 void ntfs_generate_guid(GUID* guid)
 {
-	unsigned int i;
-	u8* p = (u8*)guid;
+    unsigned int i;
+    u8* p = (u8*)guid;
 
-	/* this is called at most once from mkntfs */
-	srand(time((time_t*)NULL) ^ (getpid() << 16));
-	for (i = 0; i < sizeof(GUID); i++) {
-		p[i] = (u8)(rand() & 0xFF);
-		if (i == 7)
-			p[7] = (p[7] & 0x0F) | 0x40;
-		if (i == 8)
-			p[8] = (p[8] & 0x3F) | 0x80;
-	}
+    /* this is called at most once from mkntfs */
+    srand(time((time_t*)NULL) ^ (getpid() << 16));
+    for (i = 0; i < sizeof(GUID); i++) {
+        p[i] = (u8)(rand() & 0xFF);
+        if (i == 7)
+            p[7] = (p[7] & 0x0F) | 0x40;
+        if (i == 8)
+            p[8] = (p[8] & 0x3F) | 0x80;
+    }
 }
 
 /*
- *	Close the volume's security descriptor index ($Secure)
+ *  Close the volume's security descriptor index ($Secure)
  *
- *	returns  0 if it succeeds
- *		-1 with errno set if it fails
+ *  returns  0 if it succeeds
+ *      -1 with errno set if it fails
  */
 int ntfs_close_secure(ntfs_volume* vol)
 {
-	int res = 0;
+    int res = 0;
 
-	if (vol->secure_ni) {
-		ntfs_index_ctx_put(vol->secure_xsdh);
-		ntfs_index_ctx_put(vol->secure_xsii);
-		res = ntfs_inode_close(vol->secure_ni);
-		vol->secure_ni = NULL;
-	}
-	return res;
+    if (vol->secure_ni) {
+        ntfs_index_ctx_put(vol->secure_xsdh);
+        ntfs_index_ctx_put(vol->secure_xsii);
+        res = ntfs_inode_close(vol->secure_ni);
+        vol->secure_ni = NULL;
+    }
+    return res;
 }

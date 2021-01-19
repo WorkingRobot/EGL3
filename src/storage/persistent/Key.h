@@ -52,10 +52,10 @@ namespace EGL3::Storage::Persistent {
 
         KEY(WhatsNewTimestamps, std::unordered_map<size_t, std::chrono::system_clock::time_point>);
         KEY(WhatsNewSelection,  uint8_t);
-        KEY(Auth,				Models::Authorization);
-        KEY(StoredFriendData,	Models::StoredFriendData);
-        KEY(GameInstalls,   	Models::GameInstalls);
-        KEY(UpdateFrequency,   	std::chrono::seconds);
+        KEY(Auth,               Models::Authorization);
+        KEY(StoredFriendData,   Models::StoredFriendData);
+        KEY(GameInstalls,       Models::GameInstalls);
+        KEY(UpdateFrequency,    std::chrono::seconds);
 
 #undef KEY
 

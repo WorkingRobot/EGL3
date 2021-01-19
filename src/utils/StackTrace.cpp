@@ -87,10 +87,10 @@ __forceinline std::string GetStack(CONTEXT* Context)
 }
 
 namespace EGL3::Utils {
-	std::string GetStackTrace()
-	{
+    std::string GetStackTrace()
+    {
         CONTEXT Context;
         RtlCaptureContext(&Context);
         return GetStack(&Context);
-	}
+    }
 }

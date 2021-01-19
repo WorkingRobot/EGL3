@@ -6,34 +6,34 @@
 #include "UserBlocklistUpdate.h"
 
 namespace EGL3::Web::Xmpp::Messages {
-	class SystemMessage {
-	public:
-		enum class ActionType : uint8_t {
-			Unknown,
-			RequestAccept,
-			RequestInbound,
-			RequestOutbound,
-			Remove,
-			Block,
-			Unblock,
-			Update
-		};
+    class SystemMessage {
+    public:
+        enum class ActionType : uint8_t {
+            Unknown,
+            RequestAccept,
+            RequestInbound,
+            RequestOutbound,
+            Remove,
+            Block,
+            Unblock,
+            Update
+        };
 
-	private:
-		ActionType Action;
-		std::string AccountId;
+    private:
+        ActionType Action;
+        std::string AccountId;
 
-	public:
-		SystemMessage(FriendshipRequest&& Message, const std::string& ClientAccountId);
+    public:
+        SystemMessage(FriendshipRequest&& Message, const std::string& ClientAccountId);
 
-		SystemMessage(FriendshipRemove&& Message, const std::string& ClientAccountId);
+        SystemMessage(FriendshipRemove&& Message, const std::string& ClientAccountId);
 
-		SystemMessage(FriendshipEntryUpdate&& Message);
+        SystemMessage(FriendshipEntryUpdate&& Message);
 
-		SystemMessage(UserBlocklistUpdate&& Message);
+        SystemMessage(UserBlocklistUpdate&& Message);
 
-		ActionType GetAction() const;
+        ActionType GetAction() const;
 
-		const std::string& GetAccountId() const;
-	};
+        const std::string& GetAccountId() const;
+    };
 }

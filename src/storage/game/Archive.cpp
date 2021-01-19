@@ -24,12 +24,12 @@ namespace EGL3::Storage::Game {
         Backend->EnsureSize(Header::FileDataOffset);
 
         Header              = (decltype(Header))            Backend->Get() + 0;
-        ManifestData		= (decltype(ManifestData))		Backend->Get() + Header::ManifestDataOffset;
-        FileRunlist			= (decltype(FileRunlist))		Backend->Get() + Header::FileRunlistOffset;
-        ChunkPartRunlist	= (decltype(ChunkPartRunlist))	Backend->Get() + Header::ChunkPartRunlistOffset;
-        ChunkInfoRunlist	= (decltype(ChunkInfoRunlist))	Backend->Get() + Header::ChunkInfoRunlistOffset;
-        ChunkDataRunlist	= (decltype(ChunkDataRunlist))	Backend->Get() + Header::ChunkDataRunlistOffset;
-        RunIndex			= (decltype(RunIndex))			Backend->Get() + Header::RunIndexOffset;
+        ManifestData        = (decltype(ManifestData))      Backend->Get() + Header::ManifestDataOffset;
+        FileRunlist         = (decltype(FileRunlist))       Backend->Get() + Header::FileRunlistOffset;
+        ChunkPartRunlist    = (decltype(ChunkPartRunlist))  Backend->Get() + Header::ChunkPartRunlistOffset;
+        ChunkInfoRunlist    = (decltype(ChunkInfoRunlist))  Backend->Get() + Header::ChunkInfoRunlistOffset;
+        ChunkDataRunlist    = (decltype(ChunkDataRunlist))  Backend->Get() + Header::ChunkDataRunlistOffset;
+        RunIndex            = (decltype(RunIndex))          Backend->Get() + Header::RunIndexOffset;
 
         *Header = Game::Header{
             .Magic = Header::ExpectedMagic,
@@ -63,7 +63,7 @@ namespace EGL3::Storage::Game {
             return;
         }
 
-        Header				= (decltype(Header))			Backend->Get() + 0;
+        Header              = (decltype(Header))            Backend->Get() + 0;
 
         if (!EGL3_CONDITIONAL_LOG(Header->Magic == Header::ExpectedMagic, LogLevel::Error, "Archive has invalid magic")) {
             return;
@@ -77,12 +77,12 @@ namespace EGL3::Storage::Game {
             return;
         }
         
-        ManifestData		= (decltype(ManifestData))		Backend->Get() + Header::ManifestDataOffset;
-        FileRunlist			= (decltype(FileRunlist))		Backend->Get() + Header::FileRunlistOffset;
-        ChunkPartRunlist	= (decltype(ChunkPartRunlist))	Backend->Get() + Header::ChunkPartRunlistOffset;
-        ChunkInfoRunlist	= (decltype(ChunkInfoRunlist))	Backend->Get() + Header::ChunkInfoRunlistOffset;
-        ChunkDataRunlist	= (decltype(ChunkDataRunlist))	Backend->Get() + Header::ChunkDataRunlistOffset;
-        RunIndex			= (decltype(RunIndex))			Backend->Get() + Header::RunIndexOffset;
+        ManifestData        = (decltype(ManifestData))      Backend->Get() + Header::ManifestDataOffset;
+        FileRunlist         = (decltype(FileRunlist))       Backend->Get() + Header::FileRunlistOffset;
+        ChunkPartRunlist    = (decltype(ChunkPartRunlist))  Backend->Get() + Header::ChunkPartRunlistOffset;
+        ChunkInfoRunlist    = (decltype(ChunkInfoRunlist))  Backend->Get() + Header::ChunkInfoRunlistOffset;
+        ChunkDataRunlist    = (decltype(ChunkDataRunlist))  Backend->Get() + Header::ChunkDataRunlistOffset;
+        RunIndex            = (decltype(RunIndex))          Backend->Get() + Header::RunIndexOffset;
 
         Valid = true;
     }

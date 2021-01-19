@@ -32,7 +32,7 @@
 #include <sys/param.h>
 #endif
 
-#include <errno.h>	/* ENODATA */
+#include <errno.h>  /* ENODATA */
 
 #ifndef ENODATA
 #define ENODATA ENOENT
@@ -60,18 +60,18 @@ extern char *strsep(char **stringp, const char *delim);
 
 #ifdef WINDOWS
 
-#define HAVE_STDIO_H		/* mimic config.h */
+#define HAVE_STDIO_H        /* mimic config.h */
 #define HAVE_STDARG_H
 
-#define atoll			_atoi64
-#define fdatasync		commit
-#define __inline__		inline
-#define __attribute__(X)	/*nothing*/
+#define atoll           _atoi64
+#define fdatasync       commit
+#define __inline__      inline
+#define __attribute__(X)    /*nothing*/
 
 #else /* !defined WINDOWS */
 
 #ifndef O_BINARY
-#define O_BINARY		0		/* unix is binary by default */
+#define O_BINARY        0       /* unix is binary by default */
 #endif
 
 #endif /* defined WINDOWS */

@@ -26,18 +26,18 @@
   * Generic macro to convert pointers to values for comparison purposes.
   */
 #ifndef p2n
-#define p2n(p)		((ptrdiff_t)((ptrdiff_t*)(p)))
+#define p2n(p)      ((ptrdiff_t)((ptrdiff_t*)(p)))
 #endif
 
   /*
    * The classic min and max macros.
    */
 #ifndef min
-#define min(a,b)	((a) <= (b) ? (a) : (b))
+#define min(a,b)    ((a) <= (b) ? (a) : (b))
 #endif
 
 #ifndef max
-#define max(a,b)	((a) >= (b) ? (a) : (b))
+#define max(a,b)    ((a) >= (b) ? (a) : (b))
 #endif
 
 /*
@@ -50,8 +50,8 @@
  /*
   * Simple bit operation macros. NOTE: These are NOT atomic.
   */
-#define test_bit(bit, var)	      ((var) & (1 << (bit)))
-#define set_bit(bit, var)	      (var) |= 1 << (bit)
-#define clear_bit(bit, var)	      (var) &= ~(1 << (bit))
+#define test_bit(bit, var)        ((var) & (1 << (bit)))
+#define set_bit(bit, var)         (var) |= 1 << (bit)
+#define clear_bit(bit, var)       (var) &= ~(1 << (bit))
 
 #endif /* defined _NTFS_SUPPORT_H */

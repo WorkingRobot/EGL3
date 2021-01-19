@@ -6,34 +6,34 @@
 #include <string>
 
 namespace EGL3::Web::Epic::Auth {
-	class DeviceAuth {
-	public:
-		enum ErrorCode {
-			SUCCESS,
-			CANCELLED,
-			EXCH_CODE_NOT_200,
-			EXCH_CODE_JSON
-		};
+    class DeviceAuth {
+    public:
+        enum ErrorCode {
+            SUCCESS,
+            CANCELLED,
+            EXCH_CODE_NOT_200,
+            EXCH_CODE_JSON
+        };
 
-		DeviceAuth(const cpr::Authentication& AuthClient, const std::string& AccountId, const std::string& DeviceId, const std::string& Secret);
+        DeviceAuth(const cpr::Authentication& AuthClient, const std::string& AccountId, const std::string& DeviceId, const std::string& Secret);
 
-		~DeviceAuth();
+        ~DeviceAuth();
 
-		const std::shared_future<ErrorCode>& GetOAuthResponseFuture() const;
+        const std::shared_future<ErrorCode>& GetOAuthResponseFuture() const;
 
-		const rapidjson::Document& GetOAuthResponse() const;
+        const rapidjson::Document& GetOAuthResponse() const;
 
-	private:
-		ErrorCode RunOAuthResponseTask();
+    private:
+        ErrorCode RunOAuthResponseTask();
 
-		std::atomic_bool Cancelled;
+        std::atomic_bool Cancelled;
 
-		std::shared_future<ErrorCode> OAuthResponseFuture;
-		rapidjson::Document OAuthResponse;
+        std::shared_future<ErrorCode> OAuthResponseFuture;
+        rapidjson::Document OAuthResponse;
 
-		cpr::Authentication AuthClient;
-		std::string AccountId;
-		std::string DeviceId;
-		std::string Secret;
-	};
+        cpr::Authentication AuthClient;
+        std::string AccountId;
+        std::string DeviceId;
+        std::string Secret;
+    };
 }

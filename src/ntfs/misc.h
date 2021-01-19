@@ -1,6 +1,6 @@
 /*
  * misc.h : miscellaneous exports
- *		- memory allocation
+ *      - memory allocation
  *
  * Copyright (c) 2008 Jean-Pierre Andre
  *

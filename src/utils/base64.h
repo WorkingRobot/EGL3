@@ -6,11 +6,11 @@
 // really need speed for something used like twice
 
 namespace EGL3::Utils {
-	std::string B64Decode(const std::string& Input);
+    std::string B64Decode(const std::string& Input);
 
-	std::string B64Encode(const std::string& Input);
+    std::string B64Encode(const std::string& Input);
 
-	std::string B64Decode(const uint8_t* Input, size_t InputSize);
+    std::string B64Decode(const uint8_t* Input, size_t InputSize);
 
-	std::string B64Encode(const uint8_t* Input, size_t InputSize);
+    std::string B64Encode(const uint8_t* Input, size_t InputSize);
 }
