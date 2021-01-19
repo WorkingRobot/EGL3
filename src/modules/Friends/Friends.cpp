@@ -159,7 +159,7 @@ namespace EGL3::Modules::Friends {
             AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().UnblockUser(AccountId); }, Friend.GetAccountId());
             break;
         case Widgets::FriendItemMenu::ClickAction::COPY_USER_ID:
-            EGL3_LOG(LogLevel::Info, "Copy id button pressed");
+            Gtk::Clipboard::get()->set_text(Friend.GetAccountId());
             break;
         }
     }
