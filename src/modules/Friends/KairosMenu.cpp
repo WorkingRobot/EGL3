@@ -1,6 +1,7 @@
 #include "KairosMenu.h"
 
 #include "../../web/xmpp/PresenceKairosProfile.h"
+#include "List.h"
 
 namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
@@ -8,6 +9,7 @@ namespace EGL3::Modules::Friends {
     KairosMenuModule::KairosMenuModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
         Auth(Modules.GetModule<AuthorizationModule>()),
         ImageCache(Modules.GetModule<ImageCacheModule>()),
+        List(Modules.GetModule<ListModule>()),
         Options(Modules.GetModule<OptionsModule>()),
         Focused(false),
         Window(Builder.GetWidget<Gtk::Window>("FriendsKairosMenu")),
@@ -134,6 +136,8 @@ namespace EGL3::Modules::Friends {
                 UpdateXmppPresence();
             });
         }
+
+        List.SetKairosMenuWindow(GetWindow());
     }
 
     Gtk::Window& KairosMenuModule::GetWindow() const
@@ -178,5 +182,10 @@ namespace EGL3::Modules::Friends {
 
             BackgroundBox.show_all_children();
         }
+    }
+
+    Storage::Models::FriendCurrent& KairosMenuModule::GetCurrentUser() const
+    {
+        return List.GetCurrentUser();
     }
 }

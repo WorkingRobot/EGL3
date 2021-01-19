@@ -7,6 +7,7 @@
 #include "responses/GetAccountExternalAuths.h"
 #include "responses/GetAccounts.h"
 #include "responses/GetDeviceAuths.h"
+#include "responses/GetExchangeCode.h"
 #include "responses/GetDefaultBillingAccount.h"
 #include "responses/GetAssets.h"
 #include "responses/GetDownloadInfo.h"
@@ -52,6 +53,8 @@ namespace EGL3::Web::Epic {
 
         // You can optionally add a X-Epic-Device-Info header with JSON {"type": "Google","model":"Pixel 3","os":"10"}
         Response<Responses::GetDeviceAuths::DeviceAuth> CreateDeviceAuth();
+
+        Response<Responses::GetExchangeCode> GetExchangeCode();
 
 
         // Launcher service

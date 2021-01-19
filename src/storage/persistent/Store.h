@@ -5,6 +5,7 @@
 #include "Key.h"
 
 #include <filesystem>
+#include <mutex>
 #include <unordered_map>
 
 namespace EGL3::Storage::Persistent {
@@ -23,10 +24,13 @@ namespace EGL3::Storage::Persistent {
 
 		template<uint32_t Constant>
 		Key& Get() {
+			std::lock_guard Guard(Mutex);
+
 			auto Itr = Data.find(Constant);
 			if (Itr != Data.end()) {
 				return Itr->second;
 			}
+
 			auto Elem = Data.emplace(Constant, Constant);
 			EGL3_CONDITIONAL_LOG(Elem.second, LogLevel::Error, "Could not emplace nor find new constant in store.");
 			return Elem.first->second;
@@ -35,6 +39,7 @@ namespace EGL3::Storage::Persistent {
 		void Flush();
 
 	private:
+		std::mutex Mutex;
 		std::unordered_map<uint32_t, Key> Data;
 
 		fs::path Path;

@@ -2,7 +2,6 @@
 
 #include "AsyncFF.h"
 #include "Authorization.h"
-#include "Game.h"
 #include "ImageCache.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
@@ -13,6 +12,10 @@
 #include "Friends/List.h"
 #include "Friends/Options.h"
 #include "Friends/KairosMenu.h"
+
+#include "Game/Game.h"
+#include "Game/UpdateChecker.h"
+#include "Game/Updater.h"
 
 namespace EGL3::Modules {
 	ModuleList::ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
@@ -31,17 +34,19 @@ namespace EGL3::Modules {
 		AddModule<ImageCacheModule>();
 		AddModule<StatsGraphModule>(Builder);
 		AddModule<StatusPageModule>(Builder);
-		AddModule<AuthorizationModule>(Storage, Builder);
+		AddModule<AuthorizationModule>(Storage);
 
 		AddModule<WhatsNewModule>(*this, Storage, Builder);
 
 		AddModule<Friends::OptionsModule>(*this, Storage, Builder);
-		AddModule<Friends::KairosMenuModule>(*this, Builder);
 		AddModule<Friends::ListModule>(*this, Builder);
+		AddModule<Friends::KairosMenuModule>(*this, Builder);
 		AddModule<Friends::ChatModule>(*this, Builder);
 		AddModule<Friends::FriendsModule>(*this, Storage, Builder);
 
-		// AddModule<GameModule>(Builder);
+		AddModule<Game::UpdateCheckerModule>(*this, Storage);
+		AddModule<Game::UpdaterModule>(*this, Storage, Builder);
+		AddModule<Game::GameModule>(*this, Storage, Builder);
 	}
 
 	template<typename T, typename... Args>

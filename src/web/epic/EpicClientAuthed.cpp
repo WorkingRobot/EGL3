@@ -134,6 +134,18 @@ namespace EGL3::Web::Epic {
         );
     }
 
+    Response<Responses::GetExchangeCode> EpicClientAuthed::GetExchangeCode()
+    {
+        return Call<Responses::GetExchangeCode, 200, true>(
+            [this]() {
+                return Http::Get(
+                    Http::FormatUrl<Host::Account>("oauth/exchange", AuthData.AccountId->c_str()),
+                    cpr::Header{ { "Authorization", AuthHeader } }
+                );
+            }
+        );
+    }
+
     Response<Responses::GetDefaultBillingAccount> EpicClientAuthed::GetDefaultBillingAccount()
     {
         return Call<Responses::GetDefaultBillingAccount, 200, true>(

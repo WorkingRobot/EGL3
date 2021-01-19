@@ -2,6 +2,8 @@
 
 #include "../BaseClient.h"
 #include "../Response.h"
+#include "bps/Manifest.h"
+#include "responses/GetDownloadInfo.h"
 #include "responses/GetPageInfo.h"
 #include "responses/GetBlogPosts.h"
 #include "responses/GetStatuspageSummary.h"
@@ -12,17 +14,13 @@ namespace EGL3::Web::Epic {
 	// news/comics/tournaments, blog posts, etc.
 	class EpicClient : public BaseClient {
 	public:
-		// Get Page Info
-
 		Response<Responses::GetPageInfo> GetPageInfo(const std::string& Language);
-
-		// Blog Posts
 
 		Response<Responses::GetBlogPosts> GetBlogPosts(const std::string& Locale, int PostsPerPage = 0, int Offset = 0);
 
-		// Statuspage Info
-
 		Response<Responses::GetStatuspageSummary> GetStatuspageSummary();
+
+		Response<BPS::Manifest> GetManifest(const Responses::GetDownloadInfo::Manifest& Manifest);
 
 	private:
 		template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>

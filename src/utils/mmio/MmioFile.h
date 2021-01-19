@@ -1,13 +1,15 @@
 #pragma once
 
-#define _AMD64_
-#include <minwindef.h>
-
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
 namespace EGL3::Utils::Mmio {
+	typedef void* MM_HANDLE;
+	typedef void* MM_PVOID;
+	typedef long long MM_LARGE_INTEGER;
+	typedef size_t MM_SIZE_T;
+
 	// Read/write memory mapped file
 	class MmioFile {
 	public:
@@ -20,25 +22,23 @@ namespace EGL3::Utils::Mmio {
 
 		~MmioFile();
 
-		bool Valid() const;
+		bool IsValid() const;
 
-		char* Get() const {
-			return (char*)BaseAddress;
-		}
+		char* Get() const;
 
-		size_t Size() const {
-			return SectionSize.QuadPart;
-		}
+		size_t Size() const;
+
+		bool IsValidOffset(size_t Offset) const;
 
 		void EnsureSize(size_t Size);
 
 		void Flush();
 
 	private:
-		HANDLE HProcess;
-		HANDLE HSection;
-		PVOID BaseAddress;
-		LARGE_INTEGER SectionSize;
+		MM_HANDLE HProcess;
+		MM_HANDLE HSection;
+		MM_PVOID BaseAddress;
+		MM_LARGE_INTEGER SectionSize;
 	};
 
 	class MmioReadonlyFile {
@@ -63,9 +63,9 @@ namespace EGL3::Utils::Mmio {
 		}
 
 	private:
-		HANDLE HProcess;
-		HANDLE HSection;
-		const PVOID BaseAddress;
-		SIZE_T FileSize;
+		MM_HANDLE HProcess;
+		MM_HANDLE HSection;
+		const MM_PVOID BaseAddress;
+		MM_SIZE_T FileSize;
 	};
 }

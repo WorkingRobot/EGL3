@@ -46,7 +46,6 @@ namespace EGL3::Modules::Friends {
                 Options.OnUpdate.Set([this]() { FriendsList.ResortEntireList(); });
             }
 
-            KairosMenu.GetCurrentUser.Set([this]() { return std::ref(FriendsList.GetCurrentUser()); });
             KairosMenu.UpdateXmppPresence.Set([this]() {
                 if (XmppClient.has_value()) {
                     XmppClient->SetPresence(FriendsList.GetCurrentUser().BuildPresence());
@@ -119,8 +118,8 @@ namespace EGL3::Modules::Friends {
         FriendsRealizeDispatcher.emit();
     }
 
-    void FriendsModule::OnAuthChanged(Web::Epic::EpicClientAuthed& FNClient, Web::Epic::EpicClientAuthed& LauncherClient) {
-        auto& AuthData = LauncherClient.GetAuthData();
+    void FriendsModule::OnAuthChanged() {
+        auto& AuthData = Auth.GetClientLauncher().GetAuthData();
         EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
 
         FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());

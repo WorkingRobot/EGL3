@@ -1,8 +1,15 @@
 #pragma once
 
+#include "../../utils/Crc32.h"
+
 namespace EGL3::Storage::Game {
-	enum GameId : uint64_t {
-		GAME_ID_UNKNOWN = 0x0000000000000000,
-		GAME_ID_FORTNITE = 0x168EC355A9D7E039,
+	enum class GameId : uint32_t {
+		Unknown = 0,
+
+#define KEY(Name) Name = ~Utils::Crc32(#Name),
+
+		KEY(Fortnite)
+
+#undef KEY
 	};
 }

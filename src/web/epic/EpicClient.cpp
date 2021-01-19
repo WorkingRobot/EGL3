@@ -39,6 +39,37 @@ namespace EGL3::Web::Epic {
         );
     }
 
+    Response<BPS::Manifest> EpicClient::GetManifest(const Responses::GetDownloadInfo::Manifest& Manifest)
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        cpr::Parameters Parameters;
+        for (auto& Param : Manifest.QueryParams) {
+            Parameters.AddParameter({ Param.Name, Param.Value }, cpr::CurlHolder());
+        }
+
+        cpr::Header Headers;
+        for (auto& Header : Manifest.Headers) {
+            Headers.emplace(Header.Name, Header.Value);
+        }
+
+        auto Response = Http::Get(
+            cpr::Url{ Manifest.Uri },
+            Parameters,
+            Headers
+        );
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (Response.status_code != 200) {
+            return Response.status_code;
+        }
+
+        return BPS::Manifest(Response.text.data(), Response.text.size());
+    }
+
     template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>
     Response<ResponseType> EpicClient::Call(CallFunctorType&& CallFunctor) {
         RunningFunctionGuard Guard(Lock);

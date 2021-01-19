@@ -1,7 +1,5 @@
 #include "List.h"
 
-#include "KairosMenu.h"
-
 namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
@@ -52,7 +50,7 @@ namespace EGL3::Modules::Friends {
         {
             CurrentUserModel.Get().OnUpdate.connect([this]() { CurrentUserWidget.Update(); });
             CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
-            CurrentUserWidget.SetAsCurrentUser(Modules.GetModule<KairosMenuModule>().GetWindow());
+            // When KairosMenuModule is created, it'll run SetKairosMenuWindow
         }
 
         {
@@ -111,6 +109,11 @@ namespace EGL3::Modules::Friends {
         Widget->SetContextMenu(FriendMenu);
         Friend.Get().OnUpdate.connect([Widget = std::ref(*Widget), this]() { Widget.get().Update(); ResortWidget(Widget.get()); });
         List.add(*Widget);
+    }
+
+    void ListModule::SetKairosMenuWindow(Gtk::Window& Window)
+    {
+        CurrentUserWidget.SetAsCurrentUser(Window);
     }
 
     void ListModule::ResortList()

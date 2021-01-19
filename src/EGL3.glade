@@ -33,7 +33,7 @@ Author: Aleks Margarian
     <property name="reserve-toggle-size">False</property>
     <property name="menu-type-hint">dropdown-menu</property>
     <child>
-      <object class="GtkMenuItem">
+      <object class="GtkMenuItem" id="ExtraPlayVerifyOpt">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="tooltip-text" translatable="yes">verify game data and make sure no errors occur</property>
@@ -42,7 +42,7 @@ Author: Aleks Margarian
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem">
+      <object class="GtkMenuItem" id="ExtraPlayModifyOpt">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="tooltip-text" translatable="yes">do stuff like change compression method or download STW</property>
@@ -51,13 +51,13 @@ Author: Aleks Margarian
       </object>
     </child>
     <child>
-      <object class="GtkSeparatorMenuItem" id="Separator">
+      <object class="GtkSeparatorMenuItem" id="ExtraPlaySeparator">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem">
+      <object class="GtkMenuItem" id="ExtraPlaySignOutOpt">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="tooltip-text" translatable="yes">sign out as user</property>
@@ -107,7 +107,6 @@ Author: Aleks Margarian
       <object class="GtkSeparatorMenuItem" id="FriendsSeparator">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label">&#x2E3B;</property>
       </object>
     </child>
     <child>

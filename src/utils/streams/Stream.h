@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <stdint.h>
 #include <string>
 #include <unordered_map>
 
@@ -89,8 +88,17 @@ namespace EGL3::Utils::Streams {
 
         template<class T, uint32_t Size>
         Stream& operator<<(const T(&Val)[Size]) {
-            for (int i = 0; i < Size; ++i) {
+            for (uint32_t i = 0; i < Size; ++i) {
                 *this << Val[i];
+            }
+            return *this;
+        }
+
+        template<class T>
+        Stream& operator<<(const std::vector<T>& Val) {
+            *this << Val.size();
+            for (auto& Item : Val) {
+                *this << Item;
             }
             return *this;
         }
@@ -111,8 +119,15 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        Stream& operator<<(const std::chrono::system_clock::time_point& Val) {
-            *this << Val.time_since_epoch().count();
+        template<class Clock, class Duration>
+        Stream& operator<<(const std::chrono::time_point<Clock, Duration>& Val) {
+            *this << Val.time_since_epoch();
+            return *this;
+        }
+
+        template<class Rep, class Period>
+        Stream& operator<<(const std::chrono::duration<Rep, Period>& Val) {
+            *this << Val.count();
             return *this;
         }
 
@@ -192,8 +207,20 @@ namespace EGL3::Utils::Streams {
 
         template<class T, uint32_t Size>
         Stream& operator>>(T(&Val)[Size]) {
-            for (int i = 0; i < Size; ++i) {
+            for (uint32_t i = 0; i < Size; ++i) {
                 *this >> Val[i];
+            }
+            return *this;
+        }
+        
+        template<class T>
+        Stream& operator>>(std::vector<T>& Val) {
+            Val.clear();
+            size_t Size;
+            *this >> Size;
+            Val.reserve(Size);
+            for (size_t i = 0; i < Size; ++i) {
+                *this >> Val.emplace_back();
             }
             return *this;
         }
@@ -211,9 +238,9 @@ namespace EGL3::Utils::Streams {
             size_t Size;
             *this >> Size;
             Val.reserve(Size);
-            K Key;
-            V Value;
-            for (int i = 0; i < Size; ++i) {
+            K Key{};
+            V Value{};
+            for (size_t i = 0; i < Size; ++i) {
                 *this >> Key;
                 *this >> Value;
                 Val.emplace(Key, Value);
@@ -221,10 +248,19 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        Stream& operator>>(std::chrono::system_clock::time_point& Val) {
-            std::chrono::system_clock::rep Data;
+        template<class Clock, class Duration>
+        Stream& operator>>(std::chrono::time_point<Clock, Duration>& Val) {
+            Duration Data;
             *this >> Data;
-            Val = std::chrono::system_clock::time_point(std::chrono::system_clock::duration(Data));
+            Val = decltype(Val)(Data);
+            return *this;
+        }
+
+        template<class Rep, class Period>
+        Stream& operator>>(std::chrono::duration<Rep, Period>& Val) {
+            Rep Data;
+            *this >> Data;
+            Val = decltype(Val)(Data);
             return *this;
         }
     };

@@ -1,7 +1,7 @@
 #include "ReadonlyArchive.h"
 
-#include "../../utils/assert.h"
-#include "../../utils/align.h"
+#include "../../utils/Assert.h"
+#include "../../utils/Align.h"
 #include "RunlistStream.h"
 #include "GameId.h"
 #include "RunlistId.h"

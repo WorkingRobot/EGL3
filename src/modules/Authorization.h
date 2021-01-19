@@ -3,54 +3,36 @@
 #include "BaseModule.h"
 
 #include "../storage/persistent/Store.h"
-#include "../utils/GladeBuilder.h"
 #include "../web/epic/EpicClientAuthed.h"
 
 #include <future>
-#include <gtkmm.h>
+#include <sigc++/sigc++.h>
 
 namespace EGL3::Modules {
-	class AuthorizationModule : public BaseModule {
-	public:
-		AuthorizationModule(Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+    class AuthorizationModule : public BaseModule {
+    public:
+        AuthorizationModule(Storage::Persistent::Store& Storage);
 
-		bool IsLoggedIn() const;
+        bool IsLoggedIn() const;
 
-		// Will crash if not logged in! Take care.
-		Web::Epic::EpicClientAuthed& GetClientFN();
+        // Will crash if not logged in! Take care.
+        Web::Epic::EpicClientAuthed& GetClientFN();
 
-		Web::Epic::EpicClientAuthed& GetClientLauncher();
+        Web::Epic::EpicClientAuthed& GetClientLauncher();
 
-		enum class PlayButtonState {
-			SIGN_IN,
-			SIGNING_IN,
-			PLAY,
-			PLAYING,
-			UPDATE,
-			UPDATING
-		};
+        void StartLogin();
 
-		// Update the actual button state, called from the dispatcher
-		void UpdateButton(PlayButtonState TargetState);
+        // This will not be emitted from the main thread
+        sigc::signal<void()> AuthChanged;
 
-		// This will not be emitted from the main thread
-		sigc::signal<void(Web::Epic::EpicClientAuthed&, Web::Epic::EpicClientAuthed&)> AuthChanged;
+    private:
+        static const cpr::Authentication AuthorizationLauncher;
+        static const cpr::Authentication AuthorizationSwitch;
 
-	private:
-		PlayButtonState ButtonState; // Default state, doesn't matter too much
+        Storage::Persistent::Store& Storage;
 
-		void ButtonClick();
-
-		static const cpr::Authentication AuthorizationLauncher;
-		static const cpr::Authentication AuthorizationSwitch;
-
-		Storage::Persistent::Store& Storage;
-		Gtk::Button& PlayButton;
-		Gtk::MenuButton& MenuButton;
-
-		std::future<bool> SignInTask;
-		Glib::Dispatcher Dispatcher;
-		std::optional<Web::Epic::EpicClientAuthed> AuthClientFN;
-		std::optional<Web::Epic::EpicClientAuthed> AuthClientLauncher;
-	};
+        std::future<void> SignInTask;
+        std::optional<Web::Epic::EpicClientAuthed> AuthClientFN;
+        std::optional<Web::Epic::EpicClientAuthed> AuthClientLauncher;
+    };
 }

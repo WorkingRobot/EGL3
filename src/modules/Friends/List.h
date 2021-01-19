@@ -39,6 +39,9 @@ namespace EGL3::Modules::Friends {
         Utils::Callback<void(Widgets::FriendItemMenu::ClickAction, const Storage::Models::Friend&)> FriendMenuAction;
 
     private:
+        void SetKairosMenuWindow(Gtk::Window& Window);
+        friend class KairosMenuModule;
+
         void ResortList();
 
         void ResortWidget(Widgets::FriendItem& Widget);

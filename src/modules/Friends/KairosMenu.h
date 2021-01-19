@@ -10,6 +10,7 @@
 #include "../Authorization.h"
 #include "../ImageCache.h"
 #include "Options.h"
+#include "List.h"
 
 #include <functional>
 #include <future>
@@ -27,13 +28,15 @@ namespace EGL3::Modules::Friends {
 
         void UpdateAvailableSettings();
 
-        Utils::Callback<Storage::Models::FriendCurrent&()> GetCurrentUser;
         Utils::Callback<void()> UpdateXmppPresence;
 
     private:
+        Storage::Models::FriendCurrent& GetCurrentUser() const;
+
         AuthorizationModule& Auth;
         ImageCacheModule& ImageCache;
 
+        ListModule& List;
         OptionsModule& Options;
 
         bool Focused;

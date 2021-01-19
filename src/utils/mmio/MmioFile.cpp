@@ -3,7 +3,11 @@
 #include "ntdll.h"
 
 namespace EGL3::Utils::Mmio {
-	MmioFile::MmioFile(const fs::path& FilePath) : MmioFile(FilePath.string().c_str()) {}
+	MmioFile::MmioFile(const fs::path& FilePath) :
+		MmioFile(FilePath.string().c_str())
+	{
+
+	}
 
 	MmioFile::MmioFile(const char* FilePath) :
 		BaseAddress(NULL),
@@ -37,8 +41,8 @@ namespace EGL3::Utils::Mmio {
 
 	MmioFile::~MmioFile()
 	{
-		Flush();
 		if (BaseAddress) {
+			Flush();
 			NtUnmapViewOfSection(HProcess, BaseAddress);
 		}
 		if (HSection) {
@@ -46,16 +50,29 @@ namespace EGL3::Utils::Mmio {
 		}
 	}
 
-	bool MmioFile::Valid() const
+	bool MmioFile::IsValid() const
 	{
 		return BaseAddress;
 	}
 
+	char* MmioFile::Get() const {
+		return (char*)BaseAddress;
+	}
+
+	size_t MmioFile::Size() const {
+		return SectionSize;
+	}
+
+	bool MmioFile::IsValidOffset(size_t Offset) const
+	{
+		return Size() > Offset;
+	}
+
 	void MmioFile::EnsureSize(size_t Size)
 	{
-		if (SectionSize.QuadPart < Size) {
-			SectionSize.QuadPart = Size;
-			NtExtendSection(HSection, &SectionSize);
+		if (SectionSize < Size) {
+			SectionSize = Size;
+			NtExtendSection(HSection, (PLARGE_INTEGER)&SectionSize);
 		}
 	}
 

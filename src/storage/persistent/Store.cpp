@@ -29,6 +29,8 @@ namespace EGL3::Storage::Persistent {
 	}
 
 	void Store::Flush() {
+		std::lock_guard Guard(Mutex);
+
 		Utils::Streams::FileStream Stream;
 		Stream.open(Path, "wb+");
 		

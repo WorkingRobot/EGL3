@@ -170,7 +170,9 @@ namespace EGL3::Web::Xmpp {
             BackgroundPingNextTime = std::chrono::steady_clock::time_point::max();
         }
         BackgroundPingCV.notify_all();
-        BackgroundPingFuture.get();
+        if (BackgroundPingFuture.valid()) {
+            BackgroundPingFuture.get();
+        }
         Socket.close();
         // TODO: move this to when gtk is closing the app,
         // so we can ensure safety when 2+ clients are used
@@ -741,13 +743,13 @@ namespace EGL3::Web::Xmpp {
 
     // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88
     std::string GenerateResourceId() {
-        uint8_t Guid[16];
+        char Guid[16];
         Utils::GenerateRandomGuid(Guid);
         return "V2:launcher:WIN::" + Utils::ToHex<true>(Guid);
     }
 
     void SendPing(ix::WebSocket& Socket, const std::string& CurrentJid) {
-        uint8_t Guid[16];
+        char Guid[16];
         Utils::GenerateRandomGuid(Guid);
         auto IdString = Utils::ToHex<true>(Guid);
         auto Document = CreateDocument();

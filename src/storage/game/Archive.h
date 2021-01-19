@@ -3,53 +3,88 @@
 #include "../../utils/mmio/MmioFile.h"
 #include "GameId.h"
 #include "Header.h"
-#include "Runlist.h"
 #include "ManifestData.h"
 #include "RunIndex.h"
+#include "Runlist.h"
 
-#include <vector>
 #include <filesystem>
+#include <optional>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 namespace EGL3::Storage::Game {
-	// A full Fortnite (or maybe other game) installation
-	// As a disclaimer, we assume that all structs are aligned to 8 bytes (in order for this to compile without UB)
-	class Archive {
-	public:
-		Utils::Mmio::MmioFile Backend;
+    namespace Detail {
+        struct ECreate {
+            explicit ECreate() = default;
+        };
 
-		// at offset 0
-		Header* Header;
+        struct ELoad {
+            explicit ELoad() = default;
+        };
+    }
 
-		// at offset 256
-		Runlist* FileRunlist;
+    inline constexpr Detail::ECreate ArchiveOptionCreate{};
+    inline constexpr Detail::ELoad ArchiveOptionLoad{};
 
-		// at offset 512
-		Runlist* ChunkPartRunlist;
+    // A full Fortnite (or maybe other game) installation
+    // As a disclaimer, we assume that all structs are aligned to 8 bytes (in order for this to compile without UB)
+    class Archive {
+    public:
+        Archive(const fs::path& Path, Detail::ECreate) noexcept;
 
-		// at offset 768
-		Runlist* ChunkInfoRunlist;
+        Archive(const fs::path& Path, Detail::ELoad) noexcept;
 
-		// at offset 1024
-		Runlist* ChunkDataRunlist;
+        ~Archive();
 
-		// at offset 2048
-		ManifestData* ManifestData;
+        bool IsValid() const;
 
-		// at offset 4096
-		RunIndex* RunIndex;
+        // Do not run these functions without checking for IsValid!
+        std::string GetGame() const;
 
-		// at offset 8192 (sector 16)
-		// technical start of file data and all
+        std::string GetVersionLong() const;
 
-		Archive(const fs::path& Path);
+        std::string GetVersionHR() const;
 
-		~Archive();
+        uint64_t GetVersionNum() const;
 
-	private:
-		void Resize(Runlist* Runlist, int64_t NewSize);
+        GameId GetGameId() const;
 
-		friend class RunlistStream;
-	};
+    private:
+        void Resize(Runlist* Runlist, int64_t NewSize);
+
+        // All offsets (except for the header) are suggestions. They can be moved or changed based on the header
+        // However, that should be avoided, as errors may occur, and those offsets are not tested
+        // I may change them to be hardcoded
+
+        // at offset 0, size 256
+        Header* Header;
+
+        // at offset 256, size 1792
+        ManifestData* ManifestData;
+
+        // at offset 2048, size 14336
+        Runlist* FileRunlist;
+
+        // at offset 16384, size 16384
+        Runlist* ChunkPartRunlist;
+
+        // at offset 32768, size 16384
+        Runlist* ChunkInfoRunlist;
+
+        // at offset 49152, size 16384
+        Runlist* ChunkDataRunlist;
+
+        // at offset 65536, size 65536
+        RunIndex* RunIndex;
+
+        // at offset 131072 (sector 256)
+        // technical start of file data and all
+
+        std::optional<Utils::Mmio::MmioFile> Backend;
+
+        bool Valid;
+
+        friend class RunlistStream;
+    };
 }

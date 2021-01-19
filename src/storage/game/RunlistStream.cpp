@@ -20,13 +20,13 @@ namespace EGL3::Storage::Game {
         if (Runlist->GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
             uint32_t BytesRead = 0;
             for (auto CurrentRun = Runlist->Runs + RunStartIndex; CurrentRun != Runlist->Runs + Runlist->RunCount; CurrentRun++) {
-                size_t Offset = CurrentRun->SectorOffset * 512ull + RunByteOffset;
-                if ((BufCount - BytesRead) > CurrentRun->SectorSize * 512ull - RunByteOffset) { // write the entire buffer over
-                    memcpy(Archive.Backend.Get() + Offset, Buf + BytesRead, CurrentRun->SectorSize * 512ull - RunByteOffset);
-                    BytesRead += CurrentRun->SectorSize * 512 - RunByteOffset;
+                size_t Offset = CurrentRun->SectorOffset * Header::SectorSize + RunByteOffset;
+                if ((BufCount - BytesRead) > CurrentRun->SectorCount * Header::SectorSize - RunByteOffset) { // write the entire buffer over
+                    memcpy(Archive.Backend->Get() + Offset, Buf + BytesRead, CurrentRun->SectorCount * Header::SectorSize - RunByteOffset);
+                    BytesRead += CurrentRun->SectorCount * Header::SectorSize - RunByteOffset;
                 }
                 else { // write what it needs to use up the rest
-                    memcpy(Archive.Backend.Get(), Buf + BytesRead, BufCount - BytesRead);
+                    memcpy(Archive.Backend->Get(), Buf + BytesRead, BufCount - BytesRead);
                     BytesRead += BufCount - BytesRead;
                     break;
                 }
@@ -45,13 +45,13 @@ namespace EGL3::Storage::Game {
         if (Runlist->GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
             uint32_t BytesRead = 0;
             for (auto CurrentRun = Runlist->Runs + RunStartIndex; CurrentRun != Runlist->Runs + Runlist->RunCount; CurrentRun++) {
-                size_t Offset = CurrentRun->SectorOffset * 512ull + RunByteOffset;
-                if ((BufCount - BytesRead) > CurrentRun->SectorSize * 512ull - RunByteOffset) { // copy the entire buffer over
-                    memcpy(Buf + BytesRead, Archive.Backend.Get() + Offset, CurrentRun->SectorSize * 512ull - RunByteOffset);
-                    BytesRead += CurrentRun->SectorSize * 512ull - RunByteOffset;
+                size_t Offset = CurrentRun->SectorOffset * Header::SectorSize + RunByteOffset;
+                if ((BufCount - BytesRead) > CurrentRun->SectorCount * Header::SectorSize - RunByteOffset) { // copy the entire buffer over
+                    memcpy(Buf + BytesRead, Archive.Backend->Get() + Offset, CurrentRun->SectorCount * Header::SectorSize - RunByteOffset);
+                    BytesRead += CurrentRun->SectorCount * Header::SectorSize - RunByteOffset;
                 }
                 else { // copy what it needs to fill up the rest
-                    memcpy(Buf + BytesRead, Archive.Backend.Get() + Offset, BufCount - BytesRead);
+                    memcpy(Buf + BytesRead, Archive.Backend->Get() + Offset, BufCount - BytesRead);
                     BytesRead += BufCount - BytesRead;
                     break;
                 }

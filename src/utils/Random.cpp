@@ -6,7 +6,7 @@ namespace EGL3::Utils {
 	static std::mt19937 RandGenerator{ std::random_device{}() };
 
 	// Split into different compilation unit so there aren't multiple random devices (one static for all)
-	void GenerateRandomGuid(uint8_t Guid[16])
+	void GenerateRandomGuid(char Guid[16])
 	{
 		*(uint32_t*)(Guid + 0) = RandGenerator();
 		*(uint32_t*)(Guid + 4) = RandGenerator();
