@@ -45,9 +45,12 @@ namespace EGL3::Web::Epic {
 
         if (GetCancelled()) { return ErrorData::Status::Cancelled; }
 
-        cpr::Parameters Parameters;
+        // Some really special people decided to think that using url encoded parameters should return a 403
+        // Now, I'm forced to use a ostringstream and manually append parameters. Now look what you've done!
+        std::ostringstream BuiltUri;
+        BuiltUri << Manifest.Uri << "?";
         for (auto& Param : Manifest.QueryParams) {
-            Parameters.AddParameter({ Param.Name, Param.Value }, cpr::CurlHolder());
+            BuiltUri << Param.Name << "=" << Param.Value << "&";
         }
 
         cpr::Header Headers;
@@ -56,8 +59,7 @@ namespace EGL3::Web::Epic {
         }
 
         auto Response = Http::Get(
-            cpr::Url{ Manifest.Uri },
-            Parameters,
+            cpr::Url{ BuiltUri.str().c_str(),  (size_t)BuiltUri.tellp() - 1 },
             Headers
         );
 
