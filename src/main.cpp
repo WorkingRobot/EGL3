@@ -2,7 +2,10 @@
 #include "modules/ModuleList.h"
 #include "storage/persistent/Store.h"
 #include "utils/Assert.h"
+#include "utils/Config.h"
+#include "utils/Format.h"
 #include "utils/GladeBuilder.h"
+#include "utils/Platform.h"
 
 #include <fontconfig/fontconfig.h>
 #include <gtkmm.h>
@@ -10,6 +13,8 @@
 
 namespace EGL3 {
     __forceinline int Start() {
+        EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
+
         {
             auto Config = FcConfigCreate();
             FcConfigSetCurrent(Config);
