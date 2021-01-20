@@ -6,4 +6,9 @@ namespace EGL3::Modules::Game {
     {
 
     }
+
+    void UpdaterModule::QueueUpdate(Storage::Models::UpdateInfo& UpdateInfo)
+    {
+
+    }
 }

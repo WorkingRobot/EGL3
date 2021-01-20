@@ -2,166 +2,115 @@
 
 #include "../../utils/Assert.h"
 #include "../../utils/Align.h"
-#include "RunlistStream.h"
-#include "GameId.h"
-#include "RunlistId.h"
-
-#include <numeric>
 
 namespace EGL3::Storage::Game {
-    Archive::Archive(const fs::path& Path, Detail::ECreate) noexcept :
-        Valid(false)
+    Archive::Archive(const std::filesystem::path& Path, Detail::ECreate) noexcept :
+        ArchiveReadonly()
     {
-        if (EGL3_CONDITIONAL_LOG(fs::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
-            fs::remove(Path);
+        if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
+            std::filesystem::remove(Path);
         }
 
-        Backend.emplace(Path);
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
+        Backend = std::make_unique<Utils::Mmio::MmioFile>(Path);
+        if (!EGL3_CONDITIONAL_LOG(GetBackend().IsValid(), LogLevel::Error, "Archive file could not be created")) {
             return;
         }
 
-        Backend->EnsureSize(Header::FileDataOffset);
-
-        Header              = (decltype(Header))            Backend->Get() + 0;
-        ManifestData        = (decltype(ManifestData))      Backend->Get() + Header::ManifestDataOffset;
-        FileRunlist         = (decltype(FileRunlist))       Backend->Get() + Header::FileRunlistOffset;
-        ChunkPartRunlist    = (decltype(ChunkPartRunlist))  Backend->Get() + Header::ChunkPartRunlistOffset;
-        ChunkInfoRunlist    = (decltype(ChunkInfoRunlist))  Backend->Get() + Header::ChunkInfoRunlistOffset;
-        ChunkDataRunlist    = (decltype(ChunkDataRunlist))  Backend->Get() + Header::ChunkDataRunlistOffset;
-        RunIndex            = (decltype(RunIndex))          Backend->Get() + Header::RunIndexOffset;
-
-        *Header = Game::Header{
-            .Magic = Header::ExpectedMagic,
-            .ArchiveVersion = ArchiveVersion::Latest,
-            .HeaderSize = sizeof(Game::Header)
-        };
-
-        *FileRunlist = Runlist{ .AllocationId = RunlistId::File, .Runs{ {} } };
-        *ChunkPartRunlist = Runlist{ .AllocationId = RunlistId::ChunkPart };
-        *ChunkInfoRunlist = Runlist{ .AllocationId = RunlistId::ChunkInfo };
-        *ChunkDataRunlist = Runlist{ .AllocationId = RunlistId::ChunkData };
-
-        *RunIndex = Game::RunIndex{ .NextAvailableSector = Header::FileDataSectorOffset, .Elements{ {} } };
-
-        Valid = true;
-    }
-
-    Archive::Archive(const fs::path& Path, Detail::ELoad) noexcept :
-        Valid(false)
-    {
-        if (!EGL3_CONDITIONAL_LOG(fs::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
-            return;
-        }
-
-        Backend.emplace(Path);
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValidOffset(Header::FileDataOffset), LogLevel::Error, "Archive file is too small")) {
-            return;
-        }
-
-        Header              = (decltype(Header))            Backend->Get() + 0;
-
-        if (!EGL3_CONDITIONAL_LOG(Header->Magic == Header::ExpectedMagic, LogLevel::Error, "Archive has invalid magic")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->ArchiveVersion == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->HeaderSize == sizeof(Game::Header), LogLevel::Error, "Archive header has invalid size")) {
-            return;
-        }
+        GetBackend().EnsureSize(Header::GetMinimumArchiveSize());
         
-        ManifestData        = (decltype(ManifestData))      Backend->Get() + Header::ManifestDataOffset;
-        FileRunlist         = (decltype(FileRunlist))       Backend->Get() + Header::FileRunlistOffset;
-        ChunkPartRunlist    = (decltype(ChunkPartRunlist))  Backend->Get() + Header::ChunkPartRunlistOffset;
-        ChunkInfoRunlist    = (decltype(ChunkInfoRunlist))  Backend->Get() + Header::ChunkInfoRunlistOffset;
-        ChunkDataRunlist    = (decltype(ChunkDataRunlist))  Backend->Get() + Header::ChunkDataRunlistOffset;
-        RunIndex            = (decltype(RunIndex))          Backend->Get() + Header::RunIndexOffset;
+        GetHeader() = Game::Header();
+
+        GetRunlistFile() = RunlistFile(RunlistId::File);
+        GetRunlistChunkPart() = RunlistChunk(RunlistId::ChunkPart);
+        GetRunlistChunkInfo() = RunlistChunk(RunlistId::ChunkInfo);
+        GetRunlistChunkData() = RunlistChunk(RunlistId::ChunkData);
+
+        GetRunIndex() = RunIndexBase();
 
         Valid = true;
     }
 
-    Archive::~Archive()
+    Archive::Archive(const std::filesystem::path& Path, Detail::ELoad) noexcept :
+        ArchiveReadonly(Path)
     {
 
     }
 
-    bool Archive::IsValid() const
+    Utils::Mmio::MmioFile& Archive::GetBackend()
     {
-        return Valid;
+        return *(Utils::Mmio::MmioFile*)Backend.get();
     }
 
-    std::string Archive::GetGame() const
+    Header& Archive::GetHeader()
     {
-        return std::string(Header->Game, strnlen_s(Header->Game, sizeof(Header->Game)));
+        return *(Header*)(GetBackend().Get() + 0);
     }
 
-    std::string Archive::GetVersionLong() const
+    ManifestData& Archive::GetManifestData()
     {
-        return std::string(Header->VersionStringLong, strnlen_s(Header->VersionStringLong, sizeof(Header->VersionStringLong)));
+        return *(ManifestData*)(GetBackend().Get() + GetHeader().GetOffsetManifestData());
     }
 
-    std::string Archive::GetVersionHR() const
+    Archive::RunlistFile& Archive::GetRunlistFile()
     {
-        return std::string(Header->VersionStringHR, strnlen_s(Header->VersionStringHR, sizeof(Header->VersionStringHR)));
+        return *(RunlistFile*)(GetBackend().Get() + GetHeader().GetOffsetRunlistFile());
     }
 
-    uint64_t Archive::GetVersionNum() const
+    Archive::RunlistChunk& Archive::GetRunlistChunkPart()
     {
-        return Header->VersionNumeric;
+        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkPart());
     }
 
-    GameId Archive::GetGameId() const
+    Archive::RunlistChunk& Archive::GetRunlistChunkInfo()
     {
-        return Header->GameNumeric;
+        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkInfo());
+    }
+
+    Archive::RunlistChunk& Archive::GetRunlistChunkData()
+    {
+        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkData());
+    }
+
+    Archive::RunIndexBase& Archive::GetRunIndex()
+    {
+        return *(RunIndexBase*)(GetBackend().Get() + GetHeader().GetOffsetRunIndex());
     }
 
     // TODO: check if Runlist and RunIndex's sizes can hold an extra element (and resize accordingly somehow or something)
-    // TODO: ensure/change size of archive when modifying the index so we don't write past eof
-    void Archive::Resize(Runlist* Runlist, int64_t NewSize)
+    template<uint32_t MaxRunCount>
+    void Archive::Resize(Runlist<MaxRunCount>& Runlist, uint64_t NewSize)
     {
-        if (Runlist->TotalSize >= NewSize) {
+        if (Runlist.GetValidSize() >= NewSize) {
             return;
         }
 
-        auto AllocatedSectors = std::accumulate(Runlist->Runs, Runlist->Runs + Runlist->RunCount, 0ull, [](uint64_t A, const RunlistElement& B) {
-            return A + B.SectorCount;
-        });
-        auto RequiredSectors = Utils::Align<Header::SectorSize>(NewSize) / Header::SectorSize;
+        auto AllocatedSectors = Runlist.GetAllocatedSectors();
+        auto RequiredSectors = Utils::Align<Header::GetSectorSize()>(NewSize) / Header::GetSectorSize();
         if (RequiredSectors <= AllocatedSectors) {
-            Runlist->TotalSize = NewSize;
+            Runlist.SetValidSize(NewSize);
             return;
         }
 
-        // Number of more sectors that the run needs to be reach the target size
+        // Number of more sectors that the run needs to have to reach the target size
         auto MoreSectorsNeeded = RequiredSectors - AllocatedSectors;
 
         // We will need to modify the index/runlist past this point
-
-        if (RunIndex->Elements[RunIndex->ElementCount-1].AllocationId == Runlist->AllocationId) {
-            // We can simply increase the size of the last run here without worry of clashing
-            RunIndex->Elements[RunIndex->ElementCount - 1].SectorCount += MoreSectorsNeeded;
-            Runlist->Runs[Runlist->RunCount-1].SectorCount += MoreSectorsNeeded;
-            Runlist->TotalSize = NewSize;
-            return;
+        auto& RunIndex = GetRunIndex();
+        if (RunIndex.GetRunCount()) {
+            if (RunIndex.GetRuns()[RunIndex.GetRunCount() - 1].AllocationId == Runlist.GetId()) {
+                // We can simply increase the size of the last run here without worry of clashing
+                Runlist.ExtendLastRun(MoreSectorsNeeded);
+                RunIndex.ExtendLastRun(MoreSectorsNeeded);
+                Runlist.SetValidSize(NewSize);
+                GetBackend().EnsureSize(RunIndex.GetNextAvailableSector() * Header::GetSectorSize());
+                return;
+            }
         }
 
         // We need to add a new run to the index and to the runlist
-        RunIndex->Elements[RunIndex->ElementCount].SectorCount = MoreSectorsNeeded;
-        RunIndex->Elements[RunIndex->ElementCount].AllocationId = Runlist->AllocationId;
-        RunIndex->ElementCount++;
-
-        Runlist->Runs[Runlist->RunCount].SectorOffset = RunIndex->NextAvailableSector;
-        Runlist->Runs[Runlist->RunCount].SectorCount = MoreSectorsNeeded;
-        Runlist->RunCount++;
-
-        Runlist->TotalSize = NewSize;
-        RunIndex->NextAvailableSector += MoreSectorsNeeded;
+        EGL3_CONDITIONAL_LOG(Runlist.EmplaceRun(RunIndex.GetNextAvailableSector(), MoreSectorsNeeded), LogLevel::Critical, "Runlist ran out of available runs");
+        EGL3_CONDITIONAL_LOG(RunIndex.EmplaceRun(MoreSectorsNeeded, Runlist.GetId()), LogLevel::Critical, "Run index ran out of available runs");
+        Runlist.SetValidSize(NewSize);
+        GetBackend().EnsureSize(RunIndex.GetNextAvailableSector() * Header::GetSectorSize());
     }
 }

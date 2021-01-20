@@ -1,13 +1,13 @@
 #pragma once
 
 #include "../../utils/streams/Stream.h"
-#include "Archive.h"
+#include "ArchiveReadonly.h"
 
 namespace EGL3::Storage::Game {
     template<uint32_t MaxRunCount>
-    class RunlistStream : public Utils::Streams::Stream {
+    class RunlistStreamReadonly : public Utils::Streams::Stream {
     public:
-        RunlistStream(Runlist<MaxRunCount>& Runlist, Archive& Archive) :
+        RunlistStreamReadonly(const Runlist<MaxRunCount>& Runlist, const ArchiveReadonly& Archive) :
             Runlist(Runlist),
             Archive(Archive),
             Position(0)
@@ -16,28 +16,6 @@ namespace EGL3::Storage::Game {
         }
 
         Stream& write(const char* Buf, size_t BufCount) override {
-            if (Position + BufCount > size()) {
-                Archive.Resize(Runlist, Position + BufCount);
-            }
-
-            uint32_t RunStartIndex, RunByteOffset;
-            if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
-                uint32_t BytesRead = 0;
-                for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
-                    size_t Offset = CurrentRunItr->SectorOffset * Header::GetSectorSize() + RunByteOffset;
-                    if ((BufCount - BytesRead) > CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset) { // write the entire buffer over
-                        memcpy(Archive.Get() + Offset, Buf + BytesRead, CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset);
-                        BytesRead += CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset;
-                    }
-                    else { // write what it needs to use up the rest
-                        memcpy(Archive.Get(), Buf + BytesRead, BufCount - BytesRead);
-                        BytesRead += BufCount - BytesRead;
-                        break;
-                    }
-                    RunByteOffset = 0;
-                }
-                Position += BytesRead;
-            }
             return *this;
         }
 
@@ -92,8 +70,8 @@ namespace EGL3::Storage::Game {
         }
 
     private:
-        Runlist<MaxRunCount>& Runlist;
-        Archive& Archive;
+        const Runlist<MaxRunCount>& Runlist;
+        const ArchiveReadonly& Archive;
 
         size_t Position;
     };

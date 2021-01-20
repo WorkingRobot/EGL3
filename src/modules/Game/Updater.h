@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../storage/game/Archive.h"
+#include "../../storage/models/UpdateInfo.h"
 #include "../../storage/persistent/Store.h"
 #include "../../utils/GladeBuilder.h"
 #include "../BaseModule.h"
@@ -13,11 +13,11 @@ namespace EGL3::Modules::Game {
     public:
         UpdaterModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
-        void CheckForUpdate();
+        void QueueUpdate(Storage::Models::UpdateInfo& UpdateInfo);
 
     private:
-        std::optional<Storage::Game::Archive> Archive;
-
         Storage::Persistent::Store& Storage;
+
+        std::vector<Storage::Models::UpdateInfo> Updates;
     };
 }
