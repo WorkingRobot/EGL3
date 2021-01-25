@@ -23,16 +23,16 @@ namespace EGL3::Storage::Game {
 
         Backend->EnsureSize(Header::GetMinimumArchiveSize());
         
-        *Header = Game::Header();
+        std::construct_at(Header.Get());
+        
+        std::construct_at(ManifestData.Get());
 
-        *ManifestData = Game::ManifestData();
+        std::construct_at(RunlistFile.Get(), RunlistId::File);
+        std::construct_at(RunlistChunkPart.Get(), RunlistId::ChunkPart);
+        std::construct_at(RunlistChunkInfo.Get(), RunlistId::ChunkInfo);
+        std::construct_at(RunlistChunkData.Get(), RunlistId::ChunkData);
 
-        *RunlistFile = RunlistTraits<RunlistId::File>::Runlist(RunlistId::File);
-        *RunlistChunkPart = RunlistTraits<RunlistId::ChunkPart>::Runlist(RunlistId::ChunkPart);
-        *RunlistChunkInfo = RunlistTraits<RunlistId::ChunkInfo>::Runlist(RunlistId::ChunkInfo);
-        *RunlistChunkData = RunlistTraits<RunlistId::ChunkData>::Runlist(RunlistId::ChunkData);
-
-        *RunIndex = RunIndexTraits::RunIndex();
+        std::construct_at(RunIndex.Get());
 
         Valid = true;
     }
@@ -132,7 +132,6 @@ namespace EGL3::Storage::Game {
         return 0;
     }
 
-    // TODO: Allow the ability to shrink runlists
     template<uint32_t MaxRunCount>
     void Archive::Resize(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewSize)
     {
@@ -144,7 +143,6 @@ namespace EGL3::Storage::Game {
         }
     }
 
-    // TODO: Allow the ability to shrink runlists
     template<uint32_t MaxRunCount>
     void Archive::Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize)
     {

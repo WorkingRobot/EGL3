@@ -22,11 +22,15 @@ namespace EGL3::Storage::Game {
 
         }
 
-        [[nodiscard]] const T& operator*() const noexcept {
+        const T& operator*() const noexcept {
             return *(T*)(Archive->Get() + Offset);
         }
 
-        [[nodiscard]] const T* operator->() const noexcept {
+        const T* operator->() const noexcept {
+            return (T*)(Archive->Get() + Offset);
+        }
+
+        const T* Get() const noexcept {
             return (T*)(Archive->Get() + Offset);
         }
 
@@ -65,13 +69,19 @@ namespace EGL3::Storage::Game {
 
         using Base::operator*;
 
-        [[nodiscard]] T& operator*() noexcept {
+        T& operator*() noexcept {
             return *(T*)(Base::Archive->Get() + Base::Offset);
         }
 
         using Base::operator->;
 
-        [[nodiscard]] T* operator->() noexcept {
+        T* operator->() noexcept {
+            return (T*)(Base::Archive->Get() + Base::Offset);
+        }
+
+        using Base::Get;
+
+        T* Get() noexcept {
             return (T*)(Base::Archive->Get() + Base::Offset);
         }
 
