@@ -3,6 +3,7 @@
 #include "ManifestData.h"
 
 namespace EGL3::Storage::Game {
+    // Still unsure about this data
     struct ManifestData {
         char LaunchExeString[256];      // Path to the executable to launch
         char LaunchCommand[256];        // Extra command arguments to add to the executable

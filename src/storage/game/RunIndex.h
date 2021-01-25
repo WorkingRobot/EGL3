@@ -10,7 +10,8 @@ namespace EGL3::Storage::Game {
     public:
         RunIndex() :
             NextAvailableSector(Header::GetFirstValidSector()),
-            RunCount(0)
+            RunCount(0),
+            Runs()
         {
 
         }
@@ -36,7 +37,7 @@ namespace EGL3::Storage::Game {
             if (RunCount >= MaxRunCount) {
                 return false;
             }
-            Runs[RunCount] = RunIndexElement{ .SectorCount = SectorCount, .AllocationId = RunlistId };
+            Runs[RunCount] = RunIndexElement{ .SectorCount = SectorCount, .Id = RunlistId };
             RunCount++;
             NextAvailableSector += SectorCount;
             return true;
@@ -50,5 +51,11 @@ namespace EGL3::Storage::Game {
         uint32_t NextAvailableSector;                   // Next available free sector
         uint32_t RunCount;                              // Number of elements in element array
         std::array<RunIndexElement, MaxRunCount> Runs;  // Accumulation of all run indexes in all runs
+    };
+
+    struct RunIndexTraits {
+        using RunIndex = RunIndex<10921>;
+
+        static_assert(sizeof(RunIndex) == 65536);
     };
 }

@@ -9,6 +9,7 @@ namespace EGL3::Modules::Game {
         Storage(Storage),
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
         Auth(Modules.GetModule<AuthorizationModule>()),
+        Updater(Modules.GetModule<UpdaterModule>()),
         PlayBtn(Builder.GetWidget<Gtk::Button>("PlayBtn")),
         PlayMenuBtn(Builder.GetWidget<Gtk::MenuButton>("PlayDropdown")),
         PlayMenuVerifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
@@ -19,7 +20,7 @@ namespace EGL3::Modules::Game {
     {
         PlayBtn.signal_clicked().connect([this]() { PlayClicked(); });
 
-        InstallDialog.LocationChosen.Set([this](const std::string& File) { CreateInstall(File); });
+        InstallDialog.LocationChosen.Set([this](const std::string& File) { Install(File); });
 
         CurrentStateDispatcher.connect([this]() { UpdateToCurrentState(); });
 
@@ -30,13 +31,12 @@ namespace EGL3::Modules::Game {
 
     void GameModule::OnAuthChanged()
     {
-        auto Install = GetInstall();
-        if (!Install) {
-            CurrentState = State::Install;
+        auto Install = GetInstalls().GetGame(Storage::Game::GameId::Fortnite);
+        if (Install && std::filesystem::is_regular_file(Install->GetLocation())) {
+            CurrentState = State::Play;
         }
         else {
-            // Check for update here :)
-            CurrentState = State::Play;
+            CurrentState = State::Install;
         }
         CurrentStateDispatcher.emit();
     }
@@ -102,7 +102,7 @@ namespace EGL3::Modules::Game {
             UpdateToCurrentState();
             break;
         case State::Update:
-            // Mount to current game, update
+            StartUpdate(false);
 
             CurrentState = State::Updating;
             UpdateToCurrentState();
@@ -110,10 +110,6 @@ namespace EGL3::Modules::Game {
         case State::Install:
         {
             InstallDialog.Show();
-
-            //Auth.GetClientLauncher().GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
-            //CurrentState = State::Installing;
-            //UpdateToCurrentState();
             break;
         }
         default:
@@ -122,23 +118,21 @@ namespace EGL3::Modules::Game {
         }
     }
 
-    std::unique_ptr<char[]> ReadBytes(const fs::path& Path, size_t& OutSize) {
-        auto File = fopen(Path.string().c_str(), "rb");
-        OutSize = fs::file_size(Path);
-        auto Ret = std::make_unique<char[]>(OutSize);
-        fread(Ret.get(), OutSize, 1, File);
-        fclose(File);
-        return Ret;
-    }
-
-    void GameModule::CreateInstall(const std::string& Filename)
+    void GameModule::Install(const std::string& Filename)
     {
         if (CurrentState != State::Install || !Auth.IsLoggedIn()) {
             return;
         }
+
+        GetInstalls().GetOrCreateGame(Storage::Game::GameId::Fortnite).SetLocation(Filename);
+        StartUpdate(true);
+
         CurrentState = State::Installing;
         UpdateToCurrentState();
-        AsyncFF.Enqueue([this]() {
+    }
+
+    void GameModule::StartUpdate(bool FreshInstall) {
+        AsyncFF.Enqueue([this, FreshInstall]() {
             auto DownloadInfo = Auth.GetClientLauncher().GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
             if (!EGL3_CONDITIONAL_LOG(!DownloadInfo.HasError(), LogLevel::Error, "Download info error")) {
                 return;
@@ -152,17 +146,30 @@ namespace EGL3::Modules::Game {
             if (!EGL3_CONDITIONAL_LOG(!Manifest.HasError(), LogLevel::Error, "Manifest download error")) {
                 return;
             }
-            for (auto& File : Manifest->FileManifestList.FileList) {
-                printf("%s (%d bytes)\n", File.Filename.c_str(), File.FileSize);
+            if (!EGL3_CONDITIONAL_LOG(!Manifest->HasError(), LogLevel::Error, "Manifest parse error")) {
+                return;
             }
-            for (auto& Field : Manifest->CustomFields.Fields) {
-                printf("%s - %s\n", Field.first.c_str(), Field.second.c_str());
+
+            auto Install = GetInstalls().GetGame(Storage::Game::GameId::Fortnite);
+            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game installation found");
+            if (FreshInstall) {
+                Storage::Game::Archive Archive(Install->GetLocation(), Storage::Game::ArchiveOptionCreate);
+                Updater.QueueUpdate(std::move(Archive), std::move(Manifest.Get()), 30);
+            }
+            else {
+                Storage::Game::Archive Archive(Install->GetLocation(), Storage::Game::ArchiveOptionLoad);
+                Updater.QueueUpdate(std::move(Archive), std::move(Manifest.Get()), 30);
             }
         });
     }
 
-    const Storage::Models::GameInstall* GameModule::GetInstall() const
+    const Storage::Models::GameInstalls& GameModule::GetInstalls() const
     {
-        return Storage.Get(Storage::Persistent::Key::GameInstalls).GetGame(Storage::Game::GameId::Fortnite);
+        return Storage.Get(Storage::Persistent::Key::GameInstalls);
+    }
+
+    Storage::Models::GameInstalls& GameModule::GetInstalls()
+    {
+        return Storage.Get(Storage::Persistent::Key::GameInstalls);
     }
 }

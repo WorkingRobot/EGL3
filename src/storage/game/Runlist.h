@@ -4,6 +4,10 @@
 #include "RunlistElement.h"
 #include "RunlistId.h"
 
+#include "File.h"
+#include "ChunkPart.h"
+#include "ChunkInfo.h"
+
 #include <array>
 #include <numeric>
 
@@ -12,27 +16,37 @@ namespace EGL3::Storage::Game {
     class Runlist {
     public:
         Runlist(RunlistId Id) :
-            AllocationId(Id),
+            Id(Id),
             RunCount(0),
-            ValidSize(0)
+            AllocatedSize(0),
+            Size(0),
+            Runs()
         {
 
         }
 
         RunlistId GetId() const {
-            return AllocationId;
+            return Id;
         }
 
         uint32_t GetRunCount() const {
             return RunCount;
         }
 
-        uint64_t GetValidSize() const {
-            return ValidSize;
+        uint64_t GetAllocatedSize() const {
+            return AllocatedSize;
         }
 
-        void SetValidSize(uint64_t NewSize) {
-            ValidSize = NewSize;
+        void SetAllocatedSize(uint64_t NewSize) {
+            AllocatedSize = NewSize;
+        }
+
+        uint64_t GetSize() const {
+            return Size;
+        }
+
+        void SetSize(uint64_t NewSize) {
+            Size = NewSize;
         }
 
         const std::array<RunlistElement, MaxRunCount>& GetRuns() const {
@@ -55,7 +69,10 @@ namespace EGL3::Storage::Game {
             if (RunCount >= MaxRunCount) {
                 return false;
             }
-            Runs[RunCount] = RunlistElement{ .SectorOffset = SectorOffset, .SectorCount = SectorCount };
+            Runs[RunCount] = RunlistElement{
+                .SectorOffset = SectorOffset,
+                .SectorCount = SectorCount
+            };
             RunCount++;
             return true;
         }
@@ -71,7 +88,7 @@ namespace EGL3::Storage::Game {
         // ByteOffset is the offset of the byte requested
         // RunIndex is the index inside the Runs array, RunByteOffset is the byte offset inside that run
         bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint32_t& RunByteOffset) const {
-            if (ValidSize <= ByteOffset) {
+            if (Size <= ByteOffset) {
                 return false;
             }
 
@@ -85,10 +102,75 @@ namespace EGL3::Storage::Game {
             return false;
         }
 
+        bool IncrementRunState(uint32_t& RunIndex, uint32_t& RunByteOffset) const {
+            for (; RunIndex < RunCount; ++RunIndex) {
+                if (RunByteOffset < Runs[RunIndex].SectorCount * Header::GetSectorSize()) {
+                    return true;
+                }
+                RunByteOffset -= Runs[RunIndex].SectorCount * Header::GetSectorSize();
+            }
+            return false;
+        }
+
+        size_t GetPosition(uint32_t RunIndex, uint32_t RunByteOffset) const {
+            return Runs[RunIndex].SectorOffset * Header::GetSectorSize() + RunByteOffset;
+        }
+
+        size_t GetPosition(size_t Position) const {
+            if (Position >= Size) {
+                return -1;
+            }
+
+            uint32_t RunIndex, RunByteOffset;
+            if (GetRunIndex(Position, RunIndex, RunByteOffset)) {
+                return GetPosition(RunIndex, RunByteOffset);
+            }
+
+            return -1;
+        }
+
     private:
-        RunlistId AllocationId;                         // Basically the id of the runlist (unique), used in the RunIndex
+        RunlistId Id;                                   // Basically the id of the runlist (unique), used in the RunIndex
         uint32_t RunCount;                              // Number of runs in the list below
-        uint64_t ValidSize;                             // Number of bytes that are allocated to the runlist data
+        uint64_t AllocatedSize;                         // Number of bytes that are allocated to the runlist data (like vector capacity)
+        uint64_t Size;                                  // Number of bytes that are used in the runlist data (like vector size)
         std::array<RunlistElement, MaxRunCount> Runs;   // List of runs showing where the data can be found
+    };
+
+    template<RunlistId Id>
+    struct RunlistTraits {
+
+    };
+
+    template<>
+    struct RunlistTraits<RunlistId::File> {
+        using Runlist = Runlist<1789>;
+        using Data = File;
+
+        static_assert(sizeof(Runlist) == 14336);
+    };
+
+    template<>
+    struct RunlistTraits<RunlistId::ChunkPart> {
+        using Runlist = Runlist<2045>;
+        using Data = ChunkPart;
+
+        static_assert(sizeof(Runlist) == 16384);
+    };
+
+    template<>
+    struct RunlistTraits<RunlistId::ChunkInfo> {
+        using Runlist = Runlist<2045>;
+        using Data = ChunkInfo;
+
+        static_assert(sizeof(Runlist) == 16384);
+    };
+
+    template<>
+    struct RunlistTraits<RunlistId::ChunkData> {
+        using Runlist = Runlist<2045>;
+        using Data = char;
+
+        static_assert(sizeof(Runlist) == 16384);
     };
 }

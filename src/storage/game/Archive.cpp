@@ -2,92 +2,161 @@
 
 #include "../../utils/Assert.h"
 #include "../../utils/Align.h"
+#include "ArchiveList.h"
 
 namespace EGL3::Storage::Game {
     Archive::Archive(const std::filesystem::path& Path, Detail::ECreate) noexcept :
-        ArchiveReadonly()
+        Archive()
     {
         if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
-            std::filesystem::remove(Path);
+            std::error_code Code;
+            if (!std::filesystem::remove(Path, Code)) {
+                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
+                EGL3_LOG(LogLevel::Critical, "Remove error");
+            }
         }
 
-        Backend = std::make_unique<Utils::Mmio::MmioFile>(Path);
-        if (!EGL3_CONDITIONAL_LOG(GetBackend().IsValid(), LogLevel::Error, "Archive file could not be created")) {
+        Backend.emplace(Path, Utils::Mmio::OptionWrite);
+        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
             return;
         }
 
-        GetBackend().EnsureSize(Header::GetMinimumArchiveSize());
+        Backend->EnsureSize(Header::GetMinimumArchiveSize());
         
-        GetHeader() = Game::Header();
+        *Header = Game::Header();
 
-        GetRunlistFile() = RunlistFile(RunlistId::File);
-        GetRunlistChunkPart() = RunlistChunk(RunlistId::ChunkPart);
-        GetRunlistChunkInfo() = RunlistChunk(RunlistId::ChunkInfo);
-        GetRunlistChunkData() = RunlistChunk(RunlistId::ChunkData);
+        *ManifestData = Game::ManifestData();
 
-        GetRunIndex() = RunIndexBase();
+        *RunlistFile = RunlistTraits<RunlistId::File>::Runlist(RunlistId::File);
+        *RunlistChunkPart = RunlistTraits<RunlistId::ChunkPart>::Runlist(RunlistId::ChunkPart);
+        *RunlistChunkInfo = RunlistTraits<RunlistId::ChunkInfo>::Runlist(RunlistId::ChunkInfo);
+        *RunlistChunkData = RunlistTraits<RunlistId::ChunkData>::Runlist(RunlistId::ChunkData);
+
+        *RunIndex = RunIndexTraits::RunIndex();
 
         Valid = true;
     }
 
     Archive::Archive(const std::filesystem::path& Path, Detail::ELoad) noexcept :
-        ArchiveReadonly(Path)
+        Archive()
     {
-
-    }
-
-    Utils::Mmio::MmioFile& Archive::GetBackend()
-    {
-        return *(Utils::Mmio::MmioFile*)Backend.get();
-    }
-
-    Header& Archive::GetHeader()
-    {
-        return *(Header*)(GetBackend().Get() + 0);
-    }
-
-    ManifestData& Archive::GetManifestData()
-    {
-        return *(ManifestData*)(GetBackend().Get() + GetHeader().GetOffsetManifestData());
-    }
-
-    Archive::RunlistFile& Archive::GetRunlistFile()
-    {
-        return *(RunlistFile*)(GetBackend().Get() + GetHeader().GetOffsetRunlistFile());
-    }
-
-    Archive::RunlistChunk& Archive::GetRunlistChunkPart()
-    {
-        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkPart());
-    }
-
-    Archive::RunlistChunk& Archive::GetRunlistChunkInfo()
-    {
-        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkInfo());
-    }
-
-    Archive::RunlistChunk& Archive::GetRunlistChunkData()
-    {
-        return *(RunlistChunk*)(GetBackend().Get() + GetHeader().GetOffsetRunlistChunkData());
-    }
-
-    Archive::RunIndexBase& Archive::GetRunIndex()
-    {
-        return *(RunIndexBase*)(GetBackend().Get() + GetHeader().GetOffsetRunIndex());
-    }
-
-    // TODO: check if Runlist and RunIndex's sizes can hold an extra element (and resize accordingly somehow or something)
-    template<uint32_t MaxRunCount>
-    void Archive::Resize(Runlist<MaxRunCount>& Runlist, uint64_t NewSize)
-    {
-        if (Runlist.GetValidSize() >= NewSize) {
+        if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
             return;
         }
 
-        auto AllocatedSectors = Runlist.GetAllocatedSectors();
-        auto RequiredSectors = Utils::Align<Header::GetSectorSize()>(NewSize) / Header::GetSectorSize();
-        if (RequiredSectors <= AllocatedSectors) {
-            Runlist.SetValidSize(NewSize);
+        Backend.emplace(Path, Utils::Mmio::OptionWrite);
+        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
+            return;
+        }
+
+        Valid = true;
+    }
+
+    Archive::Archive(const std::filesystem::path& Path, Detail::ERead) noexcept :
+        Archive()
+    {
+        if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
+            return;
+        }
+
+        Backend.emplace(Path, Utils::Mmio::OptionRead);
+        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
+            return;
+        }
+
+        if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
+            return;
+        }
+
+        Valid = true;
+    }
+
+    bool Archive::IsValid() const
+    {
+        return Valid;
+    }
+
+    template<uint32_t MaxRunCount>
+    size_t Archive::ReadRunlist(const Runlist<MaxRunCount>& Runlist, size_t Position, char* Dst, size_t DstSize) const
+    {
+        if (Position + DstSize > Runlist.GetSize()) {
+            DstSize = Runlist.GetSize() - Position;
+        }
+        uint32_t RunStartIndex, RunByteOffset;
+        if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
+            uint32_t BytesRead = 0;
+            for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
+                size_t Offset = CurrentRunItr->SectorOffset * Header::GetSectorSize() + RunByteOffset;
+                if ((DstSize - BytesRead) > CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset) { // copy the entire buffer over
+                    memcpy(Dst + BytesRead, Get() + Offset, CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset);
+                    BytesRead += CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset;
+                }
+                else { // copy what it needs to fill up the rest
+                    memcpy(Dst + BytesRead, Get() + Offset, DstSize - BytesRead);
+                    BytesRead += DstSize - BytesRead;
+                    break;
+                }
+                RunByteOffset = 0;
+            }
+            return BytesRead;
+        }
+
+        return 0;
+    }
+
+    // TODO: Allow the ability to shrink runlists
+    template<uint32_t MaxRunCount>
+    void Archive::Resize(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewSize)
+    {
+        // Placing this after can cause a memory access exception due to the memory being moved
+        Runlist->SetSize(NewSize);
+
+        if (NewSize > Runlist->GetAllocatedSize()) {
+            Reserve(Runlist, NewSize);
+        }
+    }
+
+    // TODO: Allow the ability to shrink runlists
+    template<uint32_t MaxRunCount>
+    void Archive::Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize)
+    {
+        if (Runlist->GetAllocatedSize() >= NewAllocatedSize) {
+            Runlist->SetAllocatedSize(NewAllocatedSize);
+            return;
+        }
+
+        auto AllocatedSectors = Runlist->GetAllocatedSectors();
+        auto RequiredSectors = Utils::Align<Header::GetSectorSize()>(NewAllocatedSize) / Header::GetSectorSize();
+        if (AllocatedSectors >= RequiredSectors) {
+            Runlist->SetAllocatedSize(NewAllocatedSize);
             return;
         }
 
@@ -95,22 +164,81 @@ namespace EGL3::Storage::Game {
         auto MoreSectorsNeeded = RequiredSectors - AllocatedSectors;
 
         // We will need to modify the index/runlist past this point
-        auto& RunIndex = GetRunIndex();
-        if (RunIndex.GetRunCount()) {
-            if (RunIndex.GetRuns()[RunIndex.GetRunCount() - 1].AllocationId == Runlist.GetId()) {
+        if (RunIndex->GetRunCount()) {
+            if (RunIndex->GetRuns()[RunIndex->GetRunCount() - 1].Id == Runlist->GetId()) {
                 // We can simply increase the size of the last run here without worry of clashing
-                Runlist.ExtendLastRun(MoreSectorsNeeded);
-                RunIndex.ExtendLastRun(MoreSectorsNeeded);
-                Runlist.SetValidSize(NewSize);
-                GetBackend().EnsureSize(RunIndex.GetNextAvailableSector() * Header::GetSectorSize());
+                Runlist->ExtendLastRun(MoreSectorsNeeded);
+                RunIndex->ExtendLastRun(MoreSectorsNeeded);
+                Runlist->SetAllocatedSize(NewAllocatedSize);
+                Backend->EnsureSize(RunIndex->GetNextAvailableSector() * Header::GetSectorSize());
                 return;
             }
         }
 
         // We need to add a new run to the index and to the runlist
-        EGL3_CONDITIONAL_LOG(Runlist.EmplaceRun(RunIndex.GetNextAvailableSector(), MoreSectorsNeeded), LogLevel::Critical, "Runlist ran out of available runs");
-        EGL3_CONDITIONAL_LOG(RunIndex.EmplaceRun(MoreSectorsNeeded, Runlist.GetId()), LogLevel::Critical, "Run index ran out of available runs");
-        Runlist.SetValidSize(NewSize);
-        GetBackend().EnsureSize(RunIndex.GetNextAvailableSector() * Header::GetSectorSize());
+        EGL3_CONDITIONAL_LOG(Runlist->EmplaceRun(RunIndex->GetNextAvailableSector(), MoreSectorsNeeded), LogLevel::Critical, "Runlist ran out of available runs");
+        EGL3_CONDITIONAL_LOG(RunIndex->EmplaceRun(MoreSectorsNeeded, Runlist->GetId()), LogLevel::Critical, "Run index ran out of available runs");
+        Runlist->SetAllocatedSize(NewAllocatedSize);
+        Backend->EnsureSize(RunIndex->GetNextAvailableSector() * Header::GetSectorSize());
+    }
+
+    /*
+    const std::vector<EGL3File> ArchiveReadonly::GetFiles() const
+    {
+        std::vector<EGL3File> Ret;
+
+        RunlistStreamReadonly FileStream(GetRunlistFile(), *this);
+        while (FileStream.size() > FileStream.tell()) {
+            File CurFile;
+            FileStream.read((char*)&CurFile, sizeof(File));
+
+            int64_t Parent = -1;
+            std::filesystem::path Path(CurFile.Filename);
+            for (auto& Section : Path) {
+                auto Itr = std::find_if(Ret.begin(), Ret.end(), [&](const EGL3File& File) {
+                    return File.is_directory && File.parent_index == Parent && std::is_eq(Utils::CompareStringsInsensitive(std::string(File.name), Section.string()));
+                });
+                if (Itr != Ret.end()) {
+                    Parent = std::distance(Ret.begin(), Itr);
+                }
+                else {
+                    Ret.emplace_back(EGL3File{
+                        .name = Section.string().c_str(), // TODO: MUST FIX!
+                        .size = 0,
+                        .is_directory = 1,
+                        .parent_index = Parent,
+                        .reserved = nullptr,
+                        .o_runlist = nullptr
+                    });
+                    Parent = Ret.size() - 1;
+                }
+            }
+            auto& File = Ret[Parent];
+            File.is_directory = 0;
+            File.size = CurFile.FileSize;
+        }
+    }
+
+    void ArchiveReadonly::HandleFile(const EGL3File& File, uint64_t LCN, uint8_t Buffer[4096]) const
+    {
+        memset(Buffer, 'A', 1024);
+        memset(Buffer + 1024, 'B', 1024);
+        memset(Buffer + 2048, 'C', 1024);
+        memset(Buffer + 3072, 'D', 1024);
+        *(uint64_t*)Buffer = LCN;
+    }
+    */
+
+    Archive::Archive() :
+        Valid(false),
+        Header(*Backend, 0),
+        ManifestData(*Backend, Header::GetOffsetManifestData()),
+        RunlistFile(*Backend, Header::GetOffsetRunlistFile()),
+        RunlistChunkPart(*Backend, Header::GetOffsetRunlistChunkPart()),
+        RunlistChunkInfo(*Backend, Header::GetOffsetRunlistChunkInfo()),
+        RunlistChunkData(*Backend, Header::GetOffsetManifestData()),
+        RunIndex(*Backend, Header::GetOffsetRunIndex())
+    {
+
     }
 }

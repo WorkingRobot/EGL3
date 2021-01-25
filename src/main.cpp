@@ -1,5 +1,7 @@
 
 #include "modules/ModuleList.h"
+#include "storage/game/Archive.h"
+#include "storage/game/ArchiveList.h"
 #include "storage/persistent/Store.h"
 #include "utils/Assert.h"
 #include "utils/Config.h"
@@ -11,9 +13,67 @@
 #include <gtkmm.h>
 #include <pango/pangofc-fontmap.h>
 
+#ifdef TRACY_ENABLE
+#include <Tracy.hpp>
+void* operator new(std::size_t count)
+{
+    auto ptr = malloc(count);
+    TracyAlloc(ptr, count);
+    return ptr;
+}
+void operator delete(void* ptr) noexcept
+{
+    TracyFree(ptr);
+    free(ptr);
+}
+#else
+#define ZoneNamedN(a, b, c) (void)0
+#endif
+
 namespace EGL3 {
-    __forceinline int Start() {
+    int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
+
+        constexpr static uint8_t TestBits = 21;
+
+        Storage::Game::File TestFile{
+            .Filename = {},
+            .FileSize = 40592,
+            .ChunkPartDataStartIdx = 394,
+            .ChunkPartDataSize = 30
+        };
+        strcpy(TestFile.Filename, "Engine/Binaries/ThirdParty/CEF3/Win64/chrome_elf.dll");
+
+        {
+            ZoneNamedN(ZoneCreate, "Creating", true);
+            Storage::Game::Archive Arch("test.egia", Storage::Game::ArchiveOptionCreate);
+            Storage::Game::ArchiveList<Storage::Game::RunlistId::File> List(Arch);
+            sizeof(Storage::Game::File);
+            List.resize(1 << TestBits);
+
+            {
+                ZoneNamedN(ZoneWrite, "Writing", true);
+                std::fill(List.begin(), List.end(), TestFile);
+            }
+        }
+
+        uint64_t V;
+        {
+            ZoneNamedN(ZoneRead, "Reading", true);
+            Storage::Game::Archive Arch("test.egia", Storage::Game::ArchiveOptionRead);
+            Storage::Game::ArchiveList<Storage::Game::RunlistId::File> List(Arch);
+
+            {
+                ZoneNamedN(ZoneAccumulate, "Accumulating", true);
+                V = std::accumulate(List.begin(), List.end(), 0ull, [](uint64_t A, const Storage::Game::File& B) {
+                    return A + B.FileSize;
+                });
+            }
+        }
+
+        printf("%llu\n", V);
+
+        return 0;
 
         {
             auto Config = FcConfigCreate();

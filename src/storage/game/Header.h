@@ -6,6 +6,7 @@
 #include <string>
 
 namespace EGL3::Storage::Game {
+#pragma pack(push, 2)
     // Strings are not required to be 0 terminated!
     class Header {
     public:
@@ -92,13 +93,13 @@ namespace EGL3::Storage::Game {
 
     private:
         uint32_t Magic;                     // 'EGIA' aka 0x41494745
-        ArchiveVersion ArchiveVersion;      // Version of the install archive, currently 0
         uint16_t HeaderSize;                // Size of the header
+        ArchiveVersion ArchiveVersion;      // Version of the install archive, currently 0
         char Game[40];                      // Game name - example: Fortnite
         char VersionStringLong[64];         // Example: ++Fortnite+Release-13.30-CL-13884634-Windows
         char VersionStringHR[20];           // Human readable version - example: 13.30
-        GameId GameNumeric;                 // Should be some sort of enum (GameId)
         uint64_t VersionNumeric;            // Game specific, but a new update will always have a higher number (e.g. Fortnite's P4 CL)
+        GameId GameNumeric;                 // Should be some sort of enum (GameId)
 
         static constexpr uint32_t ExpectedMagic = 0x41494745;
 
@@ -115,4 +116,6 @@ namespace EGL3::Storage::Game {
 
         static constexpr uint64_t FileDataSectorOffset = FileDataOffset / SectorSize;
     };
+#pragma pack(pop)
+    static_assert(sizeof(Header) == 144);
 }

@@ -3,6 +3,7 @@
 #include "../../storage/models/UpdateInfo.h"
 #include "../../storage/persistent/Store.h"
 #include "../../utils/GladeBuilder.h"
+#include "../../widgets/UpdateDisplay.h"
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 
@@ -13,11 +14,15 @@ namespace EGL3::Modules::Game {
     public:
         UpdaterModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
-        void QueueUpdate(Storage::Models::UpdateInfo& UpdateInfo);
+        void QueueUpdate(Storage::Game::Archive&& Archive, Web::Epic::BPS::Manifest&& Manifest, size_t TaskCount);
 
     private:
         Storage::Persistent::Store& Storage;
 
-        std::vector<Storage::Models::UpdateInfo> Updates;
+        Gtk::Stack& MainStack;
+        Gtk::Box& DownloadBox;
+        Widgets::UpdateDisplay DownloadDisplay;
+
+        std::vector<std::unique_ptr<Storage::Models::UpdateInfo>> Updates;
     };
 }

@@ -10,7 +10,7 @@ namespace EGL3::Widgets {
         return BaseContainer;
     }
 
-    void UpdateDisplay::Update(Storage::Models::UpdateStatsInfo& NewStats)
+    void UpdateDisplay::Update(const Storage::Models::UpdateStatsInfo& NewStats)
     {
 
     }

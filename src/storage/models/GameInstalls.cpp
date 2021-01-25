@@ -23,4 +23,24 @@ namespace EGL3::Storage::Models {
         }
         return nullptr;
     }
+
+    GameInstall* GameInstalls::GetGame(Game::GameId Id)
+    {
+        auto Itr = std::find_if(Installs.begin(), Installs.end(), [Id](const GameInstall& Install) {
+            return Install.GetId() == Id;
+        });
+        if (Itr != Installs.end()) {
+            return &*Itr;
+        }
+        return nullptr;
+    }
+
+    GameInstall& GameInstalls::GetOrCreateGame(Game::GameId Id)
+    {
+        auto GamePtr = GetGame(Id);
+        if (GamePtr) {
+            return *GamePtr;
+        }
+        return Installs.emplace_back(Id);
+    }
 }

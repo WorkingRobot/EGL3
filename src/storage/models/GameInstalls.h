@@ -13,5 +13,9 @@ namespace EGL3::Storage::Models {
         friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const GameInstalls& Val);
 
         const GameInstall* GetGame(Game::GameId Id) const;
+
+        GameInstall* GetGame(Game::GameId Id);
+
+        GameInstall& GetOrCreateGame(Game::GameId Id);
     };
 }

@@ -7,6 +7,7 @@
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
+#include "Updater.h"
 
 #include <gtkmm.h>
 
@@ -37,13 +38,20 @@ namespace EGL3::Modules::Game {
 
         void PlayClicked();
 
-        void CreateInstall(const std::string& Filename);
+        void Install(const std::string& Filename);
 
-        const Storage::Models::GameInstall* GetInstall() const;
+        void Update();
+
+        void StartUpdate(bool FreshInstall);
+
+        const Storage::Models::GameInstalls& GetInstalls() const;
+
+        Storage::Models::GameInstalls& GetInstalls();
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
         AuthorizationModule& Auth;
+        UpdaterModule& Updater;
 
         Gtk::Button& PlayBtn;
         Gtk::MenuButton& PlayMenuBtn;

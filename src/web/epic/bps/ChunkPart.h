@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Guid.h"
 #include "UEStream.h"
 
 namespace EGL3::Web::Epic::BPS {
     struct ChunkPart {
-        Guid Guid;
+        Utils::Guid Guid;
         uint32_t Offset;
         uint32_t Size;
 

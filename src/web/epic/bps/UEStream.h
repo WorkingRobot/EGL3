@@ -2,6 +2,7 @@
 
 #include "../../../utils/streams/BufferStream.h"
 #include "../../../utils/Assert.h"
+#include "../../../utils/Guid.h"
 
 #include <memory>
 
@@ -23,6 +24,15 @@ namespace EGL3::Web::Epic::BPS {
         UEStream& operator<<(const std::vector<T>& Val);
 
 
+
+        UEStream& operator>>(Utils::Guid& Val) {
+            *this >> Val.A;
+            *this >> Val.B;
+            *this >> Val.C;
+            *this >> Val.D;
+
+            return *this;
+        }
 
         UEStream& operator>>(std::string& Val) {
             // > 0 for ANSICHAR, < 0 for UCS2CHAR serialization

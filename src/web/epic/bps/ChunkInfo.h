@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Guid.h"
+#include "../../../utils/Guid.h"
 
 #include <stdint.h>
 
 namespace EGL3::Web::Epic::BPS {
     struct ChunkInfo {
-        Guid Guid;
+        Utils::Guid Guid;
         uint64_t Hash;
         char SHAHash[20];
         uint8_t GroupNumber;

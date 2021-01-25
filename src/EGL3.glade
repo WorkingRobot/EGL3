@@ -191,6 +191,19 @@ Author: Aleks Margarian
             <property name="can-focus">False</property>
             <property name="transition-type">slide-left-right</property>
             <child>
+              <object class="GtkBox" id="DownloadContainer">
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page0</property>
+                <property name="title" translatable="yes">Download</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkPaned" id="NewsContainer">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -427,6 +440,7 @@ Author: Aleks Margarian
               <packing>
                 <property name="name">page1</property>
                 <property name="title" translatable="yes">News</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -1014,7 +1028,7 @@ Author: Aleks Margarian
               <packing>
                 <property name="name">page2</property>
                 <property name="title" translatable="yes">Account</property>
-                <property name="position">1</property>
+                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -1025,7 +1039,7 @@ Author: Aleks Margarian
               <packing>
                 <property name="name">page3</property>
                 <property name="title" translatable="yes">Settings</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -1036,7 +1050,7 @@ Author: Aleks Margarian
               <packing>
                 <property name="name">page4</property>
                 <property name="title" translatable="yes">About</property>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>

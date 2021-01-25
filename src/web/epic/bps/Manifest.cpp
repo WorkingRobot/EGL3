@@ -1,5 +1,6 @@
 #include "Manifest.h"
 
+#include "../../../utils/Assert.h"
 #include "../../../utils/Compression.h"
 #include "../../../utils/Crc32.h"
 #include "../../../utils/Hex.h"
@@ -32,7 +33,7 @@ namespace EGL3::Web::Epic::BPS {
 
     bool Manifest::HasError() const
     {
-        return GetError() == ErrorType::Success;
+        return GetError() != ErrorType::Success;
     }
 
     Manifest::ErrorType Manifest::GetError() const
@@ -92,6 +93,7 @@ namespace EGL3::Web::Epic::BPS {
             return false;
         }
         Utils::FromHex(Val.GetString(), Out, OutSize);
+        return true;
     }
 
     template<uint32_t OutSize>
@@ -150,8 +152,8 @@ namespace EGL3::Web::Epic::BPS {
         return Ret;
     }
 
-    bool TryGetGuid(const rapidjson::Value& Val, Guid& Out) {
-        if (!Val.IsString() || Val.GetStringLength() != sizeof(Guid) * 2) {
+    bool TryGetGuid(const rapidjson::Value& Val, Utils::Guid& Out) {
+        if (!Val.IsString() || Val.GetStringLength() != sizeof(Utils::Guid) * 2) {
             return false;
         }
         Out.A = HexNumber(Val.GetString() + 0);
@@ -161,7 +163,7 @@ namespace EGL3::Web::Epic::BPS {
         return true;
     }
 
-    bool TryGetGuid(const rapidjson::Value& Json, const char* Name, Guid& Out) {
+    bool TryGetGuid(const rapidjson::Value& Json, const char* Name, Utils::Guid& Out) {
         auto Val = Json.FindMember(Name);
         if (Val == Json.MemberEnd()) {
             return false;
@@ -215,7 +217,7 @@ namespace EGL3::Web::Epic::BPS {
         TryGetString(Json, "PrereqPath", ManifestMeta.PrereqPath);
         TryGetString(Json, "PrereqArgs", ManifestMeta.PrereqArgs);
 
-        std::unordered_map<Guid, ChunkInfo> ChunkMap;
+        std::unordered_map<Utils::Guid, ChunkInfo> ChunkMap;
 
         auto JsonFileManifestList = Json.FindMember("FileManifestList");
         if (JsonFileManifestList == Json.MemberEnd() || !JsonFileManifestList->value.IsArray()) {
@@ -301,7 +303,7 @@ namespace EGL3::Web::Epic::BPS {
             return;
         }
         for (auto& JsonChunkHash : JsonChunkHashList->value.GetObject()) {
-            Guid TargetGuid;
+            Utils::Guid TargetGuid;
             if (!TryGetGuid(JsonChunkHash.name, TargetGuid)) {
                 SetError(ErrorType::BadJson);
                 return;
@@ -324,7 +326,7 @@ namespace EGL3::Web::Epic::BPS {
                 return;
             }
             for (auto& JsonChunkSha : JsonChunkShaList->value.GetObject()) {
-                Guid TargetGuid;
+                Utils::Guid TargetGuid;
                 if (!TryGetGuid(JsonChunkSha.name, TargetGuid)) {
                     SetError(ErrorType::BadJson);
                     return;
@@ -371,7 +373,7 @@ namespace EGL3::Web::Epic::BPS {
                 return;
             }
             for (auto& JsonDataGroup : JsonDataGroupList->value.GetObject()) {
-                Guid TargetGuid;
+                Utils::Guid TargetGuid;
                 if (!TryGetGuid(JsonDataGroup.name, TargetGuid)) {
                     SetError(ErrorType::BadJson);
                     return;
@@ -401,7 +403,7 @@ namespace EGL3::Web::Epic::BPS {
                 return;
             }
             for (auto& JsonChunkFilesize : JsonChunkFilesizeList->value.GetObject()) {
-                Guid TargetGuid;
+                Utils::Guid TargetGuid;
                 if (!TryGetGuid(JsonChunkFilesize.name, TargetGuid)) {
                     SetError(ErrorType::BadJson);
                     return;

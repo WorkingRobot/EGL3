@@ -5,6 +5,7 @@
 project(EGL3)
 
 option(ENABLE_CONSOLE "Use console subsystem" OFF)
+option(ENABLE_TRACY "Use tracy" OFF)
 
 
 ## Config ##
@@ -82,6 +83,9 @@ endfunction()
 add_dir_recursive(EGL3 src)
 add_file(EGL3 src/main.rc)
 add_file(EGL3 src/main.manifest)
+if (ENABLE_TRACY)
+    add_file(EGL3 tracy/TracyClient.cpp)
+endif()
 
 
 ## Subsystem Options ##
@@ -102,6 +106,12 @@ install(TARGETS EGL3 DESTINATION bin)
 
 
 ## Dependencies ##
+
+# Tracy #
+if (ENABLE_TRACY)
+    target_include_directories(EGL3 PRIVATE ${CMAKE_SOURCE_DIR}/tracy)
+    target_compile_definitions(EGL3 PRIVATE TRACY_ENABLE TRACY_NO_EXIT)
+endif()
 
 # Http #
 find_package(cpr CONFIG REQUIRED)

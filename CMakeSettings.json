@@ -45,6 +45,34 @@
           "name": "ENABLE_CONSOLE",
           "value": "True",
           "type": "BOOL"
+        },
+        {
+          "name": "ENABLE_TRACY",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release-Tracy",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "ENABLE_CONSOLE",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "ENABLE_TRACY",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     },
