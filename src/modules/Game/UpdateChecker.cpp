@@ -7,8 +7,8 @@ namespace EGL3::Modules::Game {
         Auth(Modules.GetModule<AuthorizationModule>())
     {
         auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
-        if (Freq < std::chrono::seconds(10)) {
-            Freq = std::chrono::seconds(10);
+        if (Freq < std::chrono::seconds(5)) {
+            Freq = std::chrono::seconds(5);
         }
 
         Auth.AuthChanged.connect([this]() {

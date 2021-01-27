@@ -11,34 +11,18 @@
 #include <optional>
 
 namespace EGL3::Storage::Game {
-    namespace Detail {
-        struct ECreate {
-            explicit ECreate() = default;
-        };
-
-        struct ELoad {
-            explicit ELoad() = default;
-        };
-
-        struct ERead {
-            explicit ERead() = default;
-        };
-    }
-
-    inline constexpr Detail::ECreate ArchiveOptionCreate{};
-    inline constexpr Detail::ELoad ArchiveOptionLoad{};
-    inline constexpr Detail::ERead ArchiveOptionRead{};
+    enum class ArchiveMode : uint8_t {
+        Create,
+        Load,
+        // Trying to write anything while opened in read mode will cause an exception!
+        Read
+    };
 
     // A full Fortnite (or maybe other game) installation
     // As a disclaimer, we assume that all structs are aligned to 8 bytes (in order for this to compile without UB)
     class Archive {
     public:
-        Archive(const std::filesystem::path& Path, Detail::ECreate) noexcept;
-
-        Archive(const std::filesystem::path& Path, Detail::ELoad) noexcept;
-
-        // Trying to write anything while opened in read mode will cause an exception!
-        Archive(const std::filesystem::path& Path, Detail::ERead) noexcept;
+        Archive(const std::filesystem::path& Path, ArchiveMode) noexcept;
 
         bool IsValid() const;
 
@@ -131,8 +115,6 @@ namespace EGL3::Storage::Game {
         void Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize);
 
     private:
-        Archive();
-
         // at offset 0, size 256
         ArchiveRef<Header> Header;
 

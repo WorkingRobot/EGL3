@@ -9,14 +9,10 @@ namespace EGL3::Modules::Game {
         DownloadBox.pack_start(DownloadDisplay, true, true);
     }
 
-    void UpdaterModule::QueueUpdate(Storage::Game::Archive&& Archive, Web::Epic::BPS::Manifest&& Manifest, size_t TaskCount)
+    void UpdaterModule::QueueUpdateInternal(std::unique_ptr<Storage::Models::UpdateInfo>& Info)
     {
-        EGL3_CONDITIONAL_LOG(Updates.empty(), LogLevel::Critical, "Hardcoded limit, only 1 update is allowed at a time");
-        auto& Info = Updates.emplace_back(std::make_unique<Storage::Models::UpdateInfo>(std::move(Archive), std::move(Manifest), TaskCount));
-
         Info->StatsUpdate.Set([this](const Storage::Models::UpdateStatsInfo& Info) { DownloadDisplay.Update(Info); });
         Info->Begin();
-        DownloadBox.show();
-        MainStack.child_property_needs_attention(DownloadBox) = true;
+        MainStack.set_visible_child(DownloadBox);
     }
 }

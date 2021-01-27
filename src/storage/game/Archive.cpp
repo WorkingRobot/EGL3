@@ -5,98 +5,86 @@
 #include "ArchiveList.h"
 
 namespace EGL3::Storage::Game {
-    Archive::Archive(const std::filesystem::path& Path, Detail::ECreate) noexcept :
-        Archive()
+    Archive::Archive(const std::filesystem::path& Path, ArchiveMode Mode) noexcept :
+        Valid(false),
+        Header(*Backend, 0),
+        ManifestData(*Backend, Header::GetOffsetManifestData()),
+        RunlistFile(*Backend, Header::GetOffsetRunlistFile()),
+        RunlistChunkPart(*Backend, Header::GetOffsetRunlistChunkPart()),
+        RunlistChunkInfo(*Backend, Header::GetOffsetRunlistChunkInfo()),
+        RunlistChunkData(*Backend, Header::GetOffsetManifestData()),
+        RunIndex(*Backend, Header::GetOffsetRunIndex())
     {
-        if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
-            std::error_code Code;
-            if (!std::filesystem::remove(Path, Code)) {
-                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
-                EGL3_LOG(LogLevel::Critical, "Remove error");
+        switch (Mode)
+        {
+        case ArchiveMode::Create:
+        {
+            if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
+                std::error_code Code;
+                if (!std::filesystem::remove(Path, Code)) {
+                    printf("%s - %s\n", Code.category().name(), Code.message().c_str());
+                    EGL3_LOG(LogLevel::Critical, "Remove error");
+                }
             }
+
+            Backend.emplace(Path, Utils::Mmio::OptionWrite);
+            if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
+                return;
+            }
+
+            Backend->EnsureSize(Header::GetMinimumArchiveSize());
+
+            std::construct_at(Header.Get());
+
+            std::construct_at(ManifestData.Get());
+
+            std::construct_at(RunlistFile.Get(), RunlistId::File);
+            std::construct_at(RunlistChunkPart.Get(), RunlistId::ChunkPart);
+            std::construct_at(RunlistChunkInfo.Get(), RunlistId::ChunkInfo);
+            std::construct_at(RunlistChunkData.Get(), RunlistId::ChunkData);
+
+            std::construct_at(RunIndex.Get());
+
+            Valid = true;
+            break;
         }
+        case ArchiveMode::Load:
+        case ArchiveMode::Read:
+        {
+            if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
+                return;
+            }
 
-        Backend.emplace(Path, Utils::Mmio::OptionWrite);
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
-            return;
+            if (Mode == ArchiveMode::Load) {
+                Backend.emplace(Path, Utils::Mmio::OptionWrite);
+            }
+            else {
+                Backend.emplace(Path, Utils::Mmio::OptionRead);
+            }
+            if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
+                return;
+            }
+
+            if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
+                return;
+            }
+
+            if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
+                return;
+            }
+
+            if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
+                return;
+            }
+
+            if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
+                return;
+            }
+
+            Valid = true;
+            break;
         }
-
-        Backend->EnsureSize(Header::GetMinimumArchiveSize());
-        
-        std::construct_at(Header.Get());
-        
-        std::construct_at(ManifestData.Get());
-
-        std::construct_at(RunlistFile.Get(), RunlistId::File);
-        std::construct_at(RunlistChunkPart.Get(), RunlistId::ChunkPart);
-        std::construct_at(RunlistChunkInfo.Get(), RunlistId::ChunkInfo);
-        std::construct_at(RunlistChunkData.Get(), RunlistId::ChunkData);
-
-        std::construct_at(RunIndex.Get());
-
-        Valid = true;
-    }
-
-    Archive::Archive(const std::filesystem::path& Path, Detail::ELoad) noexcept :
-        Archive()
-    {
-        if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
-            return;
         }
-
-        Backend.emplace(Path, Utils::Mmio::OptionWrite);
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
-            return;
-        }
-
-        Valid = true;
-    }
-
-    Archive::Archive(const std::filesystem::path& Path, Detail::ERead) noexcept :
-        Archive()
-    {
-        if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
-            return;
-        }
-
-        Backend.emplace(Path, Utils::Mmio::OptionRead);
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
-            return;
-        }
-
-        if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
-            return;
-        }
-
-        Valid = true;
     }
 
     bool Archive::IsValid() const
@@ -226,17 +214,4 @@ namespace EGL3::Storage::Game {
         *(uint64_t*)Buffer = LCN;
     }
     */
-
-    Archive::Archive() :
-        Valid(false),
-        Header(*Backend, 0),
-        ManifestData(*Backend, Header::GetOffsetManifestData()),
-        RunlistFile(*Backend, Header::GetOffsetRunlistFile()),
-        RunlistChunkPart(*Backend, Header::GetOffsetRunlistChunkPart()),
-        RunlistChunkInfo(*Backend, Header::GetOffsetRunlistChunkInfo()),
-        RunlistChunkData(*Backend, Header::GetOffsetManifestData()),
-        RunIndex(*Backend, Header::GetOffsetRunIndex())
-    {
-
-    }
 }

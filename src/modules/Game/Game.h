@@ -38,15 +38,13 @@ namespace EGL3::Modules::Game {
 
         void PlayClicked();
 
-        void Install(const std::string& Filename);
+        void StartUpdate();
 
-        void Update();
+        bool IsInstalled(Storage::Game::GameId Id) const;
 
-        void StartUpdate(bool FreshInstall);
+        bool GetInstallFolder(std::filesystem::path& Path) const;
 
-        const Storage::Models::GameInstalls& GetInstalls() const;
-
-        Storage::Models::GameInstalls& GetInstalls();
+        //std::shared_ptr<Storage::Game::Archive> GetOrCreateGame()
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
@@ -63,5 +61,7 @@ namespace EGL3::Modules::Game {
         State CurrentState;
 
         Widgets::InstallLocationDialog InstallDialog;
+
+        std::vector<std::shared_ptr<Storage::Game::Archive>> InstalledGames;
     };
 }

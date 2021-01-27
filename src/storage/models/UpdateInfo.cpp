@@ -1,8 +1,8 @@
 #include "UpdateInfo.h"
 
 namespace EGL3::Storage::Models {
-    UpdateInfo::UpdateInfo(Game::Archive&& _Archive, Web::Epic::BPS::Manifest&& _Manifest, size_t TaskCount) :
-        Archive(std::move(_Archive)),
+    UpdateInfo::UpdateInfo(Web::Epic::BPS::Manifest&& _Manifest, size_t TaskCount, const std::filesystem::path& ArchivePath, Game::ArchiveMode ArchiveMode) :
+        Archive(ArchivePath, ArchiveMode),
         Manifest(std::move(_Manifest)),
         TaskPool(TaskCount)
     {

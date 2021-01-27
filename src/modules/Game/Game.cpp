@@ -18,9 +18,29 @@ namespace EGL3::Modules::Game {
         CurrentState(State::SignIn),
         InstallDialog(Builder.GetWidget<Gtk::ApplicationWindow>("EGL3App"))
     {
+        std::filesystem::path InstallFolder;
+        if (GetInstallFolder(InstallFolder)) {
+            std::error_code Error;
+            for (auto& File : std::filesystem::directory_iterator(InstallFolder, Error)) {
+                if (File.is_regular_file(Error)) {
+                    Storage::Game::Archive Archive(File.path(), Storage::Game::ArchiveMode::Read);
+                    if (Archive.IsValid()) {
+                        InstalledGames.emplace_back(std::make_shared<Storage::Game::Archive>(std::move(Archive)));
+                    }
+                }
+            }
+        }
+
         PlayBtn.signal_clicked().connect([this]() { PlayClicked(); });
 
-        InstallDialog.LocationChosen.Set([this](const std::string& File) { Install(File); });
+        InstallDialog.LocationChosen.Set([this](const std::string& File) {
+            this->Storage.Get(Storage::Persistent::Key::InstallLocation) = File;
+
+            StartUpdate();
+
+            CurrentState = State::Installing;
+            UpdateToCurrentState();
+        });
 
         CurrentStateDispatcher.connect([this]() { UpdateToCurrentState(); });
 
@@ -31,13 +51,7 @@ namespace EGL3::Modules::Game {
 
     void GameModule::OnAuthChanged()
     {
-        auto Install = GetInstalls().GetGame(Storage::Game::GameId::Fortnite);
-        if (Install && std::filesystem::is_regular_file(Install->GetLocation())) {
-            CurrentState = State::Play;
-        }
-        else {
-            CurrentState = State::Install;
-        }
+        CurrentState = IsInstalled(Storage::Game::GameId::Fortnite) ? State::Play : State::Install;
         CurrentStateDispatcher.emit();
     }
 
@@ -102,14 +116,23 @@ namespace EGL3::Modules::Game {
             UpdateToCurrentState();
             break;
         case State::Update:
-            StartUpdate(false);
+            StartUpdate();
 
             CurrentState = State::Updating;
             UpdateToCurrentState();
             break;
         case State::Install:
         {
-            InstallDialog.Show();
+            std::filesystem::path InstallFolder;
+            if (!GetInstallFolder(InstallFolder)) {
+                InstallDialog.Show();
+            }
+            else {
+                StartUpdate();
+
+                CurrentState = State::Installing;
+                UpdateToCurrentState();
+            }
             break;
         }
         default:
@@ -118,21 +141,9 @@ namespace EGL3::Modules::Game {
         }
     }
 
-    void GameModule::Install(const std::string& Filename)
+    void GameModule::StartUpdate()
     {
-        if (CurrentState != State::Install || !Auth.IsLoggedIn()) {
-            return;
-        }
-
-        GetInstalls().GetOrCreateGame(Storage::Game::GameId::Fortnite).SetLocation(Filename);
-        StartUpdate(true);
-
-        CurrentState = State::Installing;
-        UpdateToCurrentState();
-    }
-
-    void GameModule::StartUpdate(bool FreshInstall) {
-        AsyncFF.Enqueue([this, FreshInstall]() {
+        AsyncFF.Enqueue([this]() {
             auto DownloadInfo = Auth.GetClientLauncher().GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
             if (!EGL3_CONDITIONAL_LOG(!DownloadInfo.HasError(), LogLevel::Error, "Download info error")) {
                 return;
@@ -142,34 +153,27 @@ namespace EGL3::Modules::Game {
                 return;
             }
 
-            auto Manifest = Web::Epic::EpicClient().GetManifest(Element->PickManifest());
-            if (!EGL3_CONDITIONAL_LOG(!Manifest.HasError(), LogLevel::Error, "Manifest download error")) {
+            auto ManifestResp = Web::Epic::EpicClient().GetManifest(Element->PickManifest());
+            if (!EGL3_CONDITIONAL_LOG(!ManifestResp.HasError(), LogLevel::Error, "Manifest download error")) {
                 return;
             }
-            if (!EGL3_CONDITIONAL_LOG(!Manifest->HasError(), LogLevel::Error, "Manifest parse error")) {
+            if (!EGL3_CONDITIONAL_LOG(!ManifestResp->HasError(), LogLevel::Error, "Manifest parse error")) {
                 return;
             }
 
-            auto Install = GetInstalls().GetGame(Storage::Game::GameId::Fortnite);
-            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game installation found");
-            if (FreshInstall) {
-                Storage::Game::Archive Archive(Install->GetLocation(), Storage::Game::ArchiveOptionCreate);
-                Updater.QueueUpdate(std::move(Archive), std::move(Manifest.Get()), 30);
-            }
-            else {
-                Storage::Game::Archive Archive(Install->GetLocation(), Storage::Game::ArchiveOptionLoad);
-                Updater.QueueUpdate(std::move(Archive), std::move(Manifest.Get()), 30);
-            }
+            //auto Install = GetInstalls().GetGame(Storage::Game::GameId::Fortnite);
+            //EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game installation found");
+            //Updater.QueueUpdate(std::move(ManifestResp.Get()), 30, Install->GetLocation(), FreshInstall ? Storage::Game::ArchiveMode::Create : Storage::Game::ArchiveMode::Load);
         });
     }
 
-    const Storage::Models::GameInstalls& GameModule::GetInstalls() const
-    {
-        return Storage.Get(Storage::Persistent::Key::GameInstalls);
+    bool GameModule::IsInstalled(Storage::Game::GameId Id) const {
+        return false;
     }
 
-    Storage::Models::GameInstalls& GameModule::GetInstalls()
-    {
-        return Storage.Get(Storage::Persistent::Key::GameInstalls);
+    bool GameModule::GetInstallFolder(std::filesystem::path& Path) const {
+        std::error_code Error;
+        Path = Storage.Get(Storage::Persistent::Key::InstallLocation);
+        return std::filesystem::is_directory(Path, Error);
     }
 }

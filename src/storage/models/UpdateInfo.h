@@ -8,7 +8,7 @@
 namespace EGL3::Storage::Models {
     class UpdateInfo {
     public:
-        UpdateInfo(Game::Archive&& Archive, Web::Epic::BPS::Manifest&& Manifest, size_t TaskCount);
+        UpdateInfo(Web::Epic::BPS::Manifest&& Manifest, size_t TaskCount, const std::filesystem::path& ArchivePath, Game::ArchiveMode ArchiveMode);
 
         void Begin();
 
@@ -21,6 +21,8 @@ namespace EGL3::Storage::Models {
             Utils::Guid Guid;
             bool ToDownload; // true = download, false = delete
         };
+
+        void Initialize();
 
         bool ExecuteTask();
 
