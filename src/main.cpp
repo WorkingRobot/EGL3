@@ -31,7 +31,7 @@ void operator delete(void* ptr) noexcept
 #endif
 
 namespace EGL3 {
-    int Start() {
+    __forceinline int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
         {
