@@ -15,16 +15,22 @@ namespace EGL3::Storage::Game {
         RunlistChunkData(*Backend, Header::GetOffsetManifestData()),
         RunIndex(*Backend, Header::GetOffsetRunIndex())
     {
+        std::error_code Code;
+
         switch (Mode)
         {
         case ArchiveMode::Create:
         {
-            if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Warning, "Archive file already exists, overwriting")) {
-                std::error_code Code;
+            if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path, Code), LogLevel::Warning, "Archive file already exists, overwriting")) {
                 if (!std::filesystem::remove(Path, Code)) {
                     printf("%s - %s\n", Code.category().name(), Code.message().c_str());
                     EGL3_LOG(LogLevel::Critical, "Remove error");
                 }
+            }
+            else if (Code) {
+                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
+                EGL3_LOG(LogLevel::Error, "Could not check if regular file");
+                return;
             }
 
             Backend.emplace(Path, Utils::Mmio::OptionWrite);
@@ -51,7 +57,12 @@ namespace EGL3::Storage::Game {
         case ArchiveMode::Load:
         case ArchiveMode::Read:
         {
-            if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path), LogLevel::Error, "Archive file does not exist")) {
+            if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path, Code), LogLevel::Error, "Archive file does not exist")) {
+                return;
+            }
+            else if (Code) {
+                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
+                EGL3_LOG(LogLevel::Error, "Could not check if regular file");
                 return;
             }
 
