@@ -9,7 +9,8 @@
 #include <rapidjson/writer.h>
 
 namespace EGL3::Web::Epic {
-    EpicClientAuthed::EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient) : AuthClient(AuthClient)
+    EpicClientAuthed::EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient) :
+        AuthClient(AuthClient)
     {
         EGL3_CONDITIONAL_LOG(Responses::OAuthToken::Parse(OAuthResponse, AuthData), LogLevel::Critical, "OAuth data failed to parse");
 

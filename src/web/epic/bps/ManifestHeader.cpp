@@ -5,13 +5,16 @@ namespace EGL3::Web::Epic::BPS {
         auto StartPos = Stream.tell();
 
         Stream >> Val.Magic;
+        if (Val.Magic != ManifestHeader::ExpectedMagic) {
+            return Stream;
+        }
         Stream >> Val.HeaderSize;
         Stream >> Val.DataSizeUncompressed;
         Stream >> Val.DataSizeCompressed;
         Stream >> Val.SHAHash;
         uint8_t StoredAs;
         Stream >> StoredAs;
-        Val.StoredAs = (StorageFlags)StoredAs;
+        Val.StoredAs = (ManifestStorageFlags)StoredAs;
 
         int32_t Version;
         Stream >> Version;
@@ -22,10 +25,10 @@ namespace EGL3::Web::Epic::BPS {
     }
 
     bool ManifestHeader::IsCompressed() const {
-        return (uint8_t)StoredAs & (uint8_t)StorageFlags::Compressed;
+        return (uint8_t)StoredAs & (uint8_t)ManifestStorageFlags::Compressed;
     }
 
     bool ManifestHeader::IsEncrypted() const {
-        return (uint8_t)StoredAs & (uint8_t)StorageFlags::Encrypted;
+        return (uint8_t)StoredAs & (uint8_t)ManifestStorageFlags::Encrypted;
     }
 }

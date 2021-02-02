@@ -2,7 +2,7 @@
 
 #include "../../../utils/streams/Stream.h"
 #include "FeatureLevel.h"
-#include "StorageFlags.h"
+#include "ManifestStorageFlags.h"
 
 namespace EGL3::Web::Epic::BPS {
     struct ManifestHeader {
@@ -11,7 +11,7 @@ namespace EGL3::Web::Epic::BPS {
         uint32_t HeaderSize;
         uint32_t DataSizeCompressed;
         uint32_t DataSizeUncompressed;
-        StorageFlags StoredAs;
+        ManifestStorageFlags StoredAs;
         char SHAHash[20];
 
         static constexpr uint32_t ExpectedMagic = 0x44BEC00C;

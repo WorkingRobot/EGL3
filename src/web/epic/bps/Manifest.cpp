@@ -18,12 +18,10 @@ namespace EGL3::Web::Epic::BPS {
     Manifest::Manifest(const char* Data, size_t DataSize) :
         Error(ErrorType::Success)
     {
-        printf("parse\n");
         // Don't worry, we won't be writing to it
         BufferStream Stream((char*)Data, DataSize);
 
         Stream >> *this;
-        printf("end parse\n");
     }
 
     Manifest::Manifest(const rapidjson::Document& Json)
@@ -48,6 +46,18 @@ namespace EGL3::Web::Epic::BPS {
         });
 
         if (Itr != FileManifestList.FileList.end()) {
+            return &*Itr;
+        }
+        return nullptr;
+    }
+
+    const ChunkInfo* Manifest::GetChunk(const Utils::Guid& Guid) const
+    {
+        auto Itr = std::find_if(ChunkDataList.ChunkList.begin(), ChunkDataList.ChunkList.end(), [&Guid](const ChunkInfo& Chunk) {
+            return Chunk.Guid == Guid;
+        });
+
+        if (Itr != ChunkDataList.ChunkList.end()) {
             return &*Itr;
         }
         return nullptr;
@@ -174,7 +184,6 @@ namespace EGL3::Web::Epic::BPS {
     // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/BuildPatchServices/Private/BuildPatchManifest.cpp#L400
     void Manifest::ReadFromJson(const rapidjson::Document& Json)
     {
-        printf("deserialize\n");
         if (Json.HasParseError()) {
             SetError(ErrorType::InvalidJson);
             return;
@@ -452,8 +461,6 @@ namespace EGL3::Web::Epic::BPS {
         }
 
         ManifestMeta.BuildId = ManifestMeta.GetBackwardsCompatibleBuildId();
-
-        printf("end deserialize\n");
     }
 
     void Manifest::SetError(ErrorType NewError)
@@ -469,11 +476,9 @@ namespace EGL3::Web::Epic::BPS {
             Stream.read(&PeekChar, 1);
             Stream.seek(-1, Utils::Streams::Stream::Cur);
             if (PeekChar == '{') {
-                printf("json\n");
                 rapidjson::Document Json;
                 Utils::JsonWrapperStream JsonStream(Stream);
                 Json.ParseStream(JsonStream);
-                printf("end json\n");
 
                 Val.ReadFromJson(Json);
                 return Stream;
@@ -483,6 +488,11 @@ namespace EGL3::Web::Epic::BPS {
         // Read header
         ManifestHeader Header;
         Stream >> Header;
+
+        if (Header.Magic != ManifestHeader::ExpectedMagic) {
+            Val.SetError(Manifest::ErrorType::InvalidMagic);
+            return Stream;
+        }
 
         if (Header.Version < FeatureLevel::StoredAsBinaryData) {
             Val.SetError(Manifest::ErrorType::TooOld);

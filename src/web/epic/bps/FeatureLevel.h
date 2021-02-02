@@ -62,4 +62,38 @@ namespace EGL3::Web::Epic::BPS {
         // This is for UObject default, so that we always serialize it.
         Invalid = -1
     };
+    
+    static constexpr const char* GetChunkSubdir(FeatureLevel SelectedLevel) {
+        switch (SelectedLevel)
+        {
+        case EGL3::Web::Epic::BPS::FeatureLevel::Original:
+        case EGL3::Web::Epic::BPS::FeatureLevel::CustomFields:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StartStoringVersion:
+            return "Chunks";
+        case EGL3::Web::Epic::BPS::FeatureLevel::DataFileRenames:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresIfChunkOrFileData:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresDataGroupNumbers:
+            return "ChunksV2";
+        case EGL3::Web::Epic::BPS::FeatureLevel::ChunkCompressionSupport:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresPrerequisitesInfo:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresChunkFileSizes:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoredAsCompressedUClass:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresChunkDataShaHashes:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoresPrerequisiteIds:
+        case EGL3::Web::Epic::BPS::FeatureLevel::StoredAsBinaryData:
+            return "ChunksV3";
+        case EGL3::Web::Epic::BPS::FeatureLevel::VariableSizeChunksWithoutWindowSizeChunkInfo:
+        case EGL3::Web::Epic::BPS::FeatureLevel::VariableSizeChunks:
+        case EGL3::Web::Epic::BPS::FeatureLevel::UsesRuntimeGeneratedBuildId:
+        case EGL3::Web::Epic::BPS::FeatureLevel::UsesBuildTimeGeneratedBuildId:
+            return "ChunksV4";
+        default:
+            return "";
+        }
+    }
+
+    template<FeatureLevel SelectedLevel>
+    static constexpr const char* GetChunkSubdir() {
+        return GetChunkSubdir(SelectedLevel);
+    }
 }

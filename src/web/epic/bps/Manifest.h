@@ -20,6 +20,7 @@ namespace EGL3::Web::Epic::BPS {
 
         enum class ErrorType : uint8_t {
             Success,
+            InvalidMagic,
             InvalidJson,
             BadJson,
             TooOld,
@@ -32,6 +33,8 @@ namespace EGL3::Web::Epic::BPS {
         ErrorType GetError() const;
 
         const FileManifest* GetFile(const std::string& Filename) const;
+
+        const ChunkInfo* GetChunk(const Utils::Guid& Guid) const;
 
     private:
         void ReadFromJson(const rapidjson::Document& Json);

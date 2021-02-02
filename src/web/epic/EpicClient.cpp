@@ -72,6 +72,37 @@ namespace EGL3::Web::Epic {
         return BPS::Manifest(Response.text.data(), Response.text.size());
     }
 
+    Response<BPS::ChunkData> EpicClient::GetChunk(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo)
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (FeatureLevel < BPS::FeatureLevel::DataFileRenames) {
+            // return too old, don't care enough to support this
+            // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/BuildPatchServices/Private/BuildPatchUtil.cpp#L70
+            return 400;
+        }
+
+        auto Response = Http::Get(
+            cpr::Url{ Utils::Format("%s/%s/%02d/%016llX_%08X%08X%08X%08X.chunk",
+                CloudDir.c_str(),
+                BPS::GetChunkSubdir(FeatureLevel),
+                ChunkInfo.GroupNumber,
+                ChunkInfo.Hash,
+                ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D
+            ) }
+        );
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (Response.status_code != 200) {
+            return Response.status_code;
+        }
+
+        return BPS::ChunkData(Response.text.data(), Response.text.size());
+    }
+
     template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>
     Response<ResponseType> EpicClient::Call(CallFunctorType&& CallFunctor) {
         RunningFunctionGuard Guard(Lock);

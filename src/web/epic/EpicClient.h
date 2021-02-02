@@ -2,6 +2,7 @@
 
 #include "../BaseClient.h"
 #include "../Response.h"
+#include "bps/ChunkData.h"
 #include "bps/Manifest.h"
 #include "responses/GetDownloadInfo.h"
 #include "responses/GetPageInfo.h"
@@ -21,6 +22,8 @@ namespace EGL3::Web::Epic {
         Response<Responses::GetStatuspageSummary> GetStatuspageSummary();
 
         Response<BPS::Manifest> GetManifest(const Responses::GetDownloadInfo::Manifest& Manifest);
+
+        Response<BPS::ChunkData> GetChunk(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo);
 
     private:
         template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>
