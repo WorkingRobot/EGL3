@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../storage/models/InstalledGame.h"
 #include "../../storage/persistent/Store.h"
 #include "../../utils/GladeBuilder.h"
 #include "../../widgets/InstallLocationDialog.h"
@@ -7,6 +8,7 @@
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
+#include "Options.h"
 #include "Updater.h"
 
 #include <gtkmm.h>
@@ -34,22 +36,23 @@ namespace EGL3::Modules::Game {
 
         void UpdateToState(const char* NewLabel, bool Playable = false, bool Menuable = false);
 
+        void SetCurrentState(State NewState);
+
         void UpdateToCurrentState();
 
         void PlayClicked();
 
         void StartUpdate();
 
-        bool IsInstalled(Storage::Game::GameId Id) const;
+        Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
 
         bool GetInstallFolder(std::filesystem::path& Path) const;
-
-        //std::shared_ptr<Storage::Game::Archive> GetOrCreateGame()
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
         AuthorizationModule& Auth;
         UpdaterModule& Updater;
+        OptionsModule& Options;
 
         Gtk::Button& PlayBtn;
         Gtk::MenuButton& PlayMenuBtn;
@@ -60,8 +63,8 @@ namespace EGL3::Modules::Game {
         Glib::Dispatcher CurrentStateDispatcher;
         State CurrentState;
 
-        Widgets::InstallLocationDialog InstallDialog;
+        Widgets::InstallLocationDialog InitialInstallDialog;
 
-        std::vector<std::shared_ptr<Storage::Game::Archive>> InstalledGames;
+        std::vector<Storage::Models::InstalledGame> InstalledGames;
     };
 }

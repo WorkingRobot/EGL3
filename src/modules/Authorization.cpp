@@ -5,6 +5,7 @@
 #include "../web/epic/auth/DeviceAuth.h"
 #include "../web/epic/auth/DeviceCode.h"
 #include "../web/epic/auth/ExchangeCode.h"
+#include "../web/ClientSecrets.h"
 
 namespace EGL3::Modules {
     AuthorizationModule::AuthorizationModule(Storage::Persistent::Store& Storage) :
@@ -13,23 +14,24 @@ namespace EGL3::Modules {
         auto& Auth = Storage.Get(Storage::Persistent::Key::Auth);
         if (!Auth.GetAccountId().empty()) {
             SignInTask = std::async(std::launch::async, [this](std::reference_wrapper<const Storage::Models::Authorization> Auth) {
-                Web::Epic::Auth::DeviceAuth FNAuth(AuthorizationSwitch, Auth.get().GetAccountId(), Auth.get().GetDeviceId(), Auth.get().GetSecret());
+                Web::Epic::Auth::DeviceAuth FNAuth(Web::AuthClientSwitch, Auth.get().GetAccountId(), Auth.get().GetDeviceId(), Auth.get().GetSecret());
                 if (!EGL3_CONDITIONAL_LOG(FNAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::DeviceAuth::SUCCESS, LogLevel::Warning, "Could not use device auth")) {
                     return;
                 }
 
-                AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch);
+                AuthClientFN.emplace(FNAuth.GetOAuthResponse(), Web::AuthClientSwitch);
                 auto ExchCodeResp = AuthClientFN->GetExchangeCode();
                 if (!EGL3_CONDITIONAL_LOG(!ExchCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from fn client")) {
                     return;
                 }
 
-                Web::Epic::Auth::ExchangeCode LauncherAuth(AuthorizationLauncher, ExchCodeResp->Code);
+                Web::Epic::Auth::ExchangeCode LauncherAuth(Web::AuthClientLauncher, ExchCodeResp->Code);
                 if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher auth")) {
                     return;
                 }
 
-                AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher);
+                AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
+                LauncherContentClient.emplace(AuthClientLauncher.value());
                 AuthChanged.emit();
             }, std::cref(Auth));
         }
@@ -52,6 +54,12 @@ namespace EGL3::Modules {
         return AuthClientLauncher.value();
     }
 
+    Web::Epic::LauncherContentClient& AuthorizationModule::GetClientLauncherContent()
+    {
+        EGL3_CONDITIONAL_LOG(LauncherContentClient.has_value(), LogLevel::Critical, "Expected to be logged in. No launcher content client found.");
+        return LauncherContentClient.value();
+    }
+
     void AuthorizationModule::StartLogin() {
         if (SignInTask.valid() || IsLoggedIn()) {
             EGL3_LOG(LogLevel::Warning, "Tried to log in while already trying to or already logged in");
@@ -59,7 +67,7 @@ namespace EGL3::Modules {
         }
 
         SignInTask = std::async(std::launch::async, [this]() {
-            Web::Epic::Auth::DeviceCode FNAuth(AuthorizationSwitch);
+            Web::Epic::Auth::DeviceCode FNAuth(Web::AuthClientSwitch);
             if (!EGL3_CONDITIONAL_LOG(FNAuth.GetBrowserUrlFuture().get() == Web::Epic::Auth::DeviceCode::SUCCESS, LogLevel::Error, "Could not get browser url")) {
                 return;
             }
@@ -69,18 +77,19 @@ namespace EGL3::Modules {
                 return;
             }
 
-            AuthClientFN.emplace(FNAuth.GetOAuthResponse(), AuthorizationSwitch);
+            AuthClientFN.emplace(FNAuth.GetOAuthResponse(), Web::AuthClientSwitch);
             auto ExchCodeResp = AuthClientFN->GetExchangeCode();
             if (!EGL3_CONDITIONAL_LOG(!ExchCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from fn client")) {
                 return;
             }
 
-            Web::Epic::Auth::ExchangeCode LauncherAuth(AuthorizationLauncher, ExchCodeResp->Code);
+            Web::Epic::Auth::ExchangeCode LauncherAuth(Web::AuthClientLauncher, ExchCodeResp->Code);
             if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher auth")) {
                 return;
             }
 
-            AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), AuthorizationLauncher);
+            AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
+            LauncherContentClient.emplace(AuthClientLauncher.value());
             AuthChanged.emit();
 
             auto DevAuthResp = AuthClientFN->CreateDeviceAuth();
@@ -93,7 +102,4 @@ namespace EGL3::Modules {
             Storage.Flush();
         });
     }
-
-    const cpr::Authentication AuthorizationModule::AuthorizationLauncher{ "34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf" };
-    const cpr::Authentication AuthorizationModule::AuthorizationSwitch{ "5229dcd3ac3845208b496649092f251b", "e3bd2d3e-bf8c-4857-9e7d-f3d947d220c7" };
 }

@@ -3,6 +3,8 @@
 #include "../../JsonParsing.h"
 #include "../../../utils/Random.h"
 
+#include <filesystem>
+
 namespace EGL3::Web::Epic::Responses {
     struct GetDownloadInfo {
         struct QueryParameter {
@@ -22,6 +24,10 @@ namespace EGL3::Web::Epic::Responses {
             std::vector<QueryParameter> QueryParams;
 
             std::vector<QueryParameter> Headers;
+
+            std::string GetCloudDir() const {
+                return std::filesystem::path(Uri).parent_path().string();
+            }
 
             PARSE_DEFINE(Manifest)
                 PARSE_ITEM("uri", Uri)

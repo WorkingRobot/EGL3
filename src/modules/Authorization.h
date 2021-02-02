@@ -4,6 +4,7 @@
 
 #include "../storage/persistent/Store.h"
 #include "../web/epic/EpicClientAuthed.h"
+#include "../web/epic/content/LauncherContentClient.h"
 
 #include <future>
 #include <sigc++/sigc++.h>
@@ -20,19 +21,19 @@ namespace EGL3::Modules {
 
         Web::Epic::EpicClientAuthed& GetClientLauncher();
 
+        Web::Epic::LauncherContentClient& GetClientLauncherContent();
+
         void StartLogin();
 
         // This will not be emitted from the main thread
         sigc::signal<void()> AuthChanged;
 
     private:
-        static const cpr::Authentication AuthorizationLauncher;
-        static const cpr::Authentication AuthorizationSwitch;
-
         Storage::Persistent::Store& Storage;
 
         std::future<void> SignInTask;
         std::optional<Web::Epic::EpicClientAuthed> AuthClientFN;
         std::optional<Web::Epic::EpicClientAuthed> AuthClientLauncher;
+        std::optional<Web::Epic::LauncherContentClient> LauncherContentClient;
     };
 }
