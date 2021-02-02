@@ -358,7 +358,7 @@ namespace EGL3::Utils::StringEx::Operators {
             const size_t ClosingParenthesis = FindMatchingClosingParenthesis(Stream, ParameterBegin);
             if (ClosingParenthesis != -1)
             {
-                const size_t ParameterLen = (ClosingParenthesis + 1) - ParamBegin;
+                const size_t ParameterLen = (ClosingParenthesis + 1) - ParameterBegin;
                 StringToken ParameterToken = Stream.GenerateToken(ParameterLen);
                 Stream.Seek(Tokens.emplace_back(ParameterToken, std::string(ParameterToken.GetStart() + 1, ParameterLen - 2)).Token);
             }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CompiledToken.h"
 #include "ExpressionError.h"
 #include "ExpressionGrammar.h"
 #include "JumpTable.h"
