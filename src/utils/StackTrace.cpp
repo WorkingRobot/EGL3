@@ -66,6 +66,7 @@ __forceinline std::string GetStack(CONTEXT* Context)
     std::ostringstream Ret;
     while (StackWalk64(MachineType, CurrentProcess, CurrentThread, &Stack, Context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
     {
+        strcpy(lineBuffer, "");
         if (!GetModuleFileNameWithStack(&Stack, ModuleName, sizeof(ModuleName))) {
             strcpy_s(ModuleName, "Unknown");
         }
@@ -80,7 +81,6 @@ __forceinline std::string GetStack(CONTEXT* Context)
         }
 
         Ret << lineBuffer << "\n";
-        strcpy(lineBuffer, "");
     }
 
     return Ret.str();
