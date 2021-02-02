@@ -70,11 +70,11 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        size_t tell() override {
+        size_t tell() const override {
             return _ftelli64(BaseStream);
         }
 
-        size_t size() override {
+        size_t size() const override {
             auto cur = tell();
             _fseeki64(BaseStream, 0, SEEK_END);
             auto ret = tell();

@@ -1,7 +1,8 @@
 #pragma once
 
+#include "streams/Stream.h"
+
 #include <compare>
-#include <stdint.h>
 
 namespace EGL3::Utils {
     struct Guid {
@@ -16,6 +17,10 @@ namespace EGL3::Utils {
 
         }
 
+        bool IsValid() const {
+            return *this != Guid();
+        }
+
         std::strong_ordering operator<=>(const Guid& that) const
         {
             if (auto cmp = A <=> that.A; cmp != 0)
@@ -28,6 +33,15 @@ namespace EGL3::Utils {
         }
 
         bool operator==(const Guid&) const = default;
+
+        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, Guid& Val) {
+            Stream >> Val.A;
+            Stream >> Val.B;
+            Stream >> Val.C;
+            Stream >> Val.D;
+
+            return Stream;
+        }
     };
 }
 

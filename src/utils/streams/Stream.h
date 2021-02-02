@@ -16,8 +16,8 @@ namespace EGL3::Utils::Streams {
         virtual Stream& write(const char* Buf, size_t BufCount) = 0;
         virtual Stream& read(char* Buf, size_t BufCount) = 0;
         virtual Stream& seek(size_t Position, SeekPosition SeekFrom) = 0;
-        virtual size_t tell() = 0;
-        virtual size_t size() = 0;
+        virtual size_t tell() const = 0;
+        virtual size_t size() const = 0;
 
         // Write ops
 

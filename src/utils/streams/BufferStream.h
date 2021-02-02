@@ -44,11 +44,11 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        size_t tell() override {
+        size_t tell() const override {
             return Position;
         }
 
-        size_t size() {
+        size_t size() const override {
             return Size;
         }
 
