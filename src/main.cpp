@@ -75,13 +75,8 @@ namespace EGL3 {
             }
         }, App));
 
-        App->set_data("EGL3Storage", new Storage::Persistent::Store("storage.stor"), [](void* Store) {
-            delete (Storage::Persistent::Store*)Store;
-        });
-
-        App->signal_shutdown().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
-            App->remove_data("EGL3Storage");
-        }, App));
+        Storage::Persistent::Store Storage("storage.stor");
+        App->set_data("EGL3Storage", &Storage);
 
         Modules::ModuleList::Attach(App, Builder);
         return App->run(AppWnd, 0, NULL);
