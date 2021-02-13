@@ -20,7 +20,6 @@ namespace EGL3::Web::Epic::BPS {
             IncorrectFileSize,
             UnsupportedStorage,
             DecompressFailure,
-            HashCheckDeprecated,
             HashCheckFailed,
         };
 

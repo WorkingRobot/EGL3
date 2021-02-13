@@ -271,7 +271,7 @@ namespace EGL3::Web::Epic::BPS {
                     return;
                 }
 
-                ChunkMap.try_emplace(ChunkPart.Guid, ChunkInfo{ .Guid = ChunkPart.Guid });
+                ChunkMap.try_emplace(ChunkPart.Guid, ChunkInfo{ .Guid = ChunkPart.Guid, .WindowSize = 1 << 20 });
             }
 
             auto JsonInstallTags = JsonFileManifest.FindMember("InstallTags");

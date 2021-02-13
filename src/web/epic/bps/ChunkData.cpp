@@ -1,8 +1,9 @@
 #include "ChunkData.h"
 
-#include "../../../utils/Compression.h"
-#include "../../../utils/SHA.h"
 #include "../../../utils/streams/BufferStream.h"
+#include "../../../utils/Compression.h"
+#include "../../../utils/RollingHash.h"
+#include "../../../utils/SHA.h"
 
 namespace EGL3::Web::Epic::BPS {
     using namespace Utils::Streams;
@@ -37,47 +38,46 @@ namespace EGL3::Web::Epic::BPS {
         auto StartPos = Stream.tell();
 
         // Read header
-        ChunkHeader Header;
-        Stream >> Header;
+        Stream >> Val.Header;
 
-        if (Header.Magic != ChunkHeader::ExpectedMagic) {
+        if (Val.Header.Magic != ChunkHeader::ExpectedMagic) {
             Val.SetError(ChunkData::ErrorType::InvalidMagic);
             return Stream;
         }
 
-        if (!Header.Guid.IsValid()) {
+        if (!Val.Header.Guid.IsValid()) {
             Val.SetError(ChunkData::ErrorType::CorruptHeader);
             return Stream;
         }
 
-        if (Header.HashType == ChunkHashFlags::None) {
+        if (Val.Header.HashType == ChunkHashFlags::None) {
             Val.SetError(ChunkData::ErrorType::MissingHashInfo);
             return Stream;
         }
 
-        if (Header.HeaderSize + Header.DataSizeCompressed > Stream.size() - StartPos) {
+        if ((uint64_t)Val.Header.HeaderSize + Val.Header.DataSizeCompressed > Stream.size() - StartPos) {
             Val.SetError(ChunkData::ErrorType::IncorrectFileSize);
             return Stream;
         }
 
-        if (Header.IsEncrypted()) {
+        if (Val.Header.IsEncrypted()) {
             Val.SetError(ChunkData::ErrorType::UnsupportedStorage);
             return Stream;
         }
 
         // Read data
-        Val.Data = std::make_unique<char[]>(Header.DataSizeCompressed);
-        Stream.read(Val.Data.get(), Header.DataSizeCompressed);
+        Val.Data = std::make_unique<char[]>(Val.Header.DataSizeCompressed);
+        Stream.read(Val.Data.get(), Val.Header.DataSizeCompressed);
 
         // Decompress data if necessary
-        if (Header.IsCompressed()) {
+        if (Val.Header.IsCompressed()) {
             // Move the current data to a compressed buffer, and decompress it back to the old variable
             std::unique_ptr<char[]> CompressedData = std::move(Val.Data);
-            Val.Data = std::make_unique<char[]>(Header.DataSizeUncompressed);
+            Val.Data = std::make_unique<char[]>(Val.Header.DataSizeUncompressed);
 
             bool DecompSuccess = Utils::Compressor<Utils::CompressionMethod::Zlib>::Decompress(
-                Val.Data.get(), Header.DataSizeUncompressed,
-                CompressedData.get(), Header.DataSizeCompressed
+                Val.Data.get(), Val.Header.DataSizeUncompressed,
+                CompressedData.get(), Val.Header.DataSizeCompressed
             );
 
             if (!DecompSuccess) {
@@ -87,16 +87,16 @@ namespace EGL3::Web::Epic::BPS {
         }
 
         // Verify data integrity
-        if (Header.UsesSha1()) {
-            if (!Utils::SHA1Verify(Val.Data.get(), Header.DataSizeUncompressed, Header.SHAHash)) {
+        if (Val.Header.UsesRollingHash() && !Val.Header.UsesSha1()) {
+            if (Val.Header.RollingHash != Utils::RollingHash(Val.Data.get(), Val.Header.DataSizeUncompressed))
+            {
                 Val.SetError(ChunkData::ErrorType::HashCheckFailed);
                 return Stream;
             }
         }
-        if (Header.UsesRollingHash()) {
-            // TODO: Rolling hash isn't implemented (maybe, i have never seen it actually be used)
-            if (!Header.UsesSha1()) {
-                Val.SetError(ChunkData::ErrorType::HashCheckDeprecated);
+        if (Val.Header.UsesSha1()) {
+            if (!Utils::SHA1Verify(Val.Data.get(), Val.Header.DataSizeUncompressed, Val.Header.SHAHash)) {
+                Val.SetError(ChunkData::ErrorType::HashCheckFailed);
                 return Stream;
             }
         }
