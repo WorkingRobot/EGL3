@@ -23,6 +23,12 @@ namespace EGL3::Widgets {
         }
     }
 
+    void InstallLocationDialog::SetLocation(const std::string& NewLocation)
+    {
+        Dialog.set_filename(NewLocation);
+        LocationChosen(NewLocation);
+    }
+
     void InstallLocationDialog::Construct()
     {
         Dialog.signal_response().connect([this](int Resp) {

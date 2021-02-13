@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../../utils/streams/Stream.h"
 #include "../game/Archive.h"
 
 #include <filesystem>
-#include <memory>
 #include <variant>
 
 namespace EGL3::Storage::Models {
@@ -11,7 +11,7 @@ namespace EGL3::Storage::Models {
         struct MetadataInfo {
             MetadataInfo(const Storage::Game::Archive& Archive) :
                 Valid(Archive.IsValid()),
-                Header(Valid ? *Archive.GetHeader().Get() : Storage::Game::Header{})
+                Header(Archive.IsValid() ? *Archive.GetHeader().Get() : Storage::Game::Header{})
             {
 
             }
@@ -21,51 +21,47 @@ namespace EGL3::Storage::Models {
         };
 
     public:
-        InstalledGame(const std::filesystem::path& Path) :
-            Path(Path)
-        {
+        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, InstalledGame& Val);
 
-        }
+        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const InstalledGame& Val);
 
-        bool IsValid(bool ForceRefresh = false) {
-            EnsureData(ForceRefresh);
+        bool IsValid() const;
 
-            return std::visit([](auto&& Arg) -> bool {
-                using T = std::decay_t<decltype(Arg)>;
-                if constexpr (std::is_same_v<T, Storage::Game::Archive>)
-                    return Arg.IsValid();
-                else if constexpr (std::is_same_v<T, MetadataInfo>)
-                    return Arg.Valid;
-                else
-                    return false;
-            }, Data);
-        }
+        const Storage::Game::Header* GetHeader() const;
 
-        const Storage::Game::Header* GetHeader(bool ForceRefresh = false) {
-            if (!IsValid(ForceRefresh)) {
-                return nullptr;
-            }
+        // Open for reading
+        // Returns false if the archive is invalid (or does not exist)
+        bool OpenArchiveRead();
 
-            return std::visit([](auto&& Arg) -> const Storage::Game::Header* {
-                using T = std::decay_t<decltype(Arg)>;
-                if constexpr (std::is_same_v<T, Storage::Game::Archive>)
-                    return Arg.GetHeader().Get();
-                else if constexpr (std::is_same_v<T, MetadataInfo>)
-                    return &Arg.Header;
-                else
-                    return nullptr;
-            }, Data);
-        }
+        // Open (or create if it doesn't exist) for writing
+        // Returns false if the archive is invalid or is already opened in read mode
+        bool OpenArchiveWrite();
+
+        void CloseArchive();
+
+        // Only run if OpenArchive...() returns true
+        Storage::Game::Archive& GetArchive() const;
+
+        const std::filesystem::path& GetPath() const;
+
+        // If there is an installed archive at the old location, it will move it to the new location
+        void SetPath(const std::filesystem::path& NewPath);
+
+        bool GetAutoUpdate() const;
+
+        void SetAutoUpdate(bool Val);
+
+        bool GetCreateShortcut() const;
+
+        void SetCreateShortcut(bool Val);
 
     private:
-        void EnsureData(bool ForceRefresh) {
-            if (std::holds_alternative<std::monostate>(Data) || (ForceRefresh && std::holds_alternative<MetadataInfo>(Data))) {
-                Storage::Game::Archive Archive(Path, Storage::Game::ArchiveMode::Read);
-                Data.emplace<MetadataInfo>(Archive);
-            }
-        }
+        void EnsureData() const;
 
         std::filesystem::path Path;
-        std::variant<std::monostate, Storage::Game::Archive, MetadataInfo> Data;
+        bool AutoUpdate;
+        bool CreateShortcut;
+
+        mutable std::variant<std::monostate, Storage::Game::Archive, MetadataInfo> Data;
     };
 }

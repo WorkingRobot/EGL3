@@ -13,6 +13,8 @@ namespace EGL3::Widgets {
 
         void Show();
 
+        void SetLocation(const std::string& NewLocation);
+
         // Runs in UI thread
         Utils::Callback<void(const std::string&)> LocationChosen;
 

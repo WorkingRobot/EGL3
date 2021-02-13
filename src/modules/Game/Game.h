@@ -3,13 +3,11 @@
 #include "../../storage/models/InstalledGame.h"
 #include "../../storage/persistent/Store.h"
 #include "../../utils/GladeBuilder.h"
-#include "../../widgets/InstallLocationDialog.h"
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
-#include "Options.h"
-#include "Updater.h"
+#include "Download.h"
 
 #include <gtkmm.h>
 
@@ -40,19 +38,16 @@ namespace EGL3::Modules::Game {
 
         void UpdateToCurrentState();
 
-        void PlayClicked();
+        void PrimaryButtonClicked();
 
-        void StartUpdate();
+        void CleanInstalls();
 
         Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
-
-        bool GetInstallFolder(std::filesystem::path& Path) const;
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
         AuthorizationModule& Auth;
-        UpdaterModule& Updater;
-        OptionsModule& Options;
+        DownloadModule& Download;
 
         Gtk::Button& PlayBtn;
         Gtk::MenuButton& PlayMenuBtn;
@@ -62,9 +57,5 @@ namespace EGL3::Modules::Game {
 
         Glib::Dispatcher CurrentStateDispatcher;
         State CurrentState;
-
-        Widgets::InstallLocationDialog InitialInstallDialog;
-
-        std::vector<Storage::Models::InstalledGame> InstalledGames;
     };
 }

@@ -15,9 +15,7 @@
 #include "Friends/KairosMenu.h"
 
 #include "Game/Game.h"
-#include "Game/Options.h"
-#include "Game/Updater.h"
-#include "Game/UpdateChecker.h"
+#include "Game/Download.h"
 
 namespace EGL3::Modules {
     ModuleList::ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
@@ -47,9 +45,7 @@ namespace EGL3::Modules {
         AddModule<Friends::ChatModule>(*this, Builder);
         AddModule<Friends::FriendsModule>(*this, Storage, Builder);
 
-        AddModule<Game::OptionsModule>(*this, Builder);
-        AddModule<Game::UpdateCheckerModule>(*this, Storage);
-        AddModule<Game::UpdaterModule>(*this, Storage, Builder);
+        AddModule<Game::DownloadModule>(*this, Storage, Builder);
         AddModule<Game::GameModule>(*this, Storage, Builder);
     }
 
