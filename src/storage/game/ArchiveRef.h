@@ -69,23 +69,25 @@ namespace EGL3::Storage::Game {
 
         using Base::operator*;
 
-        T& operator*() noexcept {
+        T& operator*() const noexcept {
             return *(T*)(Base::Archive->Get() + Base::Offset);
         }
 
         using Base::operator->;
 
-        T* operator->() noexcept {
+        T* operator->() const noexcept {
             return (T*)(Base::Archive->Get() + Base::Offset);
         }
 
         using Base::Get;
 
-        T* Get() noexcept {
+        T* Get() const noexcept {
             return (T*)(Base::Archive->Get() + Base::Offset);
         }
 
-        char* GetBase() noexcept {
+        using Base::GetBase;
+
+        char* GetBase() const noexcept {
             return Base::Archive->Get();
         }
 

@@ -8,6 +8,7 @@
 #include "ManifestData.h"
 #include "RunIndex.h"
 
+#include <mutex>
 #include <optional>
 
 namespace EGL3::Storage::Game {
@@ -24,15 +25,29 @@ namespace EGL3::Storage::Game {
     public:
         Archive(const std::filesystem::path& Path, ArchiveMode) noexcept;
 
-        bool IsValid() const;
+        Archive(const Archive&) = delete;
+
+        Archive(Archive&&) noexcept;
+
+        bool IsValid() const {
+            return Valid;
+        }
 
         // Do not run these functions without checking for IsValid!
+        bool IsReadonly() const {
+            return Backend->IsReadonly();
+        }
+
         const char* Get() const {
             return Backend->Get();
         }
 
         char* Get() {
             return Backend->Get();
+        }
+
+        void Flush() {
+            Backend->Flush();
         }
 
         const ArchiveRefConst<Header>& GetHeader() const {
@@ -115,6 +130,8 @@ namespace EGL3::Storage::Game {
         void Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize);
 
     private:
+        void Construct();
+
         // at offset 0, size 256
         ArchiveRef<Header> Header;
 
@@ -141,6 +158,8 @@ namespace EGL3::Storage::Game {
 
         std::optional<Utils::Mmio::MmioFile> Backend;
         bool Valid;
+
+        std::mutex ResizeMutex;
     };
 
     template size_t Archive::ReadRunlist<1789>(const Runlist<1789>&, size_t, char*, size_t) const;

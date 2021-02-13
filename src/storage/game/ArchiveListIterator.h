@@ -22,11 +22,15 @@ namespace EGL3::Storage::Game {
         using Base::Base;
 
         Ref operator*() noexcept {
-            return *(Ptr)(Base::Runlist.GetBase() + Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset));
+            auto Pos = Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset);
+            EGL3_CONDITIONAL_LOG(Pos, LogLevel::Critical, "Writing to index 0");
+            return *(Ptr)(Base::Runlist.GetBase() + Pos);
         }
 
         Ptr operator->() noexcept {
-            return (Ptr)(Base::Runlist.GetBase() + Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset));
+            auto Pos = Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset);
+            EGL3_CONDITIONAL_LOG(Pos, LogLevel::Critical, "Writing to index 0");
+            return (Ptr)(Base::Runlist.GetBase() + Pos);
         }
 
         ArchiveListIterator& operator++() noexcept {

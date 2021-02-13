@@ -6,14 +6,7 @@
 
 namespace EGL3::Storage::Game {
     Archive::Archive(const std::filesystem::path& Path, ArchiveMode Mode) noexcept :
-        Valid(false),
-        Header(*Backend, 0),
-        ManifestData(*Backend, Header::GetOffsetManifestData()),
-        RunlistFile(*Backend, Header::GetOffsetRunlistFile()),
-        RunlistChunkPart(*Backend, Header::GetOffsetRunlistChunkPart()),
-        RunlistChunkInfo(*Backend, Header::GetOffsetRunlistChunkInfo()),
-        RunlistChunkData(*Backend, Header::GetOffsetManifestData()),
-        RunIndex(*Backend, Header::GetOffsetRunIndex())
+        Valid(false)
     {
         std::error_code Code;
 
@@ -21,22 +14,26 @@ namespace EGL3::Storage::Game {
         {
         case ArchiveMode::Create:
         {
-            if (EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path, Code), LogLevel::Warning, "Archive file already exists, overwriting")) {
-                if (!std::filesystem::remove(Path, Code)) {
-                    printf("%s - %s\n", Code.category().name(), Code.message().c_str());
-                    EGL3_LOG(LogLevel::Critical, "Remove error");
-                }
-            }
-            else if (Code) {
+            auto IsRegularFile = std::filesystem::exists(Path, Code) && std::filesystem::is_regular_file(Path, Code);
+            if (Code) {
                 printf("%s - %s\n", Code.category().name(), Code.message().c_str());
                 EGL3_LOG(LogLevel::Error, "Could not check if regular file");
                 return;
+            }
+            else if (!EGL3_CONDITIONAL_LOG(!IsRegularFile, LogLevel::Warning, "Archive file already exists, overwriting")) {
+                std::filesystem::remove(Path, Code);
+                if (Code) {
+                    printf("%s - %s\n", Code.category().name(), Code.message().c_str());
+                    EGL3_LOG(LogLevel::Critical, "Remove error");
+                }
             }
 
             Backend.emplace(Path, Utils::Mmio::OptionWrite);
             if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
                 return;
             }
+
+            Construct();
 
             Backend->EnsureSize(Header::GetMinimumArchiveSize());
 
@@ -57,6 +54,7 @@ namespace EGL3::Storage::Game {
         case ArchiveMode::Load:
         case ArchiveMode::Read:
         {
+            printf("Opening %s\n", Path.string().c_str());
             if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path, Code), LogLevel::Error, "Archive file does not exist")) {
                 return;
             }
@@ -75,6 +73,8 @@ namespace EGL3::Storage::Game {
             if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
                 return;
             }
+
+            Construct();
 
             if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
                 return;
@@ -98,9 +98,24 @@ namespace EGL3::Storage::Game {
         }
     }
 
-    bool Archive::IsValid() const
+    Archive::Archive(Archive&& Other) noexcept :
+        Valid(Other.Valid),
+        Backend(std::move(Other.Backend))
     {
-        return Valid;
+        if (Backend.has_value() && Backend->IsValid() && IsValid()) {
+            Construct();
+        }
+    }
+
+    void Archive::Construct()
+    {
+        Header = ArchiveRef<Game::Header>(*Backend, 0);
+        ManifestData = ArchiveRef<Game::ManifestData>(*Backend, Header::GetOffsetManifestData());
+        RunlistFile = ArchiveRef<RunlistTraits<RunlistId::File>::Runlist>(*Backend, Header::GetOffsetRunlistFile());
+        RunlistChunkPart = ArchiveRef<RunlistTraits<RunlistId::ChunkPart>::Runlist>(*Backend, Header::GetOffsetRunlistChunkPart());
+        RunlistChunkInfo = ArchiveRef<RunlistTraits<RunlistId::ChunkInfo>::Runlist>(*Backend, Header::GetOffsetRunlistChunkInfo());
+        RunlistChunkData = ArchiveRef<RunlistTraits<RunlistId::ChunkData>::Runlist>(*Backend, Header::GetOffsetRunlistChunkData());
+        RunIndex = ArchiveRef<RunIndexTraits::RunIndex>(*Backend, Header::GetOffsetRunIndex());
     }
 
     template<uint32_t MaxRunCount>
@@ -134,34 +149,35 @@ namespace EGL3::Storage::Game {
     template<uint32_t MaxRunCount>
     void Archive::Resize(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewSize)
     {
-        // Placing this after can cause a memory access exception due to the memory being moved
-        Runlist->SetSize(NewSize);
-
         if (NewSize > Runlist->GetAllocatedSize()) {
             Reserve(Runlist, NewSize);
         }
+
+        Runlist->SetSize(NewSize);
     }
 
     template<uint32_t MaxRunCount>
     void Archive::Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize)
     {
+        std::lock_guard Guard(ResizeMutex);
+
         if (Runlist->GetAllocatedSize() >= NewAllocatedSize) {
             Runlist->SetAllocatedSize(NewAllocatedSize);
             return;
         }
 
-        auto AllocatedSectors = Runlist->GetAllocatedSectors();
-        auto RequiredSectors = Utils::Align<Header::GetSectorSize()>(NewAllocatedSize) / Header::GetSectorSize();
+        uint64_t AllocatedSectors = Runlist->GetAllocatedSectors();
+        uint64_t RequiredSectors = Utils::Align<Header::GetSectorSize()>(NewAllocatedSize) / Header::GetSectorSize();
         if (AllocatedSectors >= RequiredSectors) {
             Runlist->SetAllocatedSize(NewAllocatedSize);
             return;
         }
 
         // Number of more sectors that the run needs to have to reach the target size
-        auto MoreSectorsNeeded = RequiredSectors - AllocatedSectors;
+        uint64_t MoreSectorsNeeded = RequiredSectors - AllocatedSectors;
 
         // We will need to modify the index/runlist past this point
-        if (RunIndex->GetRunCount()) {
+        if (RunIndex->GetRunCount() > 0) {
             if (RunIndex->GetRuns()[RunIndex->GetRunCount() - 1].Id == Runlist->GetId()) {
                 // We can simply increase the size of the last run here without worry of clashing
                 Runlist->ExtendLastRun(MoreSectorsNeeded);

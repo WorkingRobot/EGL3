@@ -88,7 +88,7 @@ namespace EGL3::Storage::Game {
         // ByteOffset is the offset of the byte requested
         // RunIndex is the index inside the Runs array, RunByteOffset is the byte offset inside that run
         bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint32_t& RunByteOffset) const {
-            if (Size <= ByteOffset) {
+            if (Size < ByteOffset) {
                 return false;
             }
 

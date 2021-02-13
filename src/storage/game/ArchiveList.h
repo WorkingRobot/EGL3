@@ -90,15 +90,18 @@ namespace EGL3::Storage::Game {
 
         template<class... Args>
         Ref emplace_back(Args&&... args) {
-            auto pos = end();
             resize_internal(size() + 1);
+            auto pos = begin() + (size() - 1);
             std::construct_at(&*pos, std::forward<Args>(args)...);
             return *pos;
         }
 
         void resize(size_t count) {
             auto OldSize = size();
-            if (count < OldSize) {
+            if (count == OldSize) {
+                return;
+            }
+            else if (count < OldSize) {
                 std::destroy(begin() + count, end());
                 resize_internal(count);
             }
@@ -108,8 +111,7 @@ namespace EGL3::Storage::Game {
             }
         }
 
-        void resize(size_t count, const T& value) {
-            auto OldSize = size();
+        void resize(size_t count, const T& value) {auto OldSize = size();
             if (count < OldSize) {
                 std::destroy(begin() + count, end());
                 resize_internal(count);
