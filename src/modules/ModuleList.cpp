@@ -5,6 +5,7 @@
 #include "ImageCache.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
+#include "Taskbar.h"
 #include "WhatsNew.h"
 
 #include "Friends/Friends.h"
@@ -33,6 +34,7 @@ namespace EGL3::Modules {
     void ModuleList::AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage) {
         AddModule<AsyncFFModule>();
         AddModule<ImageCacheModule>();
+        AddModule<TaskbarModule>(Builder);
         AddModule<StatsGraphModule>(Builder);
         AddModule<StatusPageModule>(Builder);
         AddModule<AuthorizationModule>(Storage);
