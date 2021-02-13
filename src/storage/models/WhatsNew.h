@@ -29,7 +29,7 @@ namespace EGL3::Storage::Models {
 
         ItemSource Source;
 
-        WhatsNew(decltype(Item) && Item, decltype(Date) Date, ItemSource Source);
+        WhatsNew(decltype(Item)&& Item, decltype(Date) Date, ItemSource Source);
 
         static constexpr const char* SourceToString(ItemSource Source) {
             switch (Source)

@@ -581,7 +581,7 @@ namespace EGL3::Web::Xmpp {
                 {
                     auto DelayNode = Node->first_node("delay", 5);
                     ParsedPresence.LastUpdated = std::chrono::system_clock::now(); // Set as default
-                    if (EGL3_CONDITIONAL_LOG(DelayNode, LogLevel::Debug, "No delay recieved from presence. This is technically optional, and the current system clock time will be used instead.")) {
+                    if (DelayNode) {
                         auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
                         if (EGL3_CONDITIONAL_LOG(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected")) {
                             EGL3_CONDITIONAL_LOG(XmlValueEqual(XmlnsAttr, "urn:xmpp:delay"), LogLevel::Warning, "Bad xmlns attr value with <delay>, xmlns=\"urn:xmpp:delay\" expected");
