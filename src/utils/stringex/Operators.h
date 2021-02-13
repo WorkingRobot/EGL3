@@ -105,7 +105,7 @@ namespace EGL3::Utils::StringEx::Operators {
             }
 
             std::smatch Matches;
-            if (!std::regex_search(Ctx->Input, Matches, std::regex(V))) {
+            if (!std::regex_search(Ctx->Input, Matches, Regex)) {
                 Out = false;
                 return ExpressionError();
             }
