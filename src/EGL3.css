@@ -89,3 +89,7 @@
     background-color: mix(@bg_color, @fg_color, .1);
     color: shade(@fg_color, 1.1);
 }
+
+@define-color graph_color_0 mix(#FF0000, @fg_color, .7);
+@define-color graph_color_1 mix(#00FF00, @fg_color, .7);
+@define-color graph_color_2 mix(#0000FF, @fg_color, .7);
