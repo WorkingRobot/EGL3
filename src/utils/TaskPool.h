@@ -10,16 +10,18 @@
 
 namespace EGL3::Utils {
     class TaskPool {
+    public:
         enum class PoolState : uint8_t {
             Stopped,
             Running,
+            Completed,
             Disposing
         };
 
-    public:
         TaskPool(size_t Capacity) :
+            Task([]() { return false; }),
             State(PoolState::Stopped),
-            Task([]() { return false; })
+            WorkerCount(0)
         {
             Workers.reserve(Capacity);
             for (auto i = 0; i < Capacity; ++i) {
@@ -37,12 +39,29 @@ namespace EGL3::Utils {
             }
         }
 
-        void Begin() {
-            UpdateState(PoolState::Running);
+        void SetRunning(bool Running = true) {
+            UpdateState(Running ? PoolState::Running : PoolState::Stopped);
         }
 
-        void Pause() {
-            UpdateState(PoolState::Stopped);
+        PoolState GetState() const {
+            std::shared_lock Lock(StateMutex);
+            return State;
+        }
+
+        void WaitUntilResumed() const {
+            std::shared_lock Lock(StateMutex);
+            StateCV.wait(Lock, [this]() {
+                return State != PoolState::Stopped;
+            });
+        }
+
+        // returns true if stopped before the timeout, returns false if timeout completed
+        template <class Clock, class Duration>
+        bool WaitUntilFinished(const std::chrono::time_point<Clock, Duration>& Timeout) const {
+            std::unique_lock Lock(WorkerMutex);
+            return WorkerCV.wait_until(Lock, Timeout, [this]() {
+                return WorkerCount == 0;
+            });
         }
 
         Utils::Callback<bool()> Task;
@@ -57,6 +76,12 @@ namespace EGL3::Utils {
         }
 
         void Worker() {
+            {
+                std::lock_guard Guard(WorkerMutex);
+                ++WorkerCount;
+            }
+            WorkerCV.notify_all();
+
             do {
                 std::shared_lock Lock(StateMutex);
                 StateCV.wait(Lock, [this]() {
@@ -66,11 +91,22 @@ namespace EGL3::Utils {
                     return;
                 }
             } while (Task());
+            UpdateState(PoolState::Completed);
+
+            {
+                std::lock_guard Guard(WorkerMutex);
+                --WorkerCount;
+            }
+            WorkerCV.notify_all();
         }
 
-        std::shared_mutex StateMutex;
-        std::condition_variable_any StateCV;
+        mutable std::shared_mutex StateMutex;
+        mutable std::condition_variable_any StateCV;
         PoolState State;
+
+        mutable std::condition_variable WorkerCV;
+        mutable std::mutex WorkerMutex;
+        size_t WorkerCount;
 
         std::vector<std::future<void>> Workers;
     };
