@@ -32,6 +32,13 @@ namespace EGL3::Web {
 
         }
 
+        Response(const ErrorData& Data) :
+            Error(Data),
+            Data(nullptr)
+        {
+
+        }
+
         Response(ErrorData::Status Status) :
             Error(Status),
             Data(nullptr)

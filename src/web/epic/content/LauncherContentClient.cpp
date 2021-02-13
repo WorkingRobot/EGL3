@@ -1,6 +1,6 @@
 #include "LauncherContentClient.h"
 
-namespace EGL3::Web::Epic {
+namespace EGL3::Web::Epic::Content {
     LauncherContentClient::LauncherContentClient(EpicClientAuthed& BaseClient) :
         BaseClient(BaseClient)
     {
@@ -28,29 +28,11 @@ namespace EGL3::Web::Epic {
         return CurrentManifest.emplace(std::move(Manifest.Get()));
     }
 
-    LauncherContentStream* LauncherContentClient::GetFile(const std::string& File)
-    {
-        auto Itr = OpenedStreams.find(File);
-        if (Itr != OpenedStreams.end()) {
-            return &Itr->second;
-        }
-        else {
-            auto& Manifest = GetManifest();
-            auto FilePtr = Manifest.GetFile(File);
-            if (FilePtr) {
-                return &OpenedStreams.emplace(File, LauncherContentStream(Manifest, *FilePtr, [this](const Utils::Guid& Guid) { return GetChunkData(Guid); })).first->second;
-            }
-            else {
-                return nullptr;
-            }
-        }
-    }
-
-    const std::unique_ptr<char[]>* LauncherContentClient::GetChunkData(const Utils::Guid& Guid)
+    const char* LauncherContentClient::GetChunkData(const Utils::Guid& Guid)
     {
         auto Itr = DownloadedChunks.find(Guid);
         if (Itr != DownloadedChunks.end()) {
-            return &Itr->second;
+            return Itr->second.get();
         }
         else {
             auto& Manifest = GetManifest();
@@ -59,11 +41,120 @@ namespace EGL3::Web::Epic {
                 auto Chunk = Client.GetChunk(CloudDir.value(), Manifest.ManifestMeta.FeatureLevel, *InfoPtr);
                 EGL3_CONDITIONAL_LOG(!Chunk.HasError(), LogLevel::Critical, "Could not download chunk");
                 EGL3_CONDITIONAL_LOG(!Chunk->HasError(), LogLevel::Critical, "Could not parse chunk");
-                return &DownloadedChunks.emplace(Guid, std::move(Chunk->Data)).first->second;
+                return DownloadedChunks.emplace(Guid, std::move(Chunk->Data)).first->second.get();
             }
             else {
                 return nullptr;
             }
         }
+    }
+
+    bool LauncherContentClient::GetFile(const BPS::FileManifest& File, LauncherContentStream& Out)
+    {
+        Out = LauncherContentStream(GetManifest(), File, [this](const Utils::Guid& Guid) { return GetChunkData(Guid); });
+        return true;
+    }
+
+    bool LauncherContentClient::GetFile(const std::string& File, LauncherContentStream& Out)
+    {
+        if (auto FilePtr = GetManifest().GetFile(File)) {
+            return GetFile(*FilePtr, Out);
+        }
+        else {
+            return false;
+        }
+    }
+
+    bool LauncherContentClient::GetJson(const BPS::FileManifest& File, rapidjson::Document& Out)
+    {
+        LauncherContentStream FileStream;
+        if (!GetFile(File, FileStream)) {
+            return false;
+        }
+
+        FileStream.seek(0, Utils::Streams::Stream::Beg);
+        auto Data = std::make_unique<char[]>(FileStream.size());
+        FileStream.read(Data.get(), FileStream.size());
+        rapidjson::MemoryStream DataStream(Data.get(), FileStream.size());
+        rapidjson::EncodedInputStream<rapidjson::UTF8<>, decltype(DataStream)> JsonStream(DataStream);
+
+        Out.ParseStream(JsonStream);
+        return !Out.HasParseError();
+    }
+
+    bool LauncherContentClient::GetJson(const std::string& File, rapidjson::Document& Out)
+    {
+        LauncherContentStream FileStream;
+        if (!GetFile(File, FileStream)) {
+            return false;
+        }
+
+        FileStream.seek(0, Utils::Streams::Stream::Beg);
+        auto Data = std::make_unique<char[]>(FileStream.size());
+        FileStream.read(Data.get(), FileStream.size());
+        rapidjson::MemoryStream DataStream(Data.get(), FileStream.size());
+        rapidjson::EncodedInputStream<rapidjson::UTF8<>, decltype(DataStream)> JsonStream(DataStream);
+
+        Out.ParseStream(JsonStream);
+        return !Out.HasParseError();
+    }
+
+    const NotificationList& LauncherContentClient::GetNotifications()
+    {
+        if (!Notifications.has_value()) {
+            rapidjson::Document NotifJson;
+            EGL3_CONDITIONAL_LOG(GetJson("BuildNotificationsV2.json", NotifJson), LogLevel::Critical, "No notification json file loaded");
+
+            auto& NotifList = Notifications.emplace();
+            EGL3_CONDITIONAL_LOG(NotificationList::Parse(NotifJson, NotifList), LogLevel::Critical, "Notification file has bad json");
+        }
+        return Notifications.value();
+    }
+
+    const std::vector<SdMeta::Data>* LauncherContentClient::GetSdMetaData(const std::string& AppName, const std::string& Version)
+    {
+        if (!SdMetas.has_value()) {
+            SdMetas.emplace();
+            auto& Manifest = GetManifest();
+            for (auto& File : Manifest.FileManifestList.FileList) {
+                if (File.Filename.ends_with("sdmeta")) {
+                    rapidjson::Document SdJson;
+                    if (!EGL3_CONDITIONAL_LOG(GetJson(File, SdJson), LogLevel::Warning, "Could not get json from sdmeta")) {
+                        continue;
+                    }
+
+                    SdMeta SdMeta;
+                    if (!EGL3_CONDITIONAL_LOG(SdMeta::Parse(SdJson, SdMeta), LogLevel::Warning, "Sdmeta has bad json")) {
+                        continue;
+                    }
+
+                    SdMetas->emplace_back(std::move(SdMeta));
+                }
+            }
+        }
+
+        auto Itr = std::find_if(SdMetas->begin(), SdMetas->end(), [&](const SdMeta& Meta) {
+            return std::any_of(Meta.Builds.begin(), Meta.Builds.end(), [&](const SdMeta::Build& Build) {
+                if (Build.Asset != AppName) {
+                    return false;
+                }
+                if (Build.Version == Version) {
+                    return true;
+                }
+                if (Build.Version == "*") {
+                    return true;
+                }
+                bool Matches = false;
+                if (SdMetaEvaluator.Evaluate(Build.Version, Version, Matches).HasError()) {
+                    return false;
+                }
+                return Matches;
+            });
+        });
+
+        if (Itr != SdMetas->end()) {
+            return &Itr->Datas;
+        }
+        return nullptr;
     }
 }

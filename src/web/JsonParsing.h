@@ -68,8 +68,26 @@ namespace EGL3::Web {
     template<>
     struct Parser<bool> {
         __forceinline bool operator()(const rapidjson::Value& Json, bool& Obj) const {
-            Obj = Json.GetBool();
-            return true;
+            if (Json.IsBool()) {
+                Obj = Json.GetBool();
+                return true;
+            }
+            else if (Json.IsString()) {
+                std::string Val;
+                if (!Parser<std::string>{}(Json, Val)) {
+                    return false;
+                }
+                if (Val == "true") {
+                    Obj = true;
+                    return true;
+                }
+                else if (Val == "false") {
+                    Obj = false;
+                    return true;
+                }
+                return false;
+            }
+            return false;
         }
     };
 
@@ -147,6 +165,53 @@ namespace EGL3::Web {
             return true;
         }
     };
+
+    struct JsonLocalized {
+        static bool Parse(const rapidjson::Value& Json, JsonLocalized& Obj, const char* Name) {
+            rapidjson::Document::ConstMemberIterator Itr;
+
+            Itr = Json.FindMember(Name);
+            if (Itr != Json.MemberEnd()) {
+                std::string Val;
+                if (!Parser<std::string>{}(Itr->value, Val)) {
+                    return false;
+                }
+                Obj.Values.emplace("", Val);
+            }
+            else {
+                Obj.Values.emplace("", "");
+            }
+
+            auto NameSize = strlen(Name);
+            for (Itr = Json.MemberBegin(); Itr != Json.MemberEnd(); ++Itr) {
+                auto& JsonName = Itr->name;
+                auto& JsonValue = Itr->value;
+                if (JsonName.GetStringLength() > NameSize + 1 && strncmp(JsonName.GetString(), Name, NameSize) == 0 && JsonName.GetString()[NameSize] == '_') {
+                    std::string Key, Value;
+                    if (!Parser<std::string>{}(JsonName, Key)) {
+                        return false;
+                    }
+                    if (!Parser<std::string>{}(JsonValue, Value)) {
+                        return false;
+                    }
+                    Obj.Values.emplace(Key.substr(NameSize + 1), Value);
+                }
+            }
+
+            return true;
+        }
+
+        const std::string& Get(const std::string& Locale) const {
+            auto Itr = Values.find(Locale);
+            if (Itr != Values.end()) {
+                return Itr->second;
+            }
+            return Values.at("");
+        }
+
+    private:
+        std::unordered_map<std::string, std::string> Values;
+    };
 }
 
 #define DEFINE_JSON_ENUM_MAP1(V) case Enum::V: return #V;
@@ -206,6 +271,9 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
 #define PARSE_ITEM_DEF(JsonName, TargetVariable, Default) \
         Itr = Json.FindMember(JsonName); \
         if (Itr != Json.MemberEnd()) { if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
+
+#define PARSE_ITEM_LOC(JsonName, TargetVariable) \
+        if (!JsonLocalized::Parse(Json, Obj.TargetVariable, JsonName)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
         if (!Parser<decltype(Obj.TargetVariable)>{}(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }

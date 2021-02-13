@@ -21,7 +21,7 @@ namespace EGL3::Modules {
 
         Web::Epic::EpicClientAuthed& GetClientLauncher();
 
-        Web::Epic::LauncherContentClient& GetClientLauncherContent();
+        Web::Epic::Content::LauncherContentClient& GetClientLauncherContent();
 
         void StartLogin();
 
@@ -34,6 +34,6 @@ namespace EGL3::Modules {
         std::future<void> SignInTask;
         std::optional<Web::Epic::EpicClientAuthed> AuthClientFN;
         std::optional<Web::Epic::EpicClientAuthed> AuthClientLauncher;
-        std::optional<Web::Epic::LauncherContentClient> LauncherContentClient;
+        std::optional<Web::Epic::Content::LauncherContentClient> LauncherContentClient;
     };
 }

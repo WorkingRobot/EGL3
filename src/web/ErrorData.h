@@ -19,7 +19,8 @@ namespace EGL3::Web {
         }
 
         ErrorData(Status StatusCode) :
-            StatusCode(StatusCode)
+            StatusCode(StatusCode),
+            HttpCode(0)
         {
 
         }

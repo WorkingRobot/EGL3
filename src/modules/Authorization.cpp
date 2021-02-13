@@ -54,7 +54,7 @@ namespace EGL3::Modules {
         return AuthClientLauncher.value();
     }
 
-    Web::Epic::LauncherContentClient& AuthorizationModule::GetClientLauncherContent()
+    Web::Epic::Content::LauncherContentClient& AuthorizationModule::GetClientLauncherContent()
     {
         EGL3_CONDITIONAL_LOG(LauncherContentClient.has_value(), LogLevel::Critical, "Expected to be logged in. No launcher content client found.");
         return LauncherContentClient.value();

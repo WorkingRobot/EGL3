@@ -1,9 +1,9 @@
 #include "LauncherContentStream.h"
 
-namespace EGL3::Web::Epic {
+namespace EGL3::Web::Epic::Content {
     LauncherContentStream::LauncherContentStream(const BPS::Manifest& Manifest, const BPS::FileManifest& File, const ChunkDataRequest& Request) :
-        Manifest(Manifest),
-        File(File),
+        Manifest(&Manifest),
+        File(&File),
         Request(Request),
         Position()
     {
@@ -23,17 +23,17 @@ namespace EGL3::Web::Epic {
         uint32_t PartStartIndex, PartByteOffset;
         if (GetPartIndex(Position, PartStartIndex, PartByteOffset)) {
             uint32_t BytesRead = 0;
-            for (auto CurrentPartItr = File.ChunkParts.begin() + PartStartIndex; CurrentPartItr != File.ChunkParts.end(); ++CurrentPartItr) {
+            for (auto CurrentPartItr = File->ChunkParts.begin() + PartStartIndex; CurrentPartItr != File->ChunkParts.end(); ++CurrentPartItr) {
                 auto ChunkData = Request(CurrentPartItr->Guid);
                 if (!ChunkData) {
                     return *this;
                 }
                 if ((BufCount - BytesRead) > CurrentPartItr->Size - PartByteOffset) { // copy the entire buffer over
-                    memcpy(Buf + BytesRead, ChunkData->get() + CurrentPartItr->Offset, CurrentPartItr->Size - PartByteOffset);
+                    memcpy(Buf + BytesRead, ChunkData + CurrentPartItr->Offset, CurrentPartItr->Size - PartByteOffset);
                     BytesRead += CurrentPartItr->Size - PartByteOffset;
                 }
                 else { // copy what it needs to fill up the rest
-                    memcpy(Buf + BytesRead, ChunkData->get() + CurrentPartItr->Offset, BufCount - BytesRead);
+                    memcpy(Buf + BytesRead, ChunkData + CurrentPartItr->Offset, BufCount - BytesRead);
                     BytesRead += BufCount - BytesRead;
                     break;
                 }
@@ -69,7 +69,7 @@ namespace EGL3::Web::Epic {
 
     size_t LauncherContentStream::size() const
     {
-        return File.FileSize;
+        return File->FileSize;
     }
 
     bool LauncherContentStream::GetPartIndex(uint64_t ByteOffset, uint32_t& PartIndex, uint32_t& PartByteOffset) const
@@ -78,12 +78,12 @@ namespace EGL3::Web::Epic {
             return false;
         }
 
-        for (PartIndex = 0; PartIndex < File.ChunkParts.size(); ++PartIndex) {
-            if (ByteOffset < File.ChunkParts[PartIndex].Size) {
+        for (PartIndex = 0; PartIndex < File->ChunkParts.size(); ++PartIndex) {
+            if (ByteOffset < File->ChunkParts[PartIndex].Size) {
                 PartByteOffset = ByteOffset;
                 return true;
             }
-            ByteOffset -= File.ChunkParts[PartIndex].Size;
+            ByteOffset -= File->ChunkParts[PartIndex].Size;
         }
         return false;
     }
