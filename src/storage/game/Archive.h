@@ -20,7 +20,6 @@ namespace EGL3::Storage::Game {
     };
 
     // A full Fortnite (or maybe other game) installation
-    // As a disclaimer, we assume that all structs are aligned to 8 bytes (in order for this to compile without UB)
     class Archive {
     public:
         Archive(const std::filesystem::path& Path, ArchiveMode) noexcept;
