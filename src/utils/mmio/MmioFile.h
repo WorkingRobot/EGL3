@@ -23,6 +23,8 @@ namespace EGL3::Utils::Mmio {
 
     // Read/write memory mapped file
     class MmioFile {
+        MmioFile(bool Readonly);
+
     public:
         MmioFile();
 
@@ -38,7 +40,13 @@ namespace EGL3::Utils::Mmio {
 
         ~MmioFile();
 
-        bool IsValid() const;
+        bool IsValid() const {
+            return BaseAddress;
+        }
+
+        bool IsReadonly() const {
+            return Readonly;
+        }
 
         const char* Get() const {
             return (char*)BaseAddress;
@@ -48,22 +56,27 @@ namespace EGL3::Utils::Mmio {
             return (char*)BaseAddress;
         }
 
-        size_t Size() const;
+        size_t Size() const {
+            return SectionSize;
+        }
 
-        bool IsValidPosition(size_t Position) const;
+        bool IsValidPosition(size_t Position) const {
+            return Size() > Position;
+        }
 
         void EnsureSize(size_t Size);
 
         void Flush();
 
     private:
+        const bool Readonly;
         MM_HANDLE HProcess;
         MM_HANDLE HSection;
         MM_PVOID BaseAddress;
         MM_LARGE_INTEGER SectionSize;
         MM_SIZE_T ViewSize;
 
-        static constexpr MM_SIZE_T InitialViewSize = 1 << 24; // 16 mb
-        static constexpr MM_SIZE_T ViewSizeIncrement = 1 << 24; // 16 mb increments
+        static constexpr MM_SIZE_T InitialViewSize = 1ull << 37; // 128 gb
+        static constexpr MM_SIZE_T ViewSizeIncrement = 1ull << 37; // 128 gb
     };
 }
