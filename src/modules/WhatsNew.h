@@ -40,7 +40,7 @@ namespace EGL3::Modules {
         std::chrono::system_clock::time_point GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value);
 
         Storage::Persistent::Store& Storage;
-        Modules::ImageCacheModule& ImageCache;
+        ImageCacheModule& ImageCache;
         Gtk::Box& Box;
         Gtk::Button& RefreshBtn;
         Gtk::CheckMenuItem& CheckBR;
