@@ -3,8 +3,6 @@
 #include "streams/Stream.h"
 #include "Assert.h"
 
-#include <rapidjson/stream.h>
-
 namespace EGL3::Utils {
     class JsonWrapperStream {
     public:
