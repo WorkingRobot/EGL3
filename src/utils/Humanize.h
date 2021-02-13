@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Format.h"
+
 #include <chrono>
 
 namespace EGL3::Utils {
@@ -163,8 +165,8 @@ namespace EGL3::Utils {
             return ConvertDate<T>(IsFutureTense, Amount == 1, Amount);
         }
 
-        template<class T>
-        static std::string ConvertDate(bool IsFutureTense, const std::chrono::system_clock::duration& Date) {
+        template<class T, class Rep, class Period>
+        static std::string ConvertDate(bool IsFutureTense, const std::chrono::duration<Rep, Period>& Date) {
             auto Amount = std::chrono::duration_cast<T>(Date);
             return ConvertDate<T>(IsFutureTense, Amount.count());
         }
@@ -173,18 +175,23 @@ namespace EGL3::Utils {
         static std::string ConvertDate(bool IsFutureTense, const T& Amount) {
             return ConvertDate<T>(IsFutureTense, Amount.count());
         }
+
+        std::wstring HumanizeNumber(const std::wstring& ValueString, int Precision);
     }
 
     // Sparsely based off of https://github.com/Humanizr/Humanizer/blob/2e45bca3d4bfc8c9ff651a32490c8e7676558f14/src/Humanizer/DateTimeHumanizeStrategy/DateTimeHumanizeAlgorithms.cs#L110
-    static std::string Humanize(const std::chrono::system_clock::time_point& Date) {
+    template<class Clock, class Duration>
+    static std::string Humanize(std::chrono::time_point<Clock, Duration> Time, std::chrono::time_point<Clock, Duration> CurrentTime = std::chrono::time_point<Clock, Duration>::min()) {
         // Primarily used by GetPageInfo::EmergencyNotice so people don't see 23434 years from now or something
-        if (Date == Date.max()) {
+        if (Time == Time.max()) {
             return "";
         }
 
-        auto CurrentTime = std::chrono::system_clock::now();
-        bool IsFutureTense = Date > CurrentTime;
-        auto Distance = std::chrono::abs(CurrentTime - Date);
+        if (CurrentTime == std::chrono::time_point<Clock, Duration>::min()) {
+            CurrentTime = Clock::now();
+        }
+        bool IsFutureTense = Time > CurrentTime;
+        auto Distance = std::chrono::abs(CurrentTime - Time);
 
         if (Distance < std::chrono::milliseconds(500)) {
             return Detail::ConvertDate<std::chrono::milliseconds>(IsFutureTense, 0);
@@ -224,4 +231,20 @@ namespace EGL3::Utils {
 
         return Detail::ConvertDate<Detail::ChronoYears>(IsFutureTense, Distance);
     }
+
+    std::wstring HumanizeDuration(uint64_t Ticks);
+
+    template<class Rep, class Period>
+    static std::wstring HumanizeExact(std::chrono::duration<Rep, Period> Duration) {
+        return HumanizeDuration(std::chrono::duration_cast<std::chrono::nanoseconds>(Duration).count() / 100);
+    }
+
+    template <typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    std::wstring Humanize(T Value, int Precision = 0) {
+        return Detail::HumanizeNumber(std::to_wstring(Value), Precision);
+    }
+
+    std::wstring HumanizeByteSize(uint64_t Size);
+
+    std::wstring HumanizeBitSize(uint64_t Size);
 }
