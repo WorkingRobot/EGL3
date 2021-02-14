@@ -51,7 +51,7 @@ namespace EGL3::Storage::Models {
         }, Data);
     }
 
-    bool InstalledGame::OpenArchiveRead()
+    bool InstalledGame::OpenArchiveRead() const
     {
         // Already has an archive
         if (auto ArchivePtr = std::get_if<Game::Archive>(&Data)) {

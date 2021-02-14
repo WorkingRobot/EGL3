@@ -31,7 +31,7 @@ namespace EGL3::Storage::Models {
 
         // Open for reading
         // Returns false if the archive is invalid (or does not exist)
-        bool OpenArchiveRead();
+        bool OpenArchiveRead() const;
 
         // Open (or create if it doesn't exist) for writing
         // Returns false if the archive is invalid or is already opened in read mode

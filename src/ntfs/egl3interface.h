@@ -17,10 +17,11 @@ struct _EGL3Runlist {/* In memory vcn to lcn mapping structure element. */
 };
 
 struct _EGL3File {
-    const char* name;
+    char name[256]; // Must be null terminated
     int64_t size;
     uint8_t is_directory;
     int64_t parent_index;
+    void* user_context;
     void* reserved; // internally, this is the o_index_block (INDEX_ALLOCATION*)
     EGL3Runlist* o_runlist;
 };
