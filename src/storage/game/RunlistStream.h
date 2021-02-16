@@ -20,7 +20,8 @@ namespace EGL3::Storage::Game {
                 Archive.Resize(Runlist, Position + BufCount);
             }
 
-            uint32_t RunStartIndex, RunByteOffset;
+            uint32_t RunStartIndex;
+            uint64_t RunByteOffset;
             if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
                 uint32_t BytesRead = 0;
                 for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
@@ -45,9 +46,11 @@ namespace EGL3::Storage::Game {
             if (Position + BufCount > Runlist.GetValidSize()) {
                 BufCount = Runlist.GetValidSize() - Position;
             }
-            uint32_t RunStartIndex, RunByteOffset;
+
+            uint32_t RunStartIndex;
+            uint64_t RunByteOffset;
             if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
-                uint32_t BytesRead = 0;
+                size_t BytesRead = 0;
                 for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
                     size_t Offset = CurrentRunItr->SectorOffset * Header::GetSectorSize() + RunByteOffset;
                     if ((BufCount - BytesRead) > CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset) { // copy the entire buffer over

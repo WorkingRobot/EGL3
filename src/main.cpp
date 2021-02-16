@@ -9,6 +9,9 @@
 #include "utils/GladeBuilder.h"
 #include "utils/Platform.h"
 
+#include "storage/models/MountedDisk.h"
+#include <future>
+
 #include <fontconfig/fontconfig.h>
 #include <gtkmm.h>
 #include <pango/pangofc-fontmap.h>
@@ -33,6 +36,21 @@ void operator delete(void* ptr) noexcept
 namespace EGL3 {
     __forceinline int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
+
+        if constexpr(true)
+        {
+            std::vector<Storage::Models::MountedFile> Files{
+                { "name", true, 0, -1, nullptr },
+                { "name2", false, 4096, -1, nullptr }
+            };
+
+            Storage::Models::MountedDisk Disk(Files);
+            Disk.Initialize();
+            Disk.Create();
+            Disk.Mount();
+            std::this_thread::sleep_for(std::chrono::hours(24));
+            return 0;
+        }
 
         {
             auto Config = FcConfigCreate();

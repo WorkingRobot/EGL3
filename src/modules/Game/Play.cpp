@@ -7,27 +7,41 @@ namespace EGL3::Modules::Game {
         Storage(Storage),
         Auth(Modules.GetModule<AuthorizationModule>())
     {
-        std::vector<MountedFile> Files
-        {
-            { "test folder", true, 0, -1, (void*)0 },
-            { "testfile.txt", false, 1024 * 1024 * 1024 * 1023llu, 0, (void*)1 },
-            { "test.folder", true, 0, 0, (void*)2 },
-        };
-        printf("emplacing\n");
-        Disk.emplace(Files);
-        printf("initializing\n");
-        Disk->Initialize();
-        printf("creating\n");
-        Disk->Create();
-        printf("mounting\n");
-        Disk->Mount(-1);
-        printf("waiting\n");
-        std::promise<void>().get_future().wait();
+
     }
 
     PlayInfo& PlayModule::OnPlayClicked(const InstalledGame& Game)
     {
         CurrentPlay = std::make_unique<PlayInfo>(Game);
+        CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
+            switch (NewState)
+            {
+            case PlayInfoState::Reading:
+                printf("Reading\n");
+                break;
+            case PlayInfoState::Initializing:
+                printf("Initializing\n");
+                break;
+            case PlayInfoState::Mounting:
+                printf("Mounting\n");
+                break;
+            case PlayInfoState::Playable:
+                printf("Playable\n");
+                CurrentPlay->Play(Auth.GetClientLauncher());
+                break;
+            case PlayInfoState::Playing:
+                printf("Playing\n");
+                break;
+            case PlayInfoState::Closed:
+                printf("Closed\n");
+                break;
+            default:
+                printf("Unknown\n");
+                break;
+            }
+        });
+
+        CurrentPlay->Begin();
 
         return *CurrentPlay;
     }

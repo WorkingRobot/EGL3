@@ -41,12 +41,13 @@
 
 uint8_t* ntfs_device_win32_get_cluster(void* ctx, int64_t cluster_addr);
 
-void ntfs_device_win32_set_cluster_FF(void* ctx, int64_t cluster_addr);
+BOOL ntfs_device_win32_get_cluster_FF(void* ctx, int64_t cluster_addr);
+void ntfs_device_win32_set_cluster_FF(void* ctx, int64_t cluster_addr, BOOL is_ff);
 
 int64_t* ntfs_device_win32_get_position(void* ctx);
 uint64_t* ntfs_device_win32_get_written_bytes(void* ctx);
 
-void* ntfs_device_win32_create_ctx();
+void* ntfs_device_win32_create_ctx(const char* name);
 
 /**
     * ntfs_device_win32_open - open a device
@@ -66,8 +67,8 @@ static int ntfs_device_win32_open(struct ntfs_device* dev, int flags)
         errno = EBUSY;
         return -1;
     }
-    printf("OPENING %s\n", dev->d_name);
-    dev->d_private = ntfs_device_win32_create_ctx();
+    printf("OPENING %p\n", dev->d_name);
+    dev->d_private = ntfs_device_win32_create_ctx(dev->d_name);
     if ((flags & O_RDWR) != O_RDWR)
         NDevSetReadOnly(dev);
     NDevSetOpen(dev);
@@ -84,7 +85,7 @@ static int ntfs_device_win32_open(struct ntfs_device* dev, int flags)
     */
 static int ntfs_device_win32_close(struct ntfs_device* dev)
 {
-    printf("CLOSING\nTOTAL WRITTEN: %lld\n", ntfs_device_win32_get_written_bytes(dev->d_private));
+    printf("CLOSING\nTOTAL WRITTEN: %zu\n", ntfs_device_win32_get_written_bytes(dev->d_private));
     ntfs_log_trace("Closing device %p.\n", dev);
     if (!NDevOpen(dev)) {
         errno = EBADF;
@@ -123,11 +124,43 @@ static s64 ntfs_device_win32_seek(struct ntfs_device* dev, s64 offset,
     return *pos;
 }
 
+/**
+    * ntfs_device_win32_read - read bytes from an ntfs device
+    * @dev:	ntfs device obtained via ->open
+    * @b:		pointer to where to put the contents
+    * @count:	how many bytes should be read
+    *
+    * On success returns the number of bytes actually read (can be < @count).
+    * On error returns -1 with errno set.
+    */
 static s64 ntfs_device_win32_pread(struct ntfs_device* dev, void* b,
     s64 count, s64 offset)
 {
-    errno = EOPNOTSUPP;
-    return -1;
+    s64 bytes_left = count;
+
+    s64 cluster_idx = offset >> 12; // divide by 4096
+    s64 cluster_off = offset & 4095;
+    while (bytes_left) {
+        int read_amt = min(4096 - cluster_off, bytes_left);
+        if (read_amt != 4096) {
+            memcpy(b, ntfs_device_win32_get_cluster(dev->d_private, cluster_idx) + cluster_off, read_amt);
+        }
+        else {
+            if (ntfs_device_win32_get_cluster_FF(dev->d_private, cluster_idx)) {
+                memset(b, 0xFF, read_amt);
+            }
+            else {
+                memcpy(b, ntfs_device_win32_get_cluster(dev->d_private, cluster_idx) + cluster_off, read_amt);
+            }
+        }
+        (u8*)b += read_amt;
+        cluster_off = 0;
+        bytes_left -= read_amt;
+        cluster_idx++;
+    }
+
+    //*ntfs_device_win32_get_written_bytes(dev->d_private) += count;
+    return count;
 }
 
 /**
@@ -141,8 +174,10 @@ static s64 ntfs_device_win32_pread(struct ntfs_device* dev, void* b,
     */
 static s64 ntfs_device_win32_read(struct ntfs_device* dev, void* b, s64 count)
 {
-    errno = EOPNOTSUPP;
-    return -1;
+    s64 ret = ntfs_device_win32_pread(dev, b, count, *ntfs_device_win32_get_position(dev->d_private));
+    if (ret != -1)
+        *ntfs_device_win32_get_position(dev->d_private) += ret;
+    return ret;
 }
 
 static u8 ntfs_device_win32_is_cluster_FF(const u8* b) {
@@ -176,8 +211,8 @@ static s64 ntfs_device_win32_pwrite(struct ntfs_device* dev, const u8* b,
             memcpy(ntfs_device_win32_get_cluster(dev->d_private, cluster_idx) + cluster_off, b, read_amt);
         }
         else {
-            if (ntfs_device_win32_is_cluster_FF(b)) {
-                ntfs_device_win32_set_cluster_FF(dev->d_private, cluster_idx);
+            if (ntfs_device_win32_is_cluster_FF(b) && 0) {
+                ntfs_device_win32_set_cluster_FF(dev->d_private, cluster_idx, TRUE);
             }
             else if (ntfs_device_win32_is_cluster_00(b)) {
                 // it's 0 by default
@@ -253,6 +288,7 @@ static int ntfs_device_win32_ioctl(struct ntfs_device *dev,
 {
     if (request == 0x444F4641) { // AFOD: append file operation data
         *((void**)argp) = dev->d_private;
+        return 0;
     }
     errno = EOPNOTSUPP;
     return -1;

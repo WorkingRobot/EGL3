@@ -97,10 +97,14 @@ namespace EGL3::Storage::Game {
             return std::is_gteq(*this <=> that);
         }
 
+        size_t pos() const noexcept {
+            return Runlist->GetPosition(CurrentRunIdx, CurrentRunOffset);
+        }
+
     protected:
         ArchiveRef<List> Runlist;
 
         uint32_t CurrentRunIdx;
-        uint32_t CurrentRunOffset;
+        uint64_t CurrentRunOffset;
     };
 }

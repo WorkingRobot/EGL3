@@ -126,6 +126,11 @@ namespace EGL3::Utils::Mmio {
         }
     }
 
+    void MmioFile::Flush(size_t Position, size_t Size)
+    {
+        VirtualUnlock(Get() + Position, Size);
+    }
+
     void MmioFile::Flush()
     {
         SIZE_T FlushSize = 0;

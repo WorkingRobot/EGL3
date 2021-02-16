@@ -22,16 +22,8 @@
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#ifdef HAVE_STDIO_H
 #include <stdio.h>
-#endif
 #include <errno.h>
 
 #include "types.h"
@@ -366,12 +358,14 @@ runlist *ntfs_cluster_alloc(ntfs_volume *vol, VCN start_vcn, s64 count,
             /* Allocate the bitmap bit. */
             *byte |= bit;
             writeback = 1;
+#if 0
             if (vol->free_clusters <= 0) 
                 ntfs_log_error("Non-positive free clusters "
                            "(%lld)!\n",
                         (long long)vol->free_clusters);
             else    
                 vol->free_clusters--; 
+#endif
             
             /*
              * Coalesce with previous run if adjacent LCNs.

@@ -22,11 +22,11 @@
 #ifndef _NTFS_PARAM_H
 #define _NTFS_PARAM_H
 
-#define CACHE_INODE_SIZE 32 /* inode cache, zero or >= 3 and not too big */
-#define CACHE_NIDATA_SIZE 64    /* idata cache, zero or >= 3 and not too big */
-#define CACHE_LOOKUP_SIZE 64    /* lookup cache, zero or >= 3 and not too big */
-#define CACHE_SECURID_SIZE 16    /* securid cache, zero or >= 3 and not too big */
-#define CACHE_LEGACY_SIZE 8    /* legacy cache size, zero or >= 3 and not too big */
+#define CACHE_INODE_SIZE 0//32 /* inode cache, zero or >= 3 and not too big */
+#define CACHE_NIDATA_SIZE 0//64    /* idata cache, zero or >= 3 and not too big */
+#define CACHE_LOOKUP_SIZE 0//64    /* lookup cache, zero or >= 3 and not too big */
+#define CACHE_SECURID_SIZE 0//16    /* securid cache, zero or >= 3 and not too big */
+#define CACHE_LEGACY_SIZE 0//8    /* legacy cache size, zero or >= 3 and not too big */
 
 #define FORCE_FORMAT_v1x 0  /* Insert security data as in NTFS v1.x */
 #define OWNERFROMACL 1      /* Get the owner from ACL (not Windows owner) */

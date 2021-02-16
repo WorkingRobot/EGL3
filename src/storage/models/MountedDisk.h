@@ -13,10 +13,6 @@ namespace EGL3::Storage::Models {
         void* UserContext;
     };
 
-    enum class MountedError : uint8_t {
-        Success
-    };
-
     class MountedDisk {
     public:
         MountedDisk(const std::vector<MountedFile>& Files);

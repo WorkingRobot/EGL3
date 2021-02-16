@@ -197,9 +197,13 @@ namespace EGL3::Storage::Models {
 
                 if (OldUpdateInfo.IsUpdating && OldUpdateInfo.TargetVersion == Data.Archive.GetHeader()->GetVersionNum()) {
                     BeginTimestamp -= std::chrono::nanoseconds(OldUpdateInfo.NanosecondsElapsed);
+
+                    Data.PiecesTotal += OldUpdateInfo.PiecesComplete;
                     Data.PiecesComplete.fetch_add(OldUpdateInfo.PiecesComplete);
-                    Data.BytesDownloadTotal.fetch_add(OldUpdateInfo.BytesDownloadTotal);
+
+                    Data.DownloadTotal += OldUpdateInfo.BytesDownloadTotal;
                     Data.BytesDownloadTotalLast = OldUpdateInfo.BytesDownloadTotal;
+                    Data.BytesDownloadTotal.fetch_add(OldUpdateInfo.BytesDownloadTotal);
                 }
 
                 auto NextUpdateTime = std::chrono::steady_clock::now();
@@ -333,14 +337,14 @@ namespace EGL3::Storage::Models {
                 Lock.unlock();
                 ReplaceInstallOne(Chunk, ReplaceIdx);
                 ++Data.PiecesComplete;
-                Data.Archive.Flush();
+                //Data.Archive.Flush();
                 return true;
             }
             else {
                 Lock.unlock();
                 AppendInstallOne(Chunk);
                 ++Data.PiecesComplete;
-                Data.Archive.Flush();
+                //Data.Archive.Flush();
                 return true;
             }
         }
@@ -414,7 +418,9 @@ namespace EGL3::Storage::Models {
 
         Data.BytesWriteTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
 
-        std::copy(Resp->Data.get(), Resp->Data.get() + Chunk.WindowSize, Data.ArchiveChunkDatas.begin() + ChunkInfoData.DataSector * Game::Header::GetSectorSize());
+        auto BeginChunkDataItr = Data.ArchiveChunkDatas.begin() + ChunkInfoData.DataSector * Game::Header::GetSectorSize();
+        std::copy(Resp->Data.get(), Resp->Data.get() + Chunk.WindowSize, BeginChunkDataItr);
+        Data.ArchiveChunkDatas.flush(BeginChunkDataItr, Chunk.WindowSize);
 
         Data.BytesWriteTotal.fetch_add(Chunk.WindowSize, std::memory_order::relaxed);
     }

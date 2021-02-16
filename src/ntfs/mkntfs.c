@@ -45,6 +45,7 @@
 #include "dir.h"
 #include "device_io.h"
 #include "logfile.h"
+#include "security.h"
 #include "boot.h"
 #include "attrdef.h"
 #include "misc.h"
@@ -3038,13 +3039,6 @@ static void mkntfs_cleanup(OPTS* opts)
         free(p);
         p = q;
     }
-
-    for (int i = 0; i < opts->egl3_file_count; ++i) {
-        if (opts->egl3_files[i].is_directory) {
-            // freed like g_index_block
-            free(opts->egl3_files[i].reserved); opts->egl3_files[i].reserved = NULL;
-        }
-    }
 }
 
 /**
@@ -3061,7 +3055,7 @@ static BOOL mkntfs_open_partition(OPTS* opts, ntfs_volume* vol)
      * Allocate and initialize an ntfs device structure and attach it to
      * the volume.
      */
-    vol->dev = ntfs_device_alloc("", 0, &ntfs_device_default_io_ops, NULL);
+    vol->dev = ntfs_device_alloc(NULL, 0, &ntfs_device_default_io_ops, NULL);
     if (!vol->dev) {
         ntfs_log_perror("Could not create device");
         goto done;
@@ -3406,8 +3400,8 @@ static BOOL mkntfs_initialize_logfile_rec(OPTS* opts)
     *((le32*)(opts->g_logfile_buf + 16)) = 4096; // system_page_size
     *((le32*)(opts->g_logfile_buf + 20)) = 4096; // log_page_size
     *((le16*)(opts->g_logfile_buf + 24)) = 48; // restart_area_offset
-    *((sle16*)(opts->g_logfile_buf + 26)) = 0; // minor_ver
-    *((sle16*)(opts->g_logfile_buf + 28)) = 2; // major_ver
+    *((sle16*)(opts->g_logfile_buf + 26)) = 1; // minor_ver (changed from 0)
+    *((sle16*)(opts->g_logfile_buf + 28)) = 1; // major_ver (changed from 2)
     *((le16*)(opts->g_logfile_buf + 30)) = 3; // usn
 
 
@@ -3416,7 +3410,7 @@ static BOOL mkntfs_initialize_logfile_rec(OPTS* opts)
     *((le16*)(opts->g_logfile_buf + 48 + 8)) = 1; // log_clients
     *((le16*)(opts->g_logfile_buf + 48 + 10)) = LOGFILE_NO_CLIENT; // client_free_list
     *((le16*)(opts->g_logfile_buf + 48 + 12)) = 0; // client_in_use_list
-    *((le16*)(opts->g_logfile_buf + 48 + 14)) = 0; // flags
+    *((le16*)(opts->g_logfile_buf + 48 + 14)) = RESTART_VOLUME_IS_CLEAN; // flags (modified from source, a value of 0 doesn't indicate a "clean shutdown")
     *((le32*)(opts->g_logfile_buf + 48 + 16)) = 45; // seq_number_bits
     *((le16*)(opts->g_logfile_buf + 48 + 20)) = 224; // restart_area_length
     *((le16*)(opts->g_logfile_buf + 48 + 22)) = 64; // client_array_offset
@@ -4170,103 +4164,198 @@ static BOOL mkntfs_create_root_structures(OPTS* opts)
         return FALSE;
     }
 
-    const u8* ro_sd;
-    const s64* ro_sd_len;
-    if (!err)
-        err = create_sd_sddl("O:WDG:SYD:PAI(A;;0x1200a9;;;WD)", &ro_sd, &ro_sd_len);
-
-    ntfs_log_verbose("Creating EGL3 files\n");
-
-    for (int i = 0; i < opts->egl3_file_count; ++i) {
-        EGL3File* File = opts->egl3_files + i;
-        s64 MFTrecnum = i + 27;
-        ntfs_log_verbose("Creating %s (mft record %d)\n", File->name, MFTrecnum);
-        m = (MFT_RECORD*)(opts->g_buf + MFTrecnum * opts->g_vol->mft_record_size);
-        if (File->is_directory) {
-            m->flags |= MFT_RECORD_IS_DIRECTORY;
-            if (File->parent_index == -1) {
-                if (!err)
-                    err = create_hardlink(opts, opts->g_index_block, root_ref, m,
-                        MK_LE_MREF(MFTrecnum, 1),
-                        0, 0,
-                        FILE_ATTR_I30_INDEX_PRESENT, 0, 0,
-                        File->name, FILE_NAME_POSIX);
-            }
-            else {
-                EGL3File* ParentFile = opts->egl3_files + File->parent_index;
-                if (!ParentFile->reserved) {
-                    if (!err)
-                        err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->reserved);
-                }
-                if (!err)
-                    err = create_hardlink(opts, ParentFile->reserved, MK_LE_MREF(File->parent_index + 27, 1), m,
-                        MK_LE_MREF(MFTrecnum, 1),
-                        0, 0,
-                        FILE_ATTR_I30_INDEX_PRESENT, 0, 0,
-                        File->name, FILE_NAME_POSIX);
-            }
-            if (!err)
-                err = add_attr_index_root(opts, m, "$I30", 4, CASE_SENSITIVE,
-                    AT_FILE_NAME, COLLATION_FILE_NAME,
-                    opts->g_vol->indx_record_size);
-        }
-        else {
-            if (!err) {
-                err = insert_non_resident_attr_in_mft_record_nowrite(opts, m, AT_DATA, NULL,
-                    0, CASE_SENSITIVE, const_cpu_to_le16(0), File->size, &File->o_runlist);
-            }
-            if (File->parent_index == -1) {
-                if (!err)
-                    err = create_hardlink(opts, opts->g_index_block, root_ref,
-                        m,
-                        MK_LE_MREF(MFTrecnum, 1),
-                        ((File->size) + opts->g_vol->cluster_size - 1) & ~(opts->g_vol->cluster_size - 1),
-                        File->size, FILE_ATTR_ARCHIVE, 0, 0,
-                        File->name, FILE_NAME_POSIX);
-            }
-            else {
-                EGL3File* ParentFile = opts->egl3_files + File->parent_index;
-                if (!ParentFile->reserved) {
-                    if (!err)
-                        err = upgrade_to_large_index(opts, (MFT_RECORD*)(opts->g_buf + (File->parent_index + 27) * opts->g_vol->mft_record_size), "$I30", 4, CASE_SENSITIVE, &ParentFile->reserved);
-                }
-                if (!err)
-                    err = create_hardlink(opts, ParentFile->reserved, MK_LE_MREF(File->parent_index + 27, 1), m,
-                        MK_LE_MREF(MFTrecnum, 1),
-                        ((File->size) + opts->g_vol->cluster_size - 1) & ~(opts->g_vol->cluster_size - 1),
-                        File->size, FILE_ATTR_ARCHIVE, 0, 0,
-                        File->name, FILE_NAME_POSIX);
-            }
-        }
-        if (!err)
-            err = add_attr_sd(opts, m, ro_sd, ro_sd_len);
-        if (err < 0) {
-            ntfs_log_error("Couldn't create %s: %s\n", File->name,
-                strerror(-err));
-            return FALSE;
-        }
-    }
-
-    ntfs_log_verbose("Syncing EGL3 folder index records\n");
-    for (int i = 0; i < opts->egl3_file_count; ++i) {
-        EGL3File* File = opts->egl3_files + i;
-        s64 MFTrecnum = i + 27;
-        if (!File->is_directory || !File->reserved)
-            continue;
-        ntfs_log_verbose("Syncing %s index record (mft record %X)\n", File->name, MFTrecnum);
-        m = (MFT_RECORD*)(opts->g_buf + MFTrecnum * opts->g_vol->mft_record_size);
-
-        if (!err)
-            err = mkntfs_sync_index_record(opts, File->reserved, m, L"$I30", 4);
-
-        if (err < 0) {
-            ntfs_log_error("Couldn't sync %s: %s\n", File->name,
-                strerror(-err));
-            return FALSE;
-        }
-    }
-    
     return TRUE;
+}
+
+static const MFT_REF egl3_ref(s64 parent) {
+    return parent == -1 ? (MFT_REF)FILE_root : (MFT_REF)parent;
+}
+
+static int egl3_alloc_attr(ntfs_inode* ni, s64 size, EGL3Runlist** runlist) {
+    ntfs_attr* na;
+    int err;
+
+    na = ntfs_attr_open(ni, AT_DATA, AT_UNNAMED, 0);
+    if (na) {
+        if (ntfs_attr_force_non_resident(na))
+        {
+            err = errno;
+            ntfs_log_perror("Encountered error while non-residentizing $DATA attribute");
+            goto err_out;
+        }
+        if (ntfs_attr_nonresident_data_reserve(na, size))
+        {
+            err = errno;
+            ntfs_log_perror("Encountered error while resizing $DATA attribute");
+            goto err_out;
+        }
+    }
+    else {
+        ntfs_log_perror("$DATA not added yet!");
+        err = ENOTSUP;
+        ntfs_log_perror("Encountered error while adding $DATA attribute");
+        goto err_out;
+
+        if (ntfs_attr_nonresident_data_create_reserve(ni, size, &na))
+        {
+            err = errno;
+            ntfs_log_perror("Encountered error while adding $DATA attribute");
+            goto err_out;
+        }
+    }
+
+    {
+        ntfs_attr_search_ctx* ctx = NULL;
+
+        ctx = ntfs_attr_get_search_ctx(na->ni, NULL);
+        if (!ctx)
+            goto err_out;
+        if (ntfs_attr_lookup(na->type, na->name, na->name_len, 0,
+            0, NULL, 0, ctx))
+            goto err_out;
+
+        ctx->attr->initialized_size = size;
+        na->initialized_size = size;
+#if CACHE_NIDATA_SIZE
+        if (na->ni->mrec->flags & MFT_RECORD_IS_DIRECTORY
+            ? na->type == AT_INDEX_ROOT && na->name == NTFS_INDEX_I30
+            : na->type == AT_DATA && na->name == AT_UNNAMED) {
+            na->ni->data_size = na->data_size;
+            na->ni->allocated_size = na->allocated_size;
+            set_nino_flag(na->ni, KnownSize);
+        }
+#endif
+        ntfs_attr_put_search_ctx(ctx);
+        ctx = NULL;
+    }
+
+    runlist_element* rl_current = na->rl;
+    s64 rl_size = sizeof(runlist_element);
+    while (rl_current->length) {
+        rl_size += sizeof(runlist_element);
+        ++rl_current;
+    }
+    *runlist = malloc(rl_size);
+    memcpy(*runlist, na->rl, rl_size);
+
+    err = 0;
+err_out:
+    if (na)
+        ntfs_attr_close(na);
+    if (err)
+        errno = err;
+    return err ? -1 : 0;
+}
+
+/**
+ * Create a regular file under the given directory inode
+ *
+ * It is a wrapper function to ntfs_create(...)
+ *
+ * Return:  the created file inode
+ */
+static ntfs_inode* ntfs_new_file(ntfs_inode* dir_ni,
+    const char* filename)
+{
+    ntfschar* ufilename;
+    /* inode to the file that is being created */
+    ntfs_inode* ni;
+    int ufilename_len;
+
+    /* ntfs_mbstoucs(...) will allocate memory for ufilename if it's NULL */
+    ufilename = NULL;
+    ufilename_len = ntfs_mbstoucs(filename, &ufilename);
+    if (ufilename_len == -1) {
+        ntfs_log_perror("ERROR: Failed to convert '%s' to unicode",
+            filename);
+        return NULL;
+    }
+    ni = ntfs_create(dir_ni, const_cpu_to_le32(0), ufilename, ufilename_len, S_IFREG);
+    free(ufilename);
+    return ni;
+}
+
+static int egl3_create(OPTS* opts, s64 parent, const char* name, BOOL is_directory, s64 file_size, s64* o_ino, EGL3Runlist** o_rl)
+{
+    ntfs_inode* dir_ni = NULL, * ni;
+    int res = 0;
+    /* Open parent directory. */
+    dir_ni = ntfs_inode_open(opts->g_vol, egl3_ref(parent));
+    if (!dir_ni) {
+        return res = -errno;
+        //goto exit;
+    }
+
+    ni = ntfs_new_file(dir_ni, name);
+    ntfs_inode_close(ni);
+    ntfs_inode_close(dir_ni);
+    return 0;
+//	ni = ntfs_create(dir_ni, 0, uname, uname_len, is_directory ? S_IFDIR : S_IFREG);
+//	if (ni) {
+//        ni->flags |= FILE_ATTR_ARCHIVE;
+//		ntfs_inode_update_mbsname(dir_ni, name, ni->mft_no);
+//		NInoSetDirty(ni);
+//			
+//        *o_ino = ni->mft_no;
+//
+//        if (file_size) {
+//            egl3_alloc_attr(ni, file_size, o_rl);
+//        }
+//
+//		/*
+//			* closing ni requires access to dir_ni to
+//			* synchronize the index, avoid double opening.
+//			*/
+//        if (ntfs_inode_close_in_dir(ni, dir_ni)) {
+//            printf("couldn't close inode in dir\n");
+//        }
+//
+//        ntfs_inode_update_times(dir_ni, NTFS_UPDATE_MCTIME);
+//	}
+//    else {
+//        res = -errno;
+//    }
+//
+//exit:
+//	free(uname);
+//    if (ntfs_inode_close(dir_ni)) {
+//        printf("couldn't close inode\n");
+//    }
+//	return res;
+}
+
+static int egl3_create_item(OPTS* opts, EGL3File* file, EGL3File* parent) {
+    s64 parent_idx = parent == NULL ? -1 : parent->reserved;
+    if (file->is_directory) {
+        egl3_create(opts, parent_idx, file->name, TRUE, 0, &file->reserved, &file->o_runlist);
+    }
+    else {
+        egl3_create(opts, parent_idx, file->name, FALSE, file->size, &file->reserved, &file->o_runlist);
+    }
+}
+
+static BOOL egl3_append_data(OPTS* opts)
+{
+    opts->g_vol = ntfs_mount(opts->o_data, NTFS_MNT_NONE);
+
+    for (u32 i = 0; i < opts->egl3_file_count; ++i) {
+        EGL3File* file = opts->egl3_files + i;
+        printf("-----------------------------------------------------------------------------\n");
+        egl3_create_item(opts, file, file->parent_index == -1 ? NULL : opts->egl3_files + file->parent_index);
+    }
+
+    if (opts->g_vol) {
+        if (opts->g_vol->dev) {
+            if (NDevOpen(opts->g_vol->dev) && opts->g_vol->dev->d_ops->close(opts->g_vol->dev))
+                ntfs_log_perror("Warning: Could not close %s", opts->g_vol->dev->d_name);
+            ntfs_device_free(opts->g_vol->dev);
+        }
+        free(opts->g_vol->vol_name);
+        free(opts->g_vol->attrdef);
+        free(opts->g_vol->upcase);
+        free(opts->g_vol);
+        opts->g_vol = NULL;
+    }
 }
 
 /**
@@ -4480,7 +4569,8 @@ static int mkntfs_redirect(OPTS* opts)
         ntfs_log_error("Syncing device. FAILED");
         goto done;
     }
-    ntfs_log_quiet("mkntfs completed successfully. Have a nice day.\n");
+    ntfs_log_quiet("mkntfs completed successfully. Creating files.\n");
+
     result = 0;
 done:
     ntfs_attr_put_search_ctx(ctx);
@@ -4501,6 +4591,10 @@ int EGL3CreateDisk(u64 sector_size, const char* label, const EGL3File files[], u
     opts.label = label;
 
     int result = mkntfs_redirect(&opts);
+
+    /* Use whatever mkntfs created and add EGL3's files and folders */
+    egl3_append_data(&opts);
+
     *o_data = opts.o_data;
     return result;
 }

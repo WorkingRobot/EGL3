@@ -10,6 +10,7 @@ namespace EGL3::Modules::Game {
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
         Auth(Modules.GetModule<AuthorizationModule>()),
         Download(Modules.GetModule<DownloadModule>()),
+        Play(Modules.GetModule<PlayModule>()),
         PlayBtn(Builder.GetWidget<Gtk::Button>("PlayBtn")),
         PlayMenuBtn(Builder.GetWidget<Gtk::MenuButton>("PlayDropdown")),
         PlayMenuVerifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
@@ -107,10 +108,15 @@ namespace EGL3::Modules::Game {
             SetCurrentState(State::SigningIn);
             break;
         case State::Play:
+        {
+            auto Install = GetInstall(Storage::Game::GameId::Fortnite);
+            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game, but playable?");
             EGL3_LOG(LogLevel::Info, "Play game HYPERS");
+            Play.OnPlayClicked(*Install);
 
             SetCurrentState(State::Playing);
             break;
+        }
         case State::Update:
         case State::Install:
         {

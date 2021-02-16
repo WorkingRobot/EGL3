@@ -23,7 +23,9 @@ namespace EGL3::Storage::Game {
             if (Position + BufCount > Runlist.GetValidSize()) {
                 BufCount = Runlist.GetValidSize() - Position;
             }
-            uint32_t RunStartIndex, RunByteOffset;
+
+            uint32_t RunStartIndex;
+            uint64_t RunByteOffset;
             if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
                 uint32_t BytesRead = 0;
                 for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {

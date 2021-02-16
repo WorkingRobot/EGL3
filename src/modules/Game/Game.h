@@ -8,6 +8,7 @@
 #include "../AsyncFF.h"
 #include "../Authorization.h"
 #include "Download.h"
+#include "Play.h"
 
 #include <gtkmm.h>
 
@@ -48,6 +49,7 @@ namespace EGL3::Modules::Game {
         AsyncFFModule& AsyncFF;
         AuthorizationModule& Auth;
         DownloadModule& Download;
+        PlayModule& Play;
 
         Gtk::Button& PlayBtn;
         Gtk::MenuButton& PlayMenuBtn;

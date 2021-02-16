@@ -20,7 +20,5 @@ namespace EGL3::Modules::Game {
         Modules::AuthorizationModule& Auth;
 
         std::unique_ptr<Storage::Models::PlayInfo> CurrentPlay;
-
-        std::optional<Storage::Models::MountedDisk> Disk;
     };
 }

@@ -22,7 +22,7 @@ struct _EGL3File {
     uint8_t is_directory;
     int64_t parent_index;
     void* user_context;
-    void* reserved; // internally, this is the o_index_block (INDEX_ALLOCATION*)
+    int64_t reserved;
     EGL3Runlist* o_runlist;
 };
 

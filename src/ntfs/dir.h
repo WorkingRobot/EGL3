@@ -26,14 +26,10 @@
 #define _NTFS_DIR_H
 
 #include "types.h"
+#include <sys/stat.h>
 
 #define PATH_SEP '/'
 
-/*
- * We do not have these under DJGPP, so define our version that do not conflict
- * with other S_IFs defined under DJGPP.
- */
-#ifdef DJGPP
 #ifndef S_IFLNK
 #define S_IFLNK  0120000
 #endif
@@ -46,7 +42,25 @@
 #ifndef S_ISSOCK
 #define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
 #endif
-#endif
+
+#define S_IFDIR 0040000
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define S_IFREG 0100000
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+
+#define S_ISGID 02000
+
+#define S_IREAD 0400
+#define S_IWRITE 0200
+#define S_IEXEC 0100
+
+#define S_IWUSR S_IWRITE
+#define S_IWGRP (S_IWUSR >> 3)
+#define S_IWOTH (S_IWGRP >> 3)
+
+#define S_IXUSR S_IEXEC
+#define S_IXGRP (S_IXUSR >> 3)
+#define S_IXOTH (S_IXGRP >> 3)
 
 /*
  * The little endian Unicode strings $I30, $SII, $SDH, $O, $Q, $R

@@ -333,6 +333,8 @@ extern int ntfs_non_resident_attr_record_add(ntfs_inode *ni, ATTR_TYPES type,
         int dataruns_size, ATTR_FLAGS flags);
 extern int ntfs_attr_record_rm(ntfs_attr_search_ctx *ctx);
 
+extern int ntfs_attr_nonresident_data_reserve(ntfs_attr* na, s64 size);
+extern int ntfs_attr_nonresident_data_create_reserve(ntfs_inode* ni, s64 size, ntfs_attr** o_na);
 extern int ntfs_attr_add(ntfs_inode *ni, ATTR_TYPES type,
         ntfschar *name, u8 name_len, const u8 *val, s64 size);
 extern int ntfs_attr_set_flags(ntfs_inode *ni, ATTR_TYPES type,

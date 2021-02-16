@@ -66,6 +66,8 @@ namespace EGL3::Utils::Mmio {
 
         void EnsureSize(size_t Size);
 
+        void Flush(size_t Position, size_t Size);
+
         void Flush();
 
     private:

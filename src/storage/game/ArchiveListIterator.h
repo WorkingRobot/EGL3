@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/Assert.h"
 #include "ArchiveListIteratorReadonly.h"
 
 namespace EGL3::Storage::Game {

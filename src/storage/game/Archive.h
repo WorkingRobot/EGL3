@@ -128,6 +128,9 @@ namespace EGL3::Storage::Game {
         template<uint32_t MaxRunCount>
         void Reserve(ArchiveRef<Runlist<MaxRunCount>>& Runlist, uint64_t NewAllocatedSize);
 
+        template<uint32_t MaxRunCount>
+        void FlushRunlist(const Runlist<MaxRunCount>& Runlist, size_t Position, size_t Size);
+
     private:
         void Construct();
 
@@ -169,4 +172,7 @@ namespace EGL3::Storage::Game {
 
     template void Archive::Reserve<1789>(ArchiveRef<Runlist<1789>>&, uint64_t);
     template void Archive::Reserve<2045>(ArchiveRef<Runlist<2045>>&, uint64_t);
+
+    template void Archive::FlushRunlist<1789>(const Runlist<1789>&, size_t, size_t);
+    template void Archive::FlushRunlist<2045>(const Runlist<2045>&, size_t, size_t);
 }

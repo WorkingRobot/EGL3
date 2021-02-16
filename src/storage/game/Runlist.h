@@ -87,7 +87,7 @@ namespace EGL3::Storage::Game {
         // TODO: optimize to use some sort of binary search? I really want to make it fast
         // ByteOffset is the offset of the byte requested
         // RunIndex is the index inside the Runs array, RunByteOffset is the byte offset inside that run
-        bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint32_t& RunByteOffset) const {
+        bool GetRunIndex(uint64_t ByteOffset, uint32_t& RunIndex, uint64_t& RunByteOffset) const {
             if (Size < ByteOffset) {
                 return false;
             }
@@ -102,7 +102,7 @@ namespace EGL3::Storage::Game {
             return false;
         }
 
-        bool IncrementRunState(uint32_t& RunIndex, uint32_t& RunByteOffset) const {
+        bool IncrementRunState(uint32_t& RunIndex, uint64_t& RunByteOffset) const {
             for (; RunIndex < RunCount; ++RunIndex) {
                 if (RunByteOffset < Runs[RunIndex].SectorCount * Header::GetSectorSize()) {
                     return true;
@@ -112,7 +112,7 @@ namespace EGL3::Storage::Game {
             return false;
         }
 
-        size_t GetPosition(uint32_t RunIndex, uint32_t RunByteOffset) const {
+        size_t GetPosition(uint32_t RunIndex, uint64_t RunByteOffset) const {
             return Runs[RunIndex].SectorOffset * Header::GetSectorSize() + RunByteOffset;
         }
 
@@ -121,7 +121,8 @@ namespace EGL3::Storage::Game {
                 return -1;
             }
 
-            uint32_t RunIndex, RunByteOffset;
+            uint32_t RunIndex;
+            uint64_t RunByteOffset;
             if (GetRunIndex(Position, RunIndex, RunByteOffset)) {
                 return GetPosition(RunIndex, RunByteOffset);
             }

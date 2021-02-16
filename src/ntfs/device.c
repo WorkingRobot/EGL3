@@ -55,20 +55,9 @@ struct ntfs_device *ntfs_device_alloc(const char *name, const long state,
 {
     struct ntfs_device *dev;
 
-    if (!name) {
-        errno = EINVAL;
-        return NULL;
-    }
-
     dev = ntfs_malloc(sizeof(struct ntfs_device));
     if (dev) {
-        dev->d_name = _strdup(name);
-        if (!(dev->d_name)) {
-            int eo = errno;
-            free(dev);
-            errno = eo;
-            return NULL;
-        }
+        dev->d_name = name;
         dev->d_ops = dops;
         dev->d_state = state;
         dev->d_private = priv_data;
@@ -99,7 +88,6 @@ int ntfs_device_free(struct ntfs_device *dev)
         errno = EBUSY;
         return -1;
     }
-    free(dev->d_name);
     free(dev);
     return 0;
 }
@@ -218,6 +206,61 @@ out:
     return ret;
 }
 
+/**
+ * ntfs_mst_pread - multi sector transfer (mst) positioned read
+ * @dev:	device to read from
+ * @pos:	position in file descriptor to read from
+ * @count:	number of blocks to read
+ * @bksize:	size of each block that needs mst deprotecting
+ * @b:		output data buffer
+ *
+ * Multi sector transfer (mst) positioned read. This function will read @count
+ * blocks of size @bksize bytes each from device @dev at position @pos into the
+ * the data buffer @b.
+ *
+ * On success, return the number of successfully read blocks. If this number is
+ * lower than @count this means that we have reached end of file, that the read
+ * was interrupted, or that an error was encountered during the read so that
+ * the read is partial. 0 means end of file or nothing was read (also return 0
+ * when @count or @bksize are 0).
+ *
+ * On error and nothing was read, return -1 with errno set appropriately to the
+ * return code of either seek, read, or set to EINVAL in case of invalid
+ * arguments.
+ *
+ * NOTE: If an incomplete multi sector transfer has been detected the magic
+ * will have been changed to magic_BAAD but no error will be returned. Thus it
+ * is possible that we return count blocks as being read but that any number
+ * (between zero and count!) of these blocks is actually subject to a multi
+ * sector transfer error. This should be detected by the caller by checking for
+ * the magic being "BAAD".
+ */
+s64 ntfs_mst_pread(struct ntfs_device* dev, const s64 pos, s64 count,
+    const u32 bksize, void* b)
+{
+    s64 br, i;
+
+    if (bksize & (bksize - 1) || bksize % NTFS_BLOCK_SIZE) {
+        errno = EINVAL;
+        return -1;
+    }
+    /* Do the read. */
+    br = ntfs_pread(dev, pos, count * bksize, b);
+    if (br < 0)
+        return br;
+    /*
+     * Apply fixups to successfully read data, disregarding any errors
+     * returned from the MST fixup function. This is because we want to
+     * fixup everything possible and we rely on the fact that the "BAAD"
+     * magic will be detected later on.
+     */
+    count = br / bksize;
+    for (i = 0; i < count; ++i)
+        ntfs_mst_post_read_fixup((NTFS_RECORD*)
+            ((u8*)b + i * bksize), bksize);
+    /* Finally, return the number of complete blocks read. */
+    return count;
+}
 
 /**
  * ntfs_mst_pwrite - multi sector transfer (mst) positioned write

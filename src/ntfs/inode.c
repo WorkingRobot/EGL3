@@ -30,6 +30,7 @@
 #include "cache.h"
 #include "dir.h"
 #include "support.h"
+#include "misc.h"
 
 ntfs_inode *ntfs_inode_base(ntfs_inode *ni)
 {

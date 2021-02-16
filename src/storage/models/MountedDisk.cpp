@@ -12,7 +12,7 @@
 
 namespace EGL3::Storage::Models {
     static constexpr uint32_t SectorSize = 512;
-    static constexpr uint32_t DiskSize = 1024 * 1024 - 1;
+    static constexpr uint32_t DiskSize = 1024;
     static constexpr uint32_t DiskSignature = 0x334C4745; // "EGL3"
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / SectorSize;
@@ -103,21 +103,6 @@ namespace EGL3::Storage::Models {
         // NTFS ignores the MBR cluster
         --LCN;
 
-        for (auto& File : Data->Files) {
-            if (File.is_directory) {
-                continue;
-            }
-
-            auto Runlist = File.o_runlist;
-            while (Runlist->length) {
-                if (Runlist->lcn <= LCN && Runlist->lcn + Runlist->length > LCN) {
-                    Data->FileClusterCallback(File.user_context, LCN - Runlist->lcn + Runlist->vcn, Buffer);
-                    return;
-                }
-                ++Runlist;
-            }
-        }
-
         auto search = Data->Disk->data.find(LCN);
         if (search != Data->Disk->data.end()) {
             memcpy(Buffer, search->second, 4096);
@@ -126,6 +111,24 @@ namespace EGL3::Storage::Models {
         if (Data->Disk->data_ff.contains(LCN)) {
             memset(Buffer, 255, 4096);
             return;
+        }
+
+        for (auto& File : Data->Files) {
+            if (File.is_directory) {
+                continue;
+            }
+
+            auto Runlist = File.o_runlist;
+            if (!Runlist) {
+                continue;
+            }
+            while (Runlist->length) {
+                if (Runlist->lcn <= LCN && Runlist->lcn + Runlist->length > LCN) {
+                    Data->FileClusterCallback(File.user_context, LCN - Runlist->lcn + Runlist->vcn, Buffer);
+                    return;
+                }
+                ++Runlist;
+            }
         }
     }
 

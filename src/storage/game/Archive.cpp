@@ -124,9 +124,10 @@ namespace EGL3::Storage::Game {
         if (Position + DstSize > Runlist.GetSize()) {
             DstSize = Runlist.GetSize() - Position;
         }
-        uint32_t RunStartIndex, RunByteOffset;
+        uint32_t RunStartIndex;
+        uint64_t RunByteOffset;
         if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
-            uint32_t BytesRead = 0;
+            size_t BytesRead = 0;
             for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
                 size_t Offset = CurrentRunItr->SectorOffset * Header::GetSectorSize() + RunByteOffset;
                 if ((DstSize - BytesRead) > CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset) { // copy the entire buffer over
@@ -195,50 +196,26 @@ namespace EGL3::Storage::Game {
         Backend->EnsureSize(RunIndex->GetNextAvailableSector() * Header::GetSectorSize());
     }
 
-    /*
-    const std::vector<EGL3File> ArchiveReadonly::GetFiles() const
+    template<uint32_t MaxRunCount>
+    void Archive::FlushRunlist(const Runlist<MaxRunCount>& Runlist, size_t Position, size_t Size)
     {
-        std::vector<EGL3File> Ret;
-
-        RunlistStreamReadonly FileStream(GetRunlistFile(), *this);
-        while (FileStream.size() > FileStream.tell()) {
-            File CurFile;
-            FileStream.read((char*)&CurFile, sizeof(File));
-
-            int64_t Parent = -1;
-            std::filesystem::path Path(CurFile.Filename);
-            for (auto& Section : Path) {
-                auto Itr = std::find_if(Ret.begin(), Ret.end(), [&](const EGL3File& File) {
-                    return File.is_directory && File.parent_index == Parent && std::is_eq(Utils::CompareStringsInsensitive(std::string(File.name), Section.string()));
-                });
-                if (Itr != Ret.end()) {
-                    Parent = std::distance(Ret.begin(), Itr);
+        uint32_t RunStartIndex;
+        uint64_t RunByteOffset;
+        if (Runlist.GetRunIndex(Position, RunStartIndex, RunByteOffset)) {
+            size_t BytesFlushed = 0;
+            for (auto CurrentRunItr = Runlist.GetRuns().begin() + RunStartIndex; CurrentRunItr != Runlist.GetRuns().end(); ++CurrentRunItr) {
+                size_t Offset = CurrentRunItr->SectorOffset * Header::GetSectorSize() + RunByteOffset;
+                if ((Size - BytesFlushed) > CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset) { // flush the entire buffer
+                    Backend->Flush(Offset, CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset);
+                    BytesFlushed += CurrentRunItr->SectorCount * Header::GetSectorSize() - RunByteOffset;
                 }
-                else {
-                    Ret.emplace_back(EGL3File{
-                        .name = Section.string().c_str(), // TODO: MUST FIX!
-                        .size = 0,
-                        .is_directory = 1,
-                        .parent_index = Parent,
-                        .reserved = nullptr,
-                        .o_runlist = nullptr
-                    });
-                    Parent = Ret.size() - 1;
+                else { // flush the rest
+                    Backend->Flush(Offset, Size - BytesFlushed);
+                    BytesFlushed += Size - BytesFlushed;
+                    break;
                 }
+                RunByteOffset = 0;
             }
-            auto& File = Ret[Parent];
-            File.is_directory = 0;
-            File.size = CurFile.FileSize;
         }
     }
-
-    void ArchiveReadonly::HandleFile(const EGL3File& File, uint64_t LCN, uint8_t Buffer[4096]) const
-    {
-        memset(Buffer, 'A', 1024);
-        memset(Buffer + 1024, 'B', 1024);
-        memset(Buffer + 2048, 'C', 1024);
-        memset(Buffer + 3072, 'D', 1024);
-        *(uint64_t*)Buffer = LCN;
-    }
-    */
 }

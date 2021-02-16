@@ -8,8 +8,8 @@
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
-//#define SUFFFIX_SSL
-#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
+#define SUFFFIX_SSL
+//#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
 
 namespace EGL3::Web::Http {
     const cpr::UserAgent& GetUserAgent();

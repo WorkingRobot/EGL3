@@ -111,7 +111,8 @@ namespace EGL3::Storage::Game {
             }
         }
 
-        void resize(size_t count, const T& value) {auto OldSize = size();
+        void resize(size_t count, const T& value) {
+            auto OldSize = size();
             if (count < OldSize) {
                 std::destroy(begin() + count, end());
                 resize_internal(count);
@@ -120,6 +121,11 @@ namespace EGL3::Storage::Game {
                 resize_internal(count);
                 std::uninitialized_fill(begin() + OldSize, end(), value);
             }
+        }
+
+        void flush(Itr begin, size_t count) {
+            size_t BeginPos = begin.pos();
+            Archive.FlushRunlist(*Runlist, BeginPos, BeginPos + count * sizeof(T));
         }
 
     private:

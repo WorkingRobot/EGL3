@@ -261,7 +261,6 @@ namespace EGL3::Modules::Game {
             switch (StatsData.State)
             {
             case DownloadInfoState::Installing:
-            case DownloadInfoState::Finished:
                 Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Normal);
                 break;
             case DownloadInfoState::Paused:
@@ -272,7 +271,7 @@ namespace EGL3::Modules::Game {
                 Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Error);
                 break;
             case DownloadInfoState::Initializing:
-            case DownloadInfoState::Finishing:
+                Storage.Flush();
                 Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Indeterminate);
                 break;
             default:
