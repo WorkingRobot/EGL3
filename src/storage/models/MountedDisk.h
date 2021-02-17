@@ -6,10 +6,8 @@
 
 namespace EGL3::Storage::Models {
     struct MountedFile {
-        std::string Name;
-        bool IsDirectory;
-        int64_t FileSize;
-        int64_t ParentIdx;
+        std::string Path;
+        uint64_t FileSize;
         void* UserContext;
     };
 

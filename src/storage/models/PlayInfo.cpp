@@ -66,30 +66,11 @@ namespace EGL3::Storage::Models {
         const Game::ArchiveList<Game::RunlistId::File> Files(Game.GetArchive());
         int Idx = 0;
         for (auto& File : Files) {
-            int64_t Parent = -1;
-            std::filesystem::path Path(File.Filename);
-            for (auto& Section : Path) {
-                auto Itr = std::find_if(MountedFiles.begin(), MountedFiles.end(), [&](const MountedFile& MountedFile) {
-                    return MountedFile.IsDirectory && MountedFile.ParentIdx == Parent && std::is_eq(Utils::CompareStringsInsensitive(MountedFile.Name, Section.string()));
-                });
-                if (Itr != MountedFiles.end()) {
-                    Parent = std::distance(MountedFiles.begin(), Itr);
-                }
-                else {
-                    MountedFiles.emplace_back(MountedFile{
-                        .Name = Section.string(),
-                        .IsDirectory = true,
-                        .FileSize = 0,
-                        .ParentIdx = Parent,
-                        .UserContext = nullptr
-                    });
-                    Parent = MountedFiles.size() - 1;
-                }
-            }
-            auto& MountedFile = MountedFiles[Parent];
-            MountedFile.IsDirectory = false;
-            MountedFile.FileSize = File.FileSize;
-            MountedFile.UserContext = (void*)Idx++;
+            auto& MntFile = MountedFiles.emplace_back(MountedFile{
+                .Path = File.Filename,
+                .FileSize = File.FileSize,
+                .UserContext = (void*)Idx++
+            });
         }
 
         Disk.emplace(MountedFiles);

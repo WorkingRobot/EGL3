@@ -37,11 +37,10 @@ namespace EGL3 {
     __forceinline int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
-        if constexpr(true)
+        if constexpr(false)
         {
             std::vector<Storage::Models::MountedFile> Files{
-                { "name", true, 0, -1, nullptr },
-                { "name2", false, 4096, -1, nullptr }
+                { "name/name3/name2", 1024*1024*1000, nullptr },
             };
 
             Storage::Models::MountedDisk Disk(Files);

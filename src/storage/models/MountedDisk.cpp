@@ -1,6 +1,6 @@
 #include "MountedDisk.h"
 
-#include "../../ntfs/egl3interface.h"
+#include "../../disk/interface.h"
 #include "../../utils/Align.h"
 #include "../../utils/Assert.h"
 #include "../../utils/Random.h"
@@ -12,7 +12,7 @@
 
 namespace EGL3::Storage::Models {
     static constexpr uint32_t SectorSize = 512;
-    static constexpr uint32_t DiskSize = 1024;
+    static constexpr uint32_t DiskSize = 1024 * 1024;
     static constexpr uint32_t DiskSignature = 0x334C4745; // "EGL3"
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / SectorSize;
@@ -54,18 +54,15 @@ namespace EGL3::Storage::Models {
 
         Data->Files.reserve(Files.size());
         for (auto& File : Files) {
-            EGL3_CONDITIONAL_LOG(File.Name.size() < 256, LogLevel::Critical, "File name too long");
+            EGL3_CONDITIONAL_LOG(File.Path.size() < 256, LogLevel::Critical, "File path too long");
 
             auto& DataFile = Data->Files.emplace_back(EGL3File{
                 .size = File.FileSize,
-                .is_directory = File.IsDirectory,
-                .parent_index = File.ParentIdx,
                 .user_context = File.UserContext,
-                .reserved = NULL,
-                .o_runlist = NULL
+                .runs = {}
             });
 
-            strcpy_s(DataFile.name, File.Name.c_str());
+            strcpy_s(DataFile.path, File.Path.c_str());
         }
     }
 
@@ -89,7 +86,7 @@ namespace EGL3::Storage::Models {
 
         *(uint32_t*)(Data->MBRData + 440) = DiskSignature;
 
-        EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game and Stuff", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk) == ERROR_SUCCESS, LogLevel::Critical, "Could not create NTFS disk");
+        EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }
 
     static __forceinline void HandleCluster(MountedData* Data, UINT64 LCN, UINT8 Buffer[4096]) {
@@ -108,26 +105,17 @@ namespace EGL3::Storage::Models {
             memcpy(Buffer, search->second, 4096);
             return;
         }
-        if (Data->Disk->data_ff.contains(LCN)) {
-            memset(Buffer, 255, 4096);
-            return;
-        }
 
         for (auto& File : Data->Files) {
-            if (File.is_directory) {
-                continue;
-            }
-
-            auto Runlist = File.o_runlist;
-            if (!Runlist) {
-                continue;
-            }
-            while (Runlist->length) {
-                if (Runlist->lcn <= LCN && Runlist->lcn + Runlist->length > LCN) {
-                    Data->FileClusterCallback(File.user_context, LCN - Runlist->lcn + Runlist->vcn, Buffer);
+            auto CurrentRun = File.runs;
+            uint64_t lIdx = 0;
+            while (CurrentRun->count) {
+                if (CurrentRun->idx <= LCN && uint64_t(CurrentRun->idx) + CurrentRun->count > LCN) {
+                    Data->FileClusterCallback(File.user_context, LCN - CurrentRun->idx + lIdx, Buffer);
                     return;
                 }
-                ++Runlist;
+                lIdx += CurrentRun->count;
+                CurrentRun++;
             }
         }
     }
