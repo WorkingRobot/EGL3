@@ -37,13 +37,18 @@ namespace EGL3 {
     __forceinline int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
-        if constexpr(false)
+        if constexpr(true)
         {
             std::vector<Storage::Models::MountedFile> Files{
-                { "name/name3/name2", 1024*1024*1000, nullptr },
+                { "name/name2.exe", 818304, fopen(R"(C:\Users\Aleks\Desktop\EasyAntiCheat_Setup.exe)", "rb") },
             };
 
             Storage::Models::MountedDisk Disk(Files);
+            Disk.HandleFileCluster.Set([](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) {
+                auto fp = (FILE*)Ctx;
+                fseek(fp, LCN * 4096, SEEK_SET);
+                fread(Buffer, 1, 4096, fp);
+            });
             Disk.Initialize();
             Disk.Create();
             Disk.Mount();

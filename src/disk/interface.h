@@ -22,7 +22,7 @@ struct _EGL3File {
     EGL3Run runs[16];
 };
 
-#define DISK_SIZE 1024ull * 1024 * 1024 * 100
+#define DISK_SIZE 1024ull * 1024 * 512
 
 // true = success
 // false = failed
