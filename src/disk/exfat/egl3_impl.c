@@ -209,7 +209,7 @@ bool EGL3CreateDisk(uint64_t sector_count, const char* label, const EGL3File fil
 	if (exfat_close(dev) != 0) {
 		return false;
 	}
-
+	
 	struct exfat ef;
 	if (exfat_mount(&ef, *o_data, "rw") != 0) {
 		return false;

@@ -12,7 +12,7 @@
 
 namespace EGL3::Storage::Models {
     static constexpr uint32_t SectorSize = 512;
-    static constexpr uint32_t DiskSize = 1024 * 1024;
+    static constexpr uint32_t DiskSize = DISK_SIZE / (1 << 20);
     static constexpr uint32_t DiskSignature = 0x334C4745; // "EGL3"
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / SectorSize;
@@ -84,14 +84,12 @@ namespace EGL3::Storage::Models {
         };
         EGL3_CONDITIONAL_LOG(SpdDefinePartitionTable(&Partition, 1, Data->MBRData) == ERROR_SUCCESS, LogLevel::Critical, "Could not create MBR data");
 
-        *(uint32_t*)(Data->MBRData + 440) = DiskSignature;
+        *(uint32_t*)(Data->MBRData + 440) = Utils::Random();// DiskSignature;
 
         EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }
 
     static __forceinline void HandleCluster(MountedData* Data, UINT64 LCN, UINT8 Buffer[4096]) {
-        ZeroMemory(Buffer, 4096);
-
         if (!LCN) { // MBR cluster
             memcpy(Buffer, Data->MBRData, 512);
             return;
@@ -120,26 +118,61 @@ namespace EGL3::Storage::Models {
         }
     }
 
+    static inline BOOLEAN ExceptionFilter(ULONG Code, PEXCEPTION_POINTERS Pointers,
+        PUINT_PTR PDataAddress)
+    {
+        if (EXCEPTION_IN_PAGE_ERROR != Code)
+            return EXCEPTION_CONTINUE_SEARCH;
+
+        *PDataAddress = 2 <= Pointers->ExceptionRecord->NumberParameters ?
+            Pointers->ExceptionRecord->ExceptionInformation[1] : 0;
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+
+    static VOID ReadCallbackWrapped(SPD_STORAGE_UNIT* StorageUnit, PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, UINT8 ASC, SPD_STORAGE_UNIT_STATUS* Status) {
+        UINT_PTR ExceptionDataAddress;
+        UINT64 Information, * PInformation;
+
+        __try {
+            ZeroMemory(Buffer, BlockCount * 512llu);
+
+            UINT8 ClusterBuffer[4096];
+            auto StartCluster = BlockAddress >> 3; // 8 sectors = 1 cluster, we apply alignment downwards
+            auto ThrowawaySectorCount = BlockAddress & 7; // number of sectors to throw away from the beginning
+            auto TotalClusterCount = Utils::Align<8>(ThrowawaySectorCount + BlockCount) >> 3;
+            for (UINT64 i = 0; i < TotalClusterCount; ++i) {
+                memset(ClusterBuffer, 0, 4096);
+                HandleCluster((MountedData*)StorageUnit->UserContext, StartCluster + i, ClusterBuffer);
+                if (i == 0) {
+                    memcpy(Buffer, ClusterBuffer + ThrowawaySectorCount * 512llu, std::min(BlockCount * 512llu, 4096 - ThrowawaySectorCount * 512llu));
+                }
+                else {
+                    memcpy(((UINT8*)Buffer) + i * 4096llu - ThrowawaySectorCount * 512llu, ClusterBuffer, std::min(BlockCount * 512llu, 4096llu));
+                }
+                BlockCount -= 8;
+            }
+        }
+        __except (ExceptionFilter(GetExceptionCode(), GetExceptionInformation(), &ExceptionDataAddress)) {
+            if (0 != Status)
+            {
+                PInformation = 0;
+                if (0 != ExceptionDataAddress)
+                {
+                    Information = 4055; //(UINT64)(ExceptionDataAddress - (UINT_PTR)RawDisk->Pointer) / RawDisk->BlockLength;
+                    PInformation = &Information;
+                }
+
+                SpdStorageUnitStatusSetSense(Status, SCSI_SENSE_MEDIUM_ERROR, ASC, PInformation);
+            }
+        }
+    }
+
     static BOOLEAN ReadCallback(SPD_STORAGE_UNIT* StorageUnit,
         PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
         SPD_STORAGE_UNIT_STATUS* Status)
     {
-        memset(Buffer, 0, BlockCount * 512llu);
-        UINT8 ClusterBuffer[4096];
-        auto StartCluster = BlockAddress >> 3; // 8 sectors = 1 cluster, we apply alignment downwards
-        auto ThrowawaySectorCount = BlockAddress & 7; // number of sectors to throw away from the beginning
-        auto TotalClusterCount = Utils::Align<8>(ThrowawaySectorCount + BlockCount) >> 3;
-        for (UINT64 i = 0; i < TotalClusterCount; ++i) {
-            memset(ClusterBuffer, 0, 4096);
-            HandleCluster((MountedData*)StorageUnit->UserContext, StartCluster + i, ClusterBuffer);
-            if (i == 0) {
-                memcpy(Buffer, ClusterBuffer + ThrowawaySectorCount * 512llu, std::min(BlockCount * 512llu, 4096 - ThrowawaySectorCount * 512llu));
-            }
-            else {
-                memcpy(((UINT8*)Buffer) + i * 4096llu - ThrowawaySectorCount * 512llu, ClusterBuffer, std::min(BlockCount * 512llu, 4096llu));
-            }
-            BlockCount -= 8;
-        }
+        ReadCallbackWrapped(StorageUnit, Buffer, BlockAddress, BlockCount, SCSI_ADSENSE_UNRECOVERED_ERROR, Status);
+
         return TRUE;
     }
 
