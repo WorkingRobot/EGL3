@@ -125,7 +125,7 @@ namespace EGL3::Storage::Game {
 
         void flush(Itr begin, size_t count) {
             size_t BeginPos = begin.pos();
-            Archive.FlushRunlist(*Runlist, BeginPos, BeginPos + count * sizeof(T));
+            Archive.FlushRunlist(*Runlist, BeginPos, count * sizeof(T));
         }
 
     private:
