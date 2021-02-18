@@ -22,7 +22,7 @@ struct _EGL3File {
     EGL3Run runs[16];
 };
 
-#define DISK_SIZE 1024ull * 1024 * 512
+#define DISK_SIZE 1024ull * 1024 * 1024 * 50
 #define DISK_SIZE_PARTITION DISK_SIZE - 4096 // -1 cluster for the MBR
 
 // true = success
