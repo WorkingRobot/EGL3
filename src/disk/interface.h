@@ -23,6 +23,7 @@ struct _EGL3File {
 };
 
 #define DISK_SIZE 1024ull * 1024 * 512
+#define DISK_SIZE_PARTITION DISK_SIZE - 4096 // -1 cluster for the MBR
 
 // true = success
 // false = failed
@@ -35,19 +36,32 @@ bool EGL3CreateDisk(uint64_t sector_count, const char* label, const EGL3File fil
 #include <unordered_set>
 
 // o_data
-struct AppendingFile {
+class AppendingFile {
+public:
+    AppendingFile();
+
+    int64_t seek(int64_t offset, int whence);
+
+    size_t tell();
+
+    size_t pread(uint8_t* buf, size_t size, int64_t offset);
+
+    size_t pwrite(const uint8_t* buf, size_t size, int64_t offset);
+
+    size_t read(uint8_t* buf, size_t size);
+
+    size_t write(const uint8_t* buf, size_t size);
+
+    uint8_t* try_get_cluster(int64_t cluster_idx);
+
+    uint8_t* get_cluster(int64_t cluster_idx);
+
+private:
     std::unordered_map<uint64_t, uint8_t*> data;
     uint32_t operation_count;
     uint64_t written_bytes;
-    int64_t position;
-
-    AppendingFile() :
-        operation_count(),
-        written_bytes(),
-        position()
-    {
-
-    }
+    size_t position;
+    static constexpr size_t size = DISK_SIZE_PARTITION;
 };
 
 #endif

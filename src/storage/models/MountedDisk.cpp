@@ -4,6 +4,7 @@
 #include "../../utils/Align.h"
 #include "../../utils/Assert.h"
 #include "../../utils/Random.h"
+#include "../../utils/mmio/MmioFile.h"
 
 #include <memory>
 #define WIN32_LEAN_AND_MEAN
@@ -17,6 +18,9 @@ namespace EGL3::Storage::Models {
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / SectorSize;
 
+    // I use sector and cluster interchangably, even though technically a
+    // sector would be 512 bytes and a cluster 4096 bytes, thanks wikipedia
+    // Sorry not sorry, I'll fix that eventually, I guess
     struct MountedData {
         uint8_t MBRData[512];
         std::vector<EGL3File> Files;
@@ -89,35 +93,6 @@ namespace EGL3::Storage::Models {
         EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }
 
-    static __forceinline void HandleCluster(MountedData* Data, UINT64 LCN, UINT8 Buffer[4096]) {
-        if (!LCN) { // MBR cluster
-            memcpy(Buffer, Data->MBRData, 512);
-            return;
-        }
-
-        // NTFS ignores the MBR cluster
-        --LCN;
-
-        auto search = Data->Disk->data.find(LCN);
-        if (search != Data->Disk->data.end()) {
-            memcpy(Buffer, search->second, 4096);
-            return;
-        }
-
-        for (auto& File : Data->Files) {
-            auto CurrentRun = File.runs;
-            uint64_t lIdx = 0;
-            while (CurrentRun->count) {
-                if (CurrentRun->idx <= LCN && uint64_t(CurrentRun->idx) + CurrentRun->count > LCN) {
-                    Data->FileClusterCallback(File.user_context, LCN - CurrentRun->idx + lIdx, Buffer);
-                    return;
-                }
-                lIdx += CurrentRun->count;
-                CurrentRun++;
-            }
-        }
-    }
-
     static inline BOOLEAN ExceptionFilter(ULONG Code, PEXCEPTION_POINTERS Pointers,
         PUINT_PTR PDataAddress)
     {
@@ -129,28 +104,14 @@ namespace EGL3::Storage::Models {
         return EXCEPTION_EXECUTE_HANDLER;
     }
 
-    static VOID ReadCallbackWrapped(SPD_STORAGE_UNIT* StorageUnit, PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, UINT8 ASC, SPD_STORAGE_UNIT_STATUS* Status) {
+    template<class T>
+    static VOID OperationCallback(const T& Execute, UINT8 ASC, SPD_STORAGE_UNIT_STATUS* Status)
+    {
         UINT_PTR ExceptionDataAddress;
         UINT64 Information, * PInformation;
 
         __try {
-            ZeroMemory(Buffer, BlockCount * 512llu);
-
-            UINT8 ClusterBuffer[4096];
-            auto StartCluster = BlockAddress >> 3; // 8 sectors = 1 cluster, we apply alignment downwards
-            auto ThrowawaySectorCount = BlockAddress & 7; // number of sectors to throw away from the beginning
-            auto TotalClusterCount = Utils::Align<8>(ThrowawaySectorCount + BlockCount) >> 3;
-            for (UINT64 i = 0; i < TotalClusterCount; ++i) {
-                memset(ClusterBuffer, 0, 4096);
-                HandleCluster((MountedData*)StorageUnit->UserContext, StartCluster + i, ClusterBuffer);
-                if (i == 0) {
-                    memcpy(Buffer, ClusterBuffer + ThrowawaySectorCount * 512llu, std::min(BlockCount * 512llu, 4096 - ThrowawaySectorCount * 512llu));
-                }
-                else {
-                    memcpy(((UINT8*)Buffer) + i * 4096llu - ThrowawaySectorCount * 512llu, ClusterBuffer, std::min(BlockCount * 512llu, 4096llu));
-                }
-                BlockCount -= 8;
-            }
+            Execute();
         }
         __except (ExceptionFilter(GetExceptionCode(), GetExceptionInformation(), &ExceptionDataAddress)) {
             if (0 != Status)
@@ -167,11 +128,105 @@ namespace EGL3::Storage::Models {
         }
     }
 
+    static void HandleCluster(MountedData* Data, UINT64 Idx, UINT8 Buffer[4096]) {
+        if (!Idx) { // MBR cluster
+            memcpy(Buffer, Data->MBRData, 512);
+            return;
+        }
+
+        // Filesystem ignores the MBR cluster
+        --Idx;
+
+        auto search = Data->Disk->try_get_cluster(Idx);
+        if (search) {
+            memcpy(Buffer, search, 4096);
+            return;
+        }
+
+        for (auto& File : Data->Files) {
+            auto CurrentRun = File.runs;
+            uint64_t lIdx = 0;
+            while (CurrentRun->count) {
+                if (CurrentRun->idx <= Idx && uint64_t(CurrentRun->idx) + CurrentRun->count > Idx) {
+                    Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, Buffer);
+                    return;
+                }
+                lIdx += CurrentRun->count;
+                CurrentRun++;
+            }
+        }
+    }
+
     static BOOLEAN ReadCallback(SPD_STORAGE_UNIT* StorageUnit,
         PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
         SPD_STORAGE_UNIT_STATUS* Status)
     {
-        ReadCallbackWrapped(StorageUnit, Buffer, BlockAddress, BlockCount, SCSI_ADSENSE_UNRECOVERED_ERROR, Status);
+        OperationCallback([&]() {
+            auto Data = (MountedData*)StorageUnit->UserContext;
+            
+            if (BlockAddress & 7) {
+                auto SectorsToSkip = BlockAddress & 7;
+                auto SectorsToRead = std::min((UINT64)BlockCount, 8 - SectorsToSkip);
+
+                uint8_t ClusBuf[4096];
+                HandleCluster(Data, BlockAddress / 8, ClusBuf);
+                memcpy(Buffer, ClusBuf + (SectorsToSkip * 512), SectorsToRead * 512);
+
+                BlockAddress += SectorsToRead;
+                BlockCount -= SectorsToRead;
+                Buffer = (uint8_t*)Buffer + (SectorsToRead * 512);
+            }
+
+            EGL3_CONDITIONAL_LOG(BlockCount == 0 || (BlockAddress & 7) == 0, LogLevel::Critical, "Block address must be a multiple of 8 at this point");
+            while (BlockCount) {
+                if (BlockCount >= 8) {
+                    HandleCluster(Data, BlockAddress / 8, (uint8_t*)Buffer);
+
+                    BlockAddress += 8;
+                    BlockCount -= 8;
+                    Buffer = (uint8_t*)Buffer + 4096;
+                }
+                else {
+                    uint8_t ClusBuf[4096];
+                    HandleCluster(Data, BlockAddress / 8, ClusBuf);
+                    memcpy(Buffer, ClusBuf, (UINT64)BlockCount * 512);
+                    return;
+                }
+            }
+        }, SCSI_ADSENSE_UNRECOVERED_ERROR, Status);
+
+        return TRUE;
+    }
+
+    static BOOLEAN WriteCallback(SPD_STORAGE_UNIT* StorageUnit,
+        PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
+        SPD_STORAGE_UNIT_STATUS* Status)
+    {
+        OperationCallback([&]() {
+
+        }, SCSI_ADSENSE_WRITE_ERROR, Status);
+
+        return TRUE;
+    }
+
+    static BOOLEAN FlushCallback(SPD_STORAGE_UNIT* StorageUnit,
+        UINT64 BlockAddress, UINT32 BlockCount,
+        SPD_STORAGE_UNIT_STATUS* Status)
+    {
+        OperationCallback([&]() {
+
+        }, SCSI_ADSENSE_WRITE_ERROR, Status);
+
+        return TRUE;
+    }
+
+    static BOOLEAN UnmapCallback(SPD_STORAGE_UNIT* StorageUnit,
+        SPD_UNMAP_DESCRIPTOR Descriptors[], UINT32 Count,
+        SPD_STORAGE_UNIT_STATUS* Status)
+    {
+        OperationCallback([&]() {
+
+        }, SCSI_ADSENSE_NO_SENSE, Status);
 
         return TRUE;
     }
@@ -179,9 +234,9 @@ namespace EGL3::Storage::Models {
     constexpr SPD_STORAGE_UNIT_INTERFACE DiskInterface =
     {
         ReadCallback,
-        0, // write
-        0, // flush
-        0, // unmap
+        WriteCallback,
+        FlushCallback,
+        UnmapCallback
     };
 
     void MountedDisk::Create() {

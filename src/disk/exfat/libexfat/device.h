@@ -1,6 +1,6 @@
 #pragma once
 
-#include "systypes.h"
+#include <stdint.h>
 
 struct io_ops {
     // return NULL or a pointer
@@ -11,9 +11,9 @@ struct io_ops {
     int (*close)(void* ctx);
 
     // works like standard posix functions
-    off_t(*lseek)(void* ctx, off_t offset, int whence);
-    ssize_t(*read)(void* ctx, void* buf, size_t size);
-    ssize_t(*write)(void* ctx, const void* buf, size_t size);
-    ssize_t(*pread)(void* ctx, void* buf, size_t size, off_t offset);
-    ssize_t(*pwrite)(void* ctx, const void* buf, size_t size, off_t offset);
+    int64_t(*lseek)(void* ctx, int64_t offset, int whence);
+    size_t(*read)(void* ctx, void* buf, size_t size);
+    size_t(*write)(void* ctx, const void* buf, size_t size);
+    size_t(*pread)(void* ctx, void* buf, size_t size, int64_t offset);
+    size_t(*pwrite)(void* ctx, const void* buf, size_t size, int64_t offset);
 };
