@@ -72,6 +72,9 @@ namespace EGL3::Modules::Game {
                 Utils::HumanizeByteSize(Data[2] * GraphScale)
             );
         });
+
+        // Both for downloading and playing
+        Utils::Mmio::MmioFile::SetWorkingSize();
     }
 
     DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id)

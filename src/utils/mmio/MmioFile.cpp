@@ -4,6 +4,8 @@
 #include "../Assert.h"
 #include "ntdll.h"
 
+#include <Psapi.h>
+
 namespace EGL3::Utils::Mmio {
     MmioFile::MmioFile(bool Readonly) :
         Readonly(Readonly),
@@ -97,7 +99,9 @@ namespace EGL3::Utils::Mmio {
     MmioFile::~MmioFile()
     {
         if (BaseAddress) {
+            Flush();
             NtUnmapViewOfSection(HProcess, BaseAddress);
+            EmptyWorkingSet(HProcess);
         }
         if (HSection) {
             NtClose(HSection);
@@ -137,5 +141,10 @@ namespace EGL3::Utils::Mmio {
         PVOID FlushAddr = BaseAddress;
         IO_STATUS_BLOCK Block;
         NtFlushVirtualMemory(HProcess, &FlushAddr, &FlushSize, &Block);
+    }
+
+    bool MmioFile::SetWorkingSize(uint64_t MinBytes, uint64_t MaxBytes)
+    {
+        return SetProcessWorkingSetSizeEx(GetCurrentProcess(), MinBytes, MaxBytes, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE);
     }
 }

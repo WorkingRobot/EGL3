@@ -70,6 +70,8 @@ namespace EGL3::Utils::Mmio {
 
         void Flush();
 
+        static bool SetWorkingSize(uint64_t MinBytes = 1024 * 1024 * 64, uint64_t MaxBytes = 1024 * 1024 * 1024);
+
     private:
         const bool Readonly;
         MM_HANDLE HProcess;
