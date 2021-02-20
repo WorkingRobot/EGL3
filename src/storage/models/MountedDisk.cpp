@@ -79,6 +79,51 @@ namespace EGL3::Storage::Models {
         DataAllocator.deallocate(Data, 1);
     }
 
+    char MountedDisk::GetDriveLetter()
+    {
+        HKEY MountedDevicesKey;
+        char Letter = '\0';
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\MountedDevices", 0, KEY_READ, &MountedDevicesKey) == ERROR_SUCCESS) {
+            DWORD ValueCount = 0;
+
+            DWORD Ret = RegQueryInfoKey(MountedDevicesKey, NULL, NULL, NULL, NULL, NULL, NULL, &ValueCount, NULL, NULL, NULL, NULL);
+
+            if (Ret == ERROR_SUCCESS) {
+                DWORD ValueNameSize = 255;
+                TCHAR ValueName[255];
+                DWORD ValueType;
+                DWORD ValueDataSize = 255;
+                BYTE ValueData[255];
+                for (DWORD i = 0; i < ValueCount; ++i) {
+                    ValueNameSize = 255;
+                    ValueDataSize = 255;
+                    Ret = RegEnumValue(MountedDevicesKey, i, ValueName, &ValueNameSize, NULL, &ValueType, ValueData, &ValueDataSize);
+                    if (Ret == ERROR_SUCCESS) {
+                        if (ValueType == REG_BINARY && // Data must be binary
+                            ValueDataSize == 12 && // Data is exactly 12 bytes
+                            *(uint32_t*)ValueData == DiskSignature && // First 4 bytes are the MBR signature
+                            *(uint64_t*)(ValueData + sizeof(uint32_t)) == 8 * SectorSize // Next 8 bytes are the offset at which the partition starts (sector 8)
+                            ) {
+                            if (ValueNameSize == 14 && // Name is exactly 14 bytes (matches '\DosDevices\D:')
+                                strncmp(ValueName, "\\DosDevices\\", 12) == 0 && // Starts with '\DosDevices\'
+                                ValueName[13] == ':' && // Last character is :
+                                ValueName[12] >= 'A' && ValueName[12] <= 'Z') // Drive letter must be uppercase
+                            {
+                                Letter = ValueName[12];
+                                break;
+                            }
+                            else {
+                                printf("name did not match, but data did match\n");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        RegCloseKey(MountedDevicesKey);
+        return Letter;
+    }
+
     void MountedDisk::Initialize() {
         auto Data = (MountedData*)PrivateData;
 
@@ -89,7 +134,7 @@ namespace EGL3::Storage::Models {
         };
         EGL3_CONDITIONAL_LOG(SpdDefinePartitionTable(&Partition, 1, Data->MBRData) == ERROR_SUCCESS, LogLevel::Critical, "Could not create MBR data");
 
-        *(uint32_t*)(Data->MBRData + 440) = Utils::Random();// DiskSignature;
+        *(uint32_t*)(Data->MBRData + 440) = DiskSignature; // Utils::Random()
 
         EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }

@@ -141,6 +141,12 @@ namespace EGL3::Storage::Models {
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(3));
+        char DriveLetter = MountedDisk::GetDriveLetter();
+        if (DriveLetter == '\0') {
+            printf("Could not find mounted drive\n");
+            return;
+        }
+        std::filesystem::path MountPath(std::string(1, DriveLetter) + ":/");
 
         std::stringstream CommandLine;
         CommandLine << Game.GetArchive().GetManifestData()->GetLaunchCommand()
@@ -155,7 +161,7 @@ namespace EGL3::Storage::Models {
                     << " -epicuserid=" << Client.GetAuthData().AccountId.value()
                     << " -epiclocale=en";
 
-        uint32_t CreateFlags = NORMAL_PRIORITY_CLASS | DETACHED_PROCESS; // TODO: check if extension is .cmd or .bat
+        uint32_t CreateFlags = NORMAL_PRIORITY_CLASS | DETACHED_PROCESS;
         uint32_t DwFlags = 0;
         uint16_t ShowWindowFlags = SW_HIDE;
 
@@ -183,7 +189,8 @@ namespace EGL3::Storage::Models {
             .hStdError = HANDLE(NULL)
         };
 
-        std::string CommandLineString = Utils::Format("\"%s\" %s", Game.GetArchive().GetManifestData()->GetLaunchExe().c_str(), CommandLine.str().c_str());
+        auto ExePath = MountPath / Game.GetArchive().GetManifestData()->GetLaunchExe();
+        std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), CommandLine.str().c_str());
         printf("%s\n", CommandLineString.c_str());
         PROCESS_INFORMATION ProcInfo;
 
@@ -194,7 +201,7 @@ namespace EGL3::Storage::Models {
             FALSE, // This is true if we were redirecting std outputs (https://github.com/EpicGames/UnrealEngine/blob/2bf1a5b83a7076a0fd275887b373f8ec9e99d431/Engine/Source/Runtime/Core/Private/Windows/WindowsPlatformProcess.cpp#L323)
             (DWORD)CreateFlags,
             NULL,
-            "D:\\", // TODO: don't make this a constant
+            ExePath.parent_path().string().c_str(),
             &StartupInfo,
             &ProcInfo
         );

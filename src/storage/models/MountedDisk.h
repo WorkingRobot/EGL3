@@ -19,6 +19,8 @@ namespace EGL3::Storage::Models {
 
         ~MountedDisk();
 
+        static char GetDriveLetter();
+
         void Initialize();
         
         void Create();
