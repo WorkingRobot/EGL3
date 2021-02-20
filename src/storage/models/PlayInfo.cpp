@@ -1,6 +1,6 @@
 #include "PlayInfo.h"
 
-#include "../game/ArchiveList.h"
+#include "../../utils/Align.h"
 #include "../../utils/StringCompare.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -80,6 +80,49 @@ namespace EGL3::Storage::Models {
     void PlayInfo::OnInitialize()
     {
         Disk->Initialize();
+
+        {
+            ArchiveLists.emplace(Game.GetArchive());
+
+            SectionLUT.reserve(ArchiveLists->Files.size());
+            for (auto& File : ArchiveLists->Files) {
+                auto& Sections = SectionLUT.emplace_back();
+                uint32_t ClusterCount = Utils::Align<4096>(File.FileSize) / 4096;
+                Sections.reserve(ClusterCount);
+
+                auto GetDataItr = [&](uint32_t ChunkIdx) -> uint64_t {
+                    auto& Info = ArchiveLists->ChunkInfos[ChunkIdx];
+                    return Info.DataSector * Game::Header::GetSectorSize();
+                };
+
+                auto Itr = ArchiveLists->ChunkParts.begin() + File.ChunkPartDataStartIdx;
+                auto EndItr = Itr + File.ChunkPartDataSize;
+                uint32_t ItrDataOffset = 0;
+                for (uint32_t i = 0; i < ClusterCount; ++i) {
+                    uint32_t BytesToSelect = std::min(4096llu, File.FileSize - i * 4096llu);
+                    auto& Cluster = Sections.emplace_back();
+                    int j = 0;
+
+                    do {
+                        EGL3_CONDITIONAL_LOG(j < 4, LogLevel::Critical, "Not enough available sections for this cluster");
+                        EGL3_CONDITIONAL_LOG(ItrDataOffset <= Itr->Size, LogLevel::Critical, "Invalid data offset");
+                        if (ItrDataOffset == Itr->Size) {
+                            ++Itr;
+                            ItrDataOffset = 0;
+                        }
+                        auto& ChunkPart = *Itr;
+                        auto& Section = Cluster.Sections[j];
+                        Section.Ptr = GetDataItr(ChunkPart.ChunkIdx) + ChunkPart.Offset + ItrDataOffset;
+                        Section.Size = std::min(ChunkPart.Size - ItrDataOffset, BytesToSelect);
+                        BytesToSelect -= Section.Size;
+                        ItrDataOffset += Section.Size;
+                        ++j;
+                    } while (BytesToSelect);
+
+                    EGL3_CONDITIONAL_LOG(Cluster.TotalSize() == std::min(4096llu, File.FileSize - i * 4096llu), LogLevel::Critical, "Invalid cluster size");
+                }
+            }
+        }
     }
 
     void PlayInfo::OnMount()
@@ -169,56 +212,23 @@ namespace EGL3::Storage::Models {
     {
     }
 
+    template<class> inline constexpr bool always_false_v = false;
+
+    // Technically VCN, but we aren't even using NTFS anymore
     void PlayInfo::HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const
     {
-        const Game::ArchiveList<Game::RunlistId::File> Files(Game.GetArchive());
-        const Game::ArchiveList<Game::RunlistId::ChunkPart> ChunkParts(Game.GetArchive());
-        const Game::ArchiveList<Game::RunlistId::ChunkInfo> ChunkInfos(Game.GetArchive());
-        const Game::ArchiveList<Game::RunlistId::ChunkData> ChunkDatas(Game.GetArchive());
+        auto& File = SectionLUT[(size_t)Ctx];
 
-        auto& File = Files[(int)Ctx];
-
-        uint64_t ByteOffset = LCN * 4096;
-        if (File.FileSize < ByteOffset) {
+        if (File.size() < LCN) {
             memset(Buffer, 0, 4096);
             return;
         }
 
-        auto Itr = ChunkParts.begin() + File.ChunkPartDataStartIdx;
-        auto EndItr = Itr + File.ChunkPartDataSize;
-        for (; Itr != EndItr; ++Itr) {
-            if (ByteOffset < Itr->Size) {
-                break;
-            }
-            ByteOffset -= Itr->Size;
-        }
-        if (Itr == EndItr) {
-            memset(Buffer, 0, 4096);
-            return;
-        }
-
-        uint64_t BytesToRead = 4096;
-        while (BytesToRead && Itr != EndItr) {
-            auto& Info = ChunkInfos[Itr->ChunkIdx];
-
-            auto BeginChunkDataItr = ChunkDatas.begin() + Info.DataSector * Game::Header::GetSectorSize() + Itr->Offset;
-            auto EndChunkDataItr = BeginChunkDataItr + Itr->Size;
-
-            BeginChunkDataItr += ByteOffset;
-            auto BeginPtr = &*BeginChunkDataItr;
-
-            uint64_t BytesAvailable = Itr->Size - ByteOffset;
-
-            if (BytesToRead < BytesAvailable) {
-                EndChunkDataItr = BeginChunkDataItr + BytesToRead;
-                BytesAvailable = BytesToRead;
-            }
-
-            std::copy(BeginChunkDataItr, EndChunkDataItr, Buffer + (4096 - BytesToRead));
-            BytesToRead -= BytesAvailable;
-
-            ByteOffset = 0;
-            Itr++;
+        SectionPart* Itr = (SectionPart*)&File[LCN].Sections;
+        while (Itr->Size) {
+            std::copy(ArchiveLists->ChunkDatas.begin() + Itr->Ptr, ArchiveLists->ChunkDatas.begin() + Itr->Ptr + Itr->Size, Buffer);
+            Buffer = (uint8_t*)Buffer + Itr->Size;
+            ++Itr;
         }
     }
 }

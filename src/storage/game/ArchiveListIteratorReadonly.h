@@ -15,6 +15,8 @@ namespace EGL3::Storage::Game {
 
         using value_type = T;
 
+        ArchiveListIteratorReadonly() = default;
+
         ArchiveListIteratorReadonly(const ArchiveRef<List>& Runlist, size_t Position) :
             Runlist(Runlist)
         {

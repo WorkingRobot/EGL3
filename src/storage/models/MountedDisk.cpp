@@ -7,6 +7,7 @@
 #include "../../utils/mmio/MmioFile.h"
 
 #include <memory>
+#include <thread>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <winspd/winspd.h>
@@ -276,7 +277,7 @@ namespace EGL3::Storage::Models {
         auto Data = (MountedData*)PrivateData;
 
         SpdStorageUnitSetDebugLog(Data->Unit, LogFlags);
-        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 0) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit");
+        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, std::thread::hardware_concurrency() * 4) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit");
         SpdGuardSet(&Data->CloseGuard, Data->Unit);
     }
 
