@@ -2,6 +2,7 @@
 
 #include "../../utils/Align.h"
 #include "../../utils/StringCompare.h"
+#include "../../utils/Hex.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -73,7 +74,7 @@ namespace EGL3::Storage::Models {
             });
         }
 
-        Disk.emplace(MountedFiles);
+        Disk.emplace(MountedFiles, Utils::Random());
         Disk->HandleFileCluster.Set([this](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) { HandleFileCluster(Ctx, LCN, Buffer); });
     }
 
@@ -86,6 +87,7 @@ namespace EGL3::Storage::Models {
 
             SectionLUT.reserve(ArchiveLists->Files.size());
             for (auto& File : ArchiveLists->Files) {
+                //printf("%s %s\n", File.Filename, Utils::ToHex<true>(File.SHA).c_str());
                 auto& Sections = SectionLUT.emplace_back();
                 uint32_t ClusterCount = Utils::Align<4096>(File.FileSize) / 4096;
                 Sections.reserve(ClusterCount);
@@ -133,20 +135,25 @@ namespace EGL3::Storage::Models {
 
     void PlayInfo::OnPlay(Web::Epic::EpicClientAuthed& Client)
     {
+        std::filesystem::path MountPath;
+        {
+            char DriveLetter = '\0';
+            do {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                DriveLetter = Disk->GetDriveLetter();
+                if (DriveLetter == '\0') {
+                    printf("Could not find mounted drive\n");
+                }
+            } while (!DriveLetter);
+            MountPath = std::string(1, DriveLetter) + ":/";
+        }
+
         std::string ExchangeCode;
         {
             auto Resp = Client.GetExchangeCode();
             EGL3_CONDITIONAL_LOG(!Resp.HasError(), LogLevel::Critical, "Could not get exchange code");
             ExchangeCode = Resp->Code;
         }
-
-        std::this_thread::sleep_for(std::chrono::seconds(3));
-        char DriveLetter = MountedDisk::GetDriveLetter();
-        if (DriveLetter == '\0') {
-            printf("Could not find mounted drive\n");
-            return;
-        }
-        std::filesystem::path MountPath(std::string(1, DriveLetter) + ":/");
 
         std::stringstream CommandLine;
         CommandLine << Game.GetArchive().GetManifestData()->GetLaunchCommand()
