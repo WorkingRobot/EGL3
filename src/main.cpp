@@ -8,6 +8,7 @@
 #include "utils/Format.h"
 #include "utils/GladeBuilder.h"
 #include "utils/Platform.h"
+#include "utils/Random.h"
 
 #include "storage/models/MountedDisk.h"
 #include <future>
@@ -43,7 +44,7 @@ namespace EGL3 {
                 { "name/name2.exe", 818304, fopen(R"(C:\Users\Aleks\Desktop\EasyAntiCheat_Setup.exe)", "rb") },
             };
 
-            Storage::Models::MountedDisk Disk(Files);
+            Storage::Models::MountedDisk Disk(Files, Utils::Random());
             Disk.HandleFileCluster.Set([](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) {
                 auto fp = (FILE*)Ctx;
                 fseek(fp, LCN * 4096, SEEK_SET);

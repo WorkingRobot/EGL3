@@ -13,13 +13,13 @@ namespace EGL3::Storage::Models {
 
     class MountedDisk {
     public:
-        MountedDisk(const std::vector<MountedFile>& Files);
+        MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature);
 
         MountedDisk(const MountedDisk&) = delete;
 
         ~MountedDisk();
 
-        static char GetDriveLetter();
+        char GetDriveLetter();
 
         void Initialize();
         
