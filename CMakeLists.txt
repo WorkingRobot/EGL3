@@ -80,12 +80,20 @@ function(ADD_DIR_RECURSIVE PROJECT TARGET_DIR)
     set(${PROJECT}_SOURCES ${${PROJECT}_SOURCES} PARENT_SCOPE)
 endfunction()
 
-add_dir_recursive(EGL3 src)
+add_dir_recursive(EGL3 src/disk)
+add_dir_recursive(EGL3 src/modules)
+add_dir_recursive(EGL3 src/storage)
+add_dir_recursive(EGL3 src/utils)
+add_dir_recursive(EGL3 src/web)
+add_dir_recursive(EGL3 src/widgets)
+add_file(EGL3 src/main.cpp)
 add_file(EGL3 src/main.rc)
 add_file(EGL3 src/main.manifest)
 if (ENABLE_TRACY)
     add_file(EGL3 tracy/TracyClient.cpp)
 endif()
+
+add_dir_recursive(EGL3_SRV src/srv)
 
 
 ## Subsystem Options ##
@@ -102,7 +110,8 @@ endif()
 ## Define EGL3 executable ##
 
 add_executable(EGL3 ${SUBSYSTEM} ${EGL3_SOURCES})
-install(TARGETS EGL3 DESTINATION bin)
+add_executable(EGL3_SRV ${EGL3_SRV_SOURCES})
+install(TARGETS EGL3 EGL3_SRV DESTINATION bin)
 
 
 ## Dependencies ##
@@ -187,11 +196,13 @@ target_include_directories(EGL3 SYSTEM PRIVATE ${GTKMM_INCLUDE_DIRS})
 
 # C++20 #
 set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
+set_property(TARGET EGL3_SRV PROPERTY CXX_STANDARD 20)
 
 # Add .pdb for release builds #
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
    target_compile_options(EGL3 PRIVATE /Zi)
-   set_target_properties(EGL3 PROPERTIES
+   target_compile_options(EGL3_SRV PRIVATE /Zi)
+   set_target_properties(EGL3 EGL3_SRV PROPERTIES
         LINK_FLAGS "/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"
         COMPILE_PDB_NAME EGL3 
         COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
