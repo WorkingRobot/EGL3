@@ -20,13 +20,13 @@ namespace EGL3::Storage::Models {
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / SectorSize;
 
-    // I use sector and cluster interchangably, even though technically a
-    // sector would be 512 bytes and a cluster 4096 bytes, thanks wikipedia
+    // I use sector and cluster somewhat interchangably, even though technically
+    // a sector would be 512 bytes and a cluster 4096 bytes, thanks wikipedia
     // Sorry not sorry, I'll fix that eventually, I guess
     struct MountedData {
         uint8_t MBRData[4096];
         uint8_t BlankData[4096];
-        uint32_t DiskSignature; // 0x334C4745 = "EGL3"
+        uint32_t DiskSignature; // Used to be 0x334C4745 = "EGL3", but not anymore
         std::vector<EGL3File> Files;
         AppendingFile* Disk;
         SPD_STORAGE_UNIT* Unit;
@@ -300,14 +300,12 @@ namespace EGL3::Storage::Models {
             SPD_STORAGE_UNIT_PARAMS Params{
                 .BlockCount = DiskSize * SectorsPerMegabyte,
                 .BlockLength = SectorSize,
+                .DeviceType = 0,
                 .WriteProtected = 1,
                 .CacheSupported = 0,
                 .UnmapSupported = 0,
                 .EjectDisabled = 1, // disables eject ui
-                // https://social.msdn.microsoft.com/Forums/WINDOWS/en-US/6223c501-f55a-4df3-a148-df12d8032c7b#ec8f32d4-44ea-4523-9401-e7c8c1f19fed
-                // Since its inception USBStor.sys specifies 0x10000 for MaximumTransferLength
-                // Best to stay at 64kb, but some have gone to 128kb
-                .MaxTransferLength = 1024 * 1024
+                .MaxTransferLength = 2 * 1024 * 1024
             };
 
             static_assert(sizeof(Params.Guid) == 16, "Guid is not 16 bytes (?)");
@@ -319,7 +317,9 @@ namespace EGL3::Storage::Models {
             // This can fail with error code 5
             // https://github.com/billziss-gh/winspd/blob/master/doc/WinSpd-Tutorial.asciidoc#testing-the-integration-with-the-operating-system
             // "This happens because mounting a storage unit requires administrator privileges."
-            EGL3_CONDITIONAL_LOG(SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit) == ERROR_SUCCESS, LogLevel::Critical, "Could not create storage unit");
+            auto Ret = SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit);
+            printf("%d\n", Ret);
+            EGL3_CONDITIONAL_LOG(Ret == ERROR_SUCCESS, LogLevel::Critical, "Could not create storage unit");
 
             Data->Unit->UserContext = Data;
         }
