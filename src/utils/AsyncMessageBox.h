@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef SERVICE_NAME
+#error AsyncMessageBox cannot be used as a service.
+#endif
+
 #include <stdint.h>
 
 namespace EGL3::Utils {

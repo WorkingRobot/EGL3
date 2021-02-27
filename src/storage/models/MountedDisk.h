@@ -19,7 +19,7 @@ namespace EGL3::Storage::Models {
 
         ~MountedDisk();
 
-        char GetDriveLetter();
+        char GetDriveLetter() const;
 
         void Initialize();
         

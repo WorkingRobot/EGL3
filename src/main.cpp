@@ -1,4 +1,5 @@
 #include "modules/ModuleList.h"
+#include "srv/pipe/Client.h"
 #include "storage/game/Archive.h"
 #include "storage/game/ArchiveList.h"
 #include "storage/persistent/Store.h"
@@ -36,6 +37,20 @@ void operator delete(void* ptr) noexcept
 namespace EGL3 {
     __forceinline int Start() {
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
+
+        if constexpr (false)
+        {
+            Service::Pipe::Client Client("\\\\.\\pipe\\mynamedpipe");
+            void* Ctx = nullptr;
+            EGL3_CONDITIONAL_LOG(Client.OpenArchive(R"(J:\Code\Visual Studio 2017\Projects\EGL3\out\build\x64-Release\Fortnite.egia)", Ctx), LogLevel::Critical, "Could not OpenArchive");
+            EGL3_CONDITIONAL_LOG(Client.ReadArchive(Ctx), LogLevel::Critical, "Could not ReadArchive");
+            EGL3_CONDITIONAL_LOG(Client.InitializeDisk(Ctx), LogLevel::Critical, "Could not InitializeDisk");
+            EGL3_CONDITIONAL_LOG(Client.CreateLUT(Ctx), LogLevel::Critical, "Could not CreateLUT");
+            EGL3_CONDITIONAL_LOG(Client.CreateDisk(Ctx), LogLevel::Critical, "Could not CreateDisk");
+            EGL3_CONDITIONAL_LOG(Client.MountDisk(Ctx), LogLevel::Critical, "Could not MountDisk");
+            printf("dun!\n");
+            return 0;
+        }
 
         if constexpr(false)
         {

@@ -1,7 +1,10 @@
 #include "Service.h"
 
+#include "pipe/Server.h"
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include "..\modules\Game\Service.h"
 
 #define SVC_ERROR ((DWORD)0xC0020001L)
 
@@ -16,21 +19,9 @@ VOID ReportSvcStatus(DWORD CurrentState, DWORD ExitCode, DWORD WaitHint);
 VOID SvcInit(DWORD argc, LPSTR* argv);
 VOID SvcReportEvent(LPCSTR Function);
 
-void EGL3SvcMain()
-{
-    SERVICE_TABLE_ENTRY DispatchTable[] = {
-        { (LPSTR)SVCNAME, (LPSERVICE_MAIN_FUNCTION)SvcMain },
-        { NULL, NULL }
-    };
-
-    if (!StartServiceCtrlDispatcher(DispatchTable)) {
-        SvcReportEvent("StartServiceCtrlDispatcher");
-    }
-}
-
 VOID WINAPI SvcMain(DWORD argc, LPSTR* argv)
 {
-    SvcStatusHandle = RegisterServiceCtrlHandler(SVCNAME, SvcCtrlHandler);
+    SvcStatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, SvcCtrlHandler);
 
     if (SvcStatusHandle == NULL) {
         SvcReportEvent("RegisterServiceCtrlHandler");
@@ -62,6 +53,8 @@ VOID SvcInit(DWORD argc, LPSTR* argv)
     // Report running status when initialization is complete.
 
     ReportSvcStatus(SERVICE_RUNNING, NO_ERROR, 0);
+
+    EGL3::Service::Pipe::Server Server(EGL3::Service::Pipe::PipeName);
 
     // TO_DO: Perform work until service stops.
 
@@ -123,13 +116,13 @@ VOID SvcReportEvent(LPCSTR Function)
     LPCSTR lpszStrings[2];
     CHAR Buffer[80];
 
-    hEventSource = RegisterEventSource(NULL, SVCNAME);
+    hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
 
     if (NULL != hEventSource)
     {
         sprintf_s(Buffer, "%s failed with %d", Function, GetLastError());
 
-        lpszStrings[0] = SVCNAME;
+        lpszStrings[0] = SERVICE_NAME;
         lpszStrings[1] = Buffer;
 
         ReportEvent(hEventSource,// event log handle
@@ -143,5 +136,19 @@ VOID SvcReportEvent(LPCSTR Function)
             NULL);               // no binary data
 
         DeregisterEventSource(hEventSource);
+    }
+}
+
+namespace EGL3::Service {
+    void RunMain()
+    {
+        SERVICE_TABLE_ENTRY DispatchTable[] = {
+            { (LPSTR)SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)SvcMain },
+            { NULL, NULL }
+        };
+
+        if (!StartServiceCtrlDispatcher(DispatchTable)) {
+            SvcReportEvent("StartServiceCtrlDispatcher");
+        }
     }
 }

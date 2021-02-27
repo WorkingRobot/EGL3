@@ -1,38 +1,40 @@
-#include "../utils/Crc32.h"
-#include "Service.h"
-#include "ServiceConfig.h"
-#include "ServiceControl.h"
+#include "srv/Service.h"
+#include "srv/ServiceConfig.h"
+#include "srv/ServiceControl.h"
+#include "utils/Crc32.h"
+
+using namespace EGL3::Service;
 
 int main(int argc, char* argv[]) {
     if (argc > 1) {
         switch (EGL3::Utils::Crc32<true>(argv[1]))
         {
         case EGL3::Utils::Crc32("INSTALL"):
-            EGL3SvcInstall();
+            RunInstall();
             break;
         case EGL3::Utils::Crc32("QUERY"):
-            EGL3SvcQuery();
+            RunQuery();
             break;
         case EGL3::Utils::Crc32("DESCRIBE"):
-            EGL3SvcDescribe();
+            RunDescribe();
             break;
         case EGL3::Utils::Crc32("ENABLE"):
-            EGL3SvcEnable();
+            RunEnable();
             break;
         case EGL3::Utils::Crc32("DISABLE"):
-            EGL3SvcDisable();
+            RunDisable();
             break;
         case EGL3::Utils::Crc32("DELETE"):
-            EGL3SvcDelete();
+            RunDelete();
             break;
         case EGL3::Utils::Crc32("START"):
-            EGL3SvcStart();
+            RunStart();
             break;
         case EGL3::Utils::Crc32("STOP"):
-            EGL3SvcStop();
+            RunStop();
             break;
         case EGL3::Utils::Crc32("DACL"):
-            EGL3SvcDacl();
+            RunDacl();
             break;
         default:
             printf("unknown command\n");
@@ -40,6 +42,6 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        EGL3SvcMain();
+        RunMain();
     }
 }

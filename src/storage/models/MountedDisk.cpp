@@ -36,6 +36,7 @@ namespace EGL3::Storage::Models {
         MountedData(const decltype(MountedDisk::HandleFileCluster)& Callback) :
             MBRData{},
             BlankData{},
+            DiskSignature(),
             Disk(nullptr),
             Unit(nullptr),
             CloseGuard(SPD_GUARD_INIT),
@@ -58,7 +59,6 @@ namespace EGL3::Storage::Models {
         PrivateData(DataAllocator.allocate(1))
     {
         auto Data = (MountedData*)PrivateData;
-
         std::construct_at(Data, HandleFileCluster);
 
         Data->Files.reserve(Files.size());
@@ -85,9 +85,9 @@ namespace EGL3::Storage::Models {
         DataAllocator.deallocate(Data, 1);
     }
 
-    char MountedDisk::GetDriveLetter()
+    char MountedDisk::GetDriveLetter() const
     {
-        auto Data = (MountedData*)PrivateData;
+        auto Data = (const MountedData*)PrivateData;
 
         HKEY MountedDevicesKey;
         char Letter = '\0';

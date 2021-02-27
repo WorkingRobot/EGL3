@@ -89,11 +89,19 @@ add_dir_recursive(EGL3 src/widgets)
 add_file(EGL3 src/main.cpp)
 add_file(EGL3 src/main.rc)
 add_file(EGL3 src/main.manifest)
+add_file(EGL3 src/srv/pipe/Client.cpp)
 if (ENABLE_TRACY)
     add_file(EGL3 tracy/TracyClient.cpp)
 endif()
 
 add_dir_recursive(EGL3_SRV src/srv)
+add_dir_recursive(EGL3_SRV src/utils/mmio)
+add_dir_recursive(EGL3_SRV src/storage/game)
+add_dir_recursive(EGL3_SRV src/disk)
+add_file(EGL3_SRV src/storage/models/MountedDisk.cpp)
+add_file(EGL3_SRV src/utils/StackTrace.cpp)
+add_file(EGL3_SRV src/utils/Random.cpp)
+add_file(EGL3_SRV src/srv_main.cpp)
 
 
 ## Subsystem Options ##
@@ -109,9 +117,15 @@ endif()
 
 ## Define EGL3 executable ##
 
+message(STATUS ${EGL3_SOURCES})
 add_executable(EGL3 ${SUBSYSTEM} ${EGL3_SOURCES})
 add_executable(EGL3_SRV ${EGL3_SRV_SOURCES})
 install(TARGETS EGL3 EGL3_SRV DESTINATION bin)
+
+target_compile_definitions(EGL3_SRV PRIVATE
+    SERVICE_NAME="SvcName"
+    SERVICE_DESC="This is a test description"
+)
 
 
 ## Dependencies ##
@@ -144,7 +158,9 @@ target_include_directories(EGL3 PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
 
 # WinSpd #
 target_include_directories(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
+target_include_directories(EGL3_SRV PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
 target_link_libraries(EGL3 "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib")
+target_link_libraries(EGL3_SRV "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib")
 
 # ZenReader #
 add_subdirectory(ZenReader)
@@ -153,6 +169,7 @@ target_include_directories(EGL3 PRIVATE ${ZenReader_SOURCE_DIR}/src)
 
 # NtDll (Used for mmio) #
 target_link_libraries(EGL3 "${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")
+target_link_libraries(EGL3_SRV "${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")
 
 # GUI #
 

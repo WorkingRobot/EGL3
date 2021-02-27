@@ -1,11 +1,12 @@
 #pragma once
 
-#define NOMINMAX
-#include <windows.h>
-
 #if __cplusplus
 extern "C" {
 #endif
+
+#define NOMINMAX
+#include <windows.h>
+#include <bcrypt.h>
 
 typedef struct _UNICODE_STRING
 {

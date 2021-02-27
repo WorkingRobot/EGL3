@@ -5,14 +5,15 @@ namespace EGL3::Modules::Game {
 
     PlayModule::PlayModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
         Storage(Storage),
-        Auth(Modules.GetModule<AuthorizationModule>())
+        Auth(Modules.GetModule<AuthorizationModule>()),
+        Service(Modules.GetModule<ServiceModule>())
     {
 
     }
 
     PlayInfo& PlayModule::OnPlayClicked(const InstalledGame& Game)
     {
-        CurrentPlay = std::make_unique<PlayInfo>(Game);
+        CurrentPlay = std::make_unique<PlayInfo>(Game, Service.GetClient());
         CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
             switch (NewState)
             {

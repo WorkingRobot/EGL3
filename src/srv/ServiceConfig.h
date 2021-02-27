@@ -2,17 +2,16 @@
 
 #include <string>
 
-#define SVCNAME "SvcName"
-#define SVCDESC "This is a test description"
+namespace EGL3::Service {
+    void RunInstall();
 
-void EGL3SvcInstall();
+    void RunQuery();
 
-void EGL3SvcQuery();
+    void RunDescribe();
 
-void EGL3SvcDescribe();
+    void RunEnable();
 
-void EGL3SvcEnable();
+    void RunDisable();
 
-void EGL3SvcDisable();
-
-void EGL3SvcDelete();
+    void RunDelete();
+}

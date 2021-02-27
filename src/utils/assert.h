@@ -1,7 +1,13 @@
 #pragma once
 
+#ifndef SERVICE_NAME
 #include "../web/Hosts.h"
 #include "AsyncMessageBox.h"
+#else
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#endif
 #include "StackTrace.h"
 
 #include <stdio.h>
@@ -57,9 +63,34 @@ namespace EGL3 {
         }
         _EGL3_LogFunc(Level, ConditionString, Message, Filename, Line);
         if constexpr (Level == LogLevel::Critical) {
+#ifndef SERVICE_NAME
             char Text[2048];
             sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename, Line, ConditionString ? ConditionString : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
             Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
+#else
+            HANDLE hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
+            if (hEventSource) {
+                LPCSTR lpszStrings[2];
+                CHAR Buffer[2048];
+
+                sprintf_s(Buffer, "Message: %s\nAt: %s @ %u\nReason: %s", Message, Filename, Line, ConditionString ? ConditionString : "None");
+
+                lpszStrings[0] = SERVICE_NAME;
+                lpszStrings[1] = Buffer;
+
+                ReportEvent(hEventSource,// event log handle
+                    EVENTLOG_ERROR_TYPE, // event type
+                    0,                   // event category
+                    0xC0020001L,         // event identifier (SVC_ERROR)
+                    NULL,                // no security identifier
+                    2,                   // size of lpszStrings array
+                    0,                   // no binary data
+                    lpszStrings,         // array of strings
+                    NULL);               // no binary data
+
+                DeregisterEventSource(hEventSource);
+            }
+#endif
             std::abort();
         }
         return Condition;

@@ -2,10 +2,10 @@
 
 #include <string>
 
-#define SVCNAME "SvcName"
+namespace EGL3::Service {
+    void RunStart();
 
-void EGL3SvcStart();
+    void RunStop();
 
-void EGL3SvcStop();
-
-void EGL3SvcDacl();
+    void RunDacl();
+}

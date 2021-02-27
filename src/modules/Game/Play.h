@@ -7,6 +7,7 @@
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../Authorization.h"
+#include "Service.h"
 
 namespace EGL3::Modules::Game {
     class PlayModule : public BaseModule {
@@ -18,6 +19,7 @@ namespace EGL3::Modules::Game {
     private:
         Storage::Persistent::Store& Storage;
         Modules::AuthorizationModule& Auth;
+        ServiceModule& Service;
 
         std::unique_ptr<Storage::Models::PlayInfo> CurrentPlay;
     };
