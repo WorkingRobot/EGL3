@@ -5,5 +5,3 @@
 #define SVCNAME "SvcName"
 
 void EGL3SvcMain();
-
-void EGL3SvcInstall();

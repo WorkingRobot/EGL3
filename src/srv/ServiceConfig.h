@@ -5,6 +5,8 @@
 #define SVCNAME "SvcName"
 #define SVCDESC "This is a test description"
 
+void EGL3SvcInstall();
+
 void EGL3SvcQuery();
 
 void EGL3SvcDescribe();
