@@ -22,6 +22,7 @@ namespace EGL3::Service::Pipe {
         bool QueryPath(void* Ctx, std::filesystem::path& Path);
         bool QueryLetter(void* Ctx, char& Letter);
         bool QueryStats(void* Ctx, MountedArchive::Stats& Stats);
+        bool QueryServer(uint32_t& ProtocolVersion, uint32_t& MountedDiskCount);
 
     private:
         template<MessageType Type>

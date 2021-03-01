@@ -5,6 +5,7 @@
 
 namespace EGL3::Service::Pipe {
     static constexpr const char* PipeName = R"(\\.\pipe\EGL3Connection)";
+    static constexpr uint32_t ProtocolVersion = 0x02;
 
     enum class MessageType : uint32_t {
         OpenArchive     = 0x00, // Open archive
@@ -19,6 +20,7 @@ namespace EGL3::Service::Pipe {
         QueryPath       = 0x20,
         QueryLetter     = 0x21,
         QueryStats      = 0x22,
+        QueryServer     = 0x23,
 
         Error           = 0xFF
     };
@@ -78,5 +80,16 @@ namespace EGL3::Service::Pipe {
     template<>
     struct Response<MessageType::QueryStats> : public BaseMessage<MessageType::QueryStats> {
         MountedArchive::Stats Stats;
+    };
+
+    template<>
+    struct Request<MessageType::QueryServer> : public BaseMessage<MessageType::QueryServer> {
+
+    };
+
+    template<>
+    struct Response<MessageType::QueryServer> : public BaseMessage<MessageType::QueryServer> {
+        uint32_t ProtocolVersion;
+        uint32_t MountedDiskCount;
     };
 }

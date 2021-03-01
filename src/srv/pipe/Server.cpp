@@ -179,6 +179,13 @@ namespace EGL3::Service::Pipe {
         Output.Stats = Data->QueryStats();
     }
 
+    template<>
+    void Pipe::Server::HandleRequest<MessageType::QueryServer>(const Request<MessageType::QueryServer>& Input, Response<MessageType::QueryServer>& Output)
+    {
+        Output.ProtocolVersion = ProtocolVersion;
+        Output.MountedDiskCount = Mounts.size();
+    }
+
     template<MessageType Type>
     void Server::HandleRequestTyped(const std::unique_ptr<char[]>& Input, uint32_t InputSize, std::unique_ptr<char[]>& Output, uint32_t& OutputSize)
     {
@@ -228,6 +235,9 @@ namespace EGL3::Service::Pipe {
             break;
         case MessageType::QueryStats:
             HandleRequestTyped<MessageType::QueryStats>(Input, InputSize, Output, OutputSize);
+            break;
+        case MessageType::QueryServer:
+            HandleRequestTyped<MessageType::QueryServer>(Input, InputSize, Output, OutputSize);
             break;
         default:
             std::construct_at((Response<MessageType::Error>*)Output.get());

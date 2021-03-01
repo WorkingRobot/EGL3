@@ -192,6 +192,20 @@ namespace EGL3::Service::Pipe {
         return true;
     }
 
+    bool Client::QueryServer(uint32_t& ProtocolVersion, uint32_t& MountedDiskCount)
+    {
+        Request<MessageType::QueryServer> Req{};
+        Response<MessageType::QueryServer> Resp{};
+
+        if (!Transact(Req, Resp)) {
+            return false;
+        }
+
+        ProtocolVersion = Resp.ProtocolVersion;
+        MountedDiskCount = Resp.MountedDiskCount;
+        return true;
+    }
+
     template<MessageType Type>
     bool Client::Transact(const typename Request<Type>& Req, typename Response<Type>& Resp)
     {
