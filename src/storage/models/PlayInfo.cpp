@@ -32,6 +32,7 @@ namespace EGL3::Storage::Models {
     void PlayInfo::Begin() {
         PrimaryTask = std::async(std::launch::async, [this]() {
             SetState(PlayInfoState::Opening);
+            EGL3_CONDITIONAL_LOG(Game.OpenArchiveRead(), LogLevel::Critical, "Could not open archive");
             EGL3_CONDITIONAL_LOG(PipeClient.OpenArchive(Game.GetPath(), PipeContext), LogLevel::Critical, "Could not open archive");
 
             SetState(PlayInfoState::Reading);

@@ -1,7 +1,9 @@
 #include "Server.h"
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
+#include <aclapi.h>
 
 namespace EGL3::Service::Pipe {
     Server::Server(const char* Name) :
@@ -16,11 +18,40 @@ namespace EGL3::Service::Pipe {
     }
 
     void Server::HandleConnectionThread() {
+        PSID EveryoneSID = NULL;
+        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+        EGL3_CONDITIONAL_LOG(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &EveryoneSID), LogLevel::Critical, "Could not get SID");
+
+        SECURITY_ATTRIBUTES SAttr{
+            .nLength = sizeof(SECURITY_ATTRIBUTES),
+            .lpSecurityDescriptor = NULL,
+            .bInheritHandle = FALSE
+        };
+
+        EXPLICIT_ACCESS Ace{
+            .grfAccessPermissions = FILE_GENERIC_READ | GENERIC_WRITE ,
+            .grfAccessMode = SET_ACCESS,
+            .grfInheritance = NO_INHERITANCE,
+            .Trustee = TRUSTEE{
+                .TrusteeForm = TRUSTEE_IS_SID,
+                .TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP,
+                .ptstrName = (LPTSTR)EveryoneSID
+            }
+        };
+
+        PACL Acl = NULL;
+        EGL3_CONDITIONAL_LOG(SetEntriesInAcl(1, &Ace, NULL, &Acl) == ERROR_SUCCESS, LogLevel::Critical, "Could not set ACL entries");
+        auto Sd = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
+        EGL3_CONDITIONAL_LOG(InitializeSecurityDescriptor(Sd, SECURITY_DESCRIPTOR_REVISION), LogLevel::Critical, "Could not allocate SD");
+        EGL3_CONDITIONAL_LOG(SetSecurityDescriptorDacl(Sd, TRUE, Acl, FALSE), LogLevel::Critical, "Could not set dacl");
+
+        SAttr.lpSecurityDescriptor = Sd;
+
         while (true) {
-            HANDLE PipeHandle = CreateNamedPipe(PipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, BufferSize, BufferSize, 0, NULL);
+            HANDLE PipeHandle = CreateNamedPipe(PipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_REJECT_REMOTE_CLIENTS | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, BufferSize, BufferSize, 0, &SAttr);
             if (PipeHandle == INVALID_HANDLE_VALUE) {
                 printf("CreateNamedPipe failed, GLE=%d.\n", GetLastError());
-                return;
+                break;
             }
 
             if (ConnectNamedPipe(PipeHandle, NULL) || GetLastError() == ERROR_PIPE_CONNECTED) {
@@ -30,6 +61,10 @@ namespace EGL3::Service::Pipe {
                 CloseHandle(PipeHandle);
             }
         }
+
+        LocalFree(Sd);
+        LocalFree(Acl);
+        FreeSid(EveryoneSID);
     }
 
     void Server::HandleConnection(void* PipeHandle)
@@ -167,7 +202,33 @@ namespace EGL3::Service::Pipe {
     void Pipe::Server::HandleRequest<MessageType::QueryLetter>(const Request<MessageType::QueryLetter>& Input, Response<MessageType::QueryLetter>& Output)
     {
         auto Data = (MountedArchive*)Input.Context;
+        {
+            HANDLE hEventSource;
+            LPCSTR lpszStrings[2];
+            CHAR Buffer[80];
 
+            hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
+
+            if (NULL != hEventSource)
+            {
+                sprintf_s(Buffer, "querying letter");
+
+                lpszStrings[0] = SERVICE_NAME;
+                lpszStrings[1] = Buffer;
+
+                ReportEvent(hEventSource,// event log handle
+                    EVENTLOG_ERROR_TYPE, // event type
+                    0,                   // event category
+                    ((DWORD)0xC0020001L),           // event identifier
+                    NULL,                // no security identifier
+                    2,                   // size of lpszStrings array
+                    0,                   // no binary data
+                    lpszStrings,         // array of strings
+                    NULL);               // no binary data
+
+                DeregisterEventSource(hEventSource);
+            }
+        }
         Output.Letter = Data->QueryDriveLetter();
     }
 

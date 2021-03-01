@@ -5,7 +5,8 @@
 #include <Windows.h>
 
 namespace EGL3::Service::Pipe {
-    Client::Client(const char* Name)
+    Client::Client(const char* Name) :
+        Connected(false)
     {
         while (true) {
             PipeHandle = CreateFile(Name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
@@ -31,11 +32,18 @@ namespace EGL3::Service::Pipe {
             printf("SetNamedPipeHandleState failed, GLE=%d.\n", GetLastError());
             return;
         }
+
+        Connected = true;
     }
 
     Client::~Client()
     {
         CloseHandle(PipeHandle);
+    }
+
+    bool Client::IsConnected() const
+    {
+        return Connected;
     }
 
     bool Client::OpenArchive(const std::filesystem::path& Path, void*& Ctx)

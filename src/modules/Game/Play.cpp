@@ -17,11 +17,20 @@ namespace EGL3::Modules::Game {
         CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
             switch (NewState)
             {
+            case PlayInfoState::Opening:
+                printf("Opening\n");
+                break;
             case PlayInfoState::Reading:
                 printf("Reading\n");
                 break;
             case PlayInfoState::Initializing:
                 printf("Initializing\n");
+                break;
+            case PlayInfoState::Creating:
+                printf("Creating\n");
+                break;
+            case PlayInfoState::Starting:
+                printf("Starting\n");
                 break;
             case PlayInfoState::Mounting:
                 printf("Mounting\n");
