@@ -12,6 +12,7 @@ namespace EGL3::Modules::Game {
     DownloadModule::DownloadModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
         Storage(Storage),
         Auth(Modules.GetModule<AuthorizationModule>()),
+        GameInfo(Modules.GetModule<GameInfoModule>()),
         Taskbar(Modules.GetModule<TaskbarModule>()),
         MainStack(Builder.GetWidget<Gtk::Stack>("MainStack")),
         SwitchStack(Builder.GetWidget<Gtk::Stack>("DownloadStack")),
@@ -116,28 +117,13 @@ namespace EGL3::Modules::Game {
 
     void DownloadModule::OnDownloadOkClicked()
     {
-//#define DOWNLOAD_DEBUG
-        CurrentDownload->BeginDownload([this](std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
-            if (!Auth.IsLoggedIn()) {
-                return Web::ErrorData::Status::InvalidToken;
+        CurrentDownload->BeginDownload([this](Storage::Game::GameId Id, std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
+            auto Resp = GameInfo.GetVersionData(Id);
+            if (Resp.HasError()) {
+                return Resp.GetError();
             }
-#ifdef DOWNLOAD_DEBUG
-            auto InfoResp = Auth.GetClientLauncher().GetLauncherDownloadInfo("Windows", "Live-EternalKnight");
-#else
-            auto InfoResp = Auth.GetClientLauncher().GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
-#endif
-            if (InfoResp.HasError()) {
-                return InfoResp.GetError();
-            }
-#ifdef DOWNLOAD_DEBUG
-            auto Element = InfoResp->GetElement("EpicGamesLauncherContent");
-#else
-            auto Element = InfoResp->GetElement("Fortnite");
-#endif
-            if (!Element) {
-                return Web::ErrorData::Status::Failure;
-            }
-            auto PickedManifest = Element->PickManifest();
+
+            auto& PickedManifest = Resp->Element.PickManifest();
             CloudDir = PickedManifest.GetCloudDir();
             return Web::Epic::EpicClient().GetManifest(PickedManifest);
         });

@@ -16,8 +16,10 @@
 
 #include "Game/Game.h"
 #include "Game/Download.h"
+#include "Game/GameInfo.h"
 #include "Game/Play.h"
 #include "Game/Service.h"
+#include "Game/UpdateCheck.h"
 
 namespace EGL3::Modules {
     ModuleList::ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
@@ -48,8 +50,10 @@ namespace EGL3::Modules {
         AddModule<Friends::FriendsModule>(*this, Storage, Builder);
 
         AddModule<Game::ServiceModule>();
+        AddModule<Game::GameInfoModule>(*this);
         AddModule<Game::DownloadModule>(*this, Storage, Builder);
         AddModule<Game::PlayModule>(*this, Storage, Builder);
+        AddModule<Game::UpdateCheckModule>(*this, Storage);
         AddModule<Game::GameModule>(*this, Storage, Builder);
     }
 

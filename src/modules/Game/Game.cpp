@@ -4,6 +4,9 @@
 #include "../../utils/Assert.h"
 #include "../../web/epic/EpicClient.h"
 
+#include <charconv>
+#include <regex>
+
 namespace EGL3::Modules::Game {
     GameModule::GameModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
         Storage(Storage),
@@ -11,6 +14,7 @@ namespace EGL3::Modules::Game {
         Auth(Modules.GetModule<AuthorizationModule>()),
         Download(Modules.GetModule<DownloadModule>()),
         Play(Modules.GetModule<PlayModule>()),
+        UpdateCheck(Modules.GetModule<UpdateCheckModule>()),
         PlayBtn(Builder.GetWidget<Gtk::Button>("PlayBtn")),
         PlayMenuBtn(Builder.GetWidget<Gtk::MenuButton>("PlayDropdown")),
         PlayMenuVerifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
@@ -25,6 +29,15 @@ namespace EGL3::Modules::Game {
         CurrentStateDispatcher.connect([this]() { UpdateToCurrentState(); });
 
         Auth.AuthChanged.connect(sigc::mem_fun(*this, &GameModule::OnAuthChanged));
+
+        UpdateCheck.OnUpdateAvailable.connect([this](Storage::Game::GameId Id, const Storage::Models::VersionData& Data) {
+            if (Id == Storage::Game::GameId::Fortnite) {
+                if (CurrentState == State::Play) {
+                    printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
+                    SetCurrentState(State::Update);
+                }
+            }
+        });
 
         UpdateToCurrentState();
     }

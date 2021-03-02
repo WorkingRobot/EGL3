@@ -119,7 +119,7 @@ namespace EGL3::Storage::Models {
                 std::optional<Web::Epic::BPS::Manifest> Manifest;
                 std::string CloudDir;
                 do {
-                    auto Resp = GetLatestManifest(CloudDir);
+                    auto Resp = GetLatestManifest(Id, CloudDir);
                     if (!Resp.HasError() && !Resp->HasError()) {
                         Manifest.emplace(std::move(Resp.Get()));
                     }

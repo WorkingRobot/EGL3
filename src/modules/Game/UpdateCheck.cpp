@@ -5,7 +5,8 @@ namespace EGL3::Modules::Game {
         Storage(Storage),
         Auth(Modules.GetModule<AuthorizationModule>()),
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
-        RequestVersionData([](Storage::Game::GameId Id) -> Storage::Models::VersionData { return { 0 }; })
+        GameInfo(Modules.GetModule<GameInfoModule>()),
+        Cancelled(false)
     {
         auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
         if (Freq < std::chrono::seconds(10)) {
@@ -34,11 +35,14 @@ namespace EGL3::Modules::Game {
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)
     {
         if (Auth.IsLoggedIn()) {
-            auto Data = RequestVersionData(Id);
-            if (Data.VersionNum != StoredVersion) { // Currently updating, etc.
+            auto Data = GameInfo.GetVersionData(Id);
+            if (Data.HasError()) {
                 return;
             }
-            OnUpdateAvailable(Data);
+            if (Data->VersionNum == StoredVersion) { // Currently updating, etc.
+                return;
+            }
+            OnUpdateAvailable(Id, Data.Get());
         }
     }
 

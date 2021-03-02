@@ -9,6 +9,7 @@
 #include "../Authorization.h"
 #include "Download.h"
 #include "Play.h"
+#include "UpdateCheck.h"
 
 #include <gtkmm.h>
 
@@ -50,6 +51,7 @@ namespace EGL3::Modules::Game {
         AuthorizationModule& Auth;
         DownloadModule& Download;
         PlayModule& Play;
+        UpdateCheckModule& UpdateCheck;
 
         Gtk::Button& PlayBtn;
         Gtk::MenuButton& PlayMenuBtn;

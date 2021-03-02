@@ -8,6 +8,7 @@
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
+#include "GameInfo.h"
 
 #include <gtkmm.h>
 
@@ -18,9 +19,7 @@ namespace EGL3::Modules::Game {
 
         ~UpdateCheckModule();
 
-        Utils::Callback<Storage::Models::VersionData(Storage::Game::GameId)> RequestVersionData;
-
-        sigc::signal<void(const Storage::Models::VersionData&)> OnUpdateAvailable;
+        sigc::signal<void(Storage::Game::GameId Id, const Storage::Models::VersionData&)> OnUpdateAvailable;
 
     private:
         void CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion);
@@ -30,6 +29,7 @@ namespace EGL3::Modules::Game {
         Storage::Persistent::Store& Storage;
         Modules::AuthorizationModule& Auth;
         Modules::AsyncFFModule& AsyncFF;
+        GameInfoModule& GameInfo;
 
         std::mutex Mutex;
         std::condition_variable CV;

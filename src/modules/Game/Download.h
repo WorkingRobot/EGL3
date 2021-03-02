@@ -10,6 +10,7 @@
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../Taskbar.h"
+#include "GameInfo.h"
 
 #include <chrono>
 #include <gtkmm.h>
@@ -41,6 +42,7 @@ namespace EGL3::Modules::Game {
 
         Storage::Persistent::Store& Storage;
         Modules::AuthorizationModule& Auth;
+        GameInfoModule& GameInfo;
         Modules::TaskbarModule& Taskbar;
 
         Gtk::Stack& MainStack;

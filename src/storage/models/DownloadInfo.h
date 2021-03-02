@@ -95,7 +95,7 @@ namespace EGL3::Storage::Models {
         };
 
         using InstalledGamesRequest = std::function<std::vector<InstalledGame>&()>;
-        using LatestManifestRequest = std::function<Web::Response<Web::Epic::BPS::Manifest>(std::string& CloudDir)>;
+        using LatestManifestRequest = std::function<Web::Response<Web::Epic::BPS::Manifest>(Game::GameId Id, std::string& CloudDir)>;
 
         DownloadInfo(Game::GameId Id, const InstalledGamesRequest& GetInstalledGames);
 
