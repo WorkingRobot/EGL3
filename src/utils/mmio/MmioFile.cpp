@@ -143,7 +143,7 @@ namespace EGL3::Utils::Mmio {
         NtFlushVirtualMemory(HProcess, &FlushAddr, &FlushSize, &Block);
     }
 
-    bool MmioFile::SetWorkingSize(uint64_t MinBytes, uint64_t MaxBytes)
+    bool MmioFile::SetWorkingSize(uint64_t MaxBytes, uint64_t MinBytes)
     {
         return SetProcessWorkingSetSizeEx(GetCurrentProcess(), MinBytes, MaxBytes, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE);
     }

@@ -10,6 +10,8 @@ namespace EGL3::Service::Pipe {
         PipeName(Name)
     {
         ConnectionThread = std::async(std::launch::async, [this]() { HandleConnectionThread(); });
+
+        Utils::Mmio::MmioFile::SetWorkingSize(Utils::Mmio::MmioFile::PlayWorkingSize);
     }
 
     Server::~Server()
@@ -125,12 +127,22 @@ namespace EGL3::Service::Pipe {
             return;
         }
 
-        auto Archive = std::make_unique<MountedArchive>(Path);
-        if (!Archive->OpenArchive()) {
-            Output.Status = ResponseStatus::Failure;
+        auto Itr = std::find_if(Mounts.begin(), Mounts.end(), [&Path](const std::unique_ptr<MountedArchive>& Ptr) {
+            return Ptr->QueryPath() == Path;
+        });
+
+        if (Itr == Mounts.end()) {
+            auto Archive = std::make_unique<MountedArchive>(Path);
+            if (!Archive->OpenArchive()) {
+                Output.Status = ResponseStatus::Failure;
+            }
+            else {
+                Output.Context = Mounts.emplace_back(std::move(Archive)).get();
+                Output.Status = ResponseStatus::Success;
+            }
         }
         else {
-            Output.Context = Mounts.emplace_back(std::move(Archive)).get();
+            Output.Context = Itr->get();
             Output.Status = ResponseStatus::Success;
         }
     }

@@ -74,8 +74,7 @@ namespace EGL3::Modules::Game {
             );
         });
 
-        // Both for downloading and playing
-        Utils::Mmio::MmioFile::SetWorkingSize();
+        Utils::Mmio::MmioFile::SetWorkingSize(Utils::Mmio::MmioFile::DownloadWorkingSize);
     }
 
     DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id)

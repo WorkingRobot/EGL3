@@ -70,7 +70,9 @@ namespace EGL3::Utils::Mmio {
 
         void Flush();
 
-        static bool SetWorkingSize(uint64_t MinBytes = 1024 * 1024 * 64, uint64_t MaxBytes = 4ull * 1024 * 1024 * 1024);
+        static constexpr uint64_t DownloadWorkingSize = 512ull * 1024 * 1024;
+        static constexpr uint64_t PlayWorkingSize = 2ull * 1024 * 1024 * 1024;
+        static bool SetWorkingSize(uint64_t MaxBytes, uint64_t MinBytes = 1024 * 1024 * 64);
 
     private:
         const bool Readonly;
