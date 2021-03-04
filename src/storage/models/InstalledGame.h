@@ -2,8 +2,10 @@
 
 #include "../../utils/streams/Stream.h"
 #include "../game/Archive.h"
+#include "MountedGame.h"
 
 #include <filesystem>
+#include <optional>
 #include <variant>
 
 namespace EGL3::Storage::Models {
@@ -29,6 +31,8 @@ namespace EGL3::Storage::Models {
 
         const Storage::Game::Header* GetHeader() const;
 
+        bool IsOpenForWriting() const;
+
         // Open for reading
         // Returns false if the archive is invalid (or does not exist)
         bool OpenArchiveRead() const;
@@ -41,6 +45,14 @@ namespace EGL3::Storage::Models {
 
         // Only run if OpenArchive...() returns true
         Storage::Game::Archive& GetArchive() const;
+
+        bool IsMounted() const;
+
+        bool Mount(Service::Pipe::Client& Client);
+
+        void Unmount();
+
+        char GetDriveLetter() const;
 
         const std::filesystem::path& GetPath() const;
 
@@ -63,5 +75,6 @@ namespace EGL3::Storage::Models {
         bool CreateShortcut;
 
         mutable std::variant<std::monostate, Storage::Game::Archive, MetadataInfo> Data;
+        std::optional<MountedGame> MountData;
     };
 }

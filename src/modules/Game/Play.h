@@ -14,7 +14,7 @@ namespace EGL3::Modules::Game {
     public:
         PlayModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
-        Storage::Models::PlayInfo& OnPlayClicked(const Storage::Models::InstalledGame& Game);
+        Storage::Models::PlayInfo& OnPlayClicked(Storage::Models::InstalledGame& Game);
 
     private:
         Storage::Persistent::Store& Storage;

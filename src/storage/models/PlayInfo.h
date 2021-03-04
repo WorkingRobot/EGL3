@@ -13,15 +13,8 @@
 
 namespace EGL3::Storage::Models {
     enum class PlayInfoState : uint8_t {
-        Unknown,
-        // Same order as Service::Pipe::MessageType
-        Opening,
-        Reading,
-        Initializing,
-        Creating,
-        Starting,
+        Constructed,
         Mounting,
-
         Playable,
         Playing,
         Closed
@@ -29,21 +22,17 @@ namespace EGL3::Storage::Models {
 
     class PlayInfo {
     public:
-        PlayInfo(const InstalledGame& Game, Service::Pipe::Client& PipeClient);
+        PlayInfo(InstalledGame& Game);
 
         ~PlayInfo();
 
+        PlayInfoState GetState() const;
+
         void SetState(PlayInfoState NewState);
 
-        void Begin();
+        void Mount(Service::Pipe::Client& PipeClient);
 
         void Play(Web::Epic::EpicClientAuthed& Client);
-
-        bool IsPlaying();
-
-        void Close();
-
-        Utils::Callback<void()> OnFinishPlaying;
 
         // TODO: Add PlayInfoStats callback and include playing data and stuff with it
 
@@ -52,11 +41,10 @@ namespace EGL3::Storage::Models {
     private:
         void OnPlay(Web::Epic::EpicClientAuthed& Client);
 
-        const InstalledGame& Game;
+        InstalledGame& Game;
         PlayInfoState CurrentState;
 
-        Service::Pipe::Client& PipeClient;
-        void* PipeContext;
+        void* ProcessHandle;
 
         std::future<void> PrimaryTask;
     };

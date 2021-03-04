@@ -11,27 +11,12 @@ namespace EGL3::Modules::Game {
 
     }
 
-    PlayInfo& PlayModule::OnPlayClicked(const InstalledGame& Game)
+    PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game)
     {
-        CurrentPlay = std::make_unique<PlayInfo>(Game, Service.GetClient());
+        CurrentPlay = std::make_unique<PlayInfo>(Game);
         CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
             switch (NewState)
             {
-            case PlayInfoState::Opening:
-                printf("Opening\n");
-                break;
-            case PlayInfoState::Reading:
-                printf("Reading\n");
-                break;
-            case PlayInfoState::Initializing:
-                printf("Initializing\n");
-                break;
-            case PlayInfoState::Creating:
-                printf("Creating\n");
-                break;
-            case PlayInfoState::Starting:
-                printf("Starting\n");
-                break;
             case PlayInfoState::Mounting:
                 printf("Mounting\n");
                 break;
@@ -51,7 +36,7 @@ namespace EGL3::Modules::Game {
             }
         });
 
-        CurrentPlay->Begin();
+        CurrentPlay->Mount(Service.GetClient());
 
         return *CurrentPlay;
     }

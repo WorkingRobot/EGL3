@@ -40,7 +40,7 @@ namespace EGL3 {
 
         if constexpr (false)
         {
-            Service::Pipe::Client Client("\\\\.\\pipe\\mynamedpipe");
+            Service::Pipe::Client Client;
             void* Ctx = nullptr;
             EGL3_CONDITIONAL_LOG(Client.OpenArchive(R"(J:\Code\Visual Studio 2017\Projects\EGL3\out\build\x64-Release\Fortnite.egia)", Ctx), LogLevel::Critical, "Could not OpenArchive");
             EGL3_CONDITIONAL_LOG(Client.ReadArchive(Ctx), LogLevel::Critical, "Could not ReadArchive");

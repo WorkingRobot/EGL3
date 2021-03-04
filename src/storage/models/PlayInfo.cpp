@@ -9,11 +9,10 @@
 #include <Windows.h>
 
 namespace EGL3::Storage::Models {
-    PlayInfo::PlayInfo(const InstalledGame& Game, Service::Pipe::Client& PipeClient) :
+    PlayInfo::PlayInfo(InstalledGame& Game) :
         Game(Game),
-        CurrentState(PlayInfoState::Unknown),
-        PipeClient(PipeClient),
-        PipeContext(nullptr)
+        CurrentState(PlayInfoState::Constructed),
+        ProcessHandle(nullptr)
     {
 
     }
@@ -21,7 +20,15 @@ namespace EGL3::Storage::Models {
     PlayInfo::~PlayInfo()
     {
         PrimaryTask.get();
-        Close();
+        Game.Unmount();
+        if (ProcessHandle) {
+            CloseHandle(ProcessHandle);
+        }
+    }
+
+    PlayInfoState PlayInfo::GetState() const
+    {
+        return CurrentState;
     }
 
     void PlayInfo::SetState(PlayInfoState NewState)
@@ -29,27 +36,16 @@ namespace EGL3::Storage::Models {
         OnStateUpdate.emit(CurrentState = NewState);
     }
 
-    void PlayInfo::Begin() {
-        PrimaryTask = std::async(std::launch::async, [this]() {
-            SetState(PlayInfoState::Opening);
-            EGL3_CONDITIONAL_LOG(Game.OpenArchiveRead(), LogLevel::Critical, "Could not open archive");
-            EGL3_CONDITIONAL_LOG(PipeClient.OpenArchive(Game.GetPath(), PipeContext), LogLevel::Critical, "Could not open archive");
-
-            SetState(PlayInfoState::Reading);
-            EGL3_CONDITIONAL_LOG(PipeClient.ReadArchive(PipeContext), LogLevel::Critical, "Could not read archive");
-
-            SetState(PlayInfoState::Initializing);
-            EGL3_CONDITIONAL_LOG(PipeClient.InitializeDisk(PipeContext), LogLevel::Critical, "Could not intialize disk");
-
-            SetState(PlayInfoState::Creating);
-            EGL3_CONDITIONAL_LOG(PipeClient.CreateLUT(PipeContext), LogLevel::Critical, "Could not create lut");
-
-            SetState(PlayInfoState::Starting);
-            EGL3_CONDITIONAL_LOG(PipeClient.CreateDisk(PipeContext), LogLevel::Critical, "Could not create disk");
-
+    void PlayInfo::Mount(Service::Pipe::Client& PipeClient)
+    {
+        if (CurrentState != PlayInfoState::Constructed) {
+            return;
+        }
+        
+        PrimaryTask = std::async(std::launch::async, [this, Client = std::reference_wrapper<Service::Pipe::Client>(PipeClient)]() {
             SetState(PlayInfoState::Mounting);
-            EGL3_CONDITIONAL_LOG(PipeClient.MountDisk(PipeContext), LogLevel::Critical, "Could not mount disk");
-
+            Game.OpenArchiveRead();
+            Game.Mount(Client);
             SetState(PlayInfoState::Playable);
         });
     }
@@ -58,17 +54,11 @@ namespace EGL3::Storage::Models {
         PrimaryTask = std::async(std::launch::async, [&, this]() {
             SetState(PlayInfoState::Playing);
             OnPlay(Client);
+            if (ProcessHandle) {
+                WaitForSingleObject(ProcessHandle, INFINITE);
+            }
+            SetState(PlayInfoState::Playable);
         });
-    }
-
-    bool PlayInfo::IsPlaying() {
-        return false;
-    }
-
-    void PlayInfo::Close() {
-        if (PipeContext) {
-            PipeClient.Destruct(PipeContext);
-        }
     }
 
     void PlayInfo::OnPlay(Web::Epic::EpicClientAuthed& Client)
@@ -78,8 +68,8 @@ namespace EGL3::Storage::Models {
             char DriveLetter = '\0';
             do {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                bool Success = PipeClient.QueryLetter(PipeContext, DriveLetter);
-                if (!Success || DriveLetter == '\0') {
+                DriveLetter = Game.GetDriveLetter();
+                if (DriveLetter == '\0') {
                     printf("Could not find mounted drive\n");
                 }
             } while (!DriveLetter);
@@ -156,7 +146,7 @@ namespace EGL3::Storage::Models {
         }
         else {
             CloseHandle(ProcInfo.hThread);
-            CloseHandle(ProcInfo.hProcess);
+            ProcessHandle = ProcInfo.hProcess;
         }
     }
 }

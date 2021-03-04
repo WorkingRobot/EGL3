@@ -27,10 +27,6 @@ namespace EGL3::Service {
 
         const std::filesystem::path& QueryPath() const;
 
-        const Storage::Game::ArchiveRefConst<Storage::Game::Header>& QueryHeader() const;
-
-        const Storage::Game::ArchiveRefConst<Storage::Game::ManifestData>& QueryMeta() const;
-
         using Stats = DriveCounter::Data;
 
         [[nodiscard]]
@@ -54,6 +50,7 @@ namespace EGL3::Service {
 
             }
         };
+
 #pragma pack(push, 4)
         struct SectionPart {
             uint64_t Ptr;
@@ -75,6 +72,17 @@ namespace EGL3::Service {
         };
 #pragma pack(pop)
 
+        enum class MountState {
+            Construct,
+            OpenArchive,
+            ReadArchive,
+            InitializeDisk,
+            CreateLUT,
+            CreateDisk,
+            MountDisk
+        };
+
+        MountState State;
         std::filesystem::path Path;
         std::optional<Storage::Game::Archive> Archive;
         std::optional<Storage::Models::MountedDisk> Disk;

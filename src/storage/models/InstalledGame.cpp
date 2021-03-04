@@ -51,6 +51,15 @@ namespace EGL3::Storage::Models {
         }, Data);
     }
 
+    bool InstalledGame::IsOpenForWriting() const
+    {
+        if (auto ArchivePtr = std::get_if<Game::Archive>(&Data)) {
+            return ArchivePtr->IsValid() && !ArchivePtr->IsReadonly();
+        }
+
+        return false;
+    }
+
     bool InstalledGame::OpenArchiveRead() const
     {
         // Already has an archive
@@ -104,6 +113,29 @@ namespace EGL3::Storage::Models {
     Storage::Game::Archive& InstalledGame::GetArchive() const
     {
         return std::get<Storage::Game::Archive>(Data);
+    }
+
+    bool InstalledGame::IsMounted() const
+    {
+        return MountData.has_value() && MountData->IsValid();
+    }
+
+    bool InstalledGame::Mount(Service::Pipe::Client& Client)
+    {
+        return MountData.emplace(Path, Client).IsValid();
+    }
+
+    void InstalledGame::Unmount()
+    {
+        MountData.reset();
+    }
+
+    char InstalledGame::GetDriveLetter() const
+    {
+        if (IsMounted()) {
+            return MountData->GetDriveLetter();
+        }
+        return 0;
     }
 
     const std::filesystem::path& InstalledGame::GetPath() const

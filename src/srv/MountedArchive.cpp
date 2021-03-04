@@ -8,9 +8,11 @@ namespace EGL3::Service {
     using namespace Storage::Models;
 
     MountedArchive::MountedArchive(const std::filesystem::path& Path) :
+        State(MountState::Construct),
         Path(Path),
         DriveLetter(0)
     {
+
     }
 
     MountedArchive::~MountedArchive()
@@ -19,17 +21,33 @@ namespace EGL3::Service {
 
     bool MountedArchive::OpenArchive()
     {
+        if (State >= MountState::OpenArchive) {
+            return true;
+        }
+        if (State < MountState::Construct) {
+            return false;
+        }
+
         Storage::Game::Archive Archive(Path, Storage::Game::ArchiveMode::Read);
         if (!Archive.IsValid()) {
             return false;
         }
 
         this->Archive.emplace(std::move(Archive));
+
+        State = MountState::OpenArchive;
         return true;
     }
 
     bool MountedArchive::ReadArchive()
     {
+        if (State >= MountState::ReadArchive) {
+            return true;
+        }
+        if (State < MountState::OpenArchive) {
+            return false;
+        }
+
         std::vector<MountedFile> MountedFiles;
 
         const Game::ArchiveList<Game::RunlistId::File> Files(*Archive);
@@ -45,17 +63,34 @@ namespace EGL3::Service {
         Disk.emplace(MountedFiles, Utils::Random());
         Disk->HandleFileCluster.Set([this](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) { HandleFileCluster(Ctx, LCN, Buffer); });
 
+        State = MountState::ReadArchive;
         return true;
     }
 
     bool MountedArchive::InitializeDisk()
     {
+        if (State >= MountState::InitializeDisk) {
+            return true;
+        }
+        if (State < MountState::ReadArchive) {
+            return false;
+        }
+
         Disk->Initialize();
+
+        State = MountState::InitializeDisk;
         return true;
     }
 
     bool MountedArchive::CreateLUT()
     {
+        if (State >= MountState::CreateLUT) {
+            return true;
+        }
+        if (State < MountState::ReadArchive) {
+            return false;
+        }
+
         ArchiveLists.emplace(*Archive);
 
         SectionLUT.reserve(ArchiveLists->Files.size());
@@ -98,18 +133,37 @@ namespace EGL3::Service {
             }
         }
 
+        State = MountState::CreateLUT;
         return true;
     }
 
     bool MountedArchive::CreateDisk()
     {
+        if (State >= MountState::CreateDisk) {
+            return true;
+        }
+        if (State < MountState::CreateLUT) {
+            return false;
+        }
+
         Disk->Create();
+
+        State = MountState::CreateDisk;
         return true;
     }
 
     bool MountedArchive::MountDisk()
     {
+        if (State >= MountState::MountDisk) {
+            return true;
+        }
+        if (State < MountState::CreateDisk) {
+            return false;
+        }
+
         Disk->Mount();
+
+        State = MountState::MountDisk;
         return true;
     }
 
@@ -124,16 +178,6 @@ namespace EGL3::Service {
     const std::filesystem::path& MountedArchive::QueryPath() const
     {
         return Path;
-    }
-
-    const Storage::Game::ArchiveRefConst<Storage::Game::Header>& MountedArchive::QueryHeader() const
-    {
-        return Archive->GetHeader();
-    }
-
-    const Storage::Game::ArchiveRefConst<Storage::Game::ManifestData>& MountedArchive::QueryMeta() const
-    {
-        return Archive->GetManifestData();
     }
 
     MountedArchive::Stats MountedArchive::QueryStats() const
