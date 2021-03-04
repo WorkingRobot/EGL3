@@ -8,11 +8,6 @@ namespace EGL3::Modules::Game {
         GameInfo(Modules.GetModule<GameInfoModule>()),
         Cancelled(false)
     {
-        auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
-        if (Freq < std::chrono::seconds(10)) {
-            Freq = std::chrono::seconds(10);
-        }
-
         Auth.AuthChanged.connect([this]() {
             if (!Future.valid()) {
                 Future = std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this);
@@ -30,6 +25,16 @@ namespace EGL3::Modules::Game {
         if (Future.valid()) {
             Future.get();
         }
+    }
+
+    std::chrono::seconds UpdateCheckModule::GetFrequency() const
+    {
+        auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
+        if (Freq < std::chrono::seconds(10)) {
+            Freq = std::chrono::seconds(10);
+            Storage.Flush();
+        }
+        return Freq;
     }
 
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)
@@ -50,9 +55,10 @@ namespace EGL3::Modules::Game {
     {
         std::unique_lock Lock(Mutex);
         do {
+            printf("checking\n");
             auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
             for (auto& Game : InstalledGames) {
-                if (Game.IsValid()) {
+                if (Game.IsValid() && !Game.IsOpenForWriting()) {
                     if (auto HeaderPtr = Game.GetHeader()) {
                         if (!HeaderPtr->GetUpdateInfo().IsUpdating) {
                             CheckForUpdate(HeaderPtr->GetGameId(), HeaderPtr->GetVersionNum());
@@ -60,6 +66,7 @@ namespace EGL3::Modules::Game {
                     }
                 }
             }
-        } while (CV.wait_for(Lock, Storage.Get(Storage::Persistent::Key::UpdateFrequency), [this]() { return !Cancelled; }));
+        } while (!CV.wait_for(Lock, GetFrequency(), [this]() { return Cancelled; }));
+        printf("exiting\n");
     }
 }

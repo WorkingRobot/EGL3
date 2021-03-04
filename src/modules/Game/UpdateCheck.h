@@ -22,6 +22,8 @@ namespace EGL3::Modules::Game {
         sigc::signal<void(Storage::Game::GameId Id, const Storage::Models::VersionData&)> OnUpdateAvailable;
 
     private:
+        std::chrono::seconds GetFrequency() const;
+
         void CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion);
 
         void BackgroundTask();
