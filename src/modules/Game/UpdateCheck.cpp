@@ -55,7 +55,6 @@ namespace EGL3::Modules::Game {
     {
         std::unique_lock Lock(Mutex);
         do {
-            printf("checking\n");
             auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
             for (auto& Game : InstalledGames) {
                 if (Game.IsValid() && !Game.IsOpenForWriting()) {
@@ -67,6 +66,5 @@ namespace EGL3::Modules::Game {
                 }
             }
         } while (!CV.wait_for(Lock, GetFrequency(), [this]() { return Cancelled; }));
-        printf("exiting\n");
     }
 }
