@@ -147,7 +147,7 @@ namespace EGL3::Storage::Models {
         EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }
 
-    thread_local UINT8 ClusterCache[4096];
+    static UINT8 ClusterCache[4096];
 
     static UINT8* HandleCluster(MountedData* Data, UINT64 Idx) {
         // MBR cluster
@@ -291,7 +291,7 @@ namespace EGL3::Storage::Models {
         auto Data = (MountedData*)PrivateData;
 
         SpdStorageUnitSetDebugLog(Data->Unit, LogFlags);
-        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 0) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit"); // std::thread::hardware_concurrency() * 4
+        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 1) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit"); // std::thread::hardware_concurrency() * 4
         SpdGuardSet(&Data->CloseGuard, Data->Unit);
     }
 
