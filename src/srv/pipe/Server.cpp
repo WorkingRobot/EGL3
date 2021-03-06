@@ -214,33 +214,7 @@ namespace EGL3::Service::Pipe {
     void Pipe::Server::HandleRequest<MessageType::QueryLetter>(const Request<MessageType::QueryLetter>& Input, Response<MessageType::QueryLetter>& Output)
     {
         auto Data = (MountedArchive*)Input.Context;
-        {
-            HANDLE hEventSource;
-            LPCSTR lpszStrings[2];
-            CHAR Buffer[80];
 
-            hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
-
-            if (NULL != hEventSource)
-            {
-                sprintf_s(Buffer, "querying letter");
-
-                lpszStrings[0] = SERVICE_NAME;
-                lpszStrings[1] = Buffer;
-
-                ReportEvent(hEventSource,// event log handle
-                    EVENTLOG_ERROR_TYPE, // event type
-                    0,                   // event category
-                    ((DWORD)0xC0020001L),           // event identifier
-                    NULL,                // no security identifier
-                    2,                   // size of lpszStrings array
-                    0,                   // no binary data
-                    lpszStrings,         // array of strings
-                    NULL);               // no binary data
-
-                DeregisterEventSource(hEventSource);
-            }
-        }
         Output.Letter = Data->QueryDriveLetter();
     }
 

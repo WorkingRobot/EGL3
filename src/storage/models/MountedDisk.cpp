@@ -147,39 +147,11 @@ namespace EGL3::Storage::Models {
         EGL3_CONDITIONAL_LOG(EGL3CreateDisk(Partition.BlockCount, "EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create NTFS disk");
     }
 
-    static constexpr int ClusterPoolCount = 64;
-    static UINT8 ClusterPool[ClusterPoolCount][4096];
-    static std::mutex ClusterPoolMutex;
-    static std::bitset<ClusterPoolCount> ClusterPoolAvailable(-1);
+    thread_local UINT8 ClusterCache[4096];
 
-    static UINT8* AllocateCluster() {
-        std::lock_guard Lock(ClusterPoolMutex);
-        int Idx = 0;
-        while (Idx < ClusterPoolAvailable.size() && !ClusterPoolAvailable.test(Idx)) {
-            ++Idx;
-        }
-        if (Idx < ClusterPoolAvailable.size()) {
-            ClusterPoolAvailable.set(Idx, false);
-            //printf("> %d\n", Idx);
-            EGL3_CONDITIONAL_LOG((ClusterPool[Idx] - ClusterPool[0]) / sizeof(ClusterPool[0]) == Idx, LogLevel::Critical, "Idx wouldn't work");
-            return ClusterPool[Idx];
-        }
-        return nullptr;
-    }
-
-    static void FreeCluster(UINT8* Data, bool FreeAfterUse) {
-        if (FreeAfterUse) {
-            std::lock_guard Lock(ClusterPoolMutex);
-            int Idx = (Data - ClusterPool[0]) / sizeof(ClusterPool[0]);
-            //printf("< %d\n", Idx);
-            ClusterPoolAvailable.set(Idx, true);
-        }
-    }
-
-    static UINT8* HandleCluster(MountedData* Data, UINT64 Idx, bool& FreeAfterUse) {
+    static UINT8* HandleCluster(MountedData* Data, UINT64 Idx) {
         // MBR cluster
         if (Idx == 0) {
-            FreeAfterUse = false;
             return Data->MBRData;
         }
 
@@ -187,7 +159,6 @@ namespace EGL3::Storage::Models {
         --Idx;
 
         if (auto ClusterPtr = Data->Disk->try_get_cluster(Idx)) {
-            FreeAfterUse = false;
             return ClusterPtr;
         }
 
@@ -196,17 +167,14 @@ namespace EGL3::Storage::Models {
             uint64_t lIdx = 0;
             while (CurrentRun->count) {
                 if (CurrentRun->idx <= Idx && uint64_t(CurrentRun->idx) + CurrentRun->count > Idx) {
-                    auto ClusterBuffer = AllocateCluster();
-                    Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, ClusterBuffer);
-                    FreeAfterUse = true;
-                    return ClusterBuffer;
+                    Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, ClusterCache);
+                    return ClusterCache;
                 }
                 lIdx += CurrentRun->count;
                 CurrentRun++;
             }
         }
 
-        FreeAfterUse = false;
         return Data->BlankData;
     }
 
@@ -236,10 +204,8 @@ namespace EGL3::Storage::Models {
                 auto SectorsToSkip = BlockAddress & 7;
                 auto SectorsToRead = std::min((UINT64)BlockCount, 8 - SectorsToSkip);
 
-                bool FreeClusBuf;
-                auto ClusBuf = HandleCluster(Data, BlockAddress / 8, FreeClusBuf);
+                auto ClusBuf = HandleCluster(Data, BlockAddress / 8);
                 memcpy(Buffer, ClusBuf + (SectorsToSkip * 512), SectorsToRead * 512);
-                FreeCluster(ClusBuf, FreeClusBuf);
 
                 BlockAddress += SectorsToRead;
                 BlockCount -= SectorsToRead;
@@ -249,20 +215,16 @@ namespace EGL3::Storage::Models {
             EGL3_CONDITIONAL_LOG(BlockCount == 0 || (BlockAddress & 7) == 0, LogLevel::Critical, "Block address must be a multiple of 8 at this point");
             while (BlockCount) {
                 if (BlockCount >= 8) {
-                    bool FreeClusBuf;
-                    auto ClusBuf = HandleCluster(Data, BlockAddress / 8, FreeClusBuf);
+                    auto ClusBuf = HandleCluster(Data, BlockAddress / 8);
                     memcpy(Buffer, ClusBuf, 4096);
-                    FreeCluster(ClusBuf, FreeClusBuf);
 
                     BlockAddress += 8;
                     BlockCount -= 8;
                     Buffer = (uint8_t*)Buffer + 4096;
                 }
                 else {
-                    bool FreeClusBuf;
-                    auto ClusBuf = HandleCluster(Data, BlockAddress / 8, FreeClusBuf);
+                    auto ClusBuf = HandleCluster(Data, BlockAddress / 8);
                     memcpy(Buffer, ClusBuf, (UINT64)BlockCount * 512);
-                    FreeCluster(ClusBuf, FreeClusBuf);
                     break;
                 }
             }
@@ -329,7 +291,7 @@ namespace EGL3::Storage::Models {
         auto Data = (MountedData*)PrivateData;
 
         SpdStorageUnitSetDebugLog(Data->Unit, LogFlags);
-        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 1) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit"); // std::thread::hardware_concurrency() * 4
+        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 0) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit"); // std::thread::hardware_concurrency() * 4
         SpdGuardSet(&Data->CloseGuard, Data->Unit);
     }
 
