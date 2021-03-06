@@ -8,9 +8,10 @@
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
-    // TODO: add destructors on modules with a mutex or async thread that locks the mutex to ensure all threads have exited
     class ModuleList {
         ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder);
+
+        ~ModuleList();
 
         void AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage);
 

@@ -33,6 +33,14 @@ namespace EGL3::Modules {
         AddModules(App, Builder, *(Storage::Persistent::Store*)App->get_data("EGL3Storage"));
     }
 
+    ModuleList::~ModuleList()
+    {
+        // Delete in reverse to perserve dependencies
+        for (auto Itr = Modules.rbegin(), End = Modules.rend(); Itr != End; ++Itr) {
+            Modules.erase(Itr.base());
+        }
+    }
+
     void ModuleList::AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage) {
         AddModule<AsyncFFModule>();
         AddModule<ImageCacheModule>();
