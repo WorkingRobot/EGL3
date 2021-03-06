@@ -39,6 +39,19 @@ namespace EGL3::Modules::Game {
             }
         });
 
+        Play.OnStateUpdate.Set([this](bool Playing) {
+            if (!Playing) {
+                if (CurrentState == State::Playing) {
+                    SetCurrentState(State::Play);
+                }
+            }
+            else {
+                if (CurrentState == State::Play) {
+                    SetCurrentState(State::Playing);
+                }
+            }
+        });
+
         UpdateToCurrentState();
     }
 

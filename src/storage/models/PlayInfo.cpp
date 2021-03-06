@@ -51,6 +51,10 @@ namespace EGL3::Storage::Models {
     }
 
     void PlayInfo::Play(Web::Epic::EpicClientAuthed& Client) {
+        if (CurrentState != PlayInfoState::Playable) {
+            return;
+        }
+
         PrimaryTask = std::async(std::launch::async, [&, this]() {
             SetState(PlayInfoState::Playing);
             OnPlay(Client);

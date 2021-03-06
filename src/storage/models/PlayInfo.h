@@ -16,8 +16,7 @@ namespace EGL3::Storage::Models {
         Constructed,
         Mounting,
         Playable,
-        Playing,
-        Closed
+        Playing
     };
 
     class PlayInfo {
