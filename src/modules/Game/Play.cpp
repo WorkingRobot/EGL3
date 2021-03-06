@@ -14,8 +14,6 @@ namespace EGL3::Modules::Game {
 
     PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game)
     {
-        PlayQueued = true;
-
         if (!CurrentPlay) {
             CurrentPlay = std::make_unique<PlayInfo>(Game);
             CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
@@ -45,7 +43,12 @@ namespace EGL3::Modules::Game {
                     break;
                 }
             });
+
+            PlayQueued = true;
             CurrentPlay->Mount(Service.GetClient());
+        }
+        else {
+            CurrentPlay->Play(Auth.GetClientLauncher());
         }
 
         return *CurrentPlay;
