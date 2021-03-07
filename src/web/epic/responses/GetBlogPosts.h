@@ -15,6 +15,7 @@ namespace EGL3::Web::Epic::Responses {
             TimePoint Date;
             std::optional<std::string> ExternalLink;
             std::string Slug;
+            std::string MetaTags;
             std::string ShareDescription;
             // std::optional<std::string> Content;
 
@@ -27,6 +28,7 @@ namespace EGL3::Web::Epic::Responses {
                 PARSE_ITEM("date", Date)
                 PARSE_ITEM_OPT("externalLink", ExternalLink)
                 PARSE_ITEM("slug", Slug)
+                PARSE_ITEM("_metaTags", MetaTags)
                 PARSE_ITEM_DEF("shareDescription", ShareDescription, "")
             PARSE_END
         };

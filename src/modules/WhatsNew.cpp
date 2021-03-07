@@ -94,6 +94,13 @@ namespace EGL3::Modules {
                             ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                         }
                     }
+
+                    for (auto& Post : News->EmergencyNoticeV2.EmergencyNotices.EmergencyNotices) {
+                        if (Post.Hidden) {
+                            continue;
+                        }
+                        ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                    }
                 }
 
 

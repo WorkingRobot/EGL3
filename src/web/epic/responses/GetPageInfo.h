@@ -136,6 +136,36 @@ namespace EGL3::Web::Epic::Responses {
             PARSE_END
         };
 
+        struct EmergencyNoticePost {
+            std::vector<std::string> Gamemodes;
+            bool Hidden;
+            std::string Body;
+            std::string Title;
+
+            PARSE_DEFINE(EmergencyNoticePost)
+                PARSE_ITEM("gamemodes", Gamemodes)
+                PARSE_ITEM("hidden", Hidden)
+                PARSE_ITEM("body", Body)
+                PARSE_ITEM("title", Title)
+            PARSE_END
+        };
+
+        struct EmergencyNoticesContainer {
+            std::vector<EmergencyNoticePost> EmergencyNotices;
+
+            PARSE_DEFINE(EmergencyNoticesContainer)
+                PARSE_ITEM("emergencynotices", EmergencyNotices)
+            PARSE_END
+        };
+
+        struct EmergencyNoticeV2Container {
+            EmergencyNoticesContainer EmergencyNotices;
+
+            PARSE_DEFINE(EmergencyNoticeV2Container)
+                PARSE_ITEM("emergencynotices", EmergencyNotices)
+            PARSE_END
+        };
+
         struct PlaylistItem {
             std::optional<std::string> Image;
             std::string PlaylistName;
@@ -272,6 +302,8 @@ namespace EGL3::Web::Epic::Responses {
         // Uses messages and region_messages
         GenericNewsContainer EmergencyNotice;
 
+        EmergencyNoticeV2Container EmergencyNoticeV2;
+
         PlaylistInfoContainer PlaylistInfo;
 
         TournamentInfoContainer TournamentInfo;
@@ -286,6 +318,7 @@ namespace EGL3::Web::Epic::Responses {
             PARSE_ITEM("lastModified", LastModified)
             PARSE_ITEM("savetheworldnews", SaveTheWorldNews)
             PARSE_ITEM("emergencynotice", EmergencyNotice)
+            PARSE_ITEM("emergencynoticev2", EmergencyNoticeV2)
             PARSE_ITEM("playlistinformation", PlaylistInfo)
             PARSE_ITEM("tournamentinformation", TournamentInfo)
             PARSE_ITEM("battleroyalenewsv2", BRNewsV2)

@@ -22,6 +22,8 @@ namespace EGL3::Widgets {
 
         WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericRegionPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache);
 
+        WhatsNewItem(const Web::Epic::Responses::GetPageInfo::EmergencyNoticePost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache);
+
         WhatsNewItem(WhatsNewItem&&) = default;
         WhatsNewItem& operator=(WhatsNewItem&&) = default;
 
@@ -29,6 +31,8 @@ namespace EGL3::Widgets {
 
     private:
         void Construct();
+
+        bool UseImage;
 
         Gtk::Box BaseContainer{ Gtk::ORIENTATION_VERTICAL };
         AsyncImage MainImage;

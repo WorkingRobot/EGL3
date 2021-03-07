@@ -22,7 +22,8 @@ namespace EGL3::Storage::Models {
             Web::Epic::Responses::GetPageInfo::GenericPlatformMotd,
             Web::Epic::Responses::GetPageInfo::GenericNewsPost,
             Web::Epic::Responses::GetPageInfo::GenericPlatformPost,
-            Web::Epic::Responses::GetPageInfo::GenericRegionPost
+            Web::Epic::Responses::GetPageInfo::GenericRegionPost,
+            Web::Epic::Responses::GetPageInfo::EmergencyNoticePost
         > Item;
 
         std::chrono::system_clock::time_point Date;

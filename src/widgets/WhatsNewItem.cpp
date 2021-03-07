@@ -2,16 +2,52 @@
 
 #include "../utils/Humanize.h"
 
+#include <array>
+#include <regex>
+
 namespace EGL3::Widgets {
-    WhatsNewItem::WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) {
+    WhatsNewItem::WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) :
+        UseImage(!ImageUrl.empty())
+    {
         this->Title.set_text(Title);
         this->Title.set_tooltip_text(Title);
         this->Source.set_text(Source);
         this->Date.set_text(Utils::Humanize(Date));
         this->Description.set_text(Description);
-        this->MainImage.set_async(ImageUrl, "", 768, 432, ImageCache);
+        if (UseImage) {
+            this->MainImage.set_async(ImageUrl, "", 768, 432, ImageCache);
+        }
 
         Construct();
+    }
+
+    // Taken from XmppClient.cpp
+    // Subtract 1, we aren't comparing \0 at the end of the source string
+    template<size_t SourceStringSize>
+    bool XmlStringEqual(const char* XmlString, size_t XmlStringSize, const char(&SourceString)[SourceStringSize]) {
+        if (XmlStringSize != SourceStringSize - 1) {
+            return false;
+        }
+        return memcmp(XmlString, SourceString, SourceStringSize - 1) == 0;
+    }
+
+    std::string GetDescriptionFromMetaTags(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item) {
+        // rapidxml has no support for meta tags (that don't say that they're self closing)
+        // Instead, we just use regex
+        const static std::array<std::regex, 3> DescRegexes {
+            std::regex("<meta name=\"description\" content=\"(.+?)\">"),
+            std::regex("<meta name=\"twitter:description\" content=\"(.+?)\">"),
+            std::regex("<meta property=\"og:description\" content=\"(.+?)\">")
+        };
+        std::smatch Matches;
+        for (auto& Regex : DescRegexes) {
+            if (std::regex_search(Item.MetaTags, Matches, Regex)) {
+                return Matches[1];
+            }
+        }
+        
+        EGL3_LOG(LogLevel::Warning, "Blog post's _metaTags does not have a description");
+        return "";
     }
 
     WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
@@ -21,7 +57,7 @@ namespace EGL3::Widgets {
             Item.Author.empty() ? 
                 Storage::Models::WhatsNew::SourceToString(Source) :
                 Glib::ustring::compose("%1 (%2)", Storage::Models::WhatsNew::SourceToString(Source), Item.Author),
-            Item.ShareDescription,
+            Item.ShareDescription.empty() ? GetDescriptionFromMetaTags(Item) : Item.ShareDescription,
             Time,
             ImageCache)
     {
@@ -99,6 +135,39 @@ namespace EGL3::Widgets {
 
     }
 
+    std::string CombineGamemodes(const std::vector<std::string>& Gamemodes) {
+        if (Gamemodes.size() == 2) {
+            return Utils::Format("%s and %s", Storage::Models::WhatsNew::SubGameToString(Gamemodes[0]), Storage::Models::WhatsNew::SubGameToString(Gamemodes[1]));
+        }
+        else {
+            std::stringstream Ret;
+            for (int i = 0; i < Gamemodes.size(); ++i) {
+                Ret << Storage::Models::WhatsNew::SubGameToString(Gamemodes[i]);
+                if (i + 2 == Gamemodes.size()) {
+                    Ret << ", and ";
+                }
+                else if (i + 1 != Gamemodes.size()) {
+                    Ret << ", ";
+                }
+            }
+            return Ret.str();
+        }
+    }
+
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::EmergencyNoticePost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+        WhatsNewItem(
+            Item.Title,
+            "",
+            Item.Gamemodes.empty() ?
+                Storage::Models::WhatsNew::SourceToString(Source) : 
+                Glib::ustring::compose("%2 %1", Storage::Models::WhatsNew::SourceToString(Source), CombineGamemodes(Item.Gamemodes)),
+            Item.Body,
+            Time,
+            ImageCache
+        )
+    {
+    }
+
     WhatsNewItem::operator Gtk::Widget&() {
         return BaseContainer;
     }
@@ -137,7 +206,9 @@ namespace EGL3::Widgets {
         ButtonContainer.pack_start(MarkReadButton, true, true, 5);
         ButtonContainer.pack_start(ClickButton, true, true, 5);
 
-        BaseContainer.pack_start(MainImage, false, false, 0);
+        if (UseImage) {
+            BaseContainer.pack_start(MainImage, false, false, 0);
+        }
         BaseContainer.pack_start(TitleContainer, false, false, 5);
         BaseContainer.pack_start(Description, false, false, 5);
         BaseContainer.pack_start(ButtonContainer, false, false, 5);
