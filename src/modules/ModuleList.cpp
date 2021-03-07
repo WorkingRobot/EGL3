@@ -36,7 +36,8 @@ namespace EGL3::Modules {
     ModuleList::~ModuleList()
     {
         // Delete in reverse to perserve dependencies
-        for (auto Itr = Modules.rbegin(), End = Modules.rend(); Itr != End; ++Itr) {
+        decltype(Modules.rbegin()) Itr;
+        while ((Itr = Modules.rbegin()) != Modules.rend()) {
             Modules.erase(--(Itr.base()));
         }
     }
