@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 namespace EGL3::Service {
-    void RunInstall()
+    int RunInstall()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -13,7 +13,7 @@ namespace EGL3::Service {
         if (!GetModuleFileName(NULL, FilePath, MAX_PATH))
         {
             printf("Cannot install service (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the SCM database. 
@@ -26,7 +26,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Create the service
@@ -50,15 +50,17 @@ namespace EGL3::Service {
         {
             printf("CreateService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         printf("Service installed successfully\n");
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return ERROR_SUCCESS;
     }
 
-    void RunQuery()
+    int RunQuery()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -75,7 +77,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -89,7 +91,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Get the configuration information.
@@ -162,9 +164,11 @@ namespace EGL3::Service {
     cleanup:
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunDescribe()
+    int RunDescribe()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -180,7 +184,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -194,7 +198,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Change the service description.
@@ -211,9 +215,11 @@ namespace EGL3::Service {
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunEnable()
+    int RunEnable()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -228,7 +234,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -242,7 +248,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Change the service start type.
@@ -257,9 +263,11 @@ namespace EGL3::Service {
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunDisable()
+    int RunDisable()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -274,7 +282,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -288,7 +296,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Change the service start type.
@@ -303,9 +311,11 @@ namespace EGL3::Service {
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunDelete()
+    int RunDelete()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -320,7 +330,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -334,7 +344,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Delete the service.
@@ -349,5 +359,7 @@ namespace EGL3::Service {
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 }

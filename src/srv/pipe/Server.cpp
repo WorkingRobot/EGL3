@@ -31,7 +31,7 @@ namespace EGL3::Service::Pipe {
         };
 
         EXPLICIT_ACCESS Ace{
-            .grfAccessPermissions = FILE_GENERIC_READ | GENERIC_WRITE ,
+            .grfAccessPermissions = FILE_GENERIC_READ | GENERIC_WRITE,
             .grfAccessMode = SET_ACCESS,
             .grfInheritance = NO_INHERITANCE,
             .Trustee = TRUSTEE{
@@ -233,6 +233,12 @@ namespace EGL3::Service::Pipe {
         Output.MountedDiskCount = Mounts.size();
     }
 
+    template<>
+    void Pipe::Server::HandleRequest<MessageType::Ping>(const Request<MessageType::Ping>& Input, Response<MessageType::Ping>& Output)
+    {
+        // I mean, we don't really do any processing on a ping
+    }
+
     template<MessageType Type>
     void Server::HandleRequestTyped(const std::unique_ptr<char[]>& Input, uint32_t InputSize, std::unique_ptr<char[]>& Output, uint32_t& OutputSize)
     {
@@ -285,6 +291,9 @@ namespace EGL3::Service::Pipe {
             break;
         case MessageType::QueryServer:
             HandleRequestTyped<MessageType::QueryServer>(Input, InputSize, Output, OutputSize);
+            break;
+        case MessageType::Ping:
+            HandleRequestTyped<MessageType::Ping>(Input, InputSize, Output, OutputSize);
             break;
         default:
             std::construct_at((Response<MessageType::Error>*)Output.get());

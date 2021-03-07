@@ -3,9 +3,9 @@
 #include <string>
 
 namespace EGL3::Service {
-    void RunStart();
+    int RunStart();
 
-    void RunStop();
+    int RunStop();
 
-    void RunDacl();
+    int RunDacl();
 }

@@ -33,6 +33,12 @@ namespace EGL3::Service::Pipe {
             return;
         }
 
+        Success = Ping();
+        if (!Success) {
+            printf("Ping failed, GLE=%d.\n", GetLastError());
+            return;
+        }
+
         Connected = true;
     }
 
@@ -214,6 +220,14 @@ namespace EGL3::Service::Pipe {
         return true;
     }
 
+    bool Client::Ping()
+    {
+        Request<MessageType::Ping> Req{};
+        Response<MessageType::Ping> Resp{};
+
+        return Transact(Req, Resp);
+    }
+
     template<MessageType Type>
     bool Client::Transact(const typename Request<Type>& Req, typename Response<Type>& Resp)
     {
@@ -225,6 +239,10 @@ namespace EGL3::Service::Pipe {
         }
         if (BytesRead < sizeof(MessageType)) {
             printf("Response too small to even include a message type\n");
+            return false;
+        }
+        if (Resp.Type == MessageType::Error) {
+            printf("Response was an error\n");
             return false;
         }
         if (Resp.Type != Type) {

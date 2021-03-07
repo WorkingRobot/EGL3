@@ -50,13 +50,11 @@ VOID SvcInit(DWORD argc, LPSTR* argv)
         return;
     }
 
+    EGL3::Service::Pipe::Server Server;
+
     // Report running status when initialization is complete.
 
     ReportSvcStatus(SERVICE_RUNNING, NO_ERROR, 0);
-
-    EGL3::Service::Pipe::Server Server;
-
-    // TO_DO: Perform work until service stops.
 
     while (1)
     {

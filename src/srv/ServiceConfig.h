@@ -3,15 +3,15 @@
 #include <string>
 
 namespace EGL3::Service {
-    void RunInstall();
+    int RunInstall();
 
-    void RunQuery();
+    int RunQuery();
 
-    void RunDescribe();
+    int RunDescribe();
 
-    void RunEnable();
+    int RunEnable();
 
-    void RunDisable();
+    int RunDisable();
 
-    void RunDelete();
+    int RunDelete();
 }

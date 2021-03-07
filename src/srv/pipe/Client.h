@@ -25,6 +25,7 @@ namespace EGL3::Service::Pipe {
         bool QueryLetter(void* Ctx, char& Letter);
         bool QueryStats(void* Ctx, MountedArchive::Stats& Stats);
         bool QueryServer(uint32_t& ProtocolVersion, uint32_t& MountedDiskCount);
+        bool Ping();
 
     private:
         template<MessageType Type>

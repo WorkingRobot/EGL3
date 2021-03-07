@@ -5,7 +5,7 @@
 #include <AclAPI.h>
 
 namespace EGL3::Service {
-    void RunStart()
+    int RunStart()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -21,7 +21,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -35,7 +35,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Check the status in case the service is not stopped. 
@@ -46,7 +46,7 @@ namespace EGL3::Service {
             printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Check if the service is already running. It would be possible 
@@ -57,7 +57,7 @@ namespace EGL3::Service {
             printf("Cannot start the service because it is already running\n");
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Save the tick count and initial checkpoint.
@@ -89,7 +89,7 @@ namespace EGL3::Service {
                 printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
 
             if (Status.dwCheckPoint > OldCheckPoint)
@@ -106,7 +106,7 @@ namespace EGL3::Service {
                     printf("Timeout waiting for service to stop\n");
                     CloseServiceHandle(Service);
                     CloseServiceHandle(SCManager);
-                    return;
+                    return GetLastError();
                 }
             }
         }
@@ -118,7 +118,7 @@ namespace EGL3::Service {
             printf("StartService failed (%d)\n", GetLastError());
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
         else
         {
@@ -132,7 +132,7 @@ namespace EGL3::Service {
             printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Save the tick count and initial checkpoint.
@@ -160,7 +160,7 @@ namespace EGL3::Service {
             if (!QueryServiceStatusEx(Service, SC_STATUS_PROCESS_INFO, (LPBYTE)&Status, sizeof(Status), &BytesNeeded))
             {
                 printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
-                break;
+                return GetLastError();
             }
 
             if (Status.dwCheckPoint > OldCheckPoint)
@@ -197,9 +197,11 @@ namespace EGL3::Service {
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunStop()
+    int RunStop()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -217,7 +219,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -233,7 +235,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Check the status in case the service is not stopped. 
@@ -244,7 +246,7 @@ namespace EGL3::Service {
             printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         if (Status.dwCurrentState == SERVICE_STOP)
@@ -252,7 +254,7 @@ namespace EGL3::Service {
             printf("Service is already stopped.\n");
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // If a stop is pending, wait for it.
@@ -281,7 +283,7 @@ namespace EGL3::Service {
                 printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
 
             if (Status.dwCurrentState == SERVICE_STOPPED)
@@ -289,7 +291,7 @@ namespace EGL3::Service {
                 printf("Service stopped successfully.\n");
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
 
             if (GetTickCount64() - StartTime > Timeout)
@@ -297,7 +299,7 @@ namespace EGL3::Service {
                 printf("Service stop timed out.\n");
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
         }
 
@@ -313,7 +315,7 @@ namespace EGL3::Service {
             printf("ControlService failed (%d)\n", GetLastError());
             CloseServiceHandle(Service);
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Wait for the service to stop.
@@ -326,7 +328,7 @@ namespace EGL3::Service {
                 printf("QueryServiceStatusEx failed (%d)\n", GetLastError());
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
 
             if (Status.dwCurrentState == SERVICE_STOPPED)
@@ -337,16 +339,18 @@ namespace EGL3::Service {
                 printf("Wait timed out\n");
                 CloseServiceHandle(Service);
                 CloseServiceHandle(SCManager);
-                return;
+                return GetLastError();
             }
         }
         printf("Service stopped successfully\n");
 
         CloseServiceHandle(Service);
         CloseServiceHandle(SCManager);
+
+        return GetLastError();
     }
 
-    void RunDacl()
+    int RunDacl()
     {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -361,7 +365,7 @@ namespace EGL3::Service {
         if (SCManager == NULL)
         {
             printf("OpenSCManager failed (%d)\n", GetLastError());
-            return;
+            return GetLastError();
         }
 
         // Get a handle to the service.
@@ -375,7 +379,7 @@ namespace EGL3::Service {
         {
             printf("OpenService failed (%d)\n", GetLastError());
             CloseServiceHandle(SCManager);
-            return;
+            return GetLastError();
         }
 
         // Get the current security descriptor.
@@ -473,5 +477,7 @@ namespace EGL3::Service {
             LocalFree((HLOCAL)PNewAcl);
         if (NULL != PSecDesc)
             HeapFree(GetProcessHeap(), 0, (LPVOID)PSecDesc);
+
+        return GetLastError();
     }
 }

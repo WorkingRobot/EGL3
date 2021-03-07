@@ -11,6 +11,8 @@ namespace EGL3::Modules::Game {
         Service::Pipe::Client& GetClient();
 
     private:
-        Service::Pipe::Client Client;
+        int PatchService();
+
+        std::optional<Service::Pipe::Client> Client;
     };
 }
