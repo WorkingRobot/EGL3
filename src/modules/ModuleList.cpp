@@ -37,7 +37,7 @@ namespace EGL3::Modules {
     {
         // Delete in reverse to perserve dependencies
         for (auto Itr = Modules.rbegin(), End = Modules.rend(); Itr != End; ++Itr) {
-            Modules.erase(Itr.base());
+            Modules.erase(--(Itr.base()));
         }
     }
 
