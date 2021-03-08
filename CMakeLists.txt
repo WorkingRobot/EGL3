@@ -51,6 +51,7 @@ add_compile_definitions(
     CONFIG_VERSION_LONG="${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}-${CONFIG_VERSION_HASH}++EGL3+${CONFIG_VERSION_BRANCH}"
 )
 
+
 ## Source Files ##
 
 function(ADD_DIR PROJECT TARGET_DIR)
@@ -117,7 +118,6 @@ endif()
 
 ## Define EGL3 executable ##
 
-message(STATUS ${EGL3_SOURCES})
 add_executable(EGL3 ${SUBSYSTEM} ${EGL3_SOURCES})
 add_executable(EGL3_SRV ${EGL3_SRV_SOURCES})
 install(TARGETS EGL3 EGL3_SRV DESTINATION bin)
