@@ -95,16 +95,22 @@
       ]
     },
     {
-      "name": "x64-MinRel",
+      "name": "x64-MinRel-Installer",
       "generator": "Ninja",
       "configurationType": "MinSizeRel",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
+      "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows-static",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": []
+      "variables": [
+        {
+          "name": "ENABLE_INSTALLER",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
     }
   ]
 }
