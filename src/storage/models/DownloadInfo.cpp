@@ -2,6 +2,7 @@
 
 #include "../../web/epic/EpicClient.h"
 #include "../../utils/Align.h"
+#include "../../utils/Config.h"
 #include "../../utils/Format.h"
 #include "../../utils/Taskbar.h"
 
@@ -32,10 +33,7 @@ namespace EGL3::Storage::Models {
             Data.CreateShortcut = GameConfig->GetCreateShortcut();
         }
         else {
-            std::error_code Code;
-            Data.ArchivePath = std::filesystem::current_path(Code);
-            EGL3_CONDITIONAL_LOG(!Code, LogLevel::Critical, "Could not get current path");
-            Data.ArchivePath /= "Fortnite.egia";
+            Data.ArchivePath = Utils::Config::GetConfigFolder() / "Fortnite.egia";
             Data.AutoUpdate = true;
             Data.CreateShortcut = true;
         }

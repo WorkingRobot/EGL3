@@ -9,6 +9,7 @@
 #include "utils/GladeBuilder.h"
 #include "utils/Platform.h"
 #include "utils/Random.h"
+#include "utils/FontSetup.h"
 
 #include "storage/models/MountedDisk.h"
 #include <future>
@@ -36,52 +37,14 @@ void operator delete(void* ptr) noexcept
 
 namespace EGL3 {
     __forceinline int Start() {
+        std::filesystem::current_path(Utils::Config::GetExeFolder());
+
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
-        if constexpr (false)
-        {
-            Service::Pipe::Client Client;
-            void* Ctx = nullptr;
-            EGL3_CONDITIONAL_LOG(Client.OpenArchive(R"(J:\Code\Visual Studio 2017\Projects\EGL3\out\build\x64-Release\Fortnite.egia)", Ctx), LogLevel::Critical, "Could not OpenArchive");
-            EGL3_CONDITIONAL_LOG(Client.ReadArchive(Ctx), LogLevel::Critical, "Could not ReadArchive");
-            EGL3_CONDITIONAL_LOG(Client.InitializeDisk(Ctx), LogLevel::Critical, "Could not InitializeDisk");
-            EGL3_CONDITIONAL_LOG(Client.CreateLUT(Ctx), LogLevel::Critical, "Could not CreateLUT");
-            EGL3_CONDITIONAL_LOG(Client.CreateDisk(Ctx), LogLevel::Critical, "Could not CreateDisk");
-            EGL3_CONDITIONAL_LOG(Client.MountDisk(Ctx), LogLevel::Critical, "Could not MountDisk");
-            printf("dun!\n");
-            return 0;
-        }
+        EGL3_CONDITIONAL_LOG(!Utils::Config::GetConfigFolder().empty(), LogLevel::Critical, "Could not get config folder path");
+        std::filesystem::create_directories(Utils::Config::GetConfigFolder());
 
-        if constexpr(false)
-        {
-            std::vector<Storage::Models::MountedFile> Files{
-                { "name/name2.exe", 818304, fopen(R"(C:\Users\Aleks\Desktop\EasyAntiCheat_Setup.exe)", "rb") },
-            };
-
-            Storage::Models::MountedDisk Disk(Files, Utils::Random());
-            Disk.HandleFileCluster.Set([](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) {
-                auto fp = (FILE*)Ctx;
-                fseek(fp, LCN * 4096, SEEK_SET);
-                fread(Buffer, 1, 4096, fp);
-            });
-            Disk.Initialize();
-            Disk.Create();
-            Disk.Mount();
-            std::this_thread::sleep_for(std::chrono::hours(24));
-            return 0;
-        }
-
-        {
-            auto Config = FcConfigCreate();
-            FcConfigSetCurrent(Config);
-            FcConfigParseAndLoad(Config, (FcChar8*)R"(J:\Code\Visual Studio 2017\Projects\EGL3\src\graphics\fonts\fonts.conf)", true);
-            FcConfigAppFontAddDir(Config, (FcChar8*)R"(J:\Code\Visual Studio 2017\Projects\EGL3\src\graphics\fonts)");
-            FcConfigAppFontAddDir(Config, (FcChar8*)R"(C:\WINDOWS\Fonts)");
-
-            auto FontMap = (PangoFcFontMap*)pango_cairo_font_map_new_for_font_type(CAIRO_FONT_TYPE_FT);
-            pango_fc_font_map_set_config(FontMap, Config);
-            pango_cairo_font_map_set_default((PangoCairoFontMap*)FontMap);
-        }
+        Utils::SetupFonts();
 
         //_putenv_s("GTK_CSD", "0");
         //_putenv_s("GTK_DEBUG", "interactive");
@@ -94,10 +57,10 @@ namespace EGL3 {
         StyleData->signal_parsing_error().connect([&](const Glib::RefPtr<const Gtk::CssSection>& section, const Glib::Error& error) {
             EGL3_LOG(LogLevel::Critical, "Failed to parse style data properly");
         });
-        StyleData->load_from_path("J:/Code/Visual Studio 2017/Projects/EGL3/src/EGL3.css");
+        StyleData->load_from_path("resources\\EGL3.css");
         Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        Utils::GladeBuilder Builder("J:/Code/Visual Studio 2017/Projects/EGL3/src/EGL3.glade");
+        Utils::GladeBuilder Builder("resources\\EGL3.glade");
 
         auto& AppWnd = Builder.GetWidget<Gtk::ApplicationWindow>("EGL3App");
 
@@ -112,7 +75,7 @@ namespace EGL3 {
             }
         }, App));
 
-        Storage::Persistent::Store Storage("storage.stor");
+        Storage::Persistent::Store Storage(Utils::Config::GetConfigFolder() / "storage.stor");
         App->set_data("EGL3Storage", &Storage);
 
         Modules::ModuleList::Attach(App, Builder);

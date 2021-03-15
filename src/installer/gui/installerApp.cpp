@@ -1,4 +1,5 @@
 #include "installerApp.h"
+
 #include "installerAppDlg.h"
 
 namespace EGL3::Installer {
@@ -74,6 +75,6 @@ namespace EGL3::Installer {
 
 		// Since the dialog has been closed, return FALSE so that we exit the
 		// application, rather than start the application's message pump.
-		return TRUE;
+		return FALSE;
 	}
 }

@@ -98,7 +98,7 @@ namespace EGL3::Installer {
 		if (_dupenv_s(&progFiles, nullptr, "PROGRAMFILES")) {
 			// couldn't get the env variable
 		}
-		InstallPath = std::filesystem::path(progFiles) / "fnbot.shop";
+		InstallPath = std::filesystem::path(progFiles) / "EGL3";
 
 		{
 			CPngImage img;
@@ -215,12 +215,8 @@ namespace EGL3::Installer {
 			break;
 		case InstallState::Complete:
 		{
-			STARTUPINFO si = { sizeof(si) };
-			PROCESS_INFORMATION pi;
-			if (CreateProcess(NULL, (char*)InstallManager->GetStartExe().string().c_str(), NULL, NULL, FALSE, CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
-				CloseHandle(pi.hProcess);
-				CloseHandle(pi.hThread);
-			}
+			MessageBox(Backend->GetLaunchPath().string().c_str());
+			ShellExecute(NULL, "open", Backend->GetLaunchPath().string().c_str(), NULL, NULL, SW_SHOWNORMAL);
 			DestroyWindow();
 			break;
 		}
@@ -375,41 +371,29 @@ namespace EGL3::Installer {
 	}
 
 	LRESULT CinstallerAppDlg::OnProgressUpdate(WPARAM wParam, LPARAM lParam) {
-		((CProgressCtrl*)GetDlgItem(IDC_PROGRESS))->SetPos(int(InstallManager->GetProgress() * 1000));
+		float Value;
+		Backend::Unpacker::State State;
+		Backend->GetProgress(Value, State);
+		((CProgressCtrl*)GetDlgItem(IDC_PROGRESS))->SetPos(int(Value * 1000));
 		LPCTSTR status;
-		switch (InstallManager->GetState())
+		switch (State)
 		{
-		case Backend::InstallState::INIT_PINNING:
-			status = "Initializing downloader";
+		case Backend::Unpacker::State::Opening:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Opening");
 			break;
-		case Backend::InstallState::INIT_STREAMS:
-			status = "Initializing streams";
+		case Backend::Unpacker::State::Copying:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Copying files");
 			break;
-		case Backend::InstallState::INIT_DOWNLOAD:
-			status = "Initializing download";
+		case Backend::Unpacker::State::Registry:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Updating registry");
 			break;
-		case Backend::InstallState::DOWNLOAD:
-		{
-			status = new char[100];
-			sprintf((char*)status, "Downloading... (%s)", InstallManager->GetStateInfo());
+		case Backend::Unpacker::State::Shortcut:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Creating shortcut");
 			break;
-		}
-		case Backend::InstallState::REGISTRY:
-			status = "Adding registry entries";
-			break;
-		case Backend::InstallState::SHORTCUT:
-			status = "Creating start menu shortcut";
-			break;
-		case Backend::InstallState::DONE:
-			status = "Done!";
+		case Backend::Unpacker::State::Done:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Done");
 			ENBL_DLG(IDNEXT);
 			break;
-		default:
-			return 0;
-		}
-		GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText(status);
-		if (InstallManager->GetState() == Backend::InstallState::DOWNLOAD) {
-			delete[] status;
 		}
 		return 0;
 	}
@@ -425,16 +409,16 @@ namespace EGL3::Installer {
 	void CinstallerAppDlg::RunInstaller() {
 		((CProgressCtrl*)GetDlgItem(IDC_PROGRESS))->SetRange(0, 1000);
 
-		InstallManager.emplace(InstallPath,
-			[this]() {
-				::PostMessage((HWND)GetSafeHwnd(), UWM_UPDATE_PROGRESS, 0, 0);
-			},
-			[this](const std::string& Error) {
-				char* err = new char[Error.size()];
-				strcpy(err, Error.c_str());
-				::PostMessage((HWND)GetSafeHwnd(), UWM_ERROR_PROGRESS, 0, (LPARAM)err);
-			}
-		);
-		InstallManager->Run();
+		Backend.emplace(InstallPath);
+		Backend->OnProgressUpdate.Set([this]() {
+			::PostMessage((HWND)GetSafeHwnd(), UWM_UPDATE_PROGRESS, 0, 0);
+		});
+		Backend->OnProgressError.Set([this](const std::string& Error) {
+			char* err = new char[Error.size()];
+			strcpy(err, Error.c_str());
+			::PostMessage((HWND)GetSafeHwnd(), UWM_ERROR_PROGRESS, 0, (LPARAM)err);
+		});
+
+		Backend->Run();
 	}
 }

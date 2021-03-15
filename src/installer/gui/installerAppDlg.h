@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework.h"
-#include "../backend/installer.h"
+#include "../backend/Installer.h"
 
 #include <filesystem>
 #include <optional>
@@ -26,7 +26,7 @@ namespace EGL3::Installer {
 		HICON IconHandle;
 
 		std::filesystem::path InstallPath;
-		std::optional<Backend::InstallManager> InstallManager;
+		std::optional<Backend::Installer> Backend;
 		InstallState CurrentState;
 
 		void UnloadState();

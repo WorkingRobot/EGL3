@@ -5,8 +5,6 @@
 #include <filesystem>
 #include <stdio.h>
 
-namespace fs = std::filesystem;
-
 namespace EGL3::Utils::Streams {
     class FileStream : public Stream {
     public:
@@ -20,7 +18,7 @@ namespace EGL3::Utils::Streams {
         }
 
         // weird crashes happen when i try RAII with a destructor
-        bool open(const fs::path& FilePath, const char* Mode) {
+        bool open(const std::filesystem::path& FilePath, const char* Mode) {
             BaseStream = fopen(FilePath.string().c_str(), Mode);
             return OpenAndValid = valid();
         }

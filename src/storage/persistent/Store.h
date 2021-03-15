@@ -9,11 +9,9 @@
 #include <unordered_map>
 
 namespace EGL3::Storage::Persistent {
-    namespace fs = std::filesystem;
-
     class Store {
     public:
-        Store(const fs::path& Path);
+        Store(const std::filesystem::path& Path);
 
         ~Store();
 
@@ -42,6 +40,6 @@ namespace EGL3::Storage::Persistent {
         std::mutex Mutex;
         std::unordered_map<uint32_t, Key> Data;
 
-        fs::path Path;
+        std::filesystem::path Path;
     };
 }

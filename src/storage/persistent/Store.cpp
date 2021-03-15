@@ -1,8 +1,10 @@
 #include "Store.h"
 
+#include "../../utils/Config.h"
+
 namespace EGL3::Storage::Persistent {
-    Store::Store(const fs::path& Path) : Path(Path) {
-        if (fs::is_regular_file(Path)) {
+    Store::Store(const std::filesystem::path& Path) : Path(Path) {
+        if (std::filesystem::is_regular_file(Path)) {
             Utils::Streams::FileStream Stream;
             Stream.open(Path, "rb+");
             EGL3_CONDITIONAL_LOG(Stream.valid(), LogLevel::Error, "Could not open store file. Try removing or renaming it.");
@@ -31,6 +33,7 @@ namespace EGL3::Storage::Persistent {
     void Store::Flush() {
         std::lock_guard Guard(Mutex);
 
+        std::filesystem::create_directories(Path.parent_path());
         Utils::Streams::FileStream Stream;
         Stream.open(Path, "wb+");
         

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <filesystem>
 
 namespace EGL3::Utils::Config {
     constexpr const char* GetAppName() {
@@ -34,4 +34,8 @@ namespace EGL3::Utils::Config {
     constexpr const char* GetAppVersion() {
         return CONFIG_VERSION_LONG;
     }
+
+    const std::filesystem::path& GetConfigFolder();
+
+    const std::filesystem::path& GetExeFolder();
 }

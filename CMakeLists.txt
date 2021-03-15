@@ -93,9 +93,43 @@ else()
     add_compile_definitions(USE_SUBSYSTEM_WIN32)
 endif()
 
+
+## Add projects ##
+
 if (ENABLE_INSTALLER)
     add_subdirectory(src/installer)
 else()
     add_subdirectory(src)
     add_subdirectory(src/srv)
+endif()
+
+
+## Define install targets ##
+
+if (NOT ENABLE_INSTALLER)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
+    include(InstallRequiredSystemLibraries)
+    install(
+        TARGETS EGL3 EGL3_SRV
+        RUNTIME DESTINATION "."
+        CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}
+    )
+
+    install(CODE [[
+        file(GLOB_RECURSE DLL_DEPS "${CMAKE_BINARY_DIR}/*.dll")
+        foreach(_file ${DLL_DEPS})
+            file(INSTALL
+                DESTINATION ${CMAKE_INSTALL_PREFIX}
+                TYPE SHARED_LIBRARY
+                FILES "${_file}"
+            )
+        endforeach()
+    ]])
+
+    file(GLOB EXTRA_DEPS "${CMAKE_SOURCE_DIR}/extras/*")
+    install(
+        DIRECTORY ${EXTRA_DEPS}
+        DESTINATION "."
+        CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}
+    )
 endif()
