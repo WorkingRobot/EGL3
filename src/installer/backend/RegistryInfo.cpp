@@ -143,6 +143,7 @@ namespace EGL3::Installer::Backend {
         }
 
         ShellLink->SetPath((InstallDirectory / LaunchExe).string().c_str());
+        ShellLink->SetWorkingDirectory(InstallDirectory.string().c_str());
 
         IPersistFile* PersistFile;
         Result = ShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&PersistFile);

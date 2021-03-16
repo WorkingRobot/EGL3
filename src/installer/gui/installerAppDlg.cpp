@@ -215,7 +215,6 @@ namespace EGL3::Installer {
 			break;
 		case InstallState::Complete:
 		{
-			MessageBox(Backend->GetLaunchPath().string().c_str());
 			ShellExecute(NULL, "open", Backend->GetLaunchPath().string().c_str(), NULL, NULL, SW_SHOWNORMAL);
 			DestroyWindow();
 			break;
