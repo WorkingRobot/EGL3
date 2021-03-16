@@ -76,6 +76,9 @@ namespace EGL3::Modules::Game {
         Gtk::Label& InfoWritePeak;
         Widgets::Graph<3> InfoGraph;
 
+        Gtk::Widget* MainStackBefore;
+        Gtk::Widget* MainStackCurrent;
+
         std::unique_ptr<Storage::Models::DownloadInfo> CurrentDownload;
 
         std::mutex StatsMutex;

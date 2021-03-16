@@ -5,7 +5,7 @@
 namespace EGL3::Modules::Game {
     using namespace Storage::Models;
 
-    static constexpr float GraphScale = 1024 * 1024 * 50;
+    static constexpr double GraphScale = 1024 * 1024 * 50;
     static constexpr std::chrono::milliseconds RefreshTime(500);
     static constexpr double DivideRate = std::chrono::duration_cast<std::chrono::duration<double>>(RefreshTime) / std::chrono::seconds(1);
 
@@ -77,6 +77,30 @@ namespace EGL3::Modules::Game {
                 Utils::HumanizeByteSize(Data[1] * GraphScale),
                 Utils::HumanizeByteSize(Data[2] * GraphScale)
             );
+        });
+
+        MainStackBefore = MainStackCurrent = MainStack.get_focus_child();
+
+        MainStack.signal_set_focus_child().connect([this](Gtk::Widget* NewChild) {
+            MainStackBefore = MainStackCurrent;
+            MainStackCurrent = NewChild;
+            if (MainStackBefore == &SwitchStack) {
+                if (CurrentDownload) {
+                    switch (CurrentDownload->GetState())
+                    {
+                    case DownloadInfoState::Cancelled:
+                    case DownloadInfoState::Finished:
+                        SwitchStack.hide();
+                        CurrentDownload.release();
+                        break;
+                    default:
+                        break;
+                    }
+                }
+                else {
+                    SwitchStack.hide();
+                }
+            }
         });
 
         Utils::Mmio::MmioFile::SetWorkingSize(Utils::Mmio::MmioFile::DownloadWorkingSize);
