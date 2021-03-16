@@ -22,6 +22,7 @@ namespace EGL3::Storage::Models {
 
     public:
         struct StateOptions {
+            std::filesystem::path DefaultArchivePath;
             std::filesystem::path ArchivePath;
             bool AutoUpdate;
             bool CreateShortcut;

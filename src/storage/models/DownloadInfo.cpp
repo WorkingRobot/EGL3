@@ -28,12 +28,12 @@ namespace EGL3::Storage::Models {
         });
         if (ConfigPtr != Games.end()) {
             GameConfig = &*ConfigPtr;
-            Data.ArchivePath = GameConfig->GetPath();
+            Data.DefaultArchivePath = Data.ArchivePath = GameConfig->GetPath();
             Data.AutoUpdate = GameConfig->GetAutoUpdate();
             Data.CreateShortcut = GameConfig->GetCreateShortcut();
         }
         else {
-            Data.ArchivePath = Utils::Config::GetConfigFolder() / "Fortnite.egia";
+            Data.DefaultArchivePath = Data.ArchivePath = Utils::Config::GetConfigFolder() / "Fortnite.egia";
             Data.AutoUpdate = true;
             Data.CreateShortcut = true;
         }

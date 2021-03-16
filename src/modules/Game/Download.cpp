@@ -48,13 +48,18 @@ namespace EGL3::Modules::Game {
         });
 
         OptionsFileDialog.LocationChosen.Set([this](const std::string& NewFile) {
+            auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
             if (NewFile.empty()) {
-                OptionsFilePreview.set_text("None");
-                OptionsFilePreview.set_has_tooltip(false);
+                OptionsFilePreview.set_text(Data.DefaultArchivePath.string().c_str());
+                OptionsFilePreview.set_tooltip_text(Data.DefaultArchivePath.string().c_str());
+
+                Data.ArchivePath = Data.DefaultArchivePath;
             }
             else {
                 OptionsFilePreview.set_text(NewFile);
                 OptionsFilePreview.set_tooltip_text(NewFile);
+
+                Data.ArchivePath = NewFile;
             }
         });
 
@@ -116,6 +121,9 @@ namespace EGL3::Modules::Game {
 
     void DownloadModule::OnDownloadOkClicked()
     {
+        auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
+        Data.AutoUpdate = OptionsAutoUpdate.get_active();
+        Data.CreateShortcut = OptionsCreateShortcut.get_active();
         CurrentDownload->BeginDownload([this](Storage::Game::GameId Id, std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
             auto Resp = GameInfo.GetVersionData(Id);
             if (Resp.HasError()) {
