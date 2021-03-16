@@ -97,6 +97,7 @@ int main(int argc, char* argv[]) {
             ReturnCode = RunDisable();
             break;
         case Utils::Crc32("DELETE"):
+            ReturnCode = RunStop();
             ReturnCode = RunDelete();
             break;
         case Utils::Crc32("START"):

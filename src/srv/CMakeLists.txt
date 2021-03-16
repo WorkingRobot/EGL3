@@ -22,8 +22,8 @@ add_file(EGL3_SRV ../srv_main.cpp)
 add_executable(EGL3_SRV ${EGL3_SRV_SOURCES})
 
 target_compile_definitions(EGL3_SRV PRIVATE
-    SERVICE_NAME="SvcName"
-    SERVICE_DESC="This is a test description"
+    SERVICE_NAME="EGL3 Launcher"
+    SERVICE_DESC="Handles the mounting for .egia files on EGL3's behalf"
 )
 
 

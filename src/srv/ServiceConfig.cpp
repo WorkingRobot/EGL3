@@ -37,7 +37,7 @@ namespace EGL3::Service {
             SERVICE_NAME,              // service name to display 
             SERVICE_ALL_ACCESS,        // desired access 
             SERVICE_WIN32_OWN_PROCESS, // service type 
-            SERVICE_DEMAND_START,      // start type 
+            SERVICE_AUTO_START,        // start type 
             SERVICE_ERROR_NORMAL,      // error control type 
             FilePath,                  // path to service's binary 
             NULL,                      // no load ordering group 
@@ -253,7 +253,7 @@ namespace EGL3::Service {
 
         // Change the service start type.
 
-        if (!ChangeServiceConfig(Service, SERVICE_NO_CHANGE, SERVICE_DEMAND_START, SERVICE_NO_CHANGE, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+        if (!ChangeServiceConfig(Service, SERVICE_NO_CHANGE, SERVICE_AUTO_START, SERVICE_NO_CHANGE, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
         {
             printf("ChangeServiceConfig failed (%d)\n", GetLastError());
         }

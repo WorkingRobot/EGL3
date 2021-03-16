@@ -95,7 +95,6 @@ namespace EGL3::Service {
 
         SectionLUT.reserve(ArchiveLists->Files.size());
         for (auto& File : ArchiveLists->Files) {
-            //printf("%s %s\n", File.Filename, Utils::ToHex<true>(File.SHA).c_str());
             auto& Sections = SectionLUT.emplace_back();
             uint32_t ClusterCount = Utils::Align<4096>(File.FileSize) / 4096;
             Sections.reserve(ClusterCount);
