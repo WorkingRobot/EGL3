@@ -143,7 +143,7 @@ namespace EGL3::Web::Epic::Responses {
             std::string Title;
 
             PARSE_DEFINE(EmergencyNoticePost)
-                PARSE_ITEM("gamemodes", Gamemodes)
+                PARSE_ITEM_OPT("gamemodes", Gamemodes)
                 PARSE_ITEM("hidden", Hidden)
                 PARSE_ITEM("body", Body)
                 PARSE_ITEM("title", Title)
