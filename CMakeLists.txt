@@ -13,7 +13,7 @@ option(ENABLE_INSTALLER "Build the installer installer (this must be separately 
 
 set(CONFIG_VERSION_MAJOR 3)
 set(CONFIG_VERSION_MINOR 0)
-set(CONFIG_VERSION_PATCH 2)
+set(CONFIG_VERSION_PATCH 3)
 
 # Get Git Info #
 execute_process(COMMAND git log --pretty=format:'%h' -n 1
