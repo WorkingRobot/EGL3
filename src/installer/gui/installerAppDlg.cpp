@@ -86,6 +86,7 @@ namespace EGL3::Installer {
 
 			if (font->GetLogFont(&lf)) {
 				lf.lfHeight = 16;
+				lf.lfWeight = FW_BLACK;
 				strcpy_s(lf.lfFaceName, "Consolas");
 				FontLicense.CreateFontIndirect(&lf);
 			}
@@ -377,6 +378,9 @@ namespace EGL3::Installer {
 		LPCTSTR status;
 		switch (State)
 		{
+		case Backend::Unpacker::State::StoppingService:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Stopping service");
+			break;
 		case Backend::Unpacker::State::Opening:
 			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Opening");
 			break;
@@ -388,6 +392,9 @@ namespace EGL3::Installer {
 			break;
 		case Backend::Unpacker::State::Shortcut:
 			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Creating shortcut");
+			break;
+		case Backend::Unpacker::State::StartingService:
+			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Starting service");
 			break;
 		case Backend::Unpacker::State::Done:
 			GetDlgItem(IDC_STATIC_PROGRESS)->SetWindowText("Done");
