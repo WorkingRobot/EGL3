@@ -51,6 +51,10 @@ namespace EGL3::Utils {
         auto fmt = GetCurrentNumberFormat();
         fmt.NumDigits = std::max(Precision, 0);
         int64_t BufSize = GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, NULL, 0);
+        if (BufSize == 0) {
+            wprintf(L"Couldn't humanize number (%s) GLE %d\n", ValueString.c_str(), GetLastError());
+            return L"";
+        }
         auto Buf = std::make_unique<wchar_t[]>(BufSize);
         GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, Buf.get(), BufSize);
         return std::wstring(Buf.get(), BufSize - 1);

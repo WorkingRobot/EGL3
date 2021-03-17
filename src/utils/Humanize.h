@@ -3,6 +3,7 @@
 #include "Format.h"
 
 #include <chrono>
+#include <sstream>
 
 namespace EGL3::Utils {
     namespace Detail {
@@ -241,7 +242,10 @@ namespace EGL3::Utils {
 
     template <typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
     std::wstring Humanize(T Value, int Precision = 0) {
-        return Detail::HumanizeNumber(std::to_wstring(Value), Precision);
+        std::wstringstream Buf;
+        Buf.imbue(std::locale("C"));
+        Buf << Value;
+        return Detail::HumanizeNumber(Buf.str(), Precision);
     }
 
     std::wstring HumanizeByteSize(uint64_t Size);
