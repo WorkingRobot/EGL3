@@ -1,22 +1,11 @@
 #include "modules/ModuleList.h"
-#include "srv/pipe/Client.h"
-#include "storage/game/Archive.h"
-#include "storage/game/ArchiveList.h"
 #include "storage/persistent/Store.h"
 #include "utils/Assert.h"
 #include "utils/Config.h"
 #include "utils/Format.h"
 #include "utils/GladeBuilder.h"
 #include "utils/Platform.h"
-#include "utils/Random.h"
 #include "utils/FontSetup.h"
-
-#include "storage/models/MountedDisk.h"
-#include <future>
-
-#include <fontconfig/fontconfig.h>
-#include <gtkmm.h>
-#include <pango/pangofc-fontmap.h>
 
 #ifdef TRACY_ENABLE
 #include <Tracy.hpp>
