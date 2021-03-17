@@ -5,7 +5,7 @@
 namespace EGL3::Modules::Game {
     using namespace Storage::Models;
 
-    static constexpr double GraphScale = 1024 * 1024 * 50;
+    static constexpr double GraphScale = 1024. * 1024 * 50;
     static constexpr std::chrono::milliseconds RefreshTime(500);
     static constexpr double DivideRate = std::chrono::duration_cast<std::chrono::duration<double>>(RefreshTime) / std::chrono::seconds(1);
 
@@ -361,7 +361,7 @@ namespace EGL3::Modules::Game {
             InfoWritePeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesWritePeak)));
             InfoWritePeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesWritePeak)));
 
-            InfoGraph.Add({ StatsData.BytesDownloadRate / GraphScale, StatsData.BytesReadRate / GraphScale, StatsData.BytesWriteRate / GraphScale });
+            InfoGraph.Add({ float(StatsData.BytesDownloadRate / GraphScale), float(StatsData.BytesReadRate / GraphScale), float(StatsData.BytesWriteRate / GraphScale) });
         }
     }
 }

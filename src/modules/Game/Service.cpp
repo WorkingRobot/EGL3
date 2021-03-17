@@ -12,7 +12,7 @@ namespace EGL3::Modules::Game {
         Client.emplace();
 
         if (!EGL3_CONDITIONAL_LOG(Client->IsConnected(), LogLevel::Error, "Could not connect to service server")) {
-            for (int i = 0; i < 5 && PatchService(); ++i) {} // 5 retries
+            for (int i = 0; i < 2 && PatchService(); ++i) {} // 2 retries
 
             // Assignment operator without the optional goes bonkers, this is a good alternative
             Client.reset();
@@ -38,32 +38,8 @@ namespace EGL3::Modules::Game {
             return GetLastError();
         }
 
-        uint32_t CreateFlags = NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW;
-        uint32_t DwFlags = 0;
-        uint16_t ShowWindowFlags = SW_HIDE;
-
         STARTUPINFO StartupInfo{
             .cb = sizeof(STARTUPINFO),
-
-            .lpReserved = NULL,
-            .lpDesktop = NULL,
-            .lpTitle = NULL,
-
-            .dwX = (DWORD)CW_USEDEFAULT,
-            .dwY = (DWORD)CW_USEDEFAULT,
-            .dwXSize = (DWORD)CW_USEDEFAULT,
-            .dwYSize = (DWORD)CW_USEDEFAULT,
-            .dwXCountChars = (DWORD)0,
-            .dwYCountChars = (DWORD)0,
-            .dwFillAttribute = (DWORD)0,
-            .dwFlags = (DWORD)DwFlags,
-            .wShowWindow = (WORD)ShowWindowFlags,
-
-            .cbReserved2 = 0,
-            .lpReserved2 = NULL,
-            .hStdInput = HANDLE(NULL),
-            .hStdOutput = HANDLE(NULL),
-            .hStdError = HANDLE(NULL)
         };
 
         auto ExePath = std::filesystem::path(FilePath).parent_path() / "EGL3_SRV.exe";
@@ -75,7 +51,7 @@ namespace EGL3::Modules::Game {
             CommandLineString.data(),
             NULL, NULL,
             FALSE, // This is true if we were redirecting std outputs (https://github.com/EpicGames/UnrealEngine/blob/2bf1a5b83a7076a0fd275887b373f8ec9e99d431/Engine/Source/Runtime/Core/Private/Windows/WindowsPlatformProcess.cpp#L323)
-            (DWORD)CreateFlags,
+            (DWORD)(NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW),
             NULL,
             ExePath.parent_path().string().c_str(),
             &StartupInfo,

@@ -10,10 +10,12 @@ namespace EGL3::Installer::Backend {
     class Unpacker {
     public:
         enum class State : uint8_t {
+            StoppingService,
             Opening,
             Copying,
             Registry,
             Shortcut,
+            StartingService,
             Done
         };
 
@@ -29,6 +31,8 @@ namespace EGL3::Installer::Backend {
         Utils::Callback<void(const std::string& Error)> OnProgressError;
 
     private:
+        void CallService(const char* Args) const;
+
         void UpdateProgress(float NewProgress, State NewState);
 
         std::future<void> Future;

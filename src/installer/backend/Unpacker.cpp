@@ -1,9 +1,14 @@
 #include "Unpacker.h"
 
 #include "../../utils/streams/FileStream.h"
+#include "../../utils/Format.h"
 #include "streams/LZ4DecompStream.h"
 #include "Constants.h"
 #include "RegistryInfo.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 namespace EGL3::Installer::Backend {
     Unpacker::Unpacker(Utils::Streams::Stream& InStream, const std::filesystem::path& TargetDirectory) :
@@ -15,7 +20,11 @@ namespace EGL3::Installer::Backend {
     void Unpacker::Run()
     {
         Future = std::async(std::launch::async, [this]() {
-            UpdateProgress(.02f, State::Opening);
+            UpdateProgress(.02f, State::StoppingService);
+
+            CallService("stop nowait");
+
+            UpdateProgress(.08f, State::Opening);
 
             uint32_t Magic;
             InStream >> Magic;
@@ -26,7 +35,7 @@ namespace EGL3::Installer::Backend {
 
             Streams::LZ4DecompStream Stream(InStream);
 
-            UpdateProgress(.05f, State::Copying);
+            UpdateProgress(.1f, State::Copying);
 
             auto FileBuffer = std::make_unique<char[]>(BufferSize);
             while (true) {
@@ -40,11 +49,12 @@ namespace EGL3::Installer::Backend {
                 Stream >> FileName;
 
                 auto FilePath = TargetDirectory / FileName;
-                std::filesystem::create_directories(FilePath.parent_path());
+                std::error_code Error;
+                std::filesystem::create_directories(FilePath.parent_path(), Error);
 
                 Utils::Streams::FileStream FileStream;
                 if (!FileStream.open(FilePath, "wb")) {
-                    OnProgressError("Could not open file");
+                    OnProgressError(Utils::Format("Could not open file %s", FilePath.string().c_str()));
                     return;
                 }
 
@@ -57,7 +67,7 @@ namespace EGL3::Installer::Backend {
                 } while (BytesLeft);
             }
 
-            UpdateProgress(.90f, State::Registry);
+            UpdateProgress(.85f, State::Registry);
 
             RegistryInfo Registry;
             Stream >> Registry;
@@ -71,7 +81,7 @@ namespace EGL3::Installer::Backend {
                 return;
             }
 
-            UpdateProgress(.95f, State::Shortcut);
+            UpdateProgress(.90f, State::Shortcut);
 
             if (Registry.IsShortcutted()) {
                 Registry.Unshortcut();
@@ -81,6 +91,10 @@ namespace EGL3::Installer::Backend {
                 OnProgressError("Could not add shortcut");
                 return;
             }
+
+            UpdateProgress(.95f, State::StartingService);
+
+            CallService("patch nowait");
 
             UpdateProgress(1, State::Done);
         });
@@ -95,6 +109,37 @@ namespace EGL3::Installer::Backend {
     const std::filesystem::path& Unpacker::GetLaunchPath() const
     {
         return LaunchPath;
+    }
+
+    void Unpacker::CallService(const char* Args) const
+    {
+        std::error_code Error;
+        if (std::filesystem::is_regular_file(TargetDirectory / "EGL3_SRV.exe", Error)) {
+            STARTUPINFO StartupInfo{
+                .cb = sizeof(STARTUPINFO)
+            };
+
+            auto ExePath = TargetDirectory / "EGL3_SRV.exe";
+            std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), Args);
+            PROCESS_INFORMATION ProcInfo;
+
+            BOOL Ret = CreateProcess(
+                NULL,
+                CommandLineString.data(),
+                NULL, NULL,
+                FALSE,
+                (DWORD)(NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW),
+                NULL,
+                ExePath.parent_path().string().c_str(),
+                &StartupInfo,
+                &ProcInfo
+            );
+            if (Ret) {
+                CloseHandle(ProcInfo.hThread);
+                WaitForSingleObject(ProcInfo.hProcess, INFINITE);
+                CloseHandle(ProcInfo.hProcess);
+            }
+        }
     }
 
     void Unpacker::UpdateProgress(float NewProgress, State NewState)
