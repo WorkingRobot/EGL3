@@ -66,28 +66,28 @@ namespace EGL3::Storage::Models {
 
         // Seems like it loosely follows https://github.com/EpicGames/UnrealEngine/blob/e744dd44214743240bf6a67c6800ac60b8eb49e3/Engine/Source/Programs/AutomationTool/AutomationUtils/MCPPublic.cs#L87
         static const char* PlatformToString(const std::string& Platform) {
-            switch (Utils::Crc32(Platform))
+            switch (Utils::Crc32<true>(Platform))
             {
-            case Utils::Crc32("windows"):
+            case Utils::Crc32("WINDOWS"):
                 return "Windows";
-            case Utils::Crc32("mac"):
+            case Utils::Crc32("MAC"):
                 return "Mac";
-            case Utils::Crc32("ios"):
+            case Utils::Crc32("IOS"):
                 return "iOS";
-            case Utils::Crc32("android"):
+            case Utils::Crc32("ANDROID"):
                 return "Android";
-            case Utils::Crc32("androidGP"):
+            case Utils::Crc32("ANDROIDGP"):
                 return "Android Google Play";
             case Utils::Crc32("PS4"):
                 return "PS4";
             case Utils::Crc32("PS5"):
                 return "PS5";
-            case Utils::Crc32("switch"):
+            case Utils::Crc32("SWITCH"):
                 return "Switch";
             case Utils::Crc32("XSX"):
                 return "Xbox Series X";
-            case Utils::Crc32("XBoxOne"):
-            case Utils::Crc32("XboxOneGDK"):
+            case Utils::Crc32("XBOXONE"):
+            case Utils::Crc32("XBOXONEGDK"):
                 return "Xbox One";
             default:
                 return Platform.c_str();

@@ -135,14 +135,15 @@ namespace EGL3::Widgets {
 
     }
 
-    std::string CombineGamemodes(const std::vector<std::string>& Gamemodes) {
+    template<class TransformerT>
+    std::string CombineList(const std::vector<std::string>& Gamemodes, const TransformerT& Transformer) {
         if (Gamemodes.size() == 2) {
-            return Utils::Format("%s and %s", Storage::Models::WhatsNew::SubGameToString(Gamemodes[0]), Storage::Models::WhatsNew::SubGameToString(Gamemodes[1]));
+            return Utils::Format("%s and %s", Transformer(Gamemodes[0]), Transformer(Gamemodes[1]));
         }
         else {
             std::stringstream Ret;
             for (int i = 0; i < Gamemodes.size(); ++i) {
-                Ret << Storage::Models::WhatsNew::SubGameToString(Gamemodes[i]);
+                Ret << Transformer(Gamemodes[i]);
                 if (i + 2 == Gamemodes.size()) {
                     Ret << ", and ";
                 }
@@ -160,7 +161,10 @@ namespace EGL3::Widgets {
             "",
             Item.Gamemodes.empty() ?
                 Storage::Models::WhatsNew::SourceToString(Source) : 
-                Glib::ustring::compose("%2 %1", Storage::Models::WhatsNew::SourceToString(Source), CombineGamemodes(Item.Gamemodes)),
+                Glib::ustring::compose("%2 %1%3", Storage::Models::WhatsNew::SourceToString(Source), CombineList(Item.Gamemodes, Storage::Models::WhatsNew::SubGameToString),
+                    Item.Platforms.empty() ? "" :
+                    " (" + CombineList(Item.Platforms, Storage::Models::WhatsNew::PlatformToString) + ")"
+                ),
             Item.Body,
             Time,
             ImageCache

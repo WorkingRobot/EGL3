@@ -141,12 +141,14 @@ namespace EGL3::Web::Epic::Responses {
             bool Hidden;
             std::string Body;
             std::string Title;
+            std::vector<std::string> Platforms;
 
             PARSE_DEFINE(EmergencyNoticePost)
                 PARSE_ITEM_OPT("gamemodes", Gamemodes)
                 PARSE_ITEM("hidden", Hidden)
                 PARSE_ITEM("body", Body)
                 PARSE_ITEM("title", Title)
+                PARSE_ITEM_OPT("platforms", Platforms)
             PARSE_END
         };
 
