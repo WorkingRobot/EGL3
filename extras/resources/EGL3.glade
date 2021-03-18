@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2
+<!-- Generated with glade 3.38.2 
 
 Copyright (C) Aleks Margarian
 
@@ -1398,26 +1398,6 @@ Author: Aleks Margarian
                         <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="PlayVersionString">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="halign">end</property>
-                        <property name="label" translatable="yes">++Fortnite+Release-14.10-CL-14288110-Windows</property>
-                        <property name="selectable">True</property>
-                        <property name="ellipsize">start</property>
-                        <property name="single-line-mode">True</property>
-                        <style>
-                          <class name="font-translucent"/>
-                        </style>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="pack-type">end</property>
-                        <property name="position">2</property>
                       </packing>
                     </child>
                   </object>
