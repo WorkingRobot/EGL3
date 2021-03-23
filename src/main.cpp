@@ -40,7 +40,9 @@ namespace EGL3 {
 
         auto App = Gtk::Application::create("me.workingrobot.egl3");
 
-        Gtk::Settings::get_default()->set_property("gtk-application-prefer-dark-theme", true);
+        auto Settings = Gtk::Settings::get_default();
+        Settings->property_gtk_application_prefer_dark_theme().set_value(true);
+        Settings->property_gtk_xft_dpi().set_value(128 * 1024); // 128 dpi (125%)
 
         auto StyleData = Gtk::CssProvider::create();
         StyleData->signal_parsing_error().connect([&](const Glib::RefPtr<const Gtk::CssSection>& section, const Glib::Error& error) {
