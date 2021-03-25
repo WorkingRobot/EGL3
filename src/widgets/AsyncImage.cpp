@@ -10,7 +10,18 @@ namespace EGL3::Widgets {
     }
 
     void AsyncImage::set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Modules::ImageCacheModule& ImageCache) {
-        ImageTask = ImageCache.GetImageAsync(Url, FallbackUrl, Width, Height, ImageDispatcher);
+        if (!IsMapped.test()) {
+            ImageData = std::make_unique<ImageInfo>(ImageInfo{
+                .Url = Url,
+                .FallbackUrl = FallbackUrl,
+                .Width = Width,
+                .Height = Height,
+                .ImageCache = ImageCache
+            });
+        }
+        else {
+            ImageTask = ImageCache.GetImageAsync(Url, FallbackUrl, Width, Height, ImageDispatcher);
+        }
     }
 
     void AsyncImage::set_async(const cpr::Url& Url, const cpr::Url& FallbackUrl, Modules::ImageCacheModule& ImageCache) {
@@ -21,6 +32,15 @@ namespace EGL3::Widgets {
         ImageDispatcher.connect([this]() {
             if (ImageTask.valid()) {
                 this->set(ImageTask.get());
+            }
+        });
+
+        this->signal_map().connect([this]() {
+            if (!IsMapped.test_and_set()) {
+                if (ImageData) {
+                    ImageTask = ImageData->ImageCache.GetImageAsync(ImageData->Url, ImageData->FallbackUrl, ImageData->Width, ImageData->Height, ImageDispatcher);
+                    ImageData.reset();
+                }
             }
         });
     }
