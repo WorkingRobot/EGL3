@@ -1,5 +1,7 @@
 #include "List.h"
 
+#include "../../utils/StringCompare.h"
+
 namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
@@ -9,26 +11,51 @@ namespace EGL3::Modules::Friends {
         Options(Modules.GetModule<OptionsModule>()),
         List(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
         CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
+        FilterEntry(Builder.GetWidget<Gtk::SearchEntry>("FriendsFilterEntry")),
         CurrentUserModel(Friend::ConstructCurrent),
         CurrentUserWidget(CurrentUserModel, ImageCache)
     {
         FriendMenu.OnAction.Set([this](auto Action, const auto& Friend) { FriendMenuAction(Action, Friend); });
 
         {
-            List.set_sort_func([](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
+            List.set_sort_func([this](Gtk::ListBoxRow* A, Gtk::ListBoxRow* B) {
                 auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
                 auto BPtr = (Widgets::FriendItem*)B->get_child()->get_data("EGL3_FriendBase");
 
                 EGL3_CONDITIONAL_LOG(APtr && BPtr, LogLevel::Critical, "Widgets aren't of type FriendItem");
 
+                std::weak_ordering Comp;
+
+                if (FilterEntry.get_text_length()) [[unlikely]] {
+                    std::string Text = FilterEntry.get_text();
+                    auto& FriendA = APtr->GetData().Get();
+                    auto& FriendB = BPtr->GetData().Get();
+                    Comp = Utils::ContainsStringsInsensitive(FriendA.GetDisplayName(), Text) <=> Utils::ContainsStringsInsensitive(FriendB.GetDisplayName(), Text);
+                    if (std::is_eq(Comp)) {
+                        Comp = Utils::ContainsStringsInsensitive(FriendA.GetSecondaryName(), Text) <=> Utils::ContainsStringsInsensitive(FriendB.GetSecondaryName(), Text);
+                    }
+                }
+                else {
+                    Comp = *BPtr <=> *APtr;
+                }
+
                 // Undocumented _Value, but honestly, it's fine
-                return (*BPtr <=> *APtr)._Value;
+                return Comp._Value;
             });
 
             List.set_filter_func([this](Gtk::ListBoxRow* Row) {
                 auto Ptr = (Widgets::FriendItem*)Row->get_child()->get_data("EGL3_FriendBase");
 
                 EGL3_CONDITIONAL_LOG(Ptr, LogLevel::Critical, "Widget isn't of type FriendItem");
+
+                if (FilterEntry.get_text_length()) {
+                    std::string Text = FilterEntry.get_text();
+                    auto& Friend = Ptr->GetData().Get();
+                    if (Utils::ContainsStringsInsensitive(Friend.GetUsername(), Text) == std::string::npos &&
+                        Utils::ContainsStringsInsensitive(Friend.GetNickname(), Text) == std::string::npos) {
+                        return false;
+                    }
+                }
 
                 switch (Ptr->GetData().GetType()) {
                 case FriendType::INVALID:
@@ -40,7 +67,10 @@ namespace EGL3::Modules::Friends {
                 case FriendType::INBOUND:
                     return Options.GetStorageData().HasFlag<StoredFriendData::ShowIncoming>();
                 case FriendType::NORMAL:
-                    return Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>() || Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline;
+                    // If not offline, or less than 500 friends and show offline, or show override
+                    return Ptr->GetData().Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline ||
+                        (FriendsData.size() < 500 && Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>()) ||
+                        Options.GetStorageData().HasFlag<StoredFriendData::ShowOverride>();
                 default:
                     return true;
                 }
@@ -51,6 +81,10 @@ namespace EGL3::Modules::Friends {
             CurrentUserModel.Get().OnUpdate.connect([this]() { CurrentUserWidget.Update(); });
             CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
             // When KairosMenuModule is created, it'll run SetKairosMenuWindow
+        }
+
+        {
+            FilterEntry.signal_changed().connect([this]() { ResortEntireList(); });
         }
 
         {

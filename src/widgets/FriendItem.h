@@ -28,6 +28,8 @@ namespace EGL3::Widgets {
         void SetData(const Storage::Models::Friend& NewItem);
 
     private:
+        void SetContextMenuInternal();
+
         void Construct();
 
         void UpdateDispatch();
@@ -41,22 +43,34 @@ namespace EGL3::Widgets {
         const Storage::Models::Friend* UpdateData;
 
     protected:
+        void OnMapConstruct();
+
+        struct FriendItemInternal {
+            Gtk::Box BaseBox{ Gtk::ORIENTATION_HORIZONTAL };
+            Gtk::Overlay AvatarContainer;
+            AsyncImage AvatarBackground;
+            Gtk::EventBox AvatarEventBox;
+            AsyncImage Avatar;
+            Gtk::EventBox ColorStatusEventBox;
+            AsyncImage ColorStatus;
+            Gtk::Box StatusContainer{ Gtk::ORIENTATION_VERTICAL };
+            Gtk::Box UsernameContainer{ Gtk::ORIENTATION_HORIZONTAL };
+            Gtk::Label Username;
+            Gtk::Label Nickname;
+            Gtk::Label Status;
+            Gtk::Overlay PlatformContainer;
+            AsyncImage ProductImage;
+            AsyncImage PlatformImage;
+
+            void Construct(Gtk::EventBox& BaseContainer);
+
+            void Update(const Storage::Models::Friend* UpdateData, Modules::ImageCacheModule& ImageCache);
+        };
+
         Modules::ImageCacheModule& ImageCache;
         Gtk::EventBox BaseContainer;
-        Gtk::Box BaseBox{ Gtk::ORIENTATION_HORIZONTAL };
-        Gtk::Overlay AvatarContainer;
-        AsyncImage AvatarBackground;
-        Gtk::EventBox AvatarEventBox;
-        AsyncImage Avatar;
-        Gtk::EventBox ColorStatusEventBox;
-        AsyncImage ColorStatus;
-        Gtk::Box StatusContainer{ Gtk::ORIENTATION_VERTICAL };
-        Gtk::Box UsernameContainer{ Gtk::ORIENTATION_HORIZONTAL };
-        Gtk::Label Username;
-        Gtk::Label Nickname;
-        Gtk::Label Status;
-        Gtk::Overlay PlatformContainer;
-        AsyncImage ProductImage;
-        AsyncImage PlatformImage;
+        Widgets::FriendItemMenu* ContextMenu;
+        sigc::connection ContextMenuConnection;
+        std::unique_ptr<FriendItemInternal> Data;
     };
 }

@@ -57,6 +57,8 @@ namespace EGL3::Modules::Friends {
         Storage::Models::Friend CurrentUserModel;
         Widgets::CurrentUserItem CurrentUserWidget;
 
+        Gtk::SearchEntry& FilterEntry;
+
         std::vector<std::unique_ptr<Storage::Models::Friend>> FriendsData;
         std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
 

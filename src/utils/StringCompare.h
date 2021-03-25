@@ -36,6 +36,12 @@ namespace EGL3::Utils {
             }
         };
 
+        template<class DstTraits>
+        constexpr std::basic_string_view<char, DstTraits> traits_cast(const char* Ptr, const size_t Size) noexcept
+        {
+            return { Ptr, Size };
+        }
+
         template<class Traits>
         constexpr static int TraitsCompare(const char* A, const size_t ASize, const char* B, const size_t BSize) noexcept {
             const int Cmp = Traits::compare(A, B, std::min(ASize, BSize));
@@ -51,11 +57,21 @@ namespace EGL3::Utils {
             return 0;
         }
 
+        template<class Traits>
+        constexpr static size_t TraitsContains(const char* A, const size_t ASize, const char* B, const size_t BSize) noexcept {
+            return traits_cast<Traits>(A, ASize).find(traits_cast<Traits>(B, BSize));
+        }
+
         // A <=> B
         // Workaround until visual studio decides to implement <=> for std::basic_string
         template<bool Insensitive, class Str, class Traits = typename std::conditional<Insensitive, ci_char_traits, std::char_traits<char>>::type>
         constexpr static std::strong_ordering CompareStrings(const Str& A, const Str& B) {
             return 0 <=> TraitsCompare<Traits>(A.data(), A.size(), B.data(), B.size());
+        }
+
+        template<bool Insensitive, class Str, class Traits = typename std::conditional<Insensitive, ci_char_traits, std::char_traits<char>>::type>
+        constexpr static size_t ContainsStrings(const Str& A, const Str& B) {
+            return TraitsContains<Traits>(A.data(), A.size(), B.data(), B.size());
         }
     }
 
@@ -67,6 +83,11 @@ namespace EGL3::Utils {
     template<class Str>
     constexpr static std::weak_ordering CompareStringsInsensitive(const Str& A, const Str& B) {
         return Detail::CompareStrings<true>(A, B);
+    }
+
+    template<class Str>
+    constexpr static size_t ContainsStringsInsensitive(const Str& A, const Str& B) {
+        return Detail::ContainsStrings<true>(A, B);
     }
 
     template<class Clock>

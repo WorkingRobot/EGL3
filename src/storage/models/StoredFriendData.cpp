@@ -2,7 +2,7 @@
 
 namespace EGL3::Storage::Models {
     StoredFriendData::StoredFriendData() :
-        Options(OptionFlags(OptionFlags::ShowOffline | OptionFlags::ShowOutgoing | OptionFlags::ShowIncoming | OptionFlags::ShowBlocked | OptionFlags::CensorProfanity)),
+        Options(OptionFlags(OptionFlags::ShowOutgoing | OptionFlags::ShowIncoming | OptionFlags::CensorProfanity)),
         ShowStatus(Web::Xmpp::Json::ShowStatus::Online),
         Status("Using EGL3")
     {

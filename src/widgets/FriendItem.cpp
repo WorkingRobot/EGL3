@@ -9,18 +9,18 @@ namespace EGL3::Widgets {
 
     FriendItem::FriendItem(const Storage::Models::Friend& Item, Modules::ImageCacheModule& ImageCache) :
         UpdateData(&Item),
-        ImageCache(ImageCache)
+        ImageCache(ImageCache),
+        ContextMenu(nullptr)
     {
         UpdateDispatcher.connect([this]() { UpdateDispatch(); });
 
         Construct();
-
-        UpdateDispatch();
     }
 
     FriendItem::FriendItem(Modules::ImageCacheModule& ImageCache) :
         UpdateData(nullptr),
-        ImageCache(ImageCache)
+        ImageCache(ImageCache),
+        ContextMenu(nullptr)
     {
         UpdateDispatcher.connect([this]() { UpdateDispatch(); });
 
@@ -36,8 +36,10 @@ namespace EGL3::Widgets {
     }
 
     void FriendItem::SetContextMenu(Widgets::FriendItemMenu& ContextMenu) {
-        BaseContainer.set_events(Gdk::BUTTON_RELEASE_MASK);
-        BaseContainer.signal_button_release_event().connect([&, this](GdkEventButton* evt) { ContextMenu.PopupMenu(GetData(), BaseBox); return true; });
+        this->ContextMenu = &ContextMenu;
+        if (Data) {
+            SetContextMenuInternal();
+        }
     }
 
     void FriendItem::Update() {
@@ -53,9 +55,32 @@ namespace EGL3::Widgets {
         UpdateData = &NewItem;
     }
 
+    void FriendItem::SetContextMenuInternal()
+    {
+        if (!ContextMenuConnection) {
+            ContextMenuConnection = BaseContainer.signal_button_release_event().connect([&, this](GdkEventButton* evt) { ContextMenu->PopupMenu(GetData(), Data->BaseBox); return true; });
+        }
+    }
+
     void FriendItem::Construct() {
         BaseContainer.set_data("EGL3_FriendBase", this);
 
+        BaseContainer.signal_map().connect([this]() { OnMapConstruct(); });
+    }
+
+    void FriendItem::OnMapConstruct()
+    {
+        if (!Data) {
+            Data = std::make_unique<FriendItemInternal>();
+
+            Data->Construct(BaseContainer);
+
+            UpdateDispatch();
+        }
+    }
+
+    void FriendItem::FriendItemInternal::Construct(Gtk::EventBox& BaseContainer)
+    {
         BaseBox.set_border_width(2);
 
         Username.set_xalign(0);
@@ -116,11 +141,8 @@ namespace EGL3::Widgets {
         BaseContainer.show_all();
     }
 
-    void FriendItem::UpdateDispatch() {
-        if (!UpdateData) {
-            return;
-        }
-
+    void FriendItem::FriendItemInternal::Update(const Storage::Models::Friend* UpdateData, Modules::ImageCacheModule& ImageCache)
+    {
         auto& Friend = UpdateData->Get();
 
         Username.set_tooltip_text(Friend.GetAccountId());
@@ -178,12 +200,23 @@ namespace EGL3::Widgets {
         }
     }
 
+    void FriendItem::UpdateDispatch() {
+        if (!UpdateData || !Data) {
+            return;
+        }
+
+        SetContextMenuInternal();
+
+        Data->Update(UpdateData, ImageCache);
+    }
+
     std::string FriendItem::GetProductImageUrl(std::string_view ProductId) {
         switch (Utils::Crc32(ProductId.data(), ProductId.size())) {
         case Utils::Crc32("EGL3"):
             return Utils::Format("%slauncher-icon.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("Fortnite"):
             ProductId = "fortnite";
+            [[fallthrough]];
         default:
             return Utils::Format("%slauncher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/%.*s/icon.png", Web::GetHostUrl<Web::Host::UnrealEngineCdn1>(), ProductId.size(), ProductId.data());
         }

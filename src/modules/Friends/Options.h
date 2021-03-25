@@ -28,6 +28,7 @@ namespace EGL3::Modules::Friends {
         Gtk::CheckMenuItem& CheckFriendsOutgoing;
         Gtk::CheckMenuItem& CheckFriendsIncoming;
         Gtk::CheckMenuItem& CheckFriendsBlocked;
+        Gtk::CheckMenuItem& CheckFriendsOverride;
         Gtk::CheckMenuItem& CheckDeclineReqs;
         Gtk::CheckMenuItem& CheckProfanity;
     };

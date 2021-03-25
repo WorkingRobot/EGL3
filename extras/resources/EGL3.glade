@@ -125,6 +125,13 @@ Author: Aleks Margarian
         <property name="use-underline">True</property>
       </object>
     </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="FriendsOverrideCheck">
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Override Friend Cap</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
   </object>
   <object class="GtkMenu" id="WhatsNewPicker">
     <property name="visible">True</property>
@@ -1714,25 +1721,52 @@ Author: Aleks Margarian
                         <property name="can-focus">False</property>
                         <property name="transition-type">slide-left-right</property>
                         <child>
-                          <object class="GtkScrolledWindow" id="FriendsStackPage0">
-                            <property name="width-request">550</property>
+                          <object class="GtkBox" id="FriendsStackPage0">
                             <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="hscrollbar-policy">never</property>
-                            <property name="shadow-type">in</property>
-                            <property name="propagate-natural-width">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkViewport">
+                              <object class="GtkSearchEntry" id="FriendsFilterEntry">
                                 <property name="visible">True</property>
-                                <property name="can-focus">False</property>
+                                <property name="can-focus">True</property>
+                                <property name="primary-icon-name">edit-find-symbolic</property>
+                                <property name="primary-icon-activatable">False</property>
+                                <property name="primary-icon-sensitive">False</property>
+                                <property name="placeholder-text" translatable="yes">Search</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScrolledWindow">
+                                <property name="width-request">550</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="hscrollbar-policy">never</property>
+                                <property name="shadow-type">in</property>
+                                <property name="propagate-natural-width">True</property>
                                 <child>
-                                  <object class="GtkListBox" id="FriendsListBox">
+                                  <object class="GtkViewport">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="selection-mode">none</property>
+                                    <child>
+                                      <object class="GtkListBox" id="FriendsListBox">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="selection-mode">none</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                               </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>

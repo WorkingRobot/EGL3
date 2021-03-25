@@ -12,7 +12,7 @@ namespace EGL3::Storage::Models {
             ShowOutgoing    = 0x02,
             ShowIncoming    = 0x04,
             ShowBlocked     = 0x08,
-            // Invalid1     = 0x10,
+            ShowOverride    = 0x10,
             // Invalid2     = 0x20,
             AutoDeclineReqs = 0x40,
             CensorProfanity = 0x80
