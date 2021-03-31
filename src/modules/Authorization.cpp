@@ -61,8 +61,9 @@ namespace EGL3::Modules {
     }
 
     void AuthorizationModule::StartLogin() {
-        if (SignInTask.valid() || IsLoggedIn()) {
-            EGL3_LOG(LogLevel::Warning, "Tried to log in while already trying to or already logged in");
+        if (IsLoggedIn()) {
+            EGL3_LOG(LogLevel::Warning, "Tried to log in while already logged in");
+            AuthChanged.emit();
             return;
         }
 
