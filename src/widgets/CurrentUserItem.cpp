@@ -24,7 +24,7 @@ namespace EGL3::Widgets {
         auto Alloc = Data->Avatar.get_allocation();
         int x, y;
         Data->Avatar.get_window()->get_origin(x, y);
-        // Moved after because get_height returns 1 when hidden (couldn't find other workarounds for that, and I'm not bothered since there's no flickering)
+        // Moved after show/present because get_height returns 1 when hidden (couldn't find other workarounds for that, and I'm not bothered since there's no flickering)
         KairosMenu.move(x + Alloc.get_x(), y + Alloc.get_y() - KairosMenu.get_height());
     }
 }

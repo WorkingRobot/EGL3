@@ -57,7 +57,7 @@ namespace EGL3::Widgets {
 
     void FriendItem::SetContextMenuInternal()
     {
-        if (!ContextMenuConnection) {
+        if (!ContextMenuConnection && ContextMenu) {
             ContextMenuConnection = BaseContainer.signal_button_release_event().connect([&, this](GdkEventButton* evt) { ContextMenu->PopupMenu(GetData(), Data->BaseBox); return true; });
         }
     }
