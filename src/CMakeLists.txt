@@ -17,9 +17,6 @@ add_file(EGL3 main.cpp)
 add_file(EGL3 main.rc)
 add_file(EGL3 main.manifest)
 add_file(EGL3 srv/pipe/Client.cpp)
-if (ENABLE_TRACY)
-    add_file(EGL3 ../tracy/TracyClient.cpp)
-endif()
 
 
 ## Define EGL3 executable ##
@@ -28,12 +25,6 @@ add_executable(EGL3 ${SUBSYSTEM} ${EGL3_SOURCES})
 
 
 ## Dependencies ##
-
-# Tracy #
-if (ENABLE_TRACY)
-    target_include_directories(EGL3 PRIVATE ${CMAKE_SOURCE_DIR}/tracy)
-    target_compile_definitions(EGL3 PRIVATE TRACY_ENABLE TRACY_NO_EXIT)
-endif()
 
 # Http #
 find_package(cpr CONFIG REQUIRED)

@@ -5,7 +5,6 @@
 project(EGL3)
 
 option(ENABLE_CONSOLE "Use console subsystem" OFF)
-option(ENABLE_TRACY "Use tracy" OFF)
 option(ENABLE_INSTALLER "Build the installer (this must be separate due to different vcpkg triplets)" OFF)
 
 
