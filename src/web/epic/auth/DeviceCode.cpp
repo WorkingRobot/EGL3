@@ -1,5 +1,7 @@
 #include "DeviceCode.h"
 
+#include "../../ClientSecrets.h"
+
 namespace EGL3::Web::Epic::Auth {
     DeviceCode::DeviceCode(const cpr::Authentication& AuthClient) : AuthClient(AuthClient), Cancelled(false)
     {
@@ -41,7 +43,7 @@ namespace EGL3::Web::Epic::Auth {
     {
         auto ClientCredResponse = Http::Post(
             Http::FormatUrl<Host::Account>("oauth/token"),
-            AuthClient,
+            AuthClientDauntless,
             cpr::Payload{ { "grant_type", "client_credentials" } }
         );
 
