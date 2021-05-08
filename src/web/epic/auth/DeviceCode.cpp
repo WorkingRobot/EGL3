@@ -44,7 +44,7 @@ namespace EGL3::Web::Epic::Auth {
         auto ClientCredResponse = Http::Post(
             Http::FormatUrl<Host::Account>("oauth/token"),
             AuthClientDauntless,
-            cpr::Payload{ { "grant_type", "client_credentials" } }
+            cpr::Payload{ { "grant_type", "client_credentials" }, { "token_type", "eg1" } }
         );
 
         if (Cancelled) { return CANCELLED; }
@@ -113,7 +113,7 @@ namespace EGL3::Web::Epic::Auth {
             auto Response = Http::Post(
                 Http::FormatUrl<Host::Account>("oauth/token"),
                 AuthClient,
-                cpr::Payload{ { "grant_type", "device_code" }, { "device_code", Code } }
+                cpr::Payload{ { "grant_type", "device_code" }, { "token_type", "eg1" }, { "device_code", Code } }
             );
             if (Cancelled) { return CANCELLED; }
 

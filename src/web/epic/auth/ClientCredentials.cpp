@@ -29,7 +29,7 @@ namespace EGL3::Web::Epic::Auth {
         auto Response = Http::Post(
             Http::FormatUrl<Host::Account>("oauth/token"),
             AuthClient,
-            cpr::Payload{ { "grant_type", "client_credentials" } }
+            cpr::Payload{ { "grant_type", "client_credentials" }, { "token_type", "eg1" } }
         );
 
         if (Cancelled) { return CANCELLED; }
