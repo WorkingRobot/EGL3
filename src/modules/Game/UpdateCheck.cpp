@@ -40,14 +40,14 @@ namespace EGL3::Modules::Game {
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)
     {
         if (Auth.IsLoggedIn()) {
-            auto Data = GameInfo.GetVersionData(Id);
-            if (Data.HasError()) {
+            auto Data = GameInfo.GetVersionData(Id, true);
+            if (!Data) {
                 return;
             }
             if (Data->VersionNum == StoredVersion) { // Currently updating, etc.
                 return;
             }
-            OnUpdateAvailable(Id, Data.Get());
+            OnUpdateAvailable(Id, *Data);
         }
     }
 
