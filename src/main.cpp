@@ -7,23 +7,6 @@
 #include "utils/Platform.h"
 #include "utils/FontSetup.h"
 
-#ifdef TRACY_ENABLE
-#include <Tracy.hpp>
-void* operator new(std::size_t count)
-{
-    auto ptr = malloc(count);
-    TracyAlloc(ptr, count);
-    return ptr;
-}
-void operator delete(void* ptr) noexcept
-{
-    TracyFree(ptr);
-    free(ptr);
-}
-#else
-#define ZoneNamedN(a, b, c) (void)0
-#endif
-
 namespace EGL3 {
     __forceinline int Start() {
         std::filesystem::current_path(Utils::Config::GetExeFolder());
