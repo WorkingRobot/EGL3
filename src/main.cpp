@@ -13,8 +13,7 @@ namespace EGL3 {
 
         EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
-        EGL3_CONDITIONAL_LOG(!Utils::Config::GetConfigFolder().empty(), LogLevel::Critical, "Could not get config folder path");
-        std::filesystem::create_directories(Utils::Config::GetConfigFolder());
+        Utils::Config::SetupFolders();
 
         Utils::SetupFonts();
 
@@ -49,7 +48,7 @@ namespace EGL3 {
             }
         }, App));
 
-        Storage::Persistent::Store Storage(Utils::Config::GetConfigFolder() / "storage.stor");
+        Storage::Persistent::Store Storage(Utils::Config::GetFolder() / "storage.stor");
         App->set_data("EGL3Storage", &Storage);
 
         Modules::ModuleList::Attach(App, Builder);

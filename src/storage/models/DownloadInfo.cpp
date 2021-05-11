@@ -34,7 +34,7 @@ namespace EGL3::Storage::Models {
             Data.CreateShortcut = GameConfig->GetCreateShortcut();
         }
         else {
-            Data.DefaultArchivePath = Data.ArchivePath = Utils::Config::GetConfigFolder() / "Fortnite.egia";
+            Data.DefaultArchivePath = Data.ArchivePath = Utils::Config::GetFolder() / "Fortnite.egia";
             Data.AutoUpdate = true;
             Data.CreateShortcut = true;
         }

@@ -1,12 +1,14 @@
 #include "Config.h"
 
+#include "Assert.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 #include <ShlObj_core.h>
 
 namespace EGL3::Utils::Config {
-    std::filesystem::path GetConfigFolderInternal() {
+    std::filesystem::path GetFolderInternal() {
         std::filesystem::path Path;
         {
             CHAR PathBuf[MAX_PATH];
@@ -17,11 +19,21 @@ namespace EGL3::Utils::Config {
                 Path = getenv("APPDATA");
             }
         }
+        if (Path.empty()) {
+            return Path;
+        }
         return Path / "EGL3";
     }
 
-    const std::filesystem::path& GetConfigFolder() {
-        static std::filesystem::path Path = GetConfigFolderInternal();
+    void SetupFolders()
+    {
+        EGL3_CONDITIONAL_LOG(!GetFolder().empty(), LogLevel::Critical, "Could not get config folder path");
+
+        std::filesystem::create_directories(GetFolder());
+    }
+
+    const std::filesystem::path& GetFolder() {
+        static std::filesystem::path Path = GetFolderInternal();
         return Path;
     }
 

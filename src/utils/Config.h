@@ -35,7 +35,9 @@ namespace EGL3::Utils::Config {
         return CONFIG_VERSION_LONG;
     }
 
-    const std::filesystem::path& GetConfigFolder();
+    void SetupFolders();
+
+    const std::filesystem::path& GetFolder();
 
     const std::filesystem::path& GetExeFolder();
 }

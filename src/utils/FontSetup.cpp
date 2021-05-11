@@ -20,7 +20,7 @@ namespace EGL3::Utils {
         
         {
             std::ifstream ConfStream(FontsFolder / "fonts.conf");
-            std::ofstream ConfOutStream(Config::GetConfigFolder() / "fonts.conf");
+            std::ofstream ConfOutStream(Config::GetFolder() / "fonts.conf");
             EGL3_CONDITIONAL_LOG(ConfStream.good(), LogLevel::Critical, "Can't find fonts.conf template. Try reinstalling.");
             EGL3_CONDITIONAL_LOG(ConfOutStream.good(), LogLevel::Critical, "Can't find fonts.conf template. Try reinstalling.");
 
@@ -39,7 +39,7 @@ namespace EGL3::Utils {
 
         auto Config = FcConfigCreate();
         FcConfigSetCurrent(Config);
-        FcConfigParseAndLoad(Config, (FcChar8*)(Config::GetConfigFolder() / "fonts.conf").string().c_str(), true);
+        FcConfigParseAndLoad(Config, (FcChar8*)(Config::GetFolder() / "fonts.conf").string().c_str(), true);
         FcConfigAppFontAddDir(Config, (FcChar8*)FontsFolder.string().c_str());
 
         CHAR Path[MAX_PATH];
