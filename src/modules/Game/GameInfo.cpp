@@ -26,12 +26,29 @@ namespace EGL3::Modules::Game {
         return nullptr;
     }
 
-    bool GameInfoModule::ParseGameVersion(Storage::Game::GameId Id, const std::string& Version, uint64_t& VersionNum, std::string& VersionHR)
+    const std::vector<Web::Epic::Content::SdMeta::Data>* GameInfoModule::GetInstallOptions(Storage::Game::GameId Id, const std::string& Version, bool ForceUpdate)
+    {
+        if (!Auth.IsLoggedIn()) {
+            return nullptr;
+        }
+
+        switch (Id)
+        {
+        case Storage::Game::GameId::Fortnite:
+            return Auth.GetClientLauncherContent().GetSdMetaData("Fortnite", Version);
+        default:
+            return nullptr;
+        }
+    }
+
+    bool GameInfoModule::ParseGameVersion(Storage::Game::GameId Id, const std::string& Version, std::string& GameName, uint64_t& VersionNum, std::string& VersionHR)
     {
         switch (Id)
         {
         case Storage::Game::GameId::Fortnite:
         {
+            GameName = "Fortnite";
+
             const static std::regex VersionRegex("\\+\\+Fortnite\\+Release-(\\d+)\\.(\\d+).*-CL-(\\d+)-.*");
             std::smatch Matches;
             if (std::regex_search(Version, Matches, VersionRegex)) {
@@ -42,10 +59,15 @@ namespace EGL3::Modules::Game {
                 return true;
             }
             else {
+                VersionHR = "Unknown";
+                VersionNum = -1;
                 return false;
             }
         }
         default:
+            GameName = "Unknown";
+            VersionHR = "Unknown";
+            VersionNum = -1;
             return false;
         }
     }
@@ -71,7 +93,8 @@ namespace EGL3::Modules::Game {
 
             Storage::Models::VersionData Ret{};
             Ret.Element = *Element;
-            if (!ParseGameVersion(Id, Element->BuildVersion, Ret.VersionNum, Ret.VersionHR)) {
+            std::string GameName;
+            if (!ParseGameVersion(Id, Element->BuildVersion, GameName, Ret.VersionNum, Ret.VersionHR)) {
                 return Web::ErrorData::Status::Failure;
             }
             return Ret;

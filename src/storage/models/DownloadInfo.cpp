@@ -1,5 +1,6 @@
 #include "DownloadInfo.h"
 
+#include "../../modules/Game/GameInfo.h"
 #include "../../web/epic/EpicClient.h"
 #include "../../utils/Align.h"
 #include "../../utils/Config.h"
@@ -72,7 +73,7 @@ namespace EGL3::Storage::Models {
         }
 
         template<class T>
-        const Utils::Guid& Convert(const T& Val) const;
+        const Utils::Guid& Convert(const T& Val) const = delete;
 
         template<>
         const Utils::Guid& Convert<uint32_t>(const uint32_t& Val) const {
@@ -471,39 +472,16 @@ namespace EGL3::Storage::Models {
         Header->GetUpdateInfo().PiecesComplete = 0;
         Header->GetUpdateInfo().BytesDownloadTotal = 0;
 
-        switch (Id)
-        {
-        case Game::GameId::Fortnite:
-        {
-            Header->SetGame("Fortnite");
-            Header->SetVersionLong(Meta.BuildVersion);
+        std::string GameName;
+        uint64_t VersionNum;
+        std::string VersionHR;
+        Modules::Game::GameInfoModule::ParseGameVersion(Id, Meta.BuildVersion, GameName, VersionNum, VersionHR);
 
-            const static std::regex VersionRegex("\\+\\+Fortnite\\+Release-(\\d+)\\.(\\d+).*-CL-(\\d+)-.*");
-            std::smatch Matches;
-            if (EGL3_CONDITIONAL_LOG(std::regex_search(Meta.BuildVersion, Matches, VersionRegex), LogLevel::Error, "Failed to parse Fortnite game version")) {
-                Header->SetVersionHR(Utils::Format("%s.%s", Matches[1].str().c_str(), Matches[2].str().c_str()));
-                auto VersionStr = Matches[3].str();
-                uint64_t VersionNum = -1;
-                std::from_chars(VersionStr.c_str(), VersionStr.c_str() + VersionStr.size(), VersionNum);
-                Header->SetVersionNum(VersionNum);
-                Header->GetUpdateInfo().TargetVersion = VersionNum;
-            }
-            else {
-                Header->SetVersionHR("Unknown");
-                Header->SetVersionNum(-1);
-                Header->GetUpdateInfo().TargetVersion = -1;
-            }
-            break;
-        }
-        case Game::GameId::Unknown:
-        default:
-            Header->SetGame("Unknown");
-            Header->SetVersionLong("Unknown");
-            Header->SetVersionHR("Unknown");
-            Header->SetVersionNum(-1);
-            Header->GetUpdateInfo().TargetVersion = -1;
-            break;
-        }
+        Header->SetGame(GameName);
+        Header->SetVersionLong(Meta.BuildVersion);
+        Header->SetVersionHR(VersionHR);
+        Header->SetVersionNum(VersionNum);
+        Header->GetUpdateInfo().TargetVersion = VersionNum;
 
         ManifestData->SetAppID(Meta.AppId);
         ManifestData->SetLaunchExe(Meta.LaunchExe);
