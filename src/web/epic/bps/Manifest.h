@@ -12,6 +12,8 @@
 namespace EGL3::Web::Epic::BPS {
     class Manifest {
     public:
+        Manifest(Utils::Streams::Stream& Stream);
+
         Manifest(const char* Data, size_t DataSize);
 
         Manifest(const rapidjson::Document& Json);

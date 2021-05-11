@@ -15,6 +15,12 @@
 namespace EGL3::Web::Epic::BPS {
     using namespace Utils::Streams;
 
+    Manifest::Manifest(Stream& Stream) :
+        Error(ErrorType::Success)
+    {
+        Stream >> *this;
+    }
+
     Manifest::Manifest(const char* Data, size_t DataSize) :
         Error(ErrorType::Success)
     {
@@ -468,13 +474,13 @@ namespace EGL3::Web::Epic::BPS {
         Error = NewError;
     }
 
-    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, Manifest& Val)
+    Stream& operator>>(Stream& Stream, Manifest& Val)
     {
         // Check if JSON and parse accordingly
         {
             char PeekChar;
             Stream.read(&PeekChar, 1);
-            Stream.seek(-1, Utils::Streams::Stream::Cur);
+            Stream.seek(-1, Stream::Cur);
             if (PeekChar == '{') {
                 rapidjson::Document Json;
                 Utils::JsonWrapperStream JsonStream(Stream);

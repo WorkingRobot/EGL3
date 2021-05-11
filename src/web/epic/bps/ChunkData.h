@@ -8,6 +8,8 @@
 namespace EGL3::Web::Epic::BPS {
     class ChunkData {
     public:
+        ChunkData(Utils::Streams::Stream& Stream);
+
         ChunkData(const char* Data, size_t DataSize);
 
         friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, ChunkData& Val);

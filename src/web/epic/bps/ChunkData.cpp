@@ -8,6 +8,12 @@
 namespace EGL3::Web::Epic::BPS {
     using namespace Utils::Streams;
 
+    ChunkData::ChunkData(Stream& Stream) :
+        Error(ErrorType::Success)
+    {
+        Stream >> *this;
+    }
+
     ChunkData::ChunkData(const char* Data, size_t DataSize) :
         Error(ErrorType::Success)
     {
