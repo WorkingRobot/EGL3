@@ -21,9 +21,13 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::GetStatuspageSummary> GetStatuspageSummary();
 
-        Response<BPS::Manifest> GetManifest(const Responses::GetDownloadInfo::Manifest& Manifest);
+        Response<BPS::Manifest> GetManifest(const Responses::GetDownloadInfo::Element& Element, std::string& CloudDir);
+
+        Response<BPS::Manifest> GetManifestCacheable(const Responses::GetDownloadInfo::Element& Element, std::string& CloudDir, const std::filesystem::path& CacheDir);
 
         Response<BPS::ChunkData> GetChunk(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo);
+
+        Response<BPS::ChunkData> GetChunkCacheable(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo, const std::filesystem::path& CacheDir);
 
     private:
         template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>

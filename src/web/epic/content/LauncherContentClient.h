@@ -15,7 +15,7 @@ namespace EGL3::Web::Epic::Content {
     // This allows the use of the same token and adds extensibility
     class LauncherContentClient {
     public:
-        LauncherContentClient(EpicClientAuthed& BaseClient);
+        LauncherContentClient(EpicClientAuthed& BaseClient, const std::filesystem::path& CacheDir = "");
 
         const BPS::Manifest& GetManifest();
 
@@ -31,11 +31,13 @@ namespace EGL3::Web::Epic::Content {
 
         const NotificationList& GetNotifications();
 
+        void LoadSdMetaData();
+
         const std::vector<SdMeta::Data>* GetSdMetaData(const std::string& AppName, const std::string& Version);
 
     private:
         std::optional<BPS::Manifest> CurrentManifest;
-        std::optional<std::string> CloudDir;
+        std::string CloudDir;
 
         std::unordered_map<Utils::Guid, std::unique_ptr<char[]>> DownloadedChunks;
 
@@ -46,5 +48,6 @@ namespace EGL3::Web::Epic::Content {
 
         EpicClientAuthed& BaseClient;
         EpicClient Client;
+        std::filesystem::path CacheDir;
     };
 }

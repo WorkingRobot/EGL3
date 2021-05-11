@@ -30,6 +30,7 @@ namespace EGL3::Utils::Config {
         EGL3_CONDITIONAL_LOG(!GetFolder().empty(), LogLevel::Critical, "Could not get config folder path");
 
         std::filesystem::create_directories(GetFolder());
+        std::filesystem::create_directories(GetFolder() / "contentcache");
     }
 
     const std::filesystem::path& GetFolder() {

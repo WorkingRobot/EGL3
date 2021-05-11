@@ -1,6 +1,7 @@
 #include "Authorization.h"
 
 #include "../storage/models/Authorization.h"
+#include "../utils/Config.h"
 #include "../utils/OpenBrowser.h"
 #include "../web/epic/auth/DeviceAuth.h"
 #include "../web/epic/auth/DeviceCode.h"
@@ -31,7 +32,8 @@ namespace EGL3::Modules {
                 }
 
                 AuthClientLauncher.emplace(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
-                LauncherContentClient.emplace(AuthClientLauncher.value());
+                LauncherContentClient.emplace(AuthClientLauncher.value(), Utils::Config::GetFolder() / "contentcache");
+                LauncherContentClient->LoadSdMetaData();
                 AuthChanged.emit();
             }, std::cref(Auth));
         }

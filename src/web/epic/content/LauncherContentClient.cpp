@@ -1,8 +1,9 @@
 #include "LauncherContentClient.h"
 
 namespace EGL3::Web::Epic::Content {
-    LauncherContentClient::LauncherContentClient(EpicClientAuthed& BaseClient) :
-        BaseClient(BaseClient)
+    LauncherContentClient::LauncherContentClient(EpicClientAuthed& BaseClient, const std::filesystem::path& CacheDir) :
+        BaseClient(BaseClient),
+        CacheDir(CacheDir)
     {
 
     }
@@ -14,17 +15,15 @@ namespace EGL3::Web::Epic::Content {
         }
 
         auto Info = BaseClient.GetLauncherDownloadInfo("Windows", "Live-EternalKnight");
-        EGL3_CONDITIONAL_LOG(!Info.HasError(), LogLevel::Critical, "Could not get laucher download info");
+        EGL3_CONDITIONAL_LOG(!Info.HasError(), LogLevel::Critical, "Could not get launcher download info");
 
         auto ContentInfoPtr = Info->GetElement("EpicGamesLauncherContent");
         EGL3_CONDITIONAL_LOG(ContentInfoPtr, LogLevel::Critical, "Could not get LauncherContent element");
 
-        auto& ManifestInfo = ContentInfoPtr->PickManifest();
-        auto Manifest = Client.GetManifest(ManifestInfo);
+        auto Manifest = Client.GetManifestCacheable(*ContentInfoPtr, CloudDir, CacheDir);
         EGL3_CONDITIONAL_LOG(!Manifest.HasError(), LogLevel::Critical, "Could not download LauncherContent manifest");
         EGL3_CONDITIONAL_LOG(!Manifest->HasError(), LogLevel::Critical, "Could not parse LauncherContent manifest");
 
-        CloudDir = ManifestInfo.GetCloudDir();
         return CurrentManifest.emplace(std::move(Manifest.Get()));
     }
 
@@ -38,7 +37,7 @@ namespace EGL3::Web::Epic::Content {
             auto& Manifest = GetManifest();
             auto InfoPtr = Manifest.GetChunk(Guid);
             if (InfoPtr) {
-                auto Chunk = Client.GetChunk(CloudDir.value(), Manifest.ManifestMeta.FeatureLevel, *InfoPtr);
+                auto Chunk = Client.GetChunkCacheable(CloudDir, Manifest.ManifestMeta.FeatureLevel, *InfoPtr, CacheDir);
                 EGL3_CONDITIONAL_LOG(!Chunk.HasError(), LogLevel::Critical, "Could not download chunk");
                 EGL3_CONDITIONAL_LOG(!Chunk->HasError(), LogLevel::Critical, "Could not parse chunk");
                 return DownloadedChunks.emplace(Guid, std::move(Chunk->Data)).first->second.get();
@@ -111,7 +110,7 @@ namespace EGL3::Web::Epic::Content {
         return Notifications.value();
     }
 
-    const std::vector<SdMeta::Data>* LauncherContentClient::GetSdMetaData(const std::string& AppName, const std::string& Version)
+    void LauncherContentClient::LoadSdMetaData()
     {
         if (!SdMetas.has_value()) {
             SdMetas.emplace();
@@ -132,6 +131,11 @@ namespace EGL3::Web::Epic::Content {
                 }
             }
         }
+    }
+
+    const std::vector<SdMeta::Data>* LauncherContentClient::GetSdMetaData(const std::string& AppName, const std::string& Version)
+    {
+        LoadSdMetaData();
 
         auto Itr = std::find_if(SdMetas->begin(), SdMetas->end(), [&](const SdMeta& Meta) {
             return std::any_of(Meta.Builds.begin(), Meta.Builds.end(), [&](const SdMeta::Build& Build) {

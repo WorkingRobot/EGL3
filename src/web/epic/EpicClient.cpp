@@ -1,5 +1,6 @@
 #include "EpicClient.h"
 
+#include "../../utils/streams/FileStream.h"
 #include "../Http.h"
 #include "../RunningFunctionGuard.h"
 
@@ -39,12 +40,8 @@ namespace EGL3::Web::Epic {
         );
     }
 
-    Response<BPS::Manifest> EpicClient::GetManifest(const Responses::GetDownloadInfo::Manifest& Manifest)
+    cpr::Response GetManifestData(const Responses::GetDownloadInfo::Manifest& Manifest)
     {
-        RunningFunctionGuard Guard(Lock);
-
-        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
-
         // Some really special people decided to think that using url encoded parameters should return a 403
         // Now, I'm forced to use a ostringstream and manually append parameters. Now look what you've done!
         std::ostringstream BuiltUri;
@@ -58,10 +55,22 @@ namespace EGL3::Web::Epic {
             Headers.emplace(Header.Name, Header.Value);
         }
 
-        auto Response = Http::Get(
+        return Http::Get(
             cpr::Url{ BuiltUri.str().c_str(),  (size_t)BuiltUri.tellp() - 1 },
             Headers
         );
+    }
+
+    Response<BPS::Manifest> EpicClient::GetManifest(const Responses::GetDownloadInfo::Element& Element, std::string& CloudDir)
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        auto& Manifest = Element.PickManifest();
+        CloudDir = Manifest.GetCloudDir();
+
+        auto Response = GetManifestData(Manifest);
 
         if (GetCancelled()) { return ErrorData::Status::Cancelled; }
 
@@ -70,6 +79,62 @@ namespace EGL3::Web::Epic {
         }
 
         return BPS::Manifest(Response.text.data(), Response.text.size());
+    }
+
+    Response<BPS::Manifest> EpicClient::GetManifestCacheable(const Responses::GetDownloadInfo::Element& Element, std::string& CloudDir, const std::filesystem::path& CacheDir)
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        auto& Manifest = Element.PickManifest();
+        CloudDir = Manifest.GetCloudDir();
+
+        auto CachedPath = (CacheDir / Element.Hash).replace_extension("manifest");
+        std::error_code Error;
+        if (std::filesystem::is_regular_file(CachedPath, Error)) {
+            Utils::Streams::FileStream Stream;
+            if (Stream.open(CachedPath, "rb")) {
+                // Using an intermediate memory buffer speeds up the manifest parsing significantly
+                // RapidJSON loves calling .Tell() which singlehandedly slowed down parsing by over 1.5s
+                auto Buf = std::make_unique<char[]>(Stream.size());
+                Stream.read(Buf.get(), Stream.size());
+                BPS::Manifest Ret(Buf.get(), Stream.size());
+                if (!Ret.HasError()) {
+                    return std::move(Ret);
+                }
+            }
+        }
+
+        auto Response = GetManifestData(Manifest);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (Response.status_code != 200) {
+            return Response.status_code;
+        }
+
+        {
+            Utils::Streams::FileStream Stream;
+            if (Stream.open(CachedPath, "wb")) {
+                Stream.write(Response.text.data(), Response.text.size());
+            }
+        }
+
+        return BPS::Manifest(Response.text.data(), Response.text.size());
+    }
+
+    cpr::Response GetChunkData(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo)
+    {
+        return Http::Get(
+            cpr::Url{ Utils::Format("%s/%s/%02d/%016llX_%08X%08X%08X%08X.chunk",
+                CloudDir.c_str(),
+                BPS::GetChunkSubdir(FeatureLevel),
+                ChunkInfo.GroupNumber,
+                ChunkInfo.Hash,
+                ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D
+            ) }
+        );
     }
 
     Response<BPS::ChunkData> EpicClient::GetChunk(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo)
@@ -84,20 +149,54 @@ namespace EGL3::Web::Epic {
             return 400;
         }
 
-        auto Response = Http::Get(
-            cpr::Url{ Utils::Format("%s/%s/%02d/%016llX_%08X%08X%08X%08X.chunk",
-                CloudDir.c_str(),
-                BPS::GetChunkSubdir(FeatureLevel),
-                ChunkInfo.GroupNumber,
-                ChunkInfo.Hash,
-                ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D
-            ) }
-        );
+        auto Response = GetChunkData(CloudDir, FeatureLevel, ChunkInfo);
 
         if (GetCancelled()) { return ErrorData::Status::Cancelled; }
 
         if (Response.status_code != 200) {
             return Response.status_code;
+        }
+
+        return BPS::ChunkData(Response.text.data(), Response.text.size());
+    }
+
+    Response<BPS::ChunkData> EpicClient::GetChunkCacheable(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo, const std::filesystem::path& CacheDir)
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (FeatureLevel < BPS::FeatureLevel::DataFileRenames) {
+            // return too old, don't care enough to support this
+            // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/BuildPatchServices/Private/BuildPatchUtil.cpp#L70
+            return 400;
+        }
+
+        auto CachedPath = (CacheDir / Utils::Format("%08X%08X%08X%08X", ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D)).replace_extension("chunk");
+        std::error_code Error;
+        if (std::filesystem::is_regular_file(CachedPath, Error)) {
+            Utils::Streams::FileStream Stream;
+            if (Stream.open(CachedPath, "rb")) {
+                BPS::ChunkData Ret(Stream);
+                if (!Ret.HasError()) {
+                    return std::move(Ret);
+                }
+            }
+        }
+
+        auto Response = GetChunkData(CloudDir, FeatureLevel, ChunkInfo);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (Response.status_code != 200) {
+            return Response.status_code;
+        }
+
+        {
+            Utils::Streams::FileStream Stream;
+            if (Stream.open(CachedPath, "wb")) {
+                Stream.write(Response.text.data(), Response.text.size());
+            }
         }
 
         return BPS::ChunkData(Response.text.data(), Response.text.size());
