@@ -60,7 +60,7 @@ namespace EGL3::Web::Epic::Content {
             PARSE_DEFINE(Data)
                 PARSE_ITEM("UniqueId", Id)
                 PARSE_ITEM_OPT("UpgradePathLogic", UpgradePathLogic)
-                PARSE_ITEM_OPT("InstallTags", InstallTags)
+                PARSE_ITEM_OPT("Tags", InstallTags)
                 PARSE_ITEM_DEF("IsRequired", IsRequired, false)
                 PARSE_ITEM_DEF("Invisible", Invisible, false)
                 if (Obj.Invisible) {
