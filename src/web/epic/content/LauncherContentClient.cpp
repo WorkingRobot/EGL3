@@ -148,11 +148,7 @@ namespace EGL3::Web::Epic::Content {
                 if (Build.Version == "*") {
                     return true;
                 }
-                bool Matches = false;
-                if (SdMetaEvaluator.Evaluate(Build.Version, Version, Matches).HasError()) {
-                    return false;
-                }
-                return Matches;
+                return SdMetaEvaluator.Evaluate(Build.Version, Version);
             });
         });
 

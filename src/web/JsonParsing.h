@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/Assert.h"
+#include "../utils/Config.h"
 #include "../utils/Crc32.h"
 #include "../utils/date.h"
 #include "../utils/map.h"
@@ -198,19 +199,40 @@ namespace EGL3::Web {
                 }
             }
 
+            // TODO: Is this necessary? I could just not check if this is true
+            Obj.Translate = false;
+            {
+                auto Itr = Obj.Values.find("translate");
+                if (Itr != Obj.Values.end()) {
+                    if (Itr->second == "true") {
+                        Obj.Translate = true;
+                    }
+                }
+            }
+
             return true;
         }
 
         const std::string& Get(const std::string& Locale) const {
-            auto Itr = Values.find(Locale);
-            if (Itr != Values.end()) {
-                return Itr->second;
+            if (Translate) {
+                auto Itr = Values.find(Locale);
+                if (Itr != Values.end()) {
+                    return Itr->second;
+                }
             }
             return Values.at("");
         }
 
+        const std::string& Get() const {
+            if (Utils::Config::IsDefaultLanguage()) {
+                return Values.at("");
+            }
+            return Get(Utils::Config::GetLanguage());
+        }
+
     private:
         std::unordered_map<std::string, std::string> Values;
+        bool Translate;
     };
 }
 
