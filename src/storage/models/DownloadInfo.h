@@ -30,7 +30,13 @@ namespace EGL3::Storage::Models {
         };
 
         struct StateInitializing {
+            std::vector<std::string> InstallTags;
 
+            StateInitializing(std::vector<std::string>&& InstallTags) :
+                InstallTags(std::move(InstallTags))
+            {
+
+            }
         };
 
         struct StateInstalling {
@@ -41,6 +47,7 @@ namespace EGL3::Storage::Models {
 
             std::string CloudDir;
             Web::Epic::BPS::Manifest Manifest;
+            std::vector<std::reference_wrapper<const Web::Epic::BPS::FileManifest>> ManifestFiles;
             Game::Archive& Archive;
 
             Utils::TaskPool Pool;
@@ -66,10 +73,11 @@ namespace EGL3::Storage::Models {
             Game::ArchiveList<Game::RunlistId::ChunkInfo> ArchiveChunkInfos;
             Game::ArchiveList<Game::RunlistId::ChunkData> ArchiveChunkDatas;
 
-            StateInstalling(std::string&& CloudDir, Web::Epic::BPS::Manifest&& Manifest, Game::Archive& Archive, std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>>&& UpdatedChunks, std::vector<uint32_t>&& DeletedChunkIdxs) :
+            StateInstalling(std::string&& CloudDir, Web::Epic::BPS::Manifest&& Manifest, std::vector<std::reference_wrapper<const Web::Epic::BPS::FileManifest>>&& ManifestFiles, Game::Archive& Archive, std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>>&& UpdatedChunks, std::vector<uint32_t>&& DeletedChunkIdxs) :
                 Cancelled(false),
                 CloudDir(std::move(CloudDir)),
                 Manifest(std::move(Manifest)),
+                ManifestFiles(std::move(ManifestFiles)),
                 Archive(Archive),
                 UpdatedChunks(std::move(UpdatedChunks)),
                 DeletedChunkIdxs(std::move(DeletedChunkIdxs)),

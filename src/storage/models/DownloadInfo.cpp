@@ -62,6 +62,7 @@ namespace EGL3::Storage::Models {
         SetState(DownloadInfoState::Cancelled);
     }
 
+    template<typename Comparer>
     struct GuidComparer {
         const Game::ArchiveList<Game::RunlistId::ChunkInfo>& ArchiveChunks;
 
@@ -80,13 +81,13 @@ namespace EGL3::Storage::Models {
         }
 
         template<>
-        const Utils::Guid& Convert<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>>(const std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>& Val) const {
-            return Val.get().Guid;
+        const Utils::Guid& Convert<std::reference_wrapper<const Utils::Guid>>(const std::reference_wrapper<const Utils::Guid>& Val) const {
+            return Val;
         }
 
         template<class TA, class TB>
         bool operator()(const TA& A, const TB& B) const {
-            return std::less<Utils::Guid>{}(Convert(A), Convert(B));
+            return Comparer{}(Convert(A), Convert(B));
         }
     };
 
@@ -101,12 +102,17 @@ namespace EGL3::Storage::Models {
                 GameConfig->SetPath(Data.ArchivePath);
                 GameConfig->SetFlags(Data.Flags);
                 GameConfig->SetSelectedIds(Data.SelectedIds);
+
+                // Move install tags to a temporary since we can't emplace a variant
+                // with arguments that are already replaced by the new type
+                std::vector<std::string> InstallTags(std::move(Data.InstallTags));
+                StateData.emplace<StateInitializing>(std::move(InstallTags));
             }
 
             std::chrono::steady_clock::time_point BeginTimestamp = std::chrono::steady_clock::now();
 
             {
-                StateData.emplace<StateInitializing>();
+                auto& Data = GetStateData<StateInitializing>();
                 SetState(DownloadInfoState::Initializing);
 
                 if (!GameConfig->OpenArchiveWrite()) {
@@ -125,30 +131,53 @@ namespace EGL3::Storage::Models {
 
                 const Game::ArchiveList<Game::RunlistId::ChunkInfo> ChunkInfo(GameConfig->GetArchive());
 
+                // Get a simple sequence from 0...ChunkInfo-1
                 std::vector<uint32_t> ArchiveGuids;
                 ArchiveGuids.reserve(ChunkInfo.size());
                 for (uint32_t i = 0; i < ChunkInfo.size(); ++i) {
                     ArchiveGuids.emplace_back(i);
                 }
 
-                std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>> ManifestGuids;
-                ManifestGuids.reserve(Manifest->ChunkDataList.ChunkList.size());
-                for (auto& Chunk : Manifest->ChunkDataList.ChunkList) {
-                    ManifestGuids.emplace_back(Chunk);
+                // Get all files that will be installed
+                std::vector<std::reference_wrapper<const Web::Epic::BPS::FileManifest>> ManifestFiles;
+                for (auto& File : Manifest->FileManifestList.FileList) {
+                    if (File.InstallTags.empty() || std::find_first_of(File.InstallTags.begin(), File.InstallTags.end(), Data.InstallTags.begin(), Data.InstallTags.end()) != File.InstallTags.end()) {
+                        ManifestFiles.emplace_back(File);
+                    }
                 }
 
-                GuidComparer Comparer(ChunkInfo);
+                // Get all required chunks that need to be installed
+                std::vector<std::reference_wrapper<const Utils::Guid>> ManifestGuids;
+                for (const Web::Epic::BPS::FileManifest& File : ManifestFiles) {
+                    for (auto& Part : File.ChunkParts) {
+                        ManifestGuids.emplace_back(Part.Guid);
+                    }
+                }
+
+                // Get all chunks to be updated/added to the archive and all that need to be removed/replaced
+                GuidComparer<std::less<Utils::Guid>> Comparer(ChunkInfo);
 
                 std::sort(ArchiveGuids.begin(), ArchiveGuids.end(), Comparer);
                 std::sort(ManifestGuids.begin(), ManifestGuids.end(), Comparer);
+                // std::unique only removes consecutive copies (different chunk parts using the same chunk), so it has to be sorted first.
+                // It also doesn't remove anything, so we have to erase it manually
+                ManifestGuids.erase(std::unique(ManifestGuids.begin(), ManifestGuids.end(), GuidComparer<std::equal_to<Utils::Guid>>(ChunkInfo)), ManifestGuids.end());
 
-                std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>> UpdatedChunks;
+                std::vector<std::reference_wrapper<const Utils::Guid>> UpdatedGuids;
                 std::vector<uint32_t> DeletedChunkIdxs;
 
-                std::set_difference(ManifestGuids.begin(), ManifestGuids.end(), ArchiveGuids.begin(), ArchiveGuids.end(), std::back_inserter(UpdatedChunks), Comparer);
+                std::set_difference(ManifestGuids.begin(), ManifestGuids.end(), ArchiveGuids.begin(), ArchiveGuids.end(), std::back_inserter(UpdatedGuids), Comparer);
                 std::set_difference(ArchiveGuids.begin(), ArchiveGuids.end(), ManifestGuids.begin(), ManifestGuids.end(), std::back_inserter(DeletedChunkIdxs), Comparer);
 
-                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), GameConfig->GetArchive(), std::move(UpdatedChunks), std::move(DeletedChunkIdxs));
+                std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>> UpdatedChunks;
+                for (auto& Guid : UpdatedGuids) {
+                    auto Chunk = Manifest->GetChunk(Guid);
+                    if (Chunk) {
+                        UpdatedChunks.emplace_back(*Chunk);
+                    }
+                }
+
+                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), std::move(ManifestFiles), GameConfig->GetArchive(), std::move(UpdatedChunks), std::move(DeletedChunkIdxs));
             }
 
             {
@@ -161,14 +190,14 @@ namespace EGL3::Storage::Models {
 
                 // TODO: move this into the "finalizing", it's not of any use during the update anyway
                 {
-                    Data.ArchiveFiles.resize(Data.Manifest.FileManifestList.FileList.size());
-                    uint64_t TotalChunkParts = std::accumulate(Data.Manifest.FileManifestList.FileList.begin(), Data.Manifest.FileManifestList.FileList.end(), 0ull,
+                    Data.ArchiveFiles.resize(Data.ManifestFiles.size());
+                    uint64_t TotalChunkParts = std::accumulate(Data.ManifestFiles.begin(), Data.ManifestFiles.end(), 0ull,
                         [](uint64_t Val, const Web::Epic::BPS::FileManifest& File) { return Val + File.ChunkParts.size(); });
                     Data.ArchiveChunkParts.resize(TotalChunkParts);
 
                     uint32_t NextAvailableChunkPartIdx = 0;
                     uint32_t i = 0;
-                    for (auto& File : Data.Manifest.FileManifestList.FileList) {
+                    for (const Web::Epic::BPS::FileManifest& File : Data.ManifestFiles) {
                         auto& ArchiveFile = Data.ArchiveFiles[i++];
                         strncpy_s(ArchiveFile.Filename, File.Filename.c_str(), File.Filename.size());
                         memcpy(ArchiveFile.SHA, File.FileHash, 20);
@@ -268,7 +297,7 @@ namespace EGL3::Storage::Models {
                     }
 
                     i = 0;
-                    for (auto& File : Data.Manifest.FileManifestList.FileList) {
+                    for (const Web::Epic::BPS::FileManifest& File : Data.ManifestFiles) {
                         auto& ArchiveFile = Data.ArchiveFiles[i++];
 
                         uint32_t j = 0;
