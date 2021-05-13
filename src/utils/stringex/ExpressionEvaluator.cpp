@@ -85,7 +85,7 @@ namespace EGL3::Utils::StringEx {
         }
     }
 
-    void ExpressionEvaluator::AddFunction(const std::string& Name, const std::function<bool(const std::string&)> Func)
+    void ExpressionEvaluator::AddFunction(const std::string& Name, const std::function<std::any(const std::string&)> Func)
     {
         Functions.emplace(Name, Func);
     }
@@ -123,6 +123,16 @@ namespace EGL3::Utils::StringEx {
         else {
             return ExpressionError("Output is not a bool");
         }
+    }
+
+    bool ExpressionEvaluator::Evaluate(const std::string& Expression, const std::string& Input) const
+    {
+        bool Output;
+        if (Evaluate(Expression, Input, Output).HasError()) {
+            return false;
+        }
+        printf("Expression %s evaluated to %s\n", Expression.c_str(), Output ? "true" : "false");
+        return Output;
     }
 
     ExpressionError ExpressionEvaluator::Evaluate(const std::vector<CompiledToken>& CompiledTokens, const ExpressionContext& Ctx, std::any& Output) const

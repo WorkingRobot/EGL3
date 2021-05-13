@@ -370,7 +370,7 @@ namespace EGL3::Utils::StringEx::Operators {
         return ExpressionError();
     }
 
-    static ExpressionError ConsumeCustomFunction(TokenStream& Stream, std::vector<ExpressionToken>& Tokens, const std::unordered_map<std::string, std::function<bool(const std::string&)>>& Functions)
+    static ExpressionError ConsumeCustomFunction(TokenStream& Stream, std::vector<ExpressionToken>& Tokens, const std::unordered_map<std::string, std::function<std::any(const std::string&)>>& Functions)
     {
         static const char OpenParenthesis = '(';
         for (auto& Function : Functions) {

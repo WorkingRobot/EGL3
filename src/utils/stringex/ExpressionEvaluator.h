@@ -19,11 +19,13 @@ namespace EGL3::Utils::StringEx {
     public:
         ExpressionEvaluator();
 
-        void AddFunction(const std::string& Name, const std::function<bool(const std::string&)> Func);
+        void AddFunction(const std::string& Name, const std::function<std::any(const std::string&)> Func);
 
         void RemoveFunction(const std::string& Name);
 
         ExpressionError Evaluate(const std::string& Expression, const std::string& Input, bool& Output) const;
+
+        bool Evaluate(const std::string& Expression, const std::string& Input) const;
 
     private:
         ExpressionError Evaluate(const std::vector<CompiledToken>& CompiledTokens, const ExpressionContext& Ctx, std::any& Output) const;
@@ -31,6 +33,6 @@ namespace EGL3::Utils::StringEx {
         TokenDefinitions TokenDefinitions;
         ExpressionGrammar Grammar;
         JumpTable<ExpressionContext> JumpTable;
-        std::unordered_map<std::string, std::function<bool(const std::string&)>> Functions;
+        std::unordered_map<std::string, std::function<std::any(const std::string&)>> Functions;
     };
 }
