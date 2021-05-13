@@ -131,7 +131,6 @@ namespace EGL3::Utils::StringEx {
         if (Evaluate(Expression, Input, Output).HasError()) {
             return false;
         }
-        printf("Expression %s evaluated to %s\n", Expression.c_str(), Output ? "true" : "false");
         return Output;
     }
 

@@ -92,8 +92,8 @@ namespace EGL3::Widgets {
                 auto& Row = *Itr;
                 if (Row[Columns.Selectable] && !Row[Columns.Required]) {
                     auto& Opt = *Row[Columns.Data];
-                    bool IsSelected = Row[Columns.Selected] = !Row[Columns.Selected];
-                    printf("Toggled %s to %s\n", Opt.Title.Get().c_str(), IsSelected ? "true" : "false");
+                    // Toggle the selection when the user tries to click on the row
+                    Row[Columns.Selected] = !Row[Columns.Selected];
                 }
             }
             return false;
@@ -116,13 +116,6 @@ namespace EGL3::Widgets {
         for (auto& Opt : OptionsData) {
             auto Itr = TreeStore->append();
             auto& Row = *Itr;
-            Row[Columns.Data] = &Opt;
-            if (!Opt.Invisible) {
-                Row[Columns.Name] = Opt.Title.Get();
-                Row[Columns.Required] = Opt.IsRequired;
-                Row[Columns.Selected] = false;
-                Row[Columns.Selectable] = !Opt.InstallTags.empty();
-            }
 
             for (auto& ChildOpt : Opt.Children) {
                 auto ChildItr = TreeStore->append(Row.children());
@@ -133,6 +126,17 @@ namespace EGL3::Widgets {
                     ChildRow[Columns.Required] = ChildOpt.IsRequired;
                     ChildRow[Columns.Selected] = false;
                     ChildRow[Columns.Selectable] = !ChildOpt.InstallTags.empty();
+                }
+            }
+
+            Row[Columns.Data] = &Opt;
+            if (!Opt.Invisible) {
+                Row[Columns.Name] = Opt.Title.Get();
+                Row[Columns.Required] = Opt.IsRequired;
+                Row[Columns.Selected] = false;
+                Row[Columns.Selectable] = !Opt.InstallTags.empty();
+                if (Opt.IsDefaultExpanded) {
+                    TreeView.expand_row(TreeFilter->convert_child_path_to_path(TreeStore->get_path(Itr)), false);
                 }
             }
         }
@@ -156,19 +160,17 @@ namespace EGL3::Widgets {
     void AppendSelectedIds(const std::vector<Web::Epic::Content::SdMeta::Data>& Data, const Utils::StringEx::ExpressionEvaluator& DefaultEvaluator, const std::string& ConfigHandler, std::vector<std::string>& SelectedIds)
     {
         for (auto& Opt : Data) {
-            if (Opt.InstallTags.empty()) {
-                continue;
-            }
-
-            if constexpr (OnlyDefault) {
-                if ((Opt.IsRequired) ||
-                    (Opt.IsDefaultSelected && DefaultEvaluator.Evaluate(Opt.DefaultSelectedExpression, "")) ||
-                    (ConfigHandler == "DefaultLanguage" && Opt.ConfigValue == Utils::Config::GetLanguage())) {
+            if (!Opt.InstallTags.empty()) {
+                if constexpr (OnlyDefault) {
+                    if ((Opt.IsRequired) ||
+                        (Opt.IsDefaultSelected && DefaultEvaluator.Evaluate(Opt.DefaultSelectedExpression, "")) ||
+                        (ConfigHandler == "DefaultLanguage" && Opt.ConfigValue == Utils::Config::GetLanguage())) {
+                        SelectedIds.emplace_back(Opt.Id);
+                    }
+                }
+                else {
                     SelectedIds.emplace_back(Opt.Id);
                 }
-            }
-            else {
-                SelectedIds.emplace_back(Opt.Id);
             }
 
             AppendSelectedIds<OnlyDefault>(Opt.Children, DefaultEvaluator, Opt.ConfigHandler, SelectedIds);
@@ -192,6 +194,7 @@ namespace EGL3::Widgets {
     void SdTree::GetOptions(std::vector<std::string>& UniqueIds, std::vector<std::string>& InstallTags)
     {
         UniqueIds.clear();
+        InstallTags.clear();
         // Find all required and selected ids
         TreeFilter->foreach_iter([this, &UniqueIds, &InstallTags](const Gtk::TreeModel::iterator& Itr) {
             auto& Row = *Itr;
