@@ -7,6 +7,7 @@
 #include "../../utils/GladeBuilder.h"
 #include "../../widgets/Graph.h"
 #include "../../widgets/InstallLocationDialog.h"
+#include "../../widgets/SdTree.h"
 #include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../Taskbar.h"
@@ -54,6 +55,7 @@ namespace EGL3::Modules::Game {
         Gtk::Label& OptionsFilePreview;
         Gtk::CheckButton& OptionsAutoUpdate;
         Gtk::CheckButton& OptionsCreateShortcut;
+        Widgets::SdTree OptionsSdMeta;
         Gtk::Button& OptionsButtonOk;
         Gtk::Button& OptionsButtonCancel;
 
@@ -91,5 +93,7 @@ namespace EGL3::Modules::Game {
         uint64_t StatsBytesWritePeak;
 
         Glib::Dispatcher StatsDispatcher;
+
+        std::vector<Web::Epic::Content::SdMeta::Data> InstallOpts;
     };
 }

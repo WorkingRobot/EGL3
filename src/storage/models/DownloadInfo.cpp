@@ -30,13 +30,12 @@ namespace EGL3::Storage::Models {
         if (ConfigPtr != Games.end()) {
             GameConfig = &*ConfigPtr;
             Data.DefaultArchivePath = Data.ArchivePath = GameConfig->GetPath();
-            Data.AutoUpdate = GameConfig->GetAutoUpdate();
-            Data.CreateShortcut = GameConfig->GetCreateShortcut();
+            Data.Flags = GameConfig->GetFlags();
+            Data.SelectedIds = GameConfig->GetSelectedIds();
         }
         else {
             Data.DefaultArchivePath = Data.ArchivePath = Utils::Config::GetFolder() / "Fortnite.egia";
-            Data.AutoUpdate = true;
-            Data.CreateShortcut = true;
+            Data.Flags = InstallFlags((uint16_t)InstallFlags::AutoUpdate | (uint16_t)InstallFlags::CreateShortcut | (uint16_t)InstallFlags::DefaultSelectedIds);
         }
     }
 
@@ -100,8 +99,8 @@ namespace EGL3::Storage::Models {
                 }
                 auto& Data = GetStateData<StateOptions>();
                 GameConfig->SetPath(Data.ArchivePath);
-                GameConfig->SetAutoUpdate(Data.AutoUpdate);
-                GameConfig->SetCreateShortcut(Data.CreateShortcut);
+                GameConfig->SetFlags(Data.Flags);
+                GameConfig->SetSelectedIds(Data.SelectedIds);
             }
 
             std::chrono::steady_clock::time_point BeginTimestamp = std::chrono::steady_clock::now();

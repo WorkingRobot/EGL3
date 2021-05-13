@@ -18,10 +18,12 @@ namespace EGL3::Modules::Game {
         SwitchStack(Builder.GetWidget<Gtk::Stack>("DownloadStack")),
         SwitchStackPageOptions(Builder.GetWidget<Gtk::Box>("DownloadStackPage0")),
         OptionsBrowseBtn(Builder.GetWidget<Gtk::Button>("DownloadOptionsFileChooser")),
+        // vvv The main window is used in the constructor for the dialog, don't confuse this with the actual main window vvv
         OptionsFileDialog(Builder.GetWidget<Gtk::Window>("EGL3App")),
         OptionsFilePreview(Builder.GetWidget<Gtk::Label>("DownloadOptionsFilePreview")),
         OptionsAutoUpdate(Builder.GetWidget<Gtk::CheckButton>("DownloadOptionsAutoUpdate")),
         OptionsCreateShortcut(Builder.GetWidget<Gtk::CheckButton>("DownloadOptionsCreateShortcut")),
+        OptionsSdMeta(Builder.GetWidget<Gtk::TreeView>("DownloadOptionsSelector")),
         OptionsButtonOk(Builder.GetWidget<Gtk::Button>("DownloadOptionsOk")),
         OptionsButtonCancel(Builder.GetWidget<Gtk::Button>("DownloadOptionsCancel")),
         SwitchStackPageInfo(Builder.GetWidget<Gtk::ScrolledWindow>("DownloadStackPage1")),
@@ -131,10 +133,24 @@ namespace EGL3::Modules::Game {
             StatsDispatcher.emit();
         });
 
+        auto VersionData = GameInfo.GetVersionData(Id);
+        EGL3_CONDITIONAL_LOG(VersionData, LogLevel::Critical, "Version data should be valid at this point");
+        auto InstallOpts = GameInfo.GetInstallOptions(Id, VersionData->Element.BuildVersion);
+
         auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
         OptionsFileDialog.SetLocation(Data.ArchivePath.string());
-        OptionsAutoUpdate.set_active(Data.AutoUpdate);
-        OptionsCreateShortcut.set_active(Data.CreateShortcut);
+        OptionsAutoUpdate.set_active(GetInstallFlag<InstallFlags::AutoUpdate>(Data.Flags));
+        OptionsCreateShortcut.set_active(GetInstallFlag<InstallFlags::CreateShortcut>(Data.Flags));
+        OptionsSdMeta.Initialize(InstallOpts);
+        if (GetInstallFlag<InstallFlags::DefaultSelectedIds>(Data.Flags)) {
+            OptionsSdMeta.SetDefaultOptions();
+        }
+        else if (GetInstallFlag<InstallFlags::SelectedIds>(Data.Flags)) {
+            OptionsSdMeta.SetOptions(Data.SelectedIds);
+        }
+        else {
+            OptionsSdMeta.SetAllOptions();
+        }
 
         SwitchStack.set_visible_child(SwitchStackPageOptions);
         SwitchStack.show();
@@ -146,17 +162,17 @@ namespace EGL3::Modules::Game {
     void DownloadModule::OnDownloadOkClicked()
     {
         auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
-        Data.AutoUpdate = OptionsAutoUpdate.get_active();
-        Data.CreateShortcut = OptionsCreateShortcut.get_active();
+        Data.Flags = SetInstallFlag<InstallFlags::AutoUpdate>(InstallFlags::SelectedIds, OptionsAutoUpdate.get_active());
+        Data.Flags = SetInstallFlag<InstallFlags::CreateShortcut>(Data.Flags, OptionsCreateShortcut.get_active());
+        OptionsSdMeta.GetOptions(Data.SelectedIds, Data.InstallTags);
+
         CurrentDownload->BeginDownload([this](Storage::Game::GameId Id, std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
             auto Resp = GameInfo.GetVersionData(Id);
-            if (Resp.HasError()) {
-                return Resp.GetError();
+            if (!Resp) {
+                return Web::ErrorData::Status::Failure;
             }
 
-            auto& PickedManifest = Resp->Element.PickManifest();
-            CloudDir = PickedManifest.GetCloudDir();
-            return Web::Epic::EpicClient().GetManifest(PickedManifest);
+            return Web::Epic::EpicClient().GetManifest(Resp->Element, CloudDir);
         });
         SwitchStack.set_visible_child(SwitchStackPageInfo);
     }

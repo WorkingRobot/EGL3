@@ -24,8 +24,9 @@ namespace EGL3::Storage::Models {
         struct StateOptions {
             std::filesystem::path DefaultArchivePath;
             std::filesystem::path ArchivePath;
-            bool AutoUpdate;
-            bool CreateShortcut;
+            InstallFlags Flags;
+            std::vector<std::string> SelectedIds;
+            std::vector<std::string> InstallTags;
         };
 
         struct StateInitializing {

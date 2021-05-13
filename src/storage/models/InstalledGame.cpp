@@ -7,16 +7,20 @@ namespace EGL3::Storage::Models {
         std::string Path;
         Stream >> Path;
         Val.Path = Path;
-        Stream >> Val.AutoUpdate;
-        Stream >> Val.CreateShortcut;
+        Stream >> Val.Flags;
+        if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
+            Stream >> Val.SelectedIds;
+        }
 
         return Stream;
     }
 
     Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const InstalledGame& Val) {
         Stream << Val.Path.string();
-        Stream << Val.AutoUpdate;
-        Stream << Val.CreateShortcut;
+        Stream << Val.Flags;
+        if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
+            Stream << Val.SelectedIds;
+        }
 
         return Stream;
     }
@@ -157,24 +161,24 @@ namespace EGL3::Storage::Models {
         Path = NewAbsPath;
     }
 
-    bool InstalledGame::GetAutoUpdate() const
+    InstallFlags InstalledGame::GetFlags() const
     {
-        return AutoUpdate;
+        return Flags;
     }
 
-    void InstalledGame::SetAutoUpdate(bool Val)
+    void InstalledGame::SetFlags(InstallFlags NewFlags)
     {
-        AutoUpdate = Val;
+        Flags = NewFlags;
     }
 
-    bool InstalledGame::GetCreateShortcut() const
+    const std::vector<std::string>& InstalledGame::GetSelectedIds() const
     {
-        return CreateShortcut;
+        return SelectedIds;
     }
 
-    void InstalledGame::SetCreateShortcut(bool Val)
+    void InstalledGame::SetSelectedIds(const std::vector<std::string>& NewIds)
     {
-        CreateShortcut = Val;
+        SelectedIds = NewIds;
     }
 
     void InstalledGame::EnsureData() const {
