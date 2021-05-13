@@ -35,6 +35,14 @@ namespace EGL3::Utils::Config {
         return CONFIG_VERSION_LONG;
     }
 
+    constexpr const char* GetLanguage() {
+        return "en-US";
+    }
+
+    constexpr bool IsDefaultLanguage() {
+        return true;
+    }
+
     void SetupFolders();
 
     const std::filesystem::path& GetFolder();
