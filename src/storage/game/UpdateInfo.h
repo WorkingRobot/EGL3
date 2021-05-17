@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 namespace EGL3::Storage::Game {
 #pragma pack(push, 2)
     struct UpdateInfo {

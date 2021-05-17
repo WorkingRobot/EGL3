@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../storage/models/InstalledGame.h"
 #include "../../storage/persistent/Store.h"
 #include "../../utils/GladeBuilder.h"
 #include "../BaseModule.h"
@@ -41,10 +40,6 @@ namespace EGL3::Modules::Game {
         void UpdateToCurrentState();
 
         void PrimaryButtonClicked();
-
-        void CleanInstalls();
-
-        Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;

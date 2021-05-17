@@ -3,7 +3,7 @@
 #include "../../utils/Assert.h"
 #include "../../utils/Crc32.h"
 #include "../models/Authorization.h"
-#include "../models/InstalledGame.h"
+#include "../models/legacy/InstalledGame.h"
 #include "../models/StoredFriendData.h"
 
 #include <memory>
@@ -54,7 +54,7 @@ namespace EGL3::Storage::Persistent {
         KEY(WhatsNewSelection,  uint8_t);
         KEY(Auth,               Models::Authorization);
         KEY(StoredFriendData,   Models::StoredFriendData);
-        KEY(InstalledGames,     std::vector<Models::InstalledGame>);
+        KEY(InstalledGames,     std::vector<Models::Legacy::InstalledGame>);
         KEY(UpdateFrequency,    std::chrono::seconds);
 
 #undef KEY

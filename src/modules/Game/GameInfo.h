@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../storage/game/GameId.h"
 #include "../../storage/models/VersionData.h"
 #include "../BaseModule.h"
 #include "../ModuleList.h"

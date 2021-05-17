@@ -9,14 +9,16 @@ project(EGL3App)
 
 add_dir_recursive(EGL3 disk)
 add_dir_recursive(EGL3 modules)
-add_dir_recursive(EGL3 storage)
+add_dir_recursive(EGL3 srv/sock/base)
+add_dir_recursive(EGL3 srv/sock/client)
+add_dir_recursive(EGL3 storage/models)
+add_dir_recursive(EGL3 storage/persistent)
 add_dir_recursive(EGL3 utils)
 add_dir_recursive(EGL3 web)
 add_dir_recursive(EGL3 widgets)
 add_file(EGL3 main.cpp)
 add_file(EGL3 main.rc)
 add_file(EGL3 main.manifest)
-add_file(EGL3 srv/pipe/Client.cpp)
 
 
 ## Define EGL3 executable ##

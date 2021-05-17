@@ -2,11 +2,9 @@
 
 #include "../../utils/Callback.h"
 #include "../../utils/TaskPool.h"
-#include "../../storage/models/InstalledGame.h"
 #include "../../web/epic/bps/ChunkData.h"
 #include "../../web/epic/bps/Manifest.h"
 #include "../../web/Response.h"
-#include "../game/ArchiveList.h"
 #include "../game/GameId.h"
 #include "DownloadInfoStats.h"
 
@@ -24,7 +22,8 @@ namespace EGL3::Storage::Models {
         struct StateOptions {
             std::filesystem::path DefaultArchivePath;
             std::filesystem::path ArchivePath;
-            InstallFlags Flags;
+            bool AutoUpdate;
+            bool CreateShortcut;
             std::vector<std::string> SelectedIds;
             std::vector<std::string> InstallTags;
         };
