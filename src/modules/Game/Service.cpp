@@ -14,6 +14,7 @@ namespace EGL3::Modules::Game {
         if (!EGL3_CONDITIONAL_LOG(Client->IsConnected(), LogLevel::Error, "Could not connect to service server")) {
             for (int i = 0; i < 2 && PatchService(); ++i) {} // 2 retries
 
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             // Assignment operator without the optional goes bonkers, this is a good alternative
             Client.reset();
             Client.emplace();

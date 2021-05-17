@@ -58,7 +58,7 @@ namespace EGL3::Service {
         };
 
         struct FileSection {
-            SectionPart Sections[3];
+            SectionPart Sections[4];
 
             FileSection() :
                 Sections{}
@@ -67,7 +67,7 @@ namespace EGL3::Service {
             }
 
             uint32_t TotalSize() const {
-                return Sections[0].Size + Sections[1].Size + Sections[2].Size;
+                return Sections[0].Size + Sections[1].Size + Sections[2].Size + Sections[3].Size;
             }
         };
 #pragma pack(pop)
