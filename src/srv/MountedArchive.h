@@ -1,35 +1,22 @@
 #pragma once
 
-#include "../storage/models/MountedDisk.h"
 #include "../storage/game/ArchiveList.h"
 #include "DriveCounter.h"
+#include "MountedDisk.h"
 
 namespace EGL3::Service {
     class MountedArchive {
     public:
-        MountedArchive(const std::filesystem::path& Path);
+        MountedArchive(const std::filesystem::path& Path, Storage::Game::Archive&& Archive);
 
         ~MountedArchive();
-
-        bool OpenArchive();
-
-        bool ReadArchive();
-
-        bool InitializeDisk();
-
-        bool CreateLUT();
-
-        bool CreateDisk();
-
-        bool MountDisk();
         
-        char QueryDriveLetter() const;
+        char GetDriveLetter() const;
 
-        const std::filesystem::path& QueryPath() const;
+        std::filesystem::path GetArchivePath() const;
 
         using Stats = DriveCounter::Data;
 
-        [[nodiscard]]
         Stats QueryStats() const;
 
     private:
@@ -51,43 +38,42 @@ namespace EGL3::Service {
             }
         };
 
-#pragma pack(push, 4)
         struct SectionPart {
-            uint64_t Ptr;
-            uint32_t Size;
-        };
+            uint64_t Data;
 
-        struct FileSection {
-            SectionPart Sections[4];
-
-            FileSection() :
-                Sections{}
+            SectionPart() :
+                Data(0)
             {
 
             }
 
-            uint32_t TotalSize() const {
-                return Sections[0].Size + Sections[1].Size + Sections[2].Size + Sections[3].Size;
+            SectionPart(uint64_t Ptr, uint16_t Size) :
+                Data(uint64_t(Size) << 48 | Ptr)
+            {
+
+            }
+
+            bool IsValid() const
+            {
+                return Data;
+            }
+
+            uint64_t GetPtr() const
+            {
+                return Data & (1llu << 48) - 1;
+            }
+
+            uint16_t GetSize() const
+            {
+                return Data >> 48;
             }
         };
-#pragma pack(pop)
 
-        enum class MountState {
-            Construct,
-            OpenArchive,
-            ReadArchive,
-            InitializeDisk,
-            CreateLUT,
-            CreateDisk,
-            MountDisk
-        };
-
-        MountState State;
-        std::filesystem::path Path;
-        std::optional<Storage::Game::Archive> Archive;
-        std::optional<Storage::Models::MountedDisk> Disk;
-        std::optional<Lists> ArchiveLists;
-        std::vector<std::vector<FileSection>> SectionLUT;
+        Storage::Game::Archive Archive;
+        Lists ArchiveLists;
+        MountedDisk Disk;
+        std::vector<SectionPart> SectionParts;
+        std::vector<std::vector<uint32_t>> SectionLUT;
         mutable DriveCounter Counter;
         mutable char DriveLetter;
     };

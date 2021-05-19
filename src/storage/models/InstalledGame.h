@@ -1,11 +1,9 @@
 #pragma once
 
+#include "../../srv/pipe/client/ServicedMount.h"
 #include "../../utils/streams/Stream.h"
 #include "../game/Archive.h"
-#include "MountedGame.h"
 
-#include <filesystem>
-#include <optional>
 #include <variant>
 
 namespace EGL3::Storage::Models {
@@ -38,24 +36,20 @@ namespace EGL3::Storage::Models {
 
         friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const InstalledGame& Val);
 
+        // If this points to a valid installed game
         bool IsValid() const;
 
         const Storage::Game::Header* GetHeader() const;
 
-        bool IsOpenForWriting() const;
+        const Storage::Game::ManifestData* GetManifestData() const;
 
-        // Open for reading
-        // Returns false if the archive is invalid (or does not exist)
-        bool OpenArchiveRead() const;
+        bool IsArchiveOpen() const;
 
         // Open (or create if it doesn't exist) for writing
-        // Returns false if the archive is invalid or is already opened in read mode
-        bool OpenArchiveWrite();
+        // Returns nullptr if the archive is invalid
+        Storage::Game::Archive* OpenArchive();
 
         void CloseArchive();
-
-        // Only run if OpenArchive...() returns true
-        Storage::Game::Archive& GetArchive() const;
 
         bool IsMounted() const;
 
@@ -63,7 +57,7 @@ namespace EGL3::Storage::Models {
 
         void Unmount();
 
-        char GetDriveLetter() const;
+        const std::filesystem::path& GetMountPath();
 
         const std::filesystem::path& GetPath() const;
 
@@ -91,6 +85,7 @@ namespace EGL3::Storage::Models {
         void SetSelectedIds(const std::vector<std::string>& NewIds);
 
     private:
+        // Ensures that there is at least some metadata stored about the archive at the path
         void EnsureData() const;
 
         std::filesystem::path Path;
@@ -100,16 +95,18 @@ namespace EGL3::Storage::Models {
         struct MetadataInfo {
             MetadataInfo(const Storage::Game::Archive& Archive) :
                 Valid(Archive.IsValid()),
-                Header(Archive.IsValid() ? *Archive.GetHeader().Get() : Storage::Game::Header{})
+                Header(Archive.IsValid() ? *Archive.GetHeader().Get() : Storage::Game::Header{}),
+                ManifestData(Archive.IsValid() ? *Archive.GetManifestData().Get() : Storage::Game::ManifestData{})
             {
 
             }
 
             bool Valid;
             Storage::Game::Header Header;
+            Storage::Game::ManifestData ManifestData;
         };
 
         mutable std::variant<std::monostate, Storage::Game::Archive, MetadataInfo> Data;
-        std::optional<MountedGame> MountData;
+        Service::Pipe::ServicedMount MountData;
     };
 }

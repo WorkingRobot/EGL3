@@ -2,6 +2,7 @@
 
 #include "../Align.h"
 #include "../Assert.h"
+#include "../Format.h"
 #include "ntdll.h"
 
 #include <Psapi.h>
@@ -106,6 +107,41 @@ namespace EGL3::Utils::Mmio {
         if (HSection) {
             NtClose(HSection);
         }
+    }
+
+    bool ResolveDevicePath(std::string& Filename) {
+        char DriveLetters[512];
+        if (GetLogicalDriveStrings(512 - 1, DriveLetters)) {
+            char DriveName[MAX_PATH];
+            char Drive[3] = " :";
+            for (auto DriveLetter = DriveLetters; *DriveLetter; ++DriveLetter) {
+                Drive[0] = *DriveLetter;
+                if (QueryDosDevice(Drive, DriveName, MAX_PATH)) {
+                    size_t DriveNameLen = strlen(DriveName);
+
+                    if (DriveNameLen < MAX_PATH) {
+                        if (Filename.starts_with({ DriveName, DriveNameLen }) && Filename[DriveNameLen] == '\\') {
+                            Filename.replace(0, DriveNameLen, Drive);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    std::filesystem::path MmioFile::GetPath() const
+    {
+        char Filename[MAX_PATH];
+        Filename[0] = 0;
+        if (GetMappedFileName(HProcess, BaseAddress, Filename, MAX_PATH)) {
+            std::string FilenameString = Filename;
+            if (ResolveDevicePath(FilenameString)) {
+                return FilenameString;
+            }
+        }
+        return "";
     }
 
     void MmioFile::EnsureSize(size_t Size)

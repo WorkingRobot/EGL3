@@ -44,7 +44,6 @@ namespace EGL3::Storage::Models {
         
         PrimaryTask = std::async(std::launch::async, [this, Client = std::reference_wrapper<Service::Pipe::Client>(PipeClient)]() {
             SetState(PlayInfoState::Mounting);
-            Game.OpenArchiveRead();
             Game.Mount(Client);
             SetState(PlayInfoState::Playable);
         });
@@ -67,17 +66,10 @@ namespace EGL3::Storage::Models {
 
     void PlayInfo::OnPlay(Web::Epic::EpicClientAuthed& Client)
     {
-        std::filesystem::path MountPath;
-        {
-            char DriveLetter = '\0';
-            do {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                DriveLetter = Game.GetDriveLetter();
-                if (DriveLetter == '\0') {
-                    printf("Could not find mounted drive\n");
-                }
-            } while (!DriveLetter);
-            MountPath = std::string(1, DriveLetter) + ":/";
+        // TODO: make this a retry system?
+        while (Game.GetMountPath().empty()) {
+            printf("Searching for mounted drive\n");
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
         std::string ExchangeCode;
@@ -88,11 +80,11 @@ namespace EGL3::Storage::Models {
         }
 
         std::stringstream CommandLine;
-        CommandLine << Game.GetArchive().GetManifestData()->GetLaunchCommand()
+        CommandLine << Game.GetManifestData()->GetLaunchCommand()
                     << " -AUTH_LOGIN=unused"
                     << " -AUTH_PASSWORD=" << ExchangeCode
                     << " -AUTH_TYPE=exchangecode"
-                    << " -epicapp=" << Game.GetArchive().GetHeader()->GetGame()
+                    << " -epicapp=" << Game.GetHeader()->GetGame()
                     << " -epicenv=" << "Prod"
                     // no ownership token support just yet, Fortnite is free to play after all
                     << " -EpicPortal"
@@ -128,7 +120,7 @@ namespace EGL3::Storage::Models {
             .hStdError = HANDLE(NULL)
         };
 
-        auto ExePath = MountPath / Game.GetArchive().GetManifestData()->GetLaunchExe();
+        auto ExePath = Game.GetMountPath() / Game.GetManifestData()->GetLaunchExe();
         std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), CommandLine.str().c_str());
         printf("%s\n", CommandLineString.c_str());
         PROCESS_INFORMATION ProcInfo;

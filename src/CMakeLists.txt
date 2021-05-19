@@ -10,13 +10,14 @@ project(EGL3App)
 add_dir_recursive(EGL3 disk)
 add_dir_recursive(EGL3 modules)
 add_dir_recursive(EGL3 storage)
+add_dir_recursive(EGL3 srv/pipe/base)
+add_dir_recursive(EGL3 srv/pipe/client)
 add_dir_recursive(EGL3 utils)
 add_dir_recursive(EGL3 web)
 add_dir_recursive(EGL3 widgets)
 add_file(EGL3 main.cpp)
 add_file(EGL3 main.rc)
 add_file(EGL3 main.manifest)
-add_file(EGL3 srv/pipe/Client.cpp)
 
 
 ## Define EGL3 executable ##
@@ -45,10 +46,6 @@ target_include_directories(EGL3 PRIVATE ${RAPIDXML_INCLUDE_DIRS})
 # JSON #
 find_package(RapidJSON CONFIG REQUIRED)
 target_include_directories(EGL3 PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
-
-# WinSpd #
-target_include_directories(EGL3 PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
-target_link_libraries(EGL3 "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib")
 
 # NtDll (Used for mmio) #
 target_link_libraries(EGL3 "${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")

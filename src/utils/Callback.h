@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 
 namespace EGL3::Utils {
     // Callbacks that have a non void return type must have a default

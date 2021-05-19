@@ -3,10 +3,9 @@
 #include "../../utils/Assert.h"
 
 namespace EGL3::Storage::Models {
-    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, InstalledGame& Val) {
-        std::string Path;
-        Stream >> Path;
-        Val.Path = Path;
+    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, InstalledGame& Val)
+    {
+        Stream >> Val.Path;
         Stream >> Val.Flags;
         if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
             Stream >> Val.SelectedIds;
@@ -15,8 +14,9 @@ namespace EGL3::Storage::Models {
         return Stream;
     }
 
-    Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const InstalledGame& Val) {
-        Stream << Val.Path.string();
+    Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const InstalledGame& Val)
+    {
+        Stream << Val.Path;
         Stream << Val.Flags;
         if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
             Stream << Val.SelectedIds;
@@ -25,7 +25,8 @@ namespace EGL3::Storage::Models {
         return Stream;
     }
 
-    bool InstalledGame::IsValid() const {
+    bool InstalledGame::IsValid() const
+    {
         EnsureData();
 
         return std::visit([](auto&& Arg) -> bool {
@@ -39,7 +40,8 @@ namespace EGL3::Storage::Models {
         }, Data);
     }
 
-    const Storage::Game::Header* InstalledGame::GetHeader() const {
+    const Storage::Game::Header* InstalledGame::GetHeader() const
+    {
         if (!IsValid()) {
             return nullptr;
         }
@@ -55,45 +57,44 @@ namespace EGL3::Storage::Models {
         }, Data);
     }
 
-    bool InstalledGame::IsOpenForWriting() const
+    const Storage::Game::ManifestData* InstalledGame::GetManifestData() const
     {
-        if (auto ArchivePtr = std::get_if<Game::Archive>(&Data)) {
-            return ArchivePtr->IsValid() && !ArchivePtr->IsReadonly();
+        if (!IsValid()) {
+            return nullptr;
         }
 
-        return false;
+        return std::visit([](auto&& Arg) -> const Storage::Game::ManifestData* {
+            using T = std::decay_t<decltype(Arg)>;
+            if constexpr (std::is_same_v<T, Storage::Game::ManifestData>)
+                return Arg.GetHeader().Get();
+            else if constexpr (std::is_same_v<T, MetadataInfo>)
+                return &Arg.ManifestData;
+            else
+                return nullptr;
+        }, Data);
     }
 
-    bool InstalledGame::OpenArchiveRead() const
+    bool InstalledGame::IsArchiveOpen() const
     {
-        // Already has an archive
         if (auto ArchivePtr = std::get_if<Game::Archive>(&Data)) {
             return ArchivePtr->IsValid();
         }
 
-        // Open archive, use only if valid
-        Storage::Game::Archive Archive(Path, Storage::Game::ArchiveMode::Read);
-        if (Archive.IsValid()) {
-            Data.emplace<Storage::Game::Archive>(std::move(Archive));
-            return true;
-        }
-
         return false;
     }
 
-    bool InstalledGame::OpenArchiveWrite()
+    Storage::Game::Archive* InstalledGame::OpenArchive()
     {
-        // Already has an archive. If there is one in read mode, overwriting it will cause issues
-        if (auto ArchivePtr = std::get_if<Game::Archive>(&Data)) {
-            return ArchivePtr->IsValid() && !ArchivePtr->IsReadonly();
+        // Already has an archive
+        if (IsArchiveOpen()) {
+            return &std::get<Game::Archive>(Data);
         }
 
         // Open archive, use only if valid (and if it exists)
         {
             Storage::Game::Archive Archive(Path, Storage::Game::ArchiveMode::Load);
             if (Archive.IsValid()) {
-                Data.emplace<Storage::Game::Archive>(std::move(Archive));
-                return true;
+                return &Data.emplace<Storage::Game::Archive>(std::move(Archive));
             }
         }
 
@@ -101,12 +102,11 @@ namespace EGL3::Storage::Models {
         {
             Storage::Game::Archive Archive(Path, Storage::Game::ArchiveMode::Create);
             if (Archive.IsValid()) {
-                Data.emplace<Storage::Game::Archive>(std::move(Archive));
-                return true;
+                return &Data.emplace<Storage::Game::Archive>(std::move(Archive));
             }
         }
 
-        return false;
+        return nullptr;
     }
 
     void InstalledGame::CloseArchive()
@@ -114,32 +114,28 @@ namespace EGL3::Storage::Models {
         Data.emplace<std::monostate>();
     }
 
-    Storage::Game::Archive& InstalledGame::GetArchive() const
-    {
-        return std::get<Storage::Game::Archive>(Data);
-    }
-
     bool InstalledGame::IsMounted() const
     {
-        return MountData.has_value() && MountData->IsValid();
+        return MountData.IsMounted();
     }
 
     bool InstalledGame::Mount(Service::Pipe::Client& Client)
     {
-        return MountData.emplace(Path, Client).IsValid();
+        if (!MountData) {
+            MountData = Service::Pipe::ServicedMount(Client, Path);
+            return MountData.IsMounted();
+        }
+        return true;
     }
 
     void InstalledGame::Unmount()
     {
-        MountData.reset();
+        MountData.Unmount();
     }
 
-    char InstalledGame::GetDriveLetter() const
+    const std::filesystem::path& InstalledGame::GetMountPath()
     {
-        if (IsMounted()) {
-            return MountData->GetDriveLetter();
-        }
-        return 0;
+        return MountData.GetMountPath();
     }
 
     const std::filesystem::path& InstalledGame::GetPath() const
@@ -149,6 +145,8 @@ namespace EGL3::Storage::Models {
 
     void InstalledGame::SetPath(const std::filesystem::path& NewPath)
     {
+        Unmount();
+
         std::error_code Error;
         auto NewAbsPath = std::filesystem::absolute(NewPath, Error);
         EGL3_CONDITIONAL_LOG(!Error, LogLevel::Critical, "Could not get absolute path");

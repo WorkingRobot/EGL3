@@ -115,7 +115,8 @@ namespace EGL3::Storage::Models {
                 auto& Data = GetStateData<StateInitializing>();
                 SetState(DownloadInfoState::Initializing);
 
-                if (!GameConfig->OpenArchiveWrite()) {
+                auto Archive = GameConfig->OpenArchive();
+                if (Archive == nullptr) {
                     printf("Couldn't open for writing\n");
                     return;
                 }
@@ -129,7 +130,7 @@ namespace EGL3::Storage::Models {
                     }
                 } while (!Manifest.has_value());
 
-                const Game::ArchiveList<Game::RunlistId::ChunkInfo> ChunkInfo(GameConfig->GetArchive());
+                const Game::ArchiveList<Game::RunlistId::ChunkInfo> ChunkInfo(*Archive);
 
                 // Get a simple sequence from 0...ChunkInfo-1
                 std::vector<uint32_t> ArchiveGuids;
@@ -177,7 +178,7 @@ namespace EGL3::Storage::Models {
                     }
                 }
 
-                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), std::move(ManifestFiles), GameConfig->GetArchive(), std::move(UpdatedChunks), std::move(DeletedChunkIdxs));
+                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), std::move(ManifestFiles), *Archive, std::move(UpdatedChunks), std::move(DeletedChunkIdxs));
             }
 
             {

@@ -1,10 +1,9 @@
 #include "Service.h"
 
-#include "pipe/Server.h"
+#include "pipe/server/Server.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include "..\modules\Game\Service.h"
 
 #define SVC_ERROR ((DWORD)0xC0020001L)
 

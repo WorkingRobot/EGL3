@@ -1,20 +1,18 @@
 #include "MountedDisk.h"
 
-#include "../../disk/interface.h"
-#include "../../utils/Align.h"
-#include "../../utils/Assert.h"
-#include "../../utils/Random.h"
-#include "../../utils/mmio/MmioFile.h"
+#include "../disk/interface.h"
+#include "../utils/Align.h"
+#include "../utils/Assert.h"
+#include "../utils/Random.h"
+#include "../utils/mmio/MmioFile.h"
 
-#include <bitset>
 #include <memory>
-#include <mutex>
 #include <thread>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <winspd/winspd.h>
 
-namespace EGL3::Storage::Models {
+namespace EGL3::Service {
     static constexpr uint32_t SectorSize = 512;
     static constexpr uint32_t DiskSize = DISK_SIZE / (1 << 20);
 
@@ -26,7 +24,7 @@ namespace EGL3::Storage::Models {
     struct MountedData {
         uint8_t MBRData[4096];
         uint8_t BlankData[4096];
-        uint32_t DiskSignature; // Used to be 0x334C4745 = "EGL3", but not anymore
+        uint32_t DiskSignature;
         std::vector<EGL3File> Files;
         AppendingFile* Disk;
         SPD_STORAGE_UNIT* Unit;
@@ -79,6 +77,8 @@ namespace EGL3::Storage::Models {
 
     MountedDisk::~MountedDisk()
     {
+        Unmount();
+
         auto Data = (MountedData*)PrivateData;
 
         std::destroy_at(Data);
@@ -151,7 +151,7 @@ namespace EGL3::Storage::Models {
 
     static UINT8* HandleCluster(MountedData* Data, UINT64 Idx) {
         // MBR cluster
-        if (Idx == 0) {
+        if (Idx == 0) [[unlikely]] {
             return Data->MBRData;
         }
 
@@ -166,7 +166,7 @@ namespace EGL3::Storage::Models {
             auto CurrentRun = File.runs;
             uint64_t lIdx = 0;
             while (CurrentRun->count) {
-                if (CurrentRun->idx <= Idx && uint64_t(CurrentRun->idx) + CurrentRun->count > Idx) {
+                if (CurrentRun->idx <= Idx && uint64_t(CurrentRun->idx) + CurrentRun->count > Idx) [[likely]] {
                     Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, ClusterCache);
                     return ClusterCache;
                 }
@@ -274,14 +274,12 @@ namespace EGL3::Storage::Models {
             Utils::GenerateRandomGuid((char*)&Params.Guid);
 
             strcpy_s((char*)Params.ProductId, sizeof(Params.ProductId), "EGL3");
-            strcpy_s((char*)Params.ProductRevisionLevel, sizeof(Params.ProductRevisionLevel), "1.0");
+            strncpy_s((char*)Params.ProductRevisionLevel, sizeof(Params.ProductRevisionLevel), CONFIG_VERSION_SHORT, _TRUNCATE);
 
             // This can fail with error code 5
             // https://github.com/billziss-gh/winspd/blob/master/doc/WinSpd-Tutorial.asciidoc#testing-the-integration-with-the-operating-system
             // "This happens because mounting a storage unit requires administrator privileges."
-            auto Ret = SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit);
-            printf("%d\n", Ret);
-            EGL3_CONDITIONAL_LOG(Ret == ERROR_SUCCESS, LogLevel::Critical, "Could not create storage unit");
+            EGL3_CONDITIONAL_LOG(SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit) == ERROR_SUCCESS, LogLevel::Critical, "Could not create storage unit");
 
             Data->Unit->UserContext = Data;
         }

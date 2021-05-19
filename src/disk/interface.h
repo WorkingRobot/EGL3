@@ -33,7 +33,6 @@ bool EGL3CreateDisk(uint64_t sector_count, const char* label, const EGL3File fil
 }
 
 #include <unordered_map>
-#include <unordered_set>
 
 // o_data
 class AppendingFile {

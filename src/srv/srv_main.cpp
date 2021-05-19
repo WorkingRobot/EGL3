@@ -1,7 +1,7 @@
-#include "srv/Service.h"
-#include "srv/ServiceConfig.h"
-#include "srv/ServiceControl.h"
-#include "utils/Crc32.h"
+#include "Service.h"
+#include "ServiceConfig.h"
+#include "ServiceControl.h"
+#include "../utils/Crc32.h"
 
 #include <conio.h>
 #define WIN32_LEAN_AND_MEAN

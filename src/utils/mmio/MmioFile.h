@@ -44,6 +44,8 @@ namespace EGL3::Utils::Mmio {
             return BaseAddress;
         }
 
+        std::filesystem::path GetPath() const;
+
         bool IsReadonly() const {
             return Readonly;
         }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../srv/pipe/Client.h"
+#include "../../srv/pipe/client/Client.h"
 #include "../../utils/Callback.h"
 #include "../../web/epic/EpicClientAuthed.h"
 #include "../game/ArchiveList.h"

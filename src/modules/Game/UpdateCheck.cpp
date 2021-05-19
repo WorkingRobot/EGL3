@@ -57,7 +57,7 @@ namespace EGL3::Modules::Game {
         do {
             auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
             for (auto& Game : InstalledGames) {
-                if (Game.IsValid() && !Game.IsOpenForWriting()) {
+                if (Game.IsValid() && !Game.IsArchiveOpen()) {
                     if (auto HeaderPtr = Game.GetHeader()) {
                         if (!HeaderPtr->GetUpdateInfo().IsUpdating) {
                             CheckForUpdate(HeaderPtr->GetGameId(), HeaderPtr->GetVersionNum());

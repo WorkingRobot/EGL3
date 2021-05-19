@@ -1,11 +1,13 @@
 #pragma once
 
 #include <chrono>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
 namespace EGL3::Utils::Streams {
     namespace Detail {
+        // MSVC doesn't have this yet, so I just used cppreference's example here
         template<class>
         struct is_scoped_enum : std::false_type {};
 
@@ -97,6 +99,11 @@ namespace EGL3::Utils::Streams {
 
         Stream& operator<<(const std::string& Val) {
             write((char*)Val.c_str(), Val.size() + 1);
+            return *this;
+        }
+
+        Stream& operator<<(const std::filesystem::path& Val) {
+            *this << Val.string();
             return *this;
         }
 
@@ -222,6 +229,13 @@ namespace EGL3::Utils::Streams {
                     Val.append(1, n);
                 }
             } while (n);
+            return *this;
+        }
+
+        Stream& operator>>(std::filesystem::path& Val) {
+            std::string Tmp;
+            *this >> Tmp;
+            Val = Tmp;
             return *this;
         }
 

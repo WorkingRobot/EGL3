@@ -22,7 +22,7 @@ namespace EGL3::Storage::Game {
     // A full Fortnite (or maybe other game) installation
     class Archive {
     public:
-        Archive(const std::filesystem::path& Path, ArchiveMode) noexcept;
+        Archive(const std::filesystem::path& Path, ArchiveMode Mode) noexcept;
 
         Archive(const Archive&) = delete;
 
@@ -30,6 +30,10 @@ namespace EGL3::Storage::Game {
 
         bool IsValid() const {
             return Valid;
+        }
+
+        std::filesystem::path GetPath() const {
+            return Backend->GetPath();
         }
 
         // Do not run these functions without checking for IsValid!

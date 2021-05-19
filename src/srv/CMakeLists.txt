@@ -7,14 +7,15 @@ project(EGL3_SRV)
 
 ## Source Files ##
 
-add_dir_recursive(EGL3_SRV .)
-add_dir_recursive(EGL3_SRV ../utils/mmio)
-add_dir_recursive(EGL3_SRV ../storage/game)
+add_dir(EGL3_SRV .)
+add_dir_recursive(EGL3_SRV pipe/base)
+add_dir_recursive(EGL3_SRV pipe/server)
 add_dir_recursive(EGL3_SRV ../disk)
-add_file(EGL3_SRV ../storage/models/MountedDisk.cpp)
-add_file(EGL3_SRV ../utils/StackTrace.cpp)
+add_dir_recursive(EGL3_SRV ../storage/game)
+add_dir_recursive(EGL3_SRV ../utils/mmio)
 add_file(EGL3_SRV ../utils/Random.cpp)
-add_file(EGL3_SRV ../srv_main.cpp)
+add_file(EGL3_SRV ../utils/StackTrace.cpp)
+add_file(EGL3_SRV srv_main.cpp)
 
 
 ## Define EGL3 executable ##

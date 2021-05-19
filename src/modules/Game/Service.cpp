@@ -1,6 +1,10 @@
 #include "Service.h"
 
+#include "../../utils/Assert.h"
+#include "../../utils/Config.h"
 #include "../../utils/Format.h"
+
+#include <thread>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -9,26 +13,25 @@
 namespace EGL3::Modules::Game {
     ServiceModule::ServiceModule()
     {
-        Client.emplace();
+        auto ClientName = Utils::Format("%s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion());
 
-        if (!EGL3_CONDITIONAL_LOG(Client->IsConnected(), LogLevel::Error, "Could not connect to service server")) {
-            for (int i = 0; i < 2 && PatchService(); ++i) {} // 2 retries
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            // Assignment operator without the optional goes bonkers, this is a good alternative
-            Client.reset();
-            Client.emplace();
-            EGL3_CONDITIONAL_LOG(Client->IsConnected(), LogLevel::Critical, "Could not connect to service server (after relaunch)");
+        for (int Idx = 0; Idx < 3 && !Client.IsConnected(); ++Idx) {
+            if (Idx != 0) {
+                if (PatchService() == 0) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    Client.Connect(ClientName);
+                }
+            }
+            else {
+                Client.Connect(ClientName);
+            }
         }
-
-        uint32_t ProtocolVersion, MountedDiskCount;
-        EGL3_CONDITIONAL_LOG(Client->QueryServer(ProtocolVersion, MountedDiskCount), LogLevel::Critical, "Could not query service server");
-        EGL3_CONDITIONAL_LOG(ProtocolVersion == Service::Pipe::ProtocolVersion, LogLevel::Critical, "Service server protocol version does not match");
+        EGL3_CONDITIONAL_LOG(Client.IsConnected(), LogLevel::Critical, "Could not connect to the service after multiple retries");
     }
 
     Service::Pipe::Client& ServiceModule::GetClient()
     {
-        return *Client;
+        return Client;
     }
 
     int ServiceModule::PatchService()

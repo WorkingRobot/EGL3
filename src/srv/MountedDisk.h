@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../../utils/Callback.h"
+#include "../utils/Callback.h"
 
+#include <string>
 #include <vector>
 
-namespace EGL3::Storage::Models {
+namespace EGL3::Service {
     struct MountedFile {
         std::string Path;
         uint64_t FileSize;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../srv/pipe/Client.h"
+#include "../../srv/pipe/client/Client.h"
 #include "../BaseModule.h"
 
 namespace EGL3::Modules::Game {
@@ -13,6 +13,6 @@ namespace EGL3::Modules::Game {
     private:
         int PatchService();
 
-        std::optional<Service::Pipe::Client> Client;
+        Service::Pipe::Client Client;
     };
 }

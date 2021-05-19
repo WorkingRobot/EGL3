@@ -2,7 +2,6 @@
 
 #include "../../storage/persistent/Store.h"
 #include "../../storage/models/PlayInfo.h"
-#include "../../storage/models/MountedDisk.h"
 #include "../../utils/GladeBuilder.h"
 #include "../BaseModule.h"
 #include "../ModuleList.h"
