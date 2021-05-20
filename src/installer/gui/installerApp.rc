@@ -71,10 +71,10 @@ PRODUCTVERSION CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_VERSION_PATCH,
 
                 VALUE "FileDescription", "EGL3 Installer"
                 VALUE "FileVersion", CONFIG_VERSION_SHORT ".0"
-                VALUE "InternalName", "egl3-installer"
+                VALUE "InternalName", "egl3_installer"
                 VALUE "LegalCopyright", "EGL3 (c) by Aleks Margarian (WorkingRobot)"
 
-                VALUE "OriginalFilename", "EGL3Installer.exe"
+                VALUE "OriginalFilename", "installer.exe"
                 VALUE "ProductName", "EGL3"
                 VALUE "ProductVersion", CONFIG_VERSION_LONG
         }
