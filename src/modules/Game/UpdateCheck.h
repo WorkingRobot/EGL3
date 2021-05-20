@@ -19,6 +19,7 @@ namespace EGL3::Modules::Game {
 
         ~UpdateCheckModule();
 
+        // Will only be emitted for already installed games
         sigc::signal<void(Storage::Game::GameId Id, const Storage::Models::VersionData&)> OnUpdateAvailable;
 
     private:

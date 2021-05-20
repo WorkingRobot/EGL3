@@ -23,6 +23,7 @@ namespace EGL3::Modules::Game {
         ServiceModule& Service;
 
         std::atomic<bool> PlayQueued;
+        Glib::Dispatcher PlayQueuedDispatcher;
         std::unique_ptr<Storage::Models::PlayInfo> CurrentPlay;
     };
 }

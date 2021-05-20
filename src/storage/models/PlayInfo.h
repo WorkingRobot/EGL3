@@ -27,8 +27,6 @@ namespace EGL3::Storage::Models {
 
         PlayInfoState GetState() const;
 
-        void SetState(PlayInfoState NewState);
-
         void Mount(Service::Pipe::Client& PipeClient);
 
         void Play(Web::Epic::EpicClientAuthed& Client);
@@ -38,6 +36,8 @@ namespace EGL3::Storage::Models {
         sigc::signal<void(PlayInfoState)> OnStateUpdate;
 
     private:
+        void SetState(PlayInfoState NewState);
+
         void OnPlay(Web::Epic::EpicClientAuthed& Client);
 
         InstalledGame& Game;

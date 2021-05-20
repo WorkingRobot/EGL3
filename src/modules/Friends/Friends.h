@@ -29,7 +29,7 @@ namespace EGL3::Modules::Friends {
 
         void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
 
-        void OnAuthChanged();
+        void OnLoggedIn();
 
         void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
 

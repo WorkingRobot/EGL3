@@ -8,7 +8,11 @@ namespace EGL3::Modules::Game {
         GameInfo(Modules.GetModule<GameInfoModule>()),
         Cancelled(false)
     {
-        Auth.AuthChanged.connect([this]() {
+        Auth.AuthChanged.connect([this](bool LoggedIn) {
+            if (!LoggedIn) {
+                return;
+            }
+
             if (!Future.valid()) {
                 Future = std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this);
             }

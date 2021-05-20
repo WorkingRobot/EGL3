@@ -79,7 +79,11 @@ namespace EGL3::Modules::Friends {
                 FriendsRealizeDispatcher.connect([this]() { FriendsRealize(); });
             }
 
-            Auth.AuthChanged.connect(sigc::mem_fun(*this, &FriendsModule::OnAuthChanged));
+            Auth.AuthChanged.connect([this](bool LoggedIn) {
+                if (LoggedIn) {
+                    OnLoggedIn();
+                }
+            });
 
             {
                 FriendsList.GetCurrentUser().SetDisplayStatus(Options.GetStorageData().GetStatus());
@@ -118,7 +122,7 @@ namespace EGL3::Modules::Friends {
         FriendsRealizeDispatcher.emit();
     }
 
-    void FriendsModule::OnAuthChanged() {
+    void FriendsModule::OnLoggedIn() {
         auto& AuthData = Auth.GetClientLauncher().GetAuthData();
         EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
 

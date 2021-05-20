@@ -19,7 +19,9 @@ namespace EGL3::Storage::Models {
 
     PlayInfo::~PlayInfo()
     {
-        PrimaryTask.get();
+        if (PrimaryTask.valid()) {
+            PrimaryTask.get();
+        }
         Game.Unmount();
         if (ProcessHandle) {
             CloseHandle(ProcessHandle);

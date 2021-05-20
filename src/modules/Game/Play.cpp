@@ -9,45 +9,32 @@ namespace EGL3::Modules::Game {
         Service(Modules.GetModule<ServiceModule>()),
         PlayQueued(false)
     {
-
+        PlayQueuedDispatcher.connect([this]() {
+            if (PlayQueued.exchange(false)) {
+                OnStateUpdate(true);
+                CurrentPlay->Play(Auth.GetClientLauncher());
+            }
+            else {
+                OnStateUpdate(false);
+            }
+        });
     }
 
     PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game)
     {
         if (!CurrentPlay) {
+            PlayQueued = true;
+
             CurrentPlay = std::make_unique<PlayInfo>(Game);
             CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
-                switch (NewState)
-                {
-                case PlayInfoState::Constructed:
-                    printf("Constructed\n");
-                    break;
-                case PlayInfoState::Mounting:
-                    printf("Mounting\n");
-                    break;
-                case PlayInfoState::Playable:
-                    printf("Playable\n");
-                    if (PlayQueued.exchange(false)) {
-                        OnStateUpdate(true);
-                        CurrentPlay->Play(Auth.GetClientLauncher());
-                    }
-                    else {
-                        OnStateUpdate(false);
-                    }
-                    break;
-                case PlayInfoState::Playing:
-                    printf("Playing\n");
-                    break;
-                default:
-                    printf("Unknown\n");
-                    break;
+                if (NewState == PlayInfoState::Playable) {
+                    PlayQueuedDispatcher.emit();
                 }
             });
-
-            PlayQueued = true;
             CurrentPlay->Mount(Service.GetClient());
         }
         else {
+            OnStateUpdate(true);
             CurrentPlay->Play(Auth.GetClientLauncher());
         }
 

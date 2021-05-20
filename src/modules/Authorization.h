@@ -23,10 +23,12 @@ namespace EGL3::Modules {
 
         Web::Epic::Content::LauncherContentClient& GetClientLauncherContent();
 
+        bool StartLoginStored();
+
         void StartLogin();
 
         // This will not be emitted from the main thread
-        sigc::signal<void()> AuthChanged;
+        sigc::signal<void(bool LoggedIn)> AuthChanged;
 
     private:
         Storage::Persistent::Store& Storage;

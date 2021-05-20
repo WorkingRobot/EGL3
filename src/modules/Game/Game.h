@@ -11,6 +11,7 @@
 #include "Play.h"
 #include "UpdateCheck.h"
 
+#include <set>
 #include <gtkmm.h>
 
 namespace EGL3::Modules::Game {
@@ -19,6 +20,7 @@ namespace EGL3::Modules::Game {
         GameModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
 
         enum class State {
+            Unknown,
             SignIn,
             Play,
             Update,
@@ -32,11 +34,11 @@ namespace EGL3::Modules::Game {
         };
 
     private:
-        void OnAuthChanged();
+        void OnLoggedIn();
 
         void UpdateToState(const char* NewLabel, bool Playable = false, bool Menuable = false);
 
-        void SetCurrentState(State NewState);
+        void OnUpdateToCurrentState();
 
         void UpdateToCurrentState();
 
@@ -45,6 +47,37 @@ namespace EGL3::Modules::Game {
         void CleanInstalls();
 
         Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
+
+        struct StateHolder {
+            StateHolder(GameModule& Module, State HeldState = State::Unknown);
+            ~StateHolder();
+
+            StateHolder(const StateHolder&) = delete;
+            StateHolder& operator=(const StateHolder&) = delete;
+
+            bool HasHeldState() const noexcept {
+                return GetHeldState() != State::Unknown;
+            }
+
+            State GetHeldState() const noexcept {
+                return HeldState;
+            }
+
+            void SetHeldState(State NewHeldState);
+
+            void ClearHeldState();
+
+            Utils::Callback<void()> Clicked;
+        private:
+            State HeldState;
+            GameModule* Module;
+        };
+
+        struct StateHolderComparer {
+            bool operator()(const StateHolder* Left, const StateHolder* Right) const {
+                return Left->GetHeldState() < Right->GetHeldState();
+            }
+        };
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
@@ -60,6 +93,12 @@ namespace EGL3::Modules::Game {
         Gtk::MenuItem& PlayMenuSignOutOpt;
 
         Glib::Dispatcher CurrentStateDispatcher;
-        State CurrentState;
+        StateHolder* CurrentStateHolder;
+        std::shared_mutex StateHolderMtx;
+        std::vector<StateHolder*> StateHolders;
+
+        StateHolder AuthStateHolder;
+        StateHolder InstallStateHolder;
+        StateHolder PlayStateHolder;
     };
 }

@@ -8,6 +8,8 @@
 #include <regex>
 
 namespace EGL3::Modules::Game {
+    constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
+
     GameModule::GameModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
         Storage(Storage),
         AsyncFF(Modules.GetModule<AsyncFFModule>()),
@@ -20,58 +22,93 @@ namespace EGL3::Modules::Game {
         PlayMenuVerifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
         PlayMenuModifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
         PlayMenuSignOutOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
-        CurrentState(State::SignIn)
+        CurrentStateHolder(),
+        AuthStateHolder(*this, State::SignIn),
+        InstallStateHolder(*this),
+        PlayStateHolder(*this)
     {
         CleanInstalls();
 
         PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
 
-        CurrentStateDispatcher.connect([this]() { UpdateToCurrentState(); });
+        AuthStateHolder.Clicked.Set([this]() {
+            Auth.StartLogin();
+            AuthStateHolder.SetHeldState(State::SigningIn);
+        });
+        Auth.AuthChanged.connect([this](bool LoggedIn) {
+            if (LoggedIn) {
+                AuthStateHolder.ClearHeldState();
+                OnLoggedIn();
+            }
+            else {
+                AuthStateHolder.SetHeldState(State::SignIn);
+            }
+        });
 
-        Auth.AuthChanged.connect(sigc::mem_fun(*this, &GameModule::OnAuthChanged));
+        if (Auth.StartLoginStored()) {
+            AuthStateHolder.SetHeldState(State::SigningIn);
+        }
+
+        InstallStateHolder.Clicked.Set([this]() {
+            auto& Info = Download.OnDownloadClicked(PrimaryGame);
+            Info.OnStateUpdate.connect([this](Storage::Models::DownloadInfoState NewState) {
+                switch (NewState)
+                {
+                case Storage::Models::DownloadInfoState::Initializing:
+                    InstallStateHolder.SetHeldState(InstallStateHolder.GetHeldState() == State::Update ? State::Updating : State::Installing);
+                    break;
+                case Storage::Models::DownloadInfoState::Finished:
+                    if (!PlayStateHolder.HasHeldState()) {
+                        PlayStateHolder.SetHeldState(State::Play);
+                    }
+                    InstallStateHolder.ClearHeldState();
+                    break;
+                case Storage::Models::DownloadInfoState::Cancelled:
+                    InstallStateHolder.SetHeldState(InstallStateHolder.GetHeldState() == State::Updating ? State::Update : State::Install);
+                    break;
+                }
+            });
+        });
 
         UpdateCheck.OnUpdateAvailable.connect([this](Storage::Game::GameId Id, const Storage::Models::VersionData& Data) {
-            if (Id == Storage::Game::GameId::Fortnite) {
-                if (CurrentState == State::Play) {
-                    printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
-                    SetCurrentState(State::Update);
-                }
+            if (Id == PrimaryGame) {
+                InstallStateHolder.SetHeldState(State::Update);
+                printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
             }
+        });
+
+        PlayStateHolder.Clicked.Set([this]() {
+            auto Install = GetInstall(PrimaryGame);
+            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game, but playable?");
+            Play.OnPlayClicked(*Install);
+
+            PlayStateHolder.SetHeldState(State::Playing);
         });
 
         Play.OnStateUpdate.Set([this](bool Playing) {
-            if (!Playing) {
-                if (CurrentState == State::Playing) {
-                    SetCurrentState(State::Play);
-                }
-            }
-            else {
-                if (CurrentState == State::Play) {
-                    SetCurrentState(State::Playing);
-                }
-            }
+            PlayStateHolder.SetHeldState(Playing ? State::Playing : State::Play);
         });
 
+        CurrentStateDispatcher.connect([this]() { OnUpdateToCurrentState(); });
         UpdateToCurrentState();
     }
 
-    void GameModule::OnAuthChanged()
+    void GameModule::OnLoggedIn()
     {
-        auto Install = GetInstall(Storage::Game::GameId::Fortnite);
+        auto Install = GetInstall(PrimaryGame);
         if (Install) {
             if (Install->GetHeader()->GetUpdateInfo().IsUpdating) {
                 // There was currently an update
                 // If there is a more recent one, then that's fine
-                CurrentState = State::Update;
+                InstallStateHolder.SetHeldState(State::Update);
             }
             else {
-                CurrentState = State::Play;
+                PlayStateHolder.SetHeldState(State::Play);
             }
         }
         else {
-            CurrentState = State::Install;
+            InstallStateHolder.SetHeldState(State::Install);
         }
-        CurrentStateDispatcher.emit();
     }
 
     void GameModule::UpdateToState(const char* NewLabel, bool Playable, bool Menuable)
@@ -81,15 +118,18 @@ namespace EGL3::Modules::Game {
         PlayMenuBtn.set_sensitive(Menuable);
     }
 
-    void GameModule::SetCurrentState(State NewState)
-    {
-        CurrentState = NewState;
+    void GameModule::OnUpdateToCurrentState() {
+        {
+            std::shared_lock Lock(StateHolderMtx);
+            if (StateHolders.empty()) {
+                CurrentStateHolder = nullptr;
+            }
+            else {
+                CurrentStateHolder = *std::max_element(StateHolders.begin(), StateHolders.end(), StateHolderComparer());
+            }
+        }
 
-        CurrentStateDispatcher.emit();
-    }
-
-    void GameModule::UpdateToCurrentState() {
-        switch (CurrentState)
+        switch (CurrentStateHolder ? CurrentStateHolder->GetHeldState() : State::Unknown)
         {
         case State::SignIn:
             UpdateToState("Sign In", true);
@@ -118,55 +158,22 @@ namespace EGL3::Modules::Game {
         case State::Uninstalling:
             UpdateToState("Uninstalling");
             break;
+        case State::Unknown:
         default:
             UpdateToState("Unknown");
             break;
         }
     }
 
+    void GameModule::UpdateToCurrentState()
+    {
+        CurrentStateDispatcher.emit();
+    }
+
     void GameModule::PrimaryButtonClicked()
     {
-        switch (CurrentState)
-        {
-        case State::SignIn:
-            Auth.StartLogin();
-
-            SetCurrentState(State::SigningIn);
-            break;
-        case State::Play:
-        {
-            auto Install = GetInstall(Storage::Game::GameId::Fortnite);
-            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game, but playable?");
-            EGL3_LOG(LogLevel::Info, "Play game HYPERS");
-            Play.OnPlayClicked(*Install);
-
-            SetCurrentState(State::Playing);
-            break;
-        }
-        case State::Update:
-        case State::Install:
-        {
-            auto& Info = Download.OnDownloadClicked(Storage::Game::GameId::Fortnite);
-            Info.OnStateUpdate.connect([this](Storage::Models::DownloadInfoState NewState) {
-                switch (NewState)
-                {
-                case Storage::Models::DownloadInfoState::Initializing:
-                    SetCurrentState(CurrentState == State::Update ? State::Updating : State::Installing);
-                    break;
-                case Storage::Models::DownloadInfoState::Finished:
-                    SetCurrentState(State::Play);
-                    break;
-                // case Storage::Models::DownloadInfo::State::Cancelling:
-                case Storage::Models::DownloadInfoState::Cancelled:
-                    SetCurrentState(CurrentState == State::Updating ? State::Update : State::Install);
-                    break;
-                }
-            });
-            break;
-        }
-        default:
-            EGL3_LOG(LogLevel::Warning, "Attempted to click play button on an invalid state");
-            break;
+        if (CurrentStateHolder) {
+            CurrentStateHolder->Clicked();
         }
     }
 
@@ -203,5 +210,41 @@ namespace EGL3::Modules::Game {
             return &*Itr;
         }
         return nullptr;
+    }
+
+    GameModule::StateHolder::StateHolder(GameModule& Module, State HeldState) :
+        Module(&Module),
+        HeldState(HeldState)
+    {
+        {
+            std::lock_guard Lock(Module.StateHolderMtx);
+            Module.StateHolders.emplace_back(this);
+        }
+        Module.UpdateToCurrentState();
+    }
+
+    GameModule::StateHolder::~StateHolder()
+    {
+        if (Module) {
+            {
+                std::lock_guard Lock(Module->StateHolderMtx);
+                Module->StateHolders.erase(std::remove(Module->StateHolders.begin(), Module->StateHolders.end(), this), Module->StateHolders.end());
+            }
+            Module->UpdateToCurrentState();
+            Module = nullptr;
+        }
+    }
+
+    void GameModule::StateHolder::SetHeldState(State NewHeldState)
+    {
+        if (HeldState != NewHeldState) {
+            HeldState = NewHeldState;
+            Module->UpdateToCurrentState();
+        }
+    }
+
+    void GameModule::StateHolder::ClearHeldState()
+    {
+        SetHeldState(State::Unknown);
     }
 }
