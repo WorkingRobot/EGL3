@@ -7,7 +7,7 @@ namespace EGL3::Storage::Models {
     {
         Stream >> Val.Path;
         Stream >> Val.Flags;
-        if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
+        if (Val.GetFlag<InstallFlags::SelectedIds>()) {
             Stream >> Val.SelectedIds;
         }
 
@@ -18,7 +18,7 @@ namespace EGL3::Storage::Models {
     {
         Stream << Val.Path;
         Stream << Val.Flags;
-        if (Val.GetFlag<InstallFlags::CreateShortcut>()) {
+        if (Val.GetFlag<InstallFlags::SelectedIds>()) {
             Stream << Val.SelectedIds;
         }
 
