@@ -4,8 +4,8 @@
 #include <regex>
 
 namespace EGL3::Modules::Game {
-    GameInfoModule::GameInfoModule(ModuleList& Modules) :
-        Auth(Modules.GetModule<AuthorizationModule>())
+    GameInfoModule::GameInfoModule(ModuleList& Ctx) :
+        Auth(Ctx.GetModule<AuthorizationModule>())
     {
 
     }

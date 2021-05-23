@@ -3,10 +3,8 @@
 #include "../../storage/models/ChatConversation.h"
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
-#include "../../utils/GladeBuilder.h"
 #include "../../widgets/ChatBubble.h"
 #include "../../widgets/FriendItem.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../ImageCache.h"
@@ -16,7 +14,7 @@
 namespace EGL3::Modules::Friends {
     class ChatModule : public BaseModule {
     public:
-        ChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
+        ChatModule(ModuleList& Ctx);
 
         void SetUser(const Storage::Models::Friend& Friend);
 

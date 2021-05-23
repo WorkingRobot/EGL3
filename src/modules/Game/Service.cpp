@@ -11,7 +11,7 @@
 #include <Windows.h>
 
 namespace EGL3::Modules::Game {
-    ServiceModule::ServiceModule()
+    ServiceModule::ServiceModule(ModuleList& Ctx)
     {
         auto ClientName = Utils::Format("%s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion());
 

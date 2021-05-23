@@ -2,7 +2,7 @@
 
 #include "../utils/HashCombine.h"
 #include "../web/Http.h"
-#include "BaseModule.h"
+#include "ModuleList.h"
 
 #include <future>
 #include <gtkmm.h>
@@ -44,7 +44,7 @@ namespace EGL3::Modules {
         std::unordered_map<CacheKey, std::shared_future<Glib::RefPtr<Gdk::Pixbuf>>, CacheKeyHasher> Cache;
 
     public:
-        ImageCacheModule();
+        ImageCacheModule(ModuleList& Ctx);
 
         std::future<Glib::RefPtr<Gdk::Pixbuf>> GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback);
 

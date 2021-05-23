@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseModule.h"
+#include "ModuleList.h"
 
 #include <future>
 #include <mutex>
@@ -13,7 +13,7 @@ namespace EGL3::Modules {
         std::vector<std::future<void>> Futures;
 
     public:
-        AsyncFFModule(size_t Capacity = 30);
+        AsyncFFModule(ModuleList& Ctx);
 
         void Enqueue(std::future<void>&& Future);
 

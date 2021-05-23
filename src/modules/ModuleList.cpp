@@ -56,29 +56,29 @@ namespace EGL3::Modules {
     void ModuleList::AddModules() {
         AddModule<AsyncFFModule>();
         AddModule<ImageCacheModule>();
-        AddModule<TaskbarModule>(Builder);
-        AddModule<StatsGraphModule>(Builder);
-        AddModule<StatusPageModule>(Builder);
-        AddModule<AuthorizationModule>(Storage);
+        AddModule<TaskbarModule>();
+        AddModule<StatsGraphModule>();
+        AddModule<StatusPageModule>();
+        AddModule<AuthorizationModule>();
 
-        AddModule<WhatsNewModule>(*this, Storage, Builder);
+        AddModule<WhatsNewModule>();
 
-        AddModule<Friends::OptionsModule>(*this, Storage, Builder);
-        AddModule<Friends::ListModule>(*this, Builder);
-        AddModule<Friends::KairosMenuModule>(*this, Builder);
-        AddModule<Friends::ChatModule>(*this, Builder);
-        AddModule<Friends::FriendsModule>(*this, Storage, Builder);
+        AddModule<Friends::OptionsModule>();
+        AddModule<Friends::ListModule>();
+        AddModule<Friends::KairosMenuModule>();
+        AddModule<Friends::ChatModule>();
+        AddModule<Friends::FriendsModule>();
 
         AddModule<Game::ServiceModule>();
-        AddModule<Game::GameInfoModule>(*this);
-        AddModule<Game::DownloadModule>(*this, Storage, Builder);
-        AddModule<Game::PlayModule>(*this, Storage, Builder);
-        AddModule<Game::UpdateCheckModule>(*this, Storage);
-        AddModule<Game::GameModule>(*this, Storage, Builder);
+        AddModule<Game::GameInfoModule>();
+        AddModule<Game::DownloadModule>();
+        AddModule<Game::PlayModule>();
+        AddModule<Game::UpdateCheckModule>();
+        AddModule<Game::GameModule>();
     }
 
-    template<typename T, typename... Args>
-    void ModuleList::AddModule(Args&&... ModuleArgs) {
-        Modules.emplace_back(std::make_shared<T>(std::forward<Args>(ModuleArgs)...));
+    template<typename T>
+    void ModuleList::AddModule() {
+        Modules.emplace_back(std::make_unique<T>(*this));
     }
 }

@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../../storage/models/InstalledGame.h"
-#include "../../storage/persistent/Store.h"
-#include "../../utils/GladeBuilder.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
@@ -11,13 +8,12 @@
 #include "Play.h"
 #include "UpdateCheck.h"
 
-#include <set>
 #include <gtkmm.h>
 
 namespace EGL3::Modules::Game {
     class GameModule : public BaseModule {
     public:
-        GameModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+        GameModule(ModuleList& Ctx);
 
         enum class State {
             Unknown,

@@ -3,14 +3,14 @@
 namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
-    ChatModule::ChatModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
-        ImageCache(Modules.GetModule<ImageCacheModule>()),
-        AsyncFF(Modules.GetModule<AsyncFFModule>()),
-        ChatScrollWindow(Builder.GetWidget<Gtk::ScrolledWindow>("FriendsChatScrollWindow")),
-        ChatBox(Builder.GetWidget<Gtk::Box>("FriendsChatBox")),
-        ChatEntryContainer(Builder.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
-        ChatEntry(Builder.GetWidget<Gtk::Entry>("FriendsChatEntry")),
-        SelectedFriendContainer(Builder.GetWidget<Gtk::Box>("FriendsChatSelectedUserContainer")),
+    ChatModule::ChatModule(ModuleList& Ctx) :
+        ImageCache(Ctx.GetModule<ImageCacheModule>()),
+        AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        ChatScrollWindow(Ctx.GetWidget<Gtk::ScrolledWindow>("FriendsChatScrollWindow")),
+        ChatBox(Ctx.GetWidget<Gtk::Box>("FriendsChatBox")),
+        ChatEntryContainer(Ctx.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
+        ChatEntry(Ctx.GetWidget<Gtk::Entry>("FriendsChatEntry")),
+        SelectedFriendContainer(Ctx.GetWidget<Gtk::Box>("FriendsChatSelectedUserContainer")),
         SelectedFriendWidget(ImageCache),
         SelectedFriend(nullptr)
     {

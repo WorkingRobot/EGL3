@@ -5,13 +5,13 @@
 #include "../web/Hosts.h"
 
 namespace EGL3::Modules {
-    StatusPageModule::StatusPageModule(const Utils::GladeBuilder& Builder) :
-        RefreshBtn(Builder.GetWidget<Gtk::Button>("StatusPageRefreshBtn")),
-        LabelTitleEventBox(Builder.GetWidget<Gtk::EventBox>("StatusPageTitleEventBox")),
-        LabelTitle(Builder.GetWidget<Gtk::Label>("StatusPageTitle")),
-        LabelFortnite(Builder.GetWidget<Gtk::Label>("StatusPageFortnite")),
-        LabelEOS(Builder.GetWidget<Gtk::Label>("StatusPageEOS")),
-        LabelEGS(Builder.GetWidget<Gtk::Label>("StatusPageEGS"))
+    StatusPageModule::StatusPageModule(ModuleList& Ctx) :
+        RefreshBtn(Ctx.GetWidget<Gtk::Button>("StatusPageRefreshBtn")),
+        LabelTitleEventBox(Ctx.GetWidget<Gtk::EventBox>("StatusPageTitleEventBox")),
+        LabelTitle(Ctx.GetWidget<Gtk::Label>("StatusPageTitle")),
+        LabelFortnite(Ctx.GetWidget<Gtk::Label>("StatusPageFortnite")),
+        LabelEOS(Ctx.GetWidget<Gtk::Label>("StatusPageEOS")),
+        LabelEGS(Ctx.GetWidget<Gtk::Label>("StatusPageEGS"))
     {
         Dispatcher.connect([this]() { UpdateLabels(); });
         RefreshBtn.signal_clicked().connect([this]() { Refresh(); });

@@ -1,16 +1,14 @@
 #pragma once
 
-#include "BaseModule.h"
-
-#include "../utils/GladeBuilder.h"
 #include "../widgets/Graph.h"
+#include "ModuleList.h"
 
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
     class StatsGraphModule : public BaseModule {
     public:
-        StatsGraphModule(const Utils::GladeBuilder& Builder);
+        StatsGraphModule(ModuleList& Ctx);
 
         ~StatsGraphModule();
 

@@ -6,12 +6,12 @@ namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
 
-    ListModule::ListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
-        ImageCache(Modules.GetModule<ImageCacheModule>()),
-        Options(Modules.GetModule<OptionsModule>()),
-        List(Builder.GetWidget<Gtk::ListBox>("FriendsListBox")),
-        CurrentUserContainer(Builder.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
-        FilterEntry(Builder.GetWidget<Gtk::SearchEntry>("FriendsFilterEntry")),
+    ListModule::ListModule(ModuleList& Ctx) :
+        ImageCache(Ctx.GetModule<ImageCacheModule>()),
+        Options(Ctx.GetModule<OptionsModule>()),
+        List(Ctx.GetWidget<Gtk::ListBox>("FriendsListBox")),
+        CurrentUserContainer(Ctx.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
+        FilterEntry(Ctx.GetWidget<Gtk::SearchEntry>("FriendsFilterEntry")),
         CurrentUserModel(Friend::ConstructCurrent),
         CurrentUserWidget(CurrentUserModel, ImageCache)
     {

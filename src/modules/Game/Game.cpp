@@ -10,18 +10,18 @@
 namespace EGL3::Modules::Game {
     constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
 
-    GameModule::GameModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
-        Storage(Storage),
-        AsyncFF(Modules.GetModule<AsyncFFModule>()),
-        Auth(Modules.GetModule<AuthorizationModule>()),
-        Download(Modules.GetModule<DownloadModule>()),
-        Play(Modules.GetModule<PlayModule>()),
-        UpdateCheck(Modules.GetModule<UpdateCheckModule>()),
-        PlayBtn(Builder.GetWidget<Gtk::Button>("PlayBtn")),
-        PlayMenuBtn(Builder.GetWidget<Gtk::MenuButton>("PlayDropdown")),
-        PlayMenuVerifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
-        PlayMenuModifyOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
-        PlayMenuSignOutOpt(Builder.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
+    GameModule::GameModule(ModuleList& Ctx) :
+        Storage(Ctx.GetStorage()),
+        AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Download(Ctx.GetModule<DownloadModule>()),
+        Play(Ctx.GetModule<PlayModule>()),
+        UpdateCheck(Ctx.GetModule<UpdateCheckModule>()),
+        PlayBtn(Ctx.GetWidget<Gtk::Button>("PlayBtn")),
+        PlayMenuBtn(Ctx.GetWidget<Gtk::MenuButton>("PlayDropdown")),
+        PlayMenuVerifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
+        PlayMenuModifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
+        PlayMenuSignOutOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
         CurrentStateHolder(),
         AuthStateHolder(*this, State::SignIn),
         InstallStateHolder(*this),

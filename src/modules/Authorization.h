@@ -1,18 +1,16 @@
 #pragma once
 
-#include "BaseModule.h"
-
 #include "../storage/persistent/Store.h"
 #include "../web/epic/EpicClientAuthed.h"
 #include "../web/epic/content/LauncherContentClient.h"
+#include "ModuleList.h"
 
 #include <future>
-#include <sigc++/sigc++.h>
 
 namespace EGL3::Modules {
     class AuthorizationModule : public BaseModule {
     public:
-        AuthorizationModule(Storage::Persistent::Store& Storage);
+        AuthorizationModule(ModuleList& Ctx);
 
         bool IsLoggedIn() const;
 

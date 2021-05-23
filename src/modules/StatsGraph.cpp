@@ -3,8 +3,8 @@
 #include "../utils/Format.h"
 
 namespace EGL3::Modules {
-    StatsGraphModule::StatsGraphModule(const Utils::GladeBuilder& Builder) :
-        Graph(Builder.GetWidget<Gtk::DrawingArea>("StatsGraph"))
+    StatsGraphModule::StatsGraphModule(ModuleList& Ctx) :
+        Graph(Ctx.GetWidget<Gtk::DrawingArea>("StatsGraph"))
     {
         Graph.OnFormatTooltip = [](int Idx, const auto& Data) {
             return Utils::Format("%d, %.2f", Idx, Data[0]);

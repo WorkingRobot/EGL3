@@ -3,16 +3,16 @@
 #include "../web/epic/EpicClient.h"
 
 namespace EGL3::Modules {
-    WhatsNewModule::WhatsNewModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
-        ImageCache(Modules.GetModule<ImageCacheModule>()),
-        Storage(Storage),
-        Box(Builder.GetWidget<Gtk::Box>("PlayWhatsNewBox")),
-        RefreshBtn(Builder.GetWidget<Gtk::Button>("PlayWhatsNewRefreshBtn")),
-        CheckBR(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewBR")),
-        CheckBlog(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewBlog")),
-        CheckCreative(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewCreative")),
-        CheckNotice(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewNotice")),
-        CheckSTW(Builder.GetWidget<Gtk::CheckMenuItem>("WhatsNewSTW")),
+    WhatsNewModule::WhatsNewModule(ModuleList& Ctx) :
+        ImageCache(Ctx.GetModule<ImageCacheModule>()),
+        Storage(Ctx.GetStorage()),
+        Box(Ctx.GetWidget<Gtk::Box>("PlayWhatsNewBox")),
+        RefreshBtn(Ctx.GetWidget<Gtk::Button>("PlayWhatsNewRefreshBtn")),
+        CheckBR(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewBR")),
+        CheckBlog(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewBlog")),
+        CheckCreative(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewCreative")),
+        CheckNotice(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewNotice")),
+        CheckSTW(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewSTW")),
         Selection(Storage.Get(Storage::Persistent::Key::WhatsNewSelection))
     {
         Dispatcher.connect([this]() { UpdateBox(); });

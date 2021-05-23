@@ -2,8 +2,6 @@
 
 #include "../../storage/models/StoredFriendData.h"
 #include "../../utils/Callback.h"
-#include "../../utils/GladeBuilder.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 
 #include <gtkmm.h>
@@ -11,7 +9,7 @@
 namespace EGL3::Modules::Friends {
     class OptionsModule : public BaseModule {
     public:
-        OptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+        OptionsModule(ModuleList& Ctx);
 
         const Storage::Models::StoredFriendData& GetStorageData() const;
 

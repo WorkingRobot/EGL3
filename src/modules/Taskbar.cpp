@@ -1,8 +1,8 @@
 #include "Taskbar.h"
 
 namespace EGL3::Modules {
-    TaskbarModule::TaskbarModule(const Utils::GladeBuilder& Builder) :
-        MainWindow(Builder.GetWidget<Gtk::Window>("EGL3App"))
+    TaskbarModule::TaskbarModule(ModuleList& Ctx) :
+        MainWindow(Ctx.GetWidget<Gtk::Window>("EGL3App"))
     {
 
     }

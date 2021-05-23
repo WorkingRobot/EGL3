@@ -3,10 +3,10 @@
 namespace EGL3::Modules::Game {
     using namespace Storage::Models;
 
-    PlayModule::PlayModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
-        Storage(Storage),
-        Auth(Modules.GetModule<AuthorizationModule>()),
-        Service(Modules.GetModule<ServiceModule>()),
+    PlayModule::PlayModule(ModuleList& Ctx) :
+        Storage(Ctx.GetStorage()),
+        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Service(Ctx.GetModule<ServiceModule>()),
         PlayQueued(false)
     {
         PlayQueuedDispatcher.connect([this]() {

@@ -10,33 +10,33 @@ namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
     using namespace Storage::Models;
 
-    FriendsModule::FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
-            Auth(Modules.GetModule<AuthorizationModule>()),
-            ImageCache(Modules.GetModule<ImageCacheModule>()),
-            AsyncFF(Modules.GetModule<AsyncFFModule>()),
+    FriendsModule::FriendsModule(ModuleList& Ctx) :
+            Auth(Ctx.GetModule<AuthorizationModule>()),
+            ImageCache(Ctx.GetModule<ImageCacheModule>()),
+            AsyncFF(Ctx.GetModule<AsyncFFModule>()),
 
-            Options(Modules.GetModule<OptionsModule>()),
-            KairosMenu(Modules.GetModule<KairosMenuModule>()),
-            FriendsList(Modules.GetModule<ListModule>()),
-            FriendsChat(Modules.GetModule<ChatModule>()),
+            Options(Ctx.GetModule<OptionsModule>()),
+            KairosMenu(Ctx.GetModule<KairosMenuModule>()),
+            FriendsList(Ctx.GetModule<ListModule>()),
+            FriendsChat(Ctx.GetModule<ChatModule>()),
 
-            ViewFriendsBtn(Builder.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
-            AddFriendBtn(Builder.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
+            ViewFriendsBtn(Ctx.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
+            AddFriendBtn(Ctx.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
 
-            AddFriendSendBtn(Builder.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
-            AddFriendEntry(Builder.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
-            AddFriendStatus(Builder.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
+            AddFriendSendBtn(Ctx.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
+            AddFriendEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
+            AddFriendStatus(Ctx.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
 
-            SetNicknameLabel(Builder.GetWidget<Gtk::Label>("FriendsSetNicknameLabel")),
-            SetNicknameBtn(Builder.GetWidget<Gtk::Button>("FriendsSetNicknameBtn")),
-            SetNicknameEntry(Builder.GetWidget<Gtk::Entry>("FriendsSetNicknameEntry")),
-            SetNicknameStatusLabel(Builder.GetWidget<Gtk::Label>("FriendsSetNicknameStatus")),
+            SetNicknameLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameLabel")),
+            SetNicknameBtn(Ctx.GetWidget<Gtk::Button>("FriendsSetNicknameBtn")),
+            SetNicknameEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSetNicknameEntry")),
+            SetNicknameStatusLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameStatus")),
 
-            SwitchStack(Builder.GetWidget<Gtk::Stack>("FriendsStack")),
-            SwitchStackPage0(Builder.GetWidget<Gtk::Widget>("FriendsStackPage0")),
-            SwitchStackPage1(Builder.GetWidget<Gtk::Widget>("FriendsStackPage1")),
-            SwitchStackPage2(Builder.GetWidget<Gtk::Widget>("FriendsStackPage2")),
-            SwitchStackPage3(Builder.GetWidget<Gtk::Widget>("FriendsStackPage3"))
+            SwitchStack(Ctx.GetWidget<Gtk::Stack>("FriendsStack")),
+            SwitchStackPage0(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage0")),
+            SwitchStackPage1(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage1")),
+            SwitchStackPage2(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage2")),
+            SwitchStackPage3(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage3"))
         {
             {
                 ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });

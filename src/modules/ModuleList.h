@@ -3,8 +3,8 @@
 #include "../storage/persistent/Store.h"
 #include "../utils/Assert.h"
 #include "../utils/GladeBuilder.h"
+#include "BaseModule.h"
 
-#include <any>
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
@@ -16,15 +16,25 @@ namespace EGL3::Modules {
 
         const Utils::GladeBuilder& GetBuilder() const;
 
+        template<class T>
+        T& GetWidget(const char* Name) const {
+            return Builder.GetWidget<T>(Name);
+        }
+
         const Storage::Persistent::Store& GetStorage() const;
 
         Storage::Persistent::Store& GetStorage();
 
+        template<uint32_t Constant, class T>
+        T& Get(const Storage::Persistent::KeyType<Constant, T>& Key) {
+            return Storage.Get(Key);
+        }
+
         template<typename T>
         const T& GetModule() const {
             for (auto& Module : Modules) {
-                if (auto Ret = std::any_cast<std::shared_ptr<T>>(&Module)) {
-                    return **Ret;
+                if (T* Ret = dynamic_cast<T*>(Module.get())) {
+                    return *Ret;
                 }
             }
             EGL3_LOG(LogLevel::Critical, "Could not find module");
@@ -33,8 +43,8 @@ namespace EGL3::Modules {
         template<typename T>
         T& GetModule() {
             for (auto& Module : Modules) {
-                if (auto Ret = std::any_cast<std::shared_ptr<T>>(&Module)) {
-                    return **Ret;
+                if (T* Ret = dynamic_cast<T*>(Module.get())) {
+                    return *Ret;
                 }
             }
             EGL3_LOG(LogLevel::Critical, "Could not find module");
@@ -43,11 +53,11 @@ namespace EGL3::Modules {
     private:
         void AddModules();
 
-        template<typename T, typename... Args>
-        void AddModule(Args&&... ModuleArgs);
+        template<typename T>
+        void AddModule();
 
         Utils::GladeBuilder Builder;
         Storage::Persistent::Store Storage;
-        std::vector<std::any> Modules;
+        std::vector<std::unique_ptr<BaseModule>> Modules;
     };
 }

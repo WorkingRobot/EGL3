@@ -1,11 +1,11 @@
 #include "UpdateCheck.h"
 
 namespace EGL3::Modules::Game {
-    UpdateCheckModule::UpdateCheckModule(ModuleList& Modules, Storage::Persistent::Store& Storage) :
-        Storage(Storage),
-        Auth(Modules.GetModule<AuthorizationModule>()),
-        AsyncFF(Modules.GetModule<AsyncFFModule>()),
-        GameInfo(Modules.GetModule<GameInfoModule>()),
+    UpdateCheckModule::UpdateCheckModule(ModuleList& Ctx) :
+        Storage(Ctx.GetStorage()),
+        Auth(Ctx.GetModule<AuthorizationModule>()),
+        AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        GameInfo(Ctx.GetModule<GameInfoModule>()),
         Cancelled(false)
     {
         Auth.AuthChanged.connect([this](bool LoggedIn) {

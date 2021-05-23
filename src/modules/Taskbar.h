@@ -1,9 +1,7 @@
 #pragma once
 
-#include "BaseModule.h"
-
-#include "../utils/GladeBuilder.h"
 #include "../utils/Taskbar.h"
+#include "ModuleList.h"
 
 namespace EGL3::Modules {
     class TaskbarModule : public BaseModule {
@@ -11,7 +9,7 @@ namespace EGL3::Modules {
         Utils::Taskbar TaskbarImpl;
 
     public:
-        TaskbarModule(const Utils::GladeBuilder& Builder);
+        TaskbarModule(ModuleList& Ctx);
 
         void SetProgressValue(uint64_t Value, uint64_t Total);
 

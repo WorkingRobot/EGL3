@@ -2,11 +2,9 @@
 
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
-#include "../../utils/GladeBuilder.h"
 #include "../../widgets/CurrentUserItem.h"
 #include "../../widgets/FriendItem.h"
 #include "../../widgets/FriendItemMenu.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../ImageCache.h"
 #include "Options.h"
@@ -17,7 +15,7 @@
 namespace EGL3::Modules::Friends {
     class ListModule : public BaseModule {
     public:
-        ListModule(ModuleList& Modules, const Utils::GladeBuilder& Builder);
+        ListModule(ModuleList& Ctx);
 
         void ResortEntireList();
 

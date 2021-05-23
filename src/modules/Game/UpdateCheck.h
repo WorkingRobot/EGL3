@@ -2,9 +2,7 @@
 
 #include "../../storage/models/InstalledGame.h"
 #include "../../storage/models/VersionData.h"
-#include "../../storage/persistent/Store.h"
 #include "../../utils/Callback.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Authorization.h"
@@ -15,7 +13,7 @@
 namespace EGL3::Modules::Game {
     class UpdateCheckModule : public BaseModule {
     public:
-        UpdateCheckModule(ModuleList& Modules, Storage::Persistent::Store& Storage);
+        UpdateCheckModule(ModuleList& Ctx);
 
         ~UpdateCheckModule();
 

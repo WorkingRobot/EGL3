@@ -1,14 +1,13 @@
 #pragma once
 
 #include "../../storage/models/VersionData.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../Authorization.h"
 
 namespace EGL3::Modules::Game {
     class GameInfoModule : public BaseModule {
     public:
-        GameInfoModule(ModuleList& Modules);
+        GameInfoModule(ModuleList& Ctx);
 
         Storage::Models::VersionData* GetVersionData(Storage::Game::GameId Id, bool ForceUpdate = false);
 

@@ -1,11 +1,8 @@
 #pragma once
 
 #include "../storage/models/WhatsNew.h"
-#include "../storage/persistent/Store.h"
-#include "../utils/GladeBuilder.h"
 #include "../web/ErrorData.h"
 #include "../widgets/WhatsNewItem.h"
-#include "BaseModule.h"
 #include "ModuleList.h"
 
 #include <gtkmm.h>
@@ -13,7 +10,7 @@
 namespace EGL3::Modules {
     class WhatsNewModule : public BaseModule {
     public:
-        WhatsNewModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+        WhatsNewModule(ModuleList& Ctx);
 
         ~WhatsNewModule();
 

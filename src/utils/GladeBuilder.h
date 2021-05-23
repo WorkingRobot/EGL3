@@ -8,8 +8,10 @@
 namespace EGL3::Utils {
     class GladeBuilder {
     public:
-        GladeBuilder(const std::filesystem::path& Path) {
-            Builder = Gtk::Builder::create_from_file(Path.string());
+        GladeBuilder(const std::filesystem::path& Path) :
+            Builder(Gtk::Builder::create_from_file(Path.string()))
+        {
+
         }
 
         template<class T>

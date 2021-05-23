@@ -11,7 +11,9 @@
 #include "..\modules\Taskbar.h"
 
 namespace EGL3::Utils {
-    Taskbar::Taskbar() {
+    Taskbar::Taskbar() :
+        TaskbarImpl(nullptr)
+    {
         HRESULT Result = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
         EGL3_CONDITIONAL_LOG(Result != CO_E_NOTINITIALIZED, LogLevel::Critical, "COM couldn't be initialized");
         CoInitialized = true;

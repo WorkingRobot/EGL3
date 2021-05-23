@@ -9,8 +9,8 @@
 #include "../web/ClientSecrets.h"
 
 namespace EGL3::Modules {
-    AuthorizationModule::AuthorizationModule(Storage::Persistent::Store& Storage) :
-        Storage(Storage)
+    AuthorizationModule::AuthorizationModule(ModuleList& Ctx) :
+        Storage(Ctx.GetStorage())
     {
         
     }

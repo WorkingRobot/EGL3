@@ -6,18 +6,18 @@
 namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
 
-    KairosMenuModule::KairosMenuModule(ModuleList& Modules, const Utils::GladeBuilder& Builder) :
-        Auth(Modules.GetModule<AuthorizationModule>()),
-        ImageCache(Modules.GetModule<ImageCacheModule>()),
-        List(Modules.GetModule<ListModule>()),
-        Options(Modules.GetModule<OptionsModule>()),
+    KairosMenuModule::KairosMenuModule(ModuleList& Ctx) :
+        Auth(Ctx.GetModule<AuthorizationModule>()),
+        ImageCache(Ctx.GetModule<ImageCacheModule>()),
+        List(Ctx.GetModule<ListModule>()),
+        Options(Ctx.GetModule<OptionsModule>()),
         Focused(false),
-        Window(Builder.GetWidget<Gtk::Window>("FriendsKairosMenu")),
-        AvatarBox(Builder.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
-        BackgroundBox(Builder.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
-        StatusBox(Builder.GetWidget<Gtk::FlowBox>("FriendsStatusFlow")),
-        StatusEntry(Builder.GetWidget<Gtk::Entry>("FriendsKairosStatusEntry")),
-        StatusEditBtn(Builder.GetWidget<Gtk::Button>("FriendsKairosEditStatusBtn"))
+        Window(Ctx.GetWidget<Gtk::Window>("FriendsKairosMenu")),
+        AvatarBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
+        BackgroundBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
+        StatusBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsStatusFlow")),
+        StatusEntry(Ctx.GetWidget<Gtk::Entry>("FriendsKairosStatusEntry")),
+        StatusEditBtn(Ctx.GetWidget<Gtk::Button>("FriendsKairosEditStatusBtn"))
     {
         {
             StatusBox.foreach([this](Gtk::Widget& Widget) { StatusBox.remove(Widget); });

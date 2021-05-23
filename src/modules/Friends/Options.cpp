@@ -3,15 +3,15 @@
 namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
-    OptionsModule::OptionsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder) :
-        StorageData(Storage.Get(Storage::Persistent::Key::StoredFriendData)),
-        CheckFriendsOffline(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
-        CheckFriendsOutgoing(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
-        CheckFriendsIncoming(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),
-        CheckFriendsBlocked(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsBlockedCheck")),
-        CheckFriendsOverride(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsOverrideCheck")),
-        CheckDeclineReqs(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
-        CheckProfanity(Builder.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck"))
+    OptionsModule::OptionsModule(ModuleList& Ctx) :
+        StorageData(Ctx.Get(Storage::Persistent::Key::StoredFriendData)),
+        CheckFriendsOffline(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
+        CheckFriendsOutgoing(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
+        CheckFriendsIncoming(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),
+        CheckFriendsBlocked(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsBlockedCheck")),
+        CheckFriendsOverride(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOverrideCheck")),
+        CheckDeclineReqs(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
+        CheckProfanity(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck"))
     {
         CheckFriendsOffline.set_active(StorageData.HasFlag<StoredFriendData::ShowOffline>());
         CheckFriendsOutgoing.set_active(StorageData.HasFlag<StoredFriendData::ShowOutgoing>());

@@ -3,7 +3,7 @@
 #include "../utils/EmitRAII.h"
 
 namespace EGL3::Modules {
-    ImageCacheModule::ImageCacheModule() {
+    ImageCacheModule::ImageCacheModule(ModuleList& Ctx) {
 
     }
 

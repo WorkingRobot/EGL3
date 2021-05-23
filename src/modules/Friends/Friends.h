@@ -1,13 +1,11 @@
 #pragma once
 
 #include "../../storage/models/Friend.h"
-#include "../../utils/GladeBuilder.h"
 #include "../../web/epic/EpicClientAuthed.h"
 #include "../../web/xmpp/XmppClient.h"
 #include "../../widgets/CurrentUserItem.h"
 #include "../../widgets/FriendItem.h"
 #include "../../widgets/FriendItemMenu.h"
-#include "../BaseModule.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "Chat.h"
@@ -20,7 +18,7 @@
 namespace EGL3::Modules::Friends {
     class FriendsModule : public BaseModule {
     public:
-        FriendsModule(ModuleList& Modules, Storage::Persistent::Store& Storage, const Utils::GladeBuilder& Builder);
+        FriendsModule(ModuleList& Ctx);
 
     private:
         void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence);

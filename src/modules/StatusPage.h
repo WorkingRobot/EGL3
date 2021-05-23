@@ -3,7 +3,7 @@
 #include "../utils/GladeBuilder.h"
 #include "../web/Response.h"
 #include "../web/epic/responses/GetStatuspageSummary.h"
-#include "BaseModule.h"
+#include "ModuleList.h"
 
 #include <future>
 #include <gtkmm.h>
@@ -11,7 +11,7 @@
 namespace EGL3::Modules {
     class StatusPageModule : public BaseModule {
     public:
-        StatusPageModule(const Utils::GladeBuilder& Builder);
+        StatusPageModule(ModuleList& Ctx);
 
         void Refresh();
 
