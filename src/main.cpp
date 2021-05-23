@@ -9,16 +9,17 @@ namespace EGL3 {
     class MainApp {
     public:
         MainApp() :
-            App(Gtk::Application::create("me.workingrobot.egl3"))
+            App(Gtk::Application::create("me.workingrobot.egl3", Gio::ApplicationFlags::APPLICATION_HANDLES_COMMAND_LINE))
         {
             EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
 
+            App->signal_command_line().connect(sigc::mem_fun(this, &MainApp::OnCommandLine), false);
             App->signal_startup().connect(sigc::mem_fun(this, &MainApp::OnStartup));
             App->signal_activate().connect(sigc::mem_fun(this, &MainApp::OnActivate));
         }
 
         int Run() {
-            return App->run();
+            return App->run(__argc, __argv);
         }
 
     private:
@@ -53,6 +54,18 @@ namespace EGL3 {
             App->add_window(AppWnd);
 
             AppWnd.present();
+        }
+
+        int OnCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& CommandLine) {
+            App->activate();
+
+            int argc;
+            char** argv = CommandLine->get_arguments(argc);
+            printf("%s %d\n", CommandLine->is_remote() ? "remote" : "not remote", argc);
+            for (int i = 0; i < argc; ++i) {
+                printf("%s\n", argv[i]);
+            }
+            return 0;
         }
 
         Glib::RefPtr<Gtk::Application> App;

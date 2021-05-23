@@ -32,6 +32,7 @@ namespace EGL3::Modules {
     ModuleList::~ModuleList()
     {
         // Delete in reverse to perserve dependencies
+        // std::vector doesn't guarantee reverse destruction like std::array does
         decltype(Modules.rbegin()) Itr;
         while ((Itr = Modules.rbegin()) != Modules.rend()) {
             Modules.erase(--(Itr.base()));
