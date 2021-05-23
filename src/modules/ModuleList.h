@@ -9,18 +9,16 @@
 
 namespace EGL3::Modules {
     class ModuleList {
-        ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder);
+    public:
+        ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath);
 
         ~ModuleList();
 
-        void AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage);
+        const Utils::GladeBuilder& GetBuilder() const;
 
-        template<typename T, typename... Args>
-        void AddModule(Args&&... ModuleArgs);
+        const Storage::Persistent::Store& GetStorage() const;
 
-    public:
-        // Run this on the startup signal. It gets deleted automatically when the app shuts down
-        static void Attach(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder);
+        Storage::Persistent::Store& GetStorage();
 
         template<typename T>
         const T& GetModule() const {
@@ -43,6 +41,13 @@ namespace EGL3::Modules {
         }
 
     private:
+        void AddModules();
+
+        template<typename T, typename... Args>
+        void AddModule(Args&&... ModuleArgs);
+
+        Utils::GladeBuilder Builder;
+        Storage::Persistent::Store Storage;
         std::vector<std::any> Modules;
     };
 }

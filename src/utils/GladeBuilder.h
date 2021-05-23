@@ -2,13 +2,14 @@
 
 #include "Assert.h"
 
+#include <filesystem>
 #include <gtkmm.h>
 
 namespace EGL3::Utils {
     class GladeBuilder {
     public:
-        GladeBuilder(const char* FilePath) {
-            Builder = Gtk::Builder::create_from_file(FilePath);
+        GladeBuilder(const std::filesystem::path& Path) {
+            Builder = Gtk::Builder::create_from_file(Path.string());
         }
 
         template<class T>

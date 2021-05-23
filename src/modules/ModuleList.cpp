@@ -22,15 +22,11 @@
 #include "Game/UpdateCheck.h"
 
 namespace EGL3::Modules {
-    ModuleList::ModuleList(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
-        App->set_data("EGL3Modules", this, [](void* Data) {
-            delete (ModuleList*)Data;
-        });
-        App->signal_shutdown().connect(sigc::bind([&](const Glib::RefPtr<Gtk::Application>& App) {
-            App->remove_data("EGL3Modules");
-        }, App));
-
-        AddModules(App, Builder, *(Storage::Persistent::Store*)App->get_data("EGL3Storage"));
+    ModuleList::ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath) :
+        Builder(BuilderPath),
+        Storage(StoragePath)
+    {
+        AddModules();
     }
 
     ModuleList::~ModuleList()
@@ -42,7 +38,22 @@ namespace EGL3::Modules {
         }
     }
 
-    void ModuleList::AddModules(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder, Storage::Persistent::Store& Storage) {
+    const Utils::GladeBuilder& ModuleList::GetBuilder() const
+    {
+        return Builder;
+    }
+
+    const Storage::Persistent::Store& ModuleList::GetStorage() const
+    {
+        return Storage;
+    }
+
+    Storage::Persistent::Store& ModuleList::GetStorage()
+    {
+        return Storage;
+    }
+
+    void ModuleList::AddModules() {
         AddModule<AsyncFFModule>();
         AddModule<ImageCacheModule>();
         AddModule<TaskbarModule>(Builder);
@@ -69,9 +80,5 @@ namespace EGL3::Modules {
     template<typename T, typename... Args>
     void ModuleList::AddModule(Args&&... ModuleArgs) {
         Modules.emplace_back(std::make_shared<T>(std::forward<Args>(ModuleArgs)...));
-    }
-
-    void ModuleList::Attach(const Glib::RefPtr<Gtk::Application>& App, const Utils::GladeBuilder& Builder) {
-        new ModuleList(App, Builder);
     }
 }
