@@ -7,7 +7,7 @@ namespace EGL3::Modules::Friends {
     using namespace Web::Xmpp;
 
     KairosMenuModule::KairosMenuModule(ModuleList& Ctx) :
-        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
         List(Ctx.GetModule<ListModule>()),
         Options(Ctx.GetModule<OptionsModule>()),

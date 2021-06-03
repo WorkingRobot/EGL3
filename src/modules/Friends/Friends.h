@@ -27,8 +27,6 @@ namespace EGL3::Modules::Friends {
 
         void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
 
-        void OnLoggedIn();
-
         void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
 
         void OnOpenViewFriends();
@@ -61,7 +59,7 @@ namespace EGL3::Modules::Friends {
 
         void FriendsRealize();
 
-        AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
         ImageCacheModule& ImageCache;
         AsyncFFModule& AsyncFF;
 

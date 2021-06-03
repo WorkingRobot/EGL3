@@ -8,7 +8,7 @@ namespace EGL3::Storage::Models {
         // Actual text data
         std::string Content;
         // Timestamp of the message
-        std::chrono::system_clock::time_point Time;
+        std::chrono::utc_clock::time_point Time;
         // True if remote (they sent it), false if local (we sent it)
         bool Recieved;
     };

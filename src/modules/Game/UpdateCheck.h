@@ -5,7 +5,7 @@
 #include "../../utils/Callback.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 #include "GameInfo.h"
 
 #include <gtkmm.h>
@@ -28,8 +28,8 @@ namespace EGL3::Modules::Game {
         void BackgroundTask();
 
         Storage::Persistent::Store& Storage;
-        Modules::AuthorizationModule& Auth;
-        Modules::AsyncFFModule& AsyncFF;
+        Login::AuthModule& Auth;
+        AsyncFFModule& AsyncFF;
         GameInfoModule& GameInfo;
 
         std::mutex Mutex;

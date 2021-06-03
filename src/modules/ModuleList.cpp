@@ -1,7 +1,8 @@
 #include "ModuleList.h"
 
+#include "../utils/type_name.h"
+
 #include "AsyncFF.h"
-#include "Authorization.h"
 #include "ImageCache.h"
 #include "StatsGraph.h"
 #include "StatusPage.h"
@@ -21,12 +22,24 @@
 #include "Game/Service.h"
 #include "Game/UpdateCheck.h"
 
+#include "Login/Header.h"
+#include "Login/Chooser.h"
+#include "Login/Stack.h"
+#include "Login/Auth.h"
+
 namespace EGL3::Modules {
     ModuleList::ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath) :
         Builder(BuilderPath),
         Storage(StoragePath)
     {
-        AddModules();
+        AddModulesCore();
+
+        LoggedInDispatcher.connect([this]() {
+            AddModulesLoggedIn();
+        });
+        GetModule<Login::AuthModule>().LoggedIn.connect([this]() {
+            LoggedInDispatcher.emit();
+        });
     }
 
     ModuleList::~ModuleList()
@@ -54,14 +67,22 @@ namespace EGL3::Modules {
         return Storage;
     }
 
-    void ModuleList::AddModules() {
+    void ModuleList::AddModulesCore()
+    {
         AddModule<AsyncFFModule>();
         AddModule<ImageCacheModule>();
         AddModule<TaskbarModule>();
+
+        AddModule<Login::HeaderModule>();
+        AddModule<Login::ChooserModule>();
+        AddModule<Login::StackModule>();
+        AddModule<Login::AuthModule>();
+    }
+
+    void ModuleList::AddModulesLoggedIn()
+    {
         AddModule<StatsGraphModule>();
         AddModule<StatusPageModule>();
-        AddModule<AuthorizationModule>();
-
         AddModule<WhatsNewModule>();
 
         AddModule<Friends::OptionsModule>();
@@ -81,5 +102,7 @@ namespace EGL3::Modules {
     template<typename T>
     void ModuleList::AddModule() {
         Modules.emplace_back(std::make_unique<T>(*this));
+        static constexpr std::string_view Name = type_name_v<T>.substr(sizeof("class EGL3::Modules::") - 1);
+        EGL3_LOG(LogLevel::Info, Utils::Format("%.*s loaded", Name.size(), Name.data()).c_str());
     }
 }

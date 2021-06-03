@@ -5,7 +5,7 @@ namespace EGL3::Modules::Game {
 
     PlayModule::PlayModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
-        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
         Service(Ctx.GetModule<ServiceModule>()),
         PlayQueued(false)
     {

@@ -26,7 +26,31 @@ namespace EGL3::Modules {
             return CacheItr->second;
         }
 
-        return Cache.emplace(CacheKey(Url.str(), FallbackUrl.str(), Width, Height), std::move(std::async(std::launch::async, &ImageCacheModule::GetImage, this, Url, FallbackUrl, Width, Height))).first->second;
+        return Cache.emplace(
+            CacheKey(Url.str(), FallbackUrl.str(), Width, Height),
+            std::move(std::async(std::launch::async, &ImageCacheModule::GetImage, this, Url, FallbackUrl, Width, Height))
+        ).first->second;
+    }
+
+    Glib::RefPtr<Gdk::Pixbuf> ImageCacheModule::TryGetOrQueueImage(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback)
+    {
+        auto& Future = GetImageAsync(Url, FallbackUrl, Width, Height);
+        if (Future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            return Future.get();
+        }
+
+        auto CacheItr = QueuedCache.find(QueuedCacheKey(Url.str(), FallbackUrl.str(), Width, Height, Callback));
+        if (CacheItr == QueuedCache.end()) {
+            QueuedCache.emplace(
+                QueuedCacheKey(Url.str(), FallbackUrl.str(), Width, Height, Callback),
+                std::move(std::async(std::launch::async, [&Callback, &Future]() {
+                    Utils::EmitRAII Emitter(Callback);
+                    Future.get();
+                }))
+            );
+        }
+
+        return {};
     }
 
     void CreateEmptyImage(Glib::RefPtr<Gdk::Pixbuf>& Output, int Width = -1, int Height = -1) {
@@ -60,11 +84,10 @@ namespace EGL3::Modules {
         Stream->add_bytes(Glib::Bytes::create(Response.text.data(), Response.text.size()));
         if (Width == -1 && Height == -1) {
             Output = Gdk::Pixbuf::create_from_stream(Stream);
-            return true;
         }
         else {
             Output = Gdk::Pixbuf::create_from_stream_at_scale(Stream, Width, Height, true);
-            return true;
         }
+        return (bool)Output;
     }
 }

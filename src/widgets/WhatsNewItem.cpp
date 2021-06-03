@@ -6,7 +6,7 @@
 #include <regex>
 
 namespace EGL3::Widgets {
-    WhatsNewItem::WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::system_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Glib::ustring& Title, const std::string& ImageUrl, const Glib::ustring& Source, const Glib::ustring& Description, const std::chrono::utc_clock::time_point& Date, Modules::ImageCacheModule& ImageCache) :
         UseImage(!ImageUrl.empty())
     {
         this->Title.set_text(Title);
@@ -50,7 +50,7 @@ namespace EGL3::Widgets {
         return "";
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetBlogPosts::BlogItem& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Title,
             Item.ShareImage.value_or(Item.TrendingImage),
@@ -64,7 +64,7 @@ namespace EGL3::Widgets {
 
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericMotd& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Title,
             Item.Image.value_or(""),
@@ -76,7 +76,7 @@ namespace EGL3::Widgets {
 
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformMotd& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformMotd& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Message.Title,
             Item.Message.Image.value_or(""),
@@ -88,7 +88,7 @@ namespace EGL3::Widgets {
 
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Title.value_or(""),
             Item.Image.value_or(""),
@@ -107,7 +107,7 @@ namespace EGL3::Widgets {
     
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericPlatformPost& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Message.Title.value_or(""),
             Item.Message.Image.value_or(""),
@@ -121,7 +121,7 @@ namespace EGL3::Widgets {
 
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericRegionPost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::GenericRegionPost& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Message.Title.value_or(""),
             Item.Message.Image.value_or(""),
@@ -155,7 +155,7 @@ namespace EGL3::Widgets {
         }
     }
 
-    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::EmergencyNoticePost& Item, const std::chrono::system_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
+    WhatsNewItem::WhatsNewItem(const Web::Epic::Responses::GetPageInfo::EmergencyNoticePost& Item, const std::chrono::utc_clock::time_point& Time, Storage::Models::WhatsNew::ItemSource Source, Modules::ImageCacheModule& ImageCache) :
         WhatsNewItem(
             Item.Title,
             "",

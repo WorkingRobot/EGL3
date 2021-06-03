@@ -21,7 +21,8 @@ namespace EGL3::Widgets {
     private:
         void Construct();
 
-        bool DialogOpen;
-        Gtk::FileChooserDialog Dialog;
+        Gtk::Window& Parent;
+        std::string Location;
+        std::optional<Gtk::FileChooserDialog> Dialog;
     };
 }

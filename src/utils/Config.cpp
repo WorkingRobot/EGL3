@@ -46,8 +46,13 @@ namespace EGL3::Utils::Config {
         return "";
     }
 
+    const std::filesystem::path& GetExePath() {
+        static std::filesystem::path Path = std::filesystem::absolute(GetExePathInternal());
+        return Path;
+    }
+
     const std::filesystem::path& GetExeFolder() {
-        static std::filesystem::path Path = std::filesystem::absolute(GetExePathInternal().parent_path());
+        static std::filesystem::path Path = GetExePath().parent_path();
         return Path;
     }
 }

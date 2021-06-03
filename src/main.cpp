@@ -1,9 +1,10 @@
 #include "modules/ModuleList.h"
+#include "modules/Login/Auth.h"
 #include "utils/Assert.h"
 #include "utils/Config.h"
+#include "utils/FontSetup.h"
 #include "utils/Format.h"
 #include "utils/Platform.h"
-#include "utils/FontSetup.h"
 
 namespace EGL3 {
     class MainApp {
@@ -59,13 +60,12 @@ namespace EGL3 {
         int OnCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& CommandLine) {
             App->activate();
 
-            int argc;
-            char** argv = CommandLine->get_arguments(argc);
-            printf("%s %d\n", CommandLine->is_remote() ? "remote" : "not remote", argc);
-            for (int i = 0; i < argc; ++i) {
-                printf("%s\n", argv[i]);
+            if (CommandLine->is_remote()) {
+                return PrimaryData->GetModule<Modules::Login::AuthModule>().HandleCommandLine(CommandLine);
             }
-            return 0;
+            else {
+                return 0;
+            }
         }
 
         Glib::RefPtr<Gtk::Application> App;
@@ -73,6 +73,7 @@ namespace EGL3 {
     };
 
     __forceinline int Start() {
+        //_putenv_s("GTK_DEBUG", "interactive");
         MainApp App;
 
         return App.Run();
@@ -88,6 +89,7 @@ int main(int argc, char* argv[]) {
 #elif USE_SUBSYSTEM_WIN32
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {

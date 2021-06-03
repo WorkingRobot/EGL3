@@ -66,17 +66,17 @@
 }
 
 /* For headerbars */
-.main-headerbar entry,
-.main-headerbar spinbutton,
-.main-headerbar button,
-.main-headerbar separator {
+headerbar entry,
+headerbar spinbutton,
+headerbar button,
+headerbar separator {
     margin-top: 0px;
     margin-bottom: 0px;
     font-weight: bold;
 }
 
-.main-headerbar {
-    min-height: 24px;
+headerbar {
+    min-height: 1.5em;
 }
 
 /* Friend chat bubbles */

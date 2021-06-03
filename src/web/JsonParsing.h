@@ -14,7 +14,7 @@
 #include <unordered_map>
 
 namespace EGL3::Web {
-    using TimePoint = std::chrono::system_clock::time_point;
+    using TimePoint = std::chrono::utc_clock::time_point;
     using JsonObject = rapidjson::Document;
 
     template<class Enum, class Converter, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
@@ -38,7 +38,7 @@ namespace EGL3::Web {
     };
 
     __forceinline std::string GetTimePoint(const TimePoint& Time) {
-        return date::format("%FT%TZ", Time);
+        return std::format("{:%FT%TZ}", Time);
     }
     
     __forceinline std::string GetCurrentTimePoint() {
@@ -47,7 +47,9 @@ namespace EGL3::Web {
 
     __forceinline bool GetTimePoint(const char* Str, size_t StrSize, TimePoint& Obj) {
         std::istringstream istr(std::string(Str, StrSize));
-        istr >> date::parse("%FT%TZ", Obj);
+        std::chrono::system_clock::time_point SysTime;
+        date::from_stream(istr, "%FT%TZ", SysTime);
+        Obj = std::chrono::utc_clock::from_sys(SysTime);
         return !istr.fail();
     }
 

@@ -10,12 +10,10 @@
 
 namespace EGL3::Service::Pipe {
     Server::Server(const char* Name) :
-        PipeName(Name)
+        PipeName(Name),
+        ConnectionThread(std::async(std::launch::async, [this]() { HandleConnectionThread(); }))
     {
-        ConnectionThread = std::async(std::launch::async, [this]() { HandleConnectionThread(); });
 
-        // Minimum of 16 MB, maximum of 2 GB
-        SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1 << 24, 1 << 31, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE);
     }
 
     Server::~Server()

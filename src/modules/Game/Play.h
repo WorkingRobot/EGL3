@@ -2,7 +2,7 @@
 
 #include "../../storage/models/PlayInfo.h"
 #include "../ModuleList.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 #include "Service.h"
 
 namespace EGL3::Modules::Game {
@@ -16,7 +16,7 @@ namespace EGL3::Modules::Game {
 
     private:
         Storage::Persistent::Store& Storage;
-        Modules::AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
         ServiceModule& Service;
 
         std::atomic<bool> PlayQueued;

@@ -49,6 +49,11 @@ VOID SvcInit(DWORD argc, LPSTR* argv)
         return;
     }
 
+    // Minimum of 64 MB, maximum of 2 GB
+    if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 31, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
+        SvcReportEvent("SetProcessWorkingSetSizeEx");
+    }
+
     EGL3::Service::Pipe::Server Server;
 
     // Report running status when initialization is complete.

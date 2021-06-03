@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Authorization.h" // Weird rapidjson vs windows schemery, this is here (and not lower) for a reason
+#include "../Login/Auth.h" // Weird rapidjson vs windows schemery, this is here (and not lower) for a reason
 #include "../../storage/models/DownloadInfo.h"
 #include "../../utils/Callback.h"
 #include "../../widgets/Graph.h"
@@ -39,9 +39,9 @@ namespace EGL3::Modules::Game {
         std::chrono::nanoseconds CalculateEndTimestamp(uint32_t AmountLeft);
 
         Storage::Persistent::Store& Storage;
-        Modules::AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
         GameInfoModule& GameInfo;
-        Modules::TaskbarModule& Taskbar;
+        TaskbarModule& Taskbar;
 
         Gtk::Stack& MainStack;
         Gtk::Stack& SwitchStack;

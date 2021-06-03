@@ -3,6 +3,7 @@
 #include "../modules/ImageCache.h"
 #include "AsyncImage.h"
 #include "FriendItemMenu.h"
+#include "KairosAvatar.h"
 
 #include <gtkmm.h>
 
@@ -48,9 +49,8 @@ namespace EGL3::Widgets {
         struct FriendItemInternal {
             Gtk::Box BaseBox{ Gtk::ORIENTATION_HORIZONTAL };
             Gtk::Overlay AvatarContainer;
-            AsyncImage AvatarBackground;
+            KairosAvatar Avatar;
             Gtk::EventBox AvatarEventBox;
-            AsyncImage Avatar;
             Gtk::EventBox ColorStatusEventBox;
             AsyncImage ColorStatus;
             Gtk::Box StatusContainer{ Gtk::ORIENTATION_VERTICAL };
@@ -61,10 +61,13 @@ namespace EGL3::Widgets {
             Gtk::Overlay PlatformContainer;
             AsyncImage ProductImage;
             AsyncImage PlatformImage;
+            Modules::ImageCacheModule& ImageCache;
+
+            FriendItemInternal(Modules::ImageCacheModule& ImageCache);
 
             void Construct(Gtk::EventBox& BaseContainer);
 
-            void Update(const Storage::Models::Friend* UpdateData, Modules::ImageCacheModule& ImageCache);
+            void Update(const Storage::Models::Friend* UpdateData);
         };
 
         Modules::ImageCacheModule& ImageCache;

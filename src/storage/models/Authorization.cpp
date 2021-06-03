@@ -1,64 +1,114 @@
 #include "Authorization.h"
 
+#include "../../utils/Assert.h"
 #include "../../utils/Encrypt.h"
 #include "../../utils/streams/BufferStream.h"
 #include "../../utils/streams/MemoryStream.h"
 
 namespace EGL3::Storage::Models {
-    Authorization::Authorization(const std::string& AccountId, const std::string& DeviceId, const std::string& Secret) :
-        AccountId(AccountId),
-        DeviceId(DeviceId),
-        Secret(Secret)
-    {
+    enum class DataVersion : uint16_t {
+        Legacy,
+        Initial,
 
+        LatestPlusOne,
+        Latest = LatestPlusOne - 1
+    };
+
+    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, AuthUserData& Val)
+    {
+        Stream >> Val.AccountId;
+        Stream >> Val.DisplayName;
+        Stream >> Val.KairosAvatar;
+        Stream >> Val.KairosBackground;
+        Stream >> Val.RefreshToken;
+        Stream >> Val.RefreshExpireTime;
+
+        return Stream;
+    }
+
+    Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const AuthUserData& Val)
+    {
+        Stream << Val.AccountId;
+        Stream << Val.DisplayName;
+        Stream << Val.KairosAvatar;
+        Stream << Val.KairosBackground;
+        Stream << Val.RefreshToken;
+        Stream << Val.RefreshExpireTime;
+
+        return Stream;
     }
 
     Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, Authorization& Val) {
-        uint32_t DataSize;
-        Stream >> DataSize;
-        auto Data = std::unique_ptr<char[]>(new char[DataSize]);
-        Stream.read(Data.get(), DataSize);
+        uint16_t LegacyDataSize;
+        Stream >> LegacyDataSize;
+        DataVersion Version;
+        Stream >> Version;
+        if (LegacyDataSize != 0 || Version == DataVersion::Legacy) {
+            Stream.seek(LegacyDataSize, Utils::Streams::Stream::SeekPosition::Cur);
+            return Stream;
+        }
+        if (Version > DataVersion::Initial) {
+            EGL3_LOG(LogLevel::Critical, "Data version is too new, can't read. If you want to go back a version, don't use the same storage backend.");
+            return Stream;
+        }
 
-        size_t DecryptedSize;
-        auto DecryptedData = Utils::Decrypt(Data.get(), DataSize, DecryptedSize);
+        size_t EncDataSize;
+        Stream >> EncDataSize;
 
-        Utils::Streams::BufferStream DecryptedStream(DecryptedData.get(), DecryptedSize);
+        Stream >> Val.SelectedUserIdx;
 
-        DecryptedStream >> Val.AccountId;
-        DecryptedStream >> Val.DeviceId;
-        DecryptedStream >> Val.Secret;
+        auto EncData = std::make_unique<char[]>(EncDataSize);
+        Stream.read(EncData.get(), EncDataSize);
+
+        size_t DecDataSize;
+        auto DecData = Utils::Decrypt(EncData.get(), EncDataSize, DecDataSize);
+
+        Utils::Streams::BufferStream DecStream(DecData.get(), DecDataSize);
+
+        DecStream >> Val.UserData;
 
         return Stream;
     }
 
     Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const Authorization& Val) {
-        Utils::Streams::MemoryStream DecryptedStream;
+        Utils::Streams::MemoryStream DecStream;
 
-        DecryptedStream << Val.AccountId;
-        DecryptedStream << Val.DeviceId;
-        DecryptedStream << Val.Secret;
+        DecStream << Val.UserData;
 
-        size_t EncryptedSize;
-        auto EncryptedData = Utils::Encrypt(DecryptedStream.get(), DecryptedStream.size(), EncryptedSize);
+        size_t EncDataSize;
+        auto EncData = Utils::Encrypt(DecStream.get(), DecStream.size(), EncDataSize);
 
-        Stream << (uint32_t)EncryptedSize;
-        Stream.write(EncryptedData.get(), EncryptedSize);
+        Stream << (uint16_t)0;
+        Stream << DataVersion::Latest;
+        Stream << EncDataSize;
+        Stream << Val.SelectedUserIdx;
+        Stream.write(EncData.get(), EncDataSize);
 
         return Stream;
     }
 
-    const std::string& Authorization::GetAccountId() const
+    bool Authorization::IsUserSelected() const
     {
-        return AccountId;
+        return SelectedUserIdx == InvalidUserIdx;
     }
 
-    const std::string& Authorization::GetDeviceId() const
+    const AuthUserData& Authorization::GetSelectedUser() const
     {
-        return DeviceId;
+        return UserData[SelectedUserIdx];
     }
 
-    const std::string& Authorization::GetSecret() const
+    AuthUserData& Authorization::GetSelectedUser()
     {
-        return Secret;
+        return UserData[SelectedUserIdx];
+    }
+
+    const std::vector<AuthUserData>& Authorization::GetUsers() const
+    {
+        return UserData;
+    }
+
+    std::vector<AuthUserData>& Authorization::GetUsers()
+    {
+        return UserData;
     }
 }

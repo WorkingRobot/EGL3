@@ -3,7 +3,7 @@
 #include "../../storage/models/InstalledGame.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 #include "Download.h"
 #include "Play.h"
 #include "UpdateCheck.h"
@@ -17,12 +17,10 @@ namespace EGL3::Modules::Game {
 
         enum class State {
             Unknown,
-            SignIn,
             Play,
             Update,
             Install,
 
-            SigningIn,
             Playing,
             Updating,
             Installing,
@@ -30,8 +28,6 @@ namespace EGL3::Modules::Game {
         };
 
     private:
-        void OnLoggedIn();
-
         void UpdateToState(const char* NewLabel, bool Playable = false, bool Menuable = false);
 
         void OnUpdateToCurrentState();
@@ -77,7 +73,7 @@ namespace EGL3::Modules::Game {
 
         Storage::Persistent::Store& Storage;
         AsyncFFModule& AsyncFF;
-        AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
         DownloadModule& Download;
         PlayModule& Play;
         UpdateCheckModule& UpdateCheck;
@@ -93,7 +89,6 @@ namespace EGL3::Modules::Game {
         std::shared_mutex StateHolderMtx;
         std::vector<StateHolder*> StateHolders;
 
-        StateHolder AuthStateHolder;
         StateHolder InstallStateHolder;
         StateHolder PlayStateHolder;
     };

@@ -13,7 +13,7 @@ namespace EGL3::Modules::Game {
     GameModule::GameModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
-        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
         Download(Ctx.GetModule<DownloadModule>()),
         Play(Ctx.GetModule<PlayModule>()),
         UpdateCheck(Ctx.GetModule<UpdateCheckModule>()),
@@ -23,30 +23,26 @@ namespace EGL3::Modules::Game {
         PlayMenuModifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
         PlayMenuSignOutOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
         CurrentStateHolder(),
-        AuthStateHolder(*this, State::SignIn),
         InstallStateHolder(*this),
         PlayStateHolder(*this)
     {
         CleanInstalls();
 
-        PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
-
-        AuthStateHolder.Clicked.Set([this]() {
-            Auth.StartLogin();
-            AuthStateHolder.SetHeldState(State::SigningIn);
-        });
-        Auth.AuthChanged.connect([this](bool LoggedIn) {
-            if (LoggedIn) {
-                AuthStateHolder.ClearHeldState();
-                OnLoggedIn();
+        {
+            auto Install = GetInstall(PrimaryGame);
+            if (Install) {
+                if (Install->GetHeader()->GetUpdateInfo().IsUpdating) {
+                    // There was currently an update
+                    // If there is a more recent one, then that's fine
+                    InstallStateHolder.SetHeldState(State::Update);
+                }
+                else {
+                    PlayStateHolder.SetHeldState(State::Play);
+                }
             }
             else {
-                AuthStateHolder.SetHeldState(State::SignIn);
+                InstallStateHolder.SetHeldState(State::Install);
             }
-        });
-
-        if (Auth.StartLoginStored()) {
-            AuthStateHolder.SetHeldState(State::SigningIn);
         }
 
         InstallStateHolder.Clicked.Set([this]() {
@@ -70,13 +66,6 @@ namespace EGL3::Modules::Game {
             });
         });
 
-        UpdateCheck.OnUpdateAvailable.connect([this](Storage::Game::GameId Id, const Storage::Models::VersionData& Data) {
-            if (Id == PrimaryGame) {
-                InstallStateHolder.SetHeldState(State::Update);
-                printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
-            }
-        });
-
         PlayStateHolder.Clicked.Set([this]() {
             auto Install = GetInstall(PrimaryGame);
             EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game, but playable?");
@@ -85,30 +74,22 @@ namespace EGL3::Modules::Game {
             PlayStateHolder.SetHeldState(State::Playing);
         });
 
+        UpdateCheck.OnUpdateAvailable.connect([this](Storage::Game::GameId Id, const Storage::Models::VersionData& Data) {
+            if (Id == PrimaryGame) {
+                InstallStateHolder.SetHeldState(State::Update);
+                printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
+            }
+        });
+
         Play.OnStateUpdate.Set([this](bool Playing) {
             PlayStateHolder.SetHeldState(Playing ? State::Playing : State::Play);
         });
 
-        CurrentStateDispatcher.connect([this]() { OnUpdateToCurrentState(); });
-        UpdateToCurrentState();
-    }
+        PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
 
-    void GameModule::OnLoggedIn()
-    {
-        auto Install = GetInstall(PrimaryGame);
-        if (Install) {
-            if (Install->GetHeader()->GetUpdateInfo().IsUpdating) {
-                // There was currently an update
-                // If there is a more recent one, then that's fine
-                InstallStateHolder.SetHeldState(State::Update);
-            }
-            else {
-                PlayStateHolder.SetHeldState(State::Play);
-            }
-        }
-        else {
-            InstallStateHolder.SetHeldState(State::Install);
-        }
+        CurrentStateDispatcher.connect([this]() { OnUpdateToCurrentState(); });
+
+        UpdateToCurrentState();
     }
 
     void GameModule::UpdateToState(const char* NewLabel, bool Playable, bool Menuable)
@@ -131,9 +112,6 @@ namespace EGL3::Modules::Game {
 
         switch (CurrentStateHolder ? CurrentStateHolder->GetHeldState() : State::Unknown)
         {
-        case State::SignIn:
-            UpdateToState("Sign In", true);
-            break;
         case State::Play:
             UpdateToState("Play", true, true);
             break;
@@ -142,9 +120,6 @@ namespace EGL3::Modules::Game {
             break;
         case State::Install:
             UpdateToState("Install", true);
-            break;
-        case State::SigningIn:
-            UpdateToState("Signing In");
             break;
         case State::Playing:
             UpdateToState("Playing");

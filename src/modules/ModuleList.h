@@ -5,8 +5,6 @@
 #include "../utils/GladeBuilder.h"
 #include "BaseModule.h"
 
-#include <gtkmm.h>
-
 namespace EGL3::Modules {
     class ModuleList {
     public:
@@ -51,7 +49,9 @@ namespace EGL3::Modules {
         }
 
     private:
-        void AddModules();
+        void AddModulesCore();
+
+        void AddModulesLoggedIn();
 
         template<typename T>
         void AddModule();
@@ -59,5 +59,6 @@ namespace EGL3::Modules {
         Utils::GladeBuilder Builder;
         Storage::Persistent::Store Storage;
         std::vector<std::unique_ptr<BaseModule>> Modules;
+        Glib::Dispatcher LoggedInDispatcher;
     };
 }

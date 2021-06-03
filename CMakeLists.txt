@@ -128,11 +128,13 @@ if (NOT ENABLE_INSTALLER)
     file(GLOB EXTRA_DEPS "${CMAKE_SOURCE_DIR}/extras/*")
     foreach(EXTRA_DEP ${EXTRA_DEPS})
         if(IS_DIRECTORY ${EXTRA_DEP})
-            install(
-                DIRECTORY ${EXTRA_DEP}
-                DESTINATION "."
-                CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}
-            )
+            if (NOT ${EXTRA_DEP} MATCHES "extras/share$")
+                install(
+                    DIRECTORY ${EXTRA_DEP}
+                    DESTINATION "."
+                    CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}
+                )
+            endif()
         else()
             install(
                 FILES ${EXTRA_DEP}

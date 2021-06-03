@@ -11,7 +11,7 @@ namespace EGL3::Modules::Game {
 
     DownloadModule::DownloadModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
-        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
         GameInfo(Ctx.GetModule<GameInfoModule>()),
         Taskbar(Ctx.GetModule<TaskbarModule>()),
         MainStack(Ctx.GetWidget<Gtk::Stack>("MainStack")),

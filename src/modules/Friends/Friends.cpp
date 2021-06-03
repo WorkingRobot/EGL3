@@ -1,7 +1,7 @@
 #include "Friends.h"
 
 #include "../../utils/EmitRAII.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 
 #include <array>
 #include <regex>
@@ -11,7 +11,7 @@ namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
     FriendsModule::FriendsModule(ModuleList& Ctx) :
-            Auth(Ctx.GetModule<AuthorizationModule>()),
+            Auth(Ctx.GetModule<Login::AuthModule>()),
             ImageCache(Ctx.GetModule<ImageCacheModule>()),
             AsyncFF(Ctx.GetModule<AsyncFFModule>()),
 
@@ -79,11 +79,21 @@ namespace EGL3::Modules::Friends {
                 FriendsRealizeDispatcher.connect([this]() { FriendsRealize(); });
             }
 
-            Auth.AuthChanged.connect([this](bool LoggedIn) {
-                if (LoggedIn) {
-                    OnLoggedIn();
-                }
-            });
+            {
+                auto& AuthData = Auth.GetClientLauncher().GetAuthData();
+                EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
+
+                FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
+
+                auto& Client = XmppClient.emplace(AuthData.AccountId.value(), AuthData.AccessToken);
+                Client.PresenceUpdate.Set([this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); });
+                Client.ChatRecieved.Set([this](const auto& A, auto&& B) { OnChatMessage(A, std::move(B)); });
+                Client.SystemMessage.Set([this](auto&& A) { OnSystemMessage(std::move(A)); });
+
+                AddFriendBtn.set_sensitive(true);
+
+                UpdateAsync();
+            }
 
             {
                 FriendsList.GetCurrentUser().SetDisplayStatus(Options.GetStorageData().GetStatus());
@@ -92,7 +102,7 @@ namespace EGL3::Modules::Friends {
         }
 
     void FriendsModule::OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) {
-        if (Auth.IsLoggedIn() && AccountId != Auth.GetClientLauncher().GetAuthData().AccountId) {
+        if (AccountId != Auth.GetClientLauncher().GetAuthData().AccountId) {
             std::lock_guard Guard(ItemDataMutex);
 
             auto Friend = FriendsList.GetUser(AccountId);
@@ -120,22 +130,6 @@ namespace EGL3::Modules::Friends {
         FriendsRealizeData.emplace_back(std::move(NewMessage));
 
         FriendsRealizeDispatcher.emit();
-    }
-
-    void FriendsModule::OnLoggedIn() {
-        auto& AuthData = Auth.GetClientLauncher().GetAuthData();
-        EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
-
-        FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
-
-        auto& Client = XmppClient.emplace(AuthData.AccountId.value(), AuthData.AccessToken);
-        Client.PresenceUpdate.Set([this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); });
-        Client.ChatRecieved.Set([this](const auto& A, auto&& B) { OnChatMessage(A, std::move(B)); });
-        Client.SystemMessage.Set([this](auto&& A) { OnSystemMessage(std::move(A)); });
-
-        AddFriendBtn.set_sensitive(true);
-
-        UpdateAsync();
     }
 
     void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Friend& FriendData) {
@@ -203,10 +197,6 @@ namespace EGL3::Modules::Friends {
 
     void FriendsModule::OnSendFriendRequest() {
         if (!AddFriendSendBtn.get_sensitive()) {
-            return;
-        }
-
-        if (!Auth.IsLoggedIn()) {
             return;
         }
 
@@ -349,10 +339,6 @@ namespace EGL3::Modules::Friends {
             return;
         }
 
-        if (!Auth.IsLoggedIn()) {
-            return;
-        }
-
         SetNicknameBtn.set_sensitive(false);
         SetNicknameTask = std::async(std::launch::async, [this](std::string AccountId, std::string Text) {
             Utils::EmitRAII Emitter(SetNicknameDispatcher);
@@ -389,10 +375,6 @@ namespace EGL3::Modules::Friends {
     }
 
     void FriendsModule::UpdateAsync() {
-        if (!Auth.IsLoggedIn()) {
-            return;
-        }
-
         { // Atomic CAS: if there is no update running, return, otherwise, set the flag and continue
             bool OldValue = UpdateCurrentlyRunning.load();
             do {

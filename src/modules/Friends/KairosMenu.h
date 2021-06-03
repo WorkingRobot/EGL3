@@ -5,7 +5,7 @@
 #include "../../web/xmpp/ShowStatus.h"
 #include "../../widgets/AsyncImageKeyed.h"
 #include "../ModuleList.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 #include "../ImageCache.h"
 #include "Options.h"
 #include "List.h"
@@ -31,7 +31,7 @@ namespace EGL3::Modules::Friends {
     private:
         Storage::Models::FriendCurrent& GetCurrentUser() const;
 
-        AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
         ImageCacheModule& ImageCache;
 
         ListModule& List;

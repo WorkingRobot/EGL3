@@ -2,6 +2,7 @@
 
 #include "../../utils/Crc32.h"
 #include "../../utils/Format.h"
+#include "../../utils/Random.h"
 #include "../../web/Hosts.h"
 
 #include <rapidjson/writer.h>
@@ -15,7 +16,7 @@ namespace EGL3::Web::Xmpp::Json {
     }
 
     std::string PresenceKairosProfile::GetDefaultKairosAvatarUrl() {
-        auto Id = rand() % 8 + 1;
+        uint32_t Id = Utils::Random(1, 8);
         return Utils::Format("%sKairos/portraits/cid_%03d_athena_commando_%c_default.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Id, Id > 4 ? 'm' : 'f');
     }
 
@@ -27,7 +28,7 @@ namespace EGL3::Web::Xmpp::Json {
     }
 
     std::string PresenceKairosProfile::GetDefaultKairosBackgroundUrl() {
-        return Utils::Format("%sbackgrounds/C893C04B.png", Web::GetHostUrl<Web::Host::EGL3>());
+        return Utils::Format("%sbackgrounds/EB869345.png", Web::GetHostUrl<Web::Host::EGL3>());
     }
 
     std::string PresenceKairosProfile::GetKairosBackgroundUrl(const std::string& Background) {

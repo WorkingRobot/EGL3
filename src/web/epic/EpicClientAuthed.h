@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/Callback.h"
 #include "../BaseClient.h"
 #include "../Http.h"
 #include "../Response.h"
@@ -30,6 +31,7 @@ namespace EGL3::Web::Epic {
     class EpicClientAuthed : public BaseClient {
     public:
         EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient);
+        EpicClientAuthed(EpicClientAuthed&&);
 
         ~EpicClientAuthed();
 
@@ -160,6 +162,10 @@ namespace EGL3::Web::Epic {
 
         const Responses::OAuthToken& GetAuthData() const;
 
+        void SetKillTokenOnDestruct(bool Value = true);
+
+        Utils::Callback<void(const Responses::OAuthToken&)> OnRefresh;
+
     private:
         bool EnsureTokenValidity();
 
@@ -171,5 +177,6 @@ namespace EGL3::Web::Epic {
         Responses::OAuthToken AuthData;
         std::string AuthHeader;
         cpr::Authentication AuthClient; // used for refresh token auth
+        bool KillTokenOnDestruct;
     };
 }

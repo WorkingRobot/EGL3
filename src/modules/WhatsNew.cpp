@@ -82,7 +82,7 @@ namespace EGL3::Modules {
                                 continue;
                             }
                             // Emergency notices should be at the top (plus, they're not unique between downtimes so it's hard to put a uuid on them anyway)
-                            ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                            ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                         }
                     }
 
@@ -91,7 +91,7 @@ namespace EGL3::Modules {
                             if (Post.Region != "NA" || Post.Message.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                            ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                         }
                     }
 
@@ -99,7 +99,7 @@ namespace EGL3::Modules {
                         if (Post.Hidden) {
                             continue;
                         }
-                        ItemData.emplace_back(Post, std::chrono::system_clock::time_point::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                        ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                     }
                 }
 
@@ -213,24 +213,24 @@ namespace EGL3::Modules {
     }
 
     template<class T>
-    std::chrono::system_clock::time_point WhatsNewModule::GetTime(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const T& Value) {
-        return std::chrono::system_clock::time_point::min();
+    Web::TimePoint WhatsNewModule::GetTime(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const T& Value) {
+        return Web::TimePoint::min();
     }
 
     template<>
-    std::chrono::system_clock::time_point WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
         return Value.Date;
     }
 
     template<>
-    std::chrono::system_clock::time_point WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
         // Just hash the id, it isn't used anywhere and I assume it's unique anyway
-        return Storage.try_emplace(std::hash<std::string>{}(Value.Id), std::chrono::system_clock::now()).first->second;
+        return Storage.try_emplace(std::hash<std::string>{}(Value.Id), std::chrono::utc_clock::now()).first->second;
     }
 
     template<>
-    std::chrono::system_clock::time_point WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
         // Only used for stw at this point, if any of these change, it's going to look different visually
-        return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), std::chrono::system_clock::now()).first->second;
+        return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), std::chrono::utc_clock::now()).first->second;
     }
 }

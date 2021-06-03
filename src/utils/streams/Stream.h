@@ -108,8 +108,8 @@ namespace EGL3::Utils::Streams {
         }
 
         template<class T, std::enable_if_t<Detail::is_scoped_enum_v<T>, bool> = true>
-        Stream& operator<<(T& Val) {
-            write((char*)&Val, sizeof(std::underlying_type_t<T>));
+        Stream& operator<<(const T& Val) {
+            write((char*)&Val, sizeof(Val));
             return *this;
         }
 
@@ -241,7 +241,7 @@ namespace EGL3::Utils::Streams {
 
         template<class T, std::enable_if_t<Detail::is_scoped_enum_v<T>, bool> = true>
         Stream& operator>>(T& Val) {
-            read((char*)&Val, sizeof(std::underlying_type_t<T>));
+            read((char*)&Val, sizeof(Val));
             return *this;
         }
 

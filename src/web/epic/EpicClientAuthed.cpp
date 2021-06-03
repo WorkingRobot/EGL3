@@ -10,19 +10,31 @@
 
 namespace EGL3::Web::Epic {
     EpicClientAuthed::EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient) :
-        AuthClient(AuthClient)
+        AuthClient(AuthClient),
+        KillTokenOnDestruct(true)
     {
         EGL3_CONDITIONAL_LOG(Responses::OAuthToken::Parse(OAuthResponse, AuthData), LogLevel::Critical, "OAuth data failed to parse");
 
         AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
     }
 
+    EpicClientAuthed::EpicClientAuthed(EpicClientAuthed&& Other) :
+        AuthData(Other.AuthData),
+        AuthHeader(Other.AuthHeader),
+        AuthClient(Other.AuthClient)
+    {
+        Other.EnsureCallCompletion();
+        std::lock_guard Lock(Other.TokenValidityMutex);
+        Other.AuthHeader.clear();
+        Other.AuthData = {};
+    }
+
     EpicClientAuthed::~EpicClientAuthed()
     {
         EnsureCallCompletion();
 
-        // Token isn't expired yet
-        if (AuthData.ExpiresAt > TimePoint::clock::now()) {
+        //                         Token isn't expired yet
+        if (KillTokenOnDestruct && AuthData.ExpiresAt > TimePoint::clock::now()) {
             // This will return a 204
             // If it fails, it's on epic's blame. We don't really need any handling
             Http::Delete(
@@ -547,10 +559,15 @@ namespace EGL3::Web::Epic {
         return AuthData;
     }
 
+    void EpicClientAuthed::SetKillTokenOnDestruct(bool Value)
+    {
+        KillTokenOnDestruct = Value;
+    }
+
     bool EpicClientAuthed::EnsureTokenValidity()
     {
         // Make sure that no other thread will call in to this function and end up with the refresh token being used multiple times
-        std::lock_guard Lock(TokenValidityMutex);
+        std::unique_lock Lock(TokenValidityMutex);
 
         auto Now = TimePoint::clock::now();
 
@@ -596,6 +613,8 @@ namespace EGL3::Web::Epic {
         }
 
         AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
+        Lock.unlock();
+        OnRefresh(AuthData);
         return true;
     }
 

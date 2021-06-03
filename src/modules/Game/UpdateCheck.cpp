@@ -3,20 +3,13 @@
 namespace EGL3::Modules::Game {
     UpdateCheckModule::UpdateCheckModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
-        Auth(Ctx.GetModule<AuthorizationModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         GameInfo(Ctx.GetModule<GameInfoModule>()),
-        Cancelled(false)
+        Cancelled(false),
+        Future(std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this))
     {
-        Auth.AuthChanged.connect([this](bool LoggedIn) {
-            if (!LoggedIn) {
-                return;
-            }
-
-            if (!Future.valid()) {
-                Future = std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this);
-            }
-        });
+        
     }
 
     UpdateCheckModule::~UpdateCheckModule()
@@ -26,9 +19,7 @@ namespace EGL3::Modules::Game {
             Cancelled = true;
         }
         CV.notify_all();
-        if (Future.valid()) {
-            Future.get();
-        }
+        Future.get();
     }
 
     std::chrono::seconds UpdateCheckModule::GetFrequency() const
@@ -43,16 +34,14 @@ namespace EGL3::Modules::Game {
 
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)
     {
-        if (Auth.IsLoggedIn()) {
-            auto Data = GameInfo.GetVersionData(Id, true);
-            if (!Data) {
-                return;
-            }
-            if (Data->VersionNum == StoredVersion) { // Currently updating, etc.
-                return;
-            }
-            OnUpdateAvailable(Id, *Data);
+        auto Data = GameInfo.GetVersionData(Id, true);
+        if (!Data) {
+            return;
         }
+        if (Data->VersionNum == StoredVersion) { // Currently updating, etc.
+            return;
+        }
+        OnUpdateAvailable(Id, *Data);
     }
 
     void UpdateCheckModule::BackgroundTask()

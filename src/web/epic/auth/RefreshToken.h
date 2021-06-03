@@ -6,18 +6,18 @@
 #include <string>
 
 namespace EGL3::Web::Epic::Auth {
-    class TokenToToken {
+    class RefreshToken {
     public:
         enum ErrorCode {
             SUCCESS,
             CANCELLED,
-            TTK_CODE_NOT_200,
-            TTK_CODE_JSON
+            REFRESH_CODE_NOT_200,
+            REFRESH_CODE_JSON
         };
 
-        TokenToToken(const cpr::Authentication& AuthClient, const std::string& Token);
+        RefreshToken(const cpr::Authentication& AuthClient, const std::string& Code);
 
-        ~TokenToToken();
+        ~RefreshToken();
 
         const std::shared_future<ErrorCode>& GetOAuthResponseFuture() const;
 
@@ -32,6 +32,6 @@ namespace EGL3::Web::Epic::Auth {
         rapidjson::Document OAuthResponse;
 
         cpr::Authentication AuthClient;
-        std::string Token;
+        std::string Code;
     };
 }

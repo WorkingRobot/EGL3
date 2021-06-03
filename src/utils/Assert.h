@@ -61,6 +61,9 @@ namespace EGL3 {
         if (ConditionString && Condition) {
             return true;
         }
+
+        Filename += sizeof("..\\..\\..\\src\\") - 1;
+
         _EGL3_LogFunc(Level, ConditionString, Message, Filename, Line);
         if constexpr (Level == LogLevel::Critical) {
 #ifndef SERVICE_NAME

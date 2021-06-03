@@ -71,12 +71,19 @@ namespace EGL3::Widgets {
     void FriendItem::OnMapConstruct()
     {
         if (!Data) {
-            Data = std::make_unique<FriendItemInternal>();
+            Data = std::make_unique<FriendItemInternal>(ImageCache);
 
             Data->Construct(BaseContainer);
 
             UpdateDispatch();
         }
+    }
+
+    FriendItem::FriendItemInternal::FriendItemInternal(Modules::ImageCacheModule& ImageCache) :
+        Avatar(ImageCache, 64),
+        ImageCache(ImageCache)
+    {
+
     }
 
     void FriendItem::FriendItemInternal::Construct(Gtk::EventBox& BaseContainer)
@@ -111,11 +118,9 @@ namespace EGL3::Widgets {
 
         AvatarContainer.set_size_request(72, 72);
 
-        AvatarContainer.add(AvatarBackground);
-        AvatarContainer.add_overlay(AvatarEventBox);
+        AvatarContainer.add(AvatarEventBox);
         AvatarContainer.add_overlay(ColorStatusEventBox);
 
-        AvatarContainer.set_overlay_pass_through(AvatarEventBox, false);
         AvatarContainer.set_overlay_pass_through(ColorStatusEventBox, false);
 
         UsernameContainer.set_spacing(5);
@@ -141,7 +146,7 @@ namespace EGL3::Widgets {
         BaseContainer.show_all();
     }
 
-    void FriendItem::FriendItemInternal::Update(const Storage::Models::Friend* UpdateData, Modules::ImageCacheModule& ImageCache)
+    void FriendItem::FriendItemInternal::Update(const Storage::Models::Friend* UpdateData)
     {
         auto& Friend = UpdateData->Get();
 
@@ -149,8 +154,7 @@ namespace EGL3::Widgets {
         Username.set_text(Friend.GetDisplayName());
         Nickname.set_text(Friend.GetSecondaryName());
 
-        AvatarBackground.set_async(Friend.GetKairosBackgroundUrl(), PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, ImageCache);
-        Avatar.set_async(Friend.GetKairosAvatarUrl(), PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, ImageCache);
+        Avatar.set_avatar(Friend.GetKairosAvatar(), Friend.GetKairosBackground());
 
         Status.set_has_tooltip(false);
 
@@ -207,7 +211,7 @@ namespace EGL3::Widgets {
 
         SetContextMenuInternal();
 
-        Data->Update(UpdateData, ImageCache);
+        Data->Update(UpdateData);
     }
 
     std::string FriendItem::GetProductImageUrl(std::string_view ProductId) {

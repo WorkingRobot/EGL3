@@ -112,7 +112,7 @@ namespace EGL3::Modules::Friends {
 
     void ChatModule::OnRecieveChatMessage(const std::string& AccountId, std::string&& NewMessage, bool Recieved)
     {
-        auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = std::chrono::system_clock::now(), .Recieved = Recieved });
+        auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = std::chrono::utc_clock::now(), .Recieved = Recieved });
 
         if (SelectedFriend && AccountId == SelectedFriend->Get().GetAccountId()) {
             std::lock_guard Lock(NewChatMutex);

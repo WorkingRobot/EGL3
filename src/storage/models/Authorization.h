@@ -3,24 +3,41 @@
 #include "../../utils/streams/Stream.h"
 
 namespace EGL3::Storage::Models {
-    class Authorization {
-        std::string AccountId;
-        std::string DeviceId;
-        std::string Secret;
+    struct AuthUserData {
+        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, AuthUserData& Val);
 
+        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const AuthUserData& Val);
+
+        std::string AccountId;
+        std::string DisplayName;
+        std::string KairosAvatar;
+        std::string KairosBackground;
+        std::string RefreshToken;
+        std::chrono::utc_clock::time_point RefreshExpireTime;
+    };
+
+    class Authorization {
     public:
         Authorization() = default;
-
-        Authorization(const std::string& AccountId, const std::string& DeviceId, const std::string& Secret);
 
         friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, Authorization& Val);
 
         friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const Authorization& Val);
 
-        const std::string& GetAccountId() const;
+        bool IsUserSelected() const;
 
-        const std::string& GetDeviceId() const;
+        const AuthUserData& GetSelectedUser() const;
 
-        const std::string& GetSecret() const;
+        AuthUserData& GetSelectedUser();
+
+        const std::vector<AuthUserData>& GetUsers() const;
+
+        std::vector<AuthUserData>& GetUsers();
+
+    private:
+        static constexpr uint32_t InvalidUserIdx = -1;
+
+        uint32_t SelectedUserIdx = InvalidUserIdx;
+        std::vector<AuthUserData> UserData;
     };
 }

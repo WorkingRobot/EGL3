@@ -5,7 +5,7 @@
 
 namespace EGL3::Modules::Game {
     GameInfoModule::GameInfoModule(ModuleList& Ctx) :
-        Auth(Ctx.GetModule<AuthorizationModule>())
+        Auth(Ctx.GetModule<Login::AuthModule>())
     {
 
     }
@@ -28,10 +28,6 @@ namespace EGL3::Modules::Game {
 
     const std::vector<Web::Epic::Content::SdMeta::Data>* GameInfoModule::GetInstallOptions(Storage::Game::GameId Id, const std::string& Version, bool ForceUpdate)
     {
-        if (!Auth.IsLoggedIn()) {
-            return nullptr;
-        }
-
         switch (Id)
         {
         case Storage::Game::GameId::Fortnite:
@@ -74,10 +70,6 @@ namespace EGL3::Modules::Game {
     
     Web::Response<Storage::Models::VersionData> GameInfoModule::GetVersionDataInternal(Storage::Game::GameId Id)
     {
-        if (!Auth.IsLoggedIn()) {
-            return Web::ErrorData::Status::InvalidToken;
-        }
-
         switch (Id)
         {
         case Storage::Game::GameId::Fortnite:

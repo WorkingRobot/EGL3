@@ -2,7 +2,7 @@
 
 #include "../../storage/models/VersionData.h"
 #include "../ModuleList.h"
-#include "../Authorization.h"
+#include "../Login/Auth.h"
 
 namespace EGL3::Modules::Game {
     class GameInfoModule : public BaseModule {
@@ -20,6 +20,6 @@ namespace EGL3::Modules::Game {
 
         std::unordered_map<Storage::Game::GameId, Storage::Models::VersionData> VersionData;
         std::unordered_map<Storage::Game::GameId, std::vector<Web::Epic::Content::SdMeta::Data>> InstallOptions;
-        AuthorizationModule& Auth;
+        Login::AuthModule& Auth;
     };
 }

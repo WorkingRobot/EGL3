@@ -47,5 +47,7 @@ namespace EGL3::Utils::Config {
 
     const std::filesystem::path& GetFolder();
 
+    const std::filesystem::path& GetExePath();
+
     const std::filesystem::path& GetExeFolder();
 }
