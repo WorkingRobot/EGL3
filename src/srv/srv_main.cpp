@@ -109,6 +109,9 @@ int main(int argc, char* argv[]) {
         case Utils::Crc32("DACL"):
             ReturnCode = RunDacl();
             break;
+        case Utils::Crc32("USERMODE"):
+            ReturnCode = RunUsermode();
+            break;
         default:
             printf("unknown command\n");
             return ERROR_INVALID_PARAMETER;

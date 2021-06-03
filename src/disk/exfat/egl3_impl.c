@@ -186,7 +186,7 @@ static int setup(struct exfat_dev* dev, int sector_bits, int spc_bits,
 	return mkfs(dev, param.volume_size);
 }
 
-bool EGL3CreateDisk(uint64_t sector_count, const char* label, const EGL3File files[], uint32_t file_count, void** o_data) {
+bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_count, void** o_data) {
     struct exfat_dev* dev; 
     dev = exfat_open(NULL, EXFAT_MODE_RW);
 
