@@ -93,13 +93,16 @@ static int vbr_write(struct exfat_dev* dev)
 	}
 
 	init_sb(&sb);
-	if (exfat_write(dev, &sb, sizeof(struct exfat_super_block)) < 0)
+
+	memset(sector, 0, get_sector_size());
+	memcpy_s(sector, get_sector_size(), &sb, sizeof(struct exfat_super_block));
+	if (exfat_write(dev, sector, get_sector_size()) < 0)
 	{
 		free(sector);
 		exfat_error("failed to write super block sector");
 		return 1;
 	}
-	checksum = exfat_vbr_start_checksum(&sb, sizeof(struct exfat_super_block));
+	checksum = exfat_vbr_start_checksum(sector, get_sector_size());
 
 	memset(sector, 0, get_sector_size());
 	sector[get_sector_size() / sizeof(sector[0]) - 1] =

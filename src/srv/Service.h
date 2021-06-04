@@ -4,4 +4,6 @@
 
 namespace EGL3::Service {
     void RunMain();
+
+    int RunUsermode();
 }

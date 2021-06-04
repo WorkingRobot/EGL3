@@ -153,4 +153,18 @@ namespace EGL3::Service {
             SvcReportEvent("StartServiceCtrlDispatcher");
         }
     }
+
+    int RunUsermode()
+    {
+        // Minimum of 64 MB, maximum of 2 GB
+        if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 31, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
+            printf("Could not set working size\n");
+        }
+
+        EGL3::Service::Pipe::Server Server;
+
+        Sleep(INFINITE);
+
+        return 0;
+    }
 }
