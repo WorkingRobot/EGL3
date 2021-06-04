@@ -17,7 +17,7 @@ namespace EGL3::Modules::Login {
 
     private:
         Gtk::StackSwitcher& Switcher;
-        Gtk::MenuButton& MenuButton;
+        Gtk::Box& LoginInfo;
         Gtk::Label& Username;
         Gtk::AspectFrame& AvatarContainer;
         Widgets::KairosAvatar Avatar;

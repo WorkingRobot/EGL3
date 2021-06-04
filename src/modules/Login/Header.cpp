@@ -3,7 +3,7 @@
 namespace EGL3::Modules::Login {
     HeaderModule::HeaderModule(ModuleList& Ctx) :
         Switcher(Ctx.GetWidget<Gtk::StackSwitcher>("MainStackSwitcher")),
-        MenuButton(Ctx.GetWidget<Gtk::MenuButton>("LoginInfoHeader")),
+        LoginInfo(Ctx.GetWidget<Gtk::Box>("LoginInfoContainer")),
         Username(Ctx.GetWidget<Gtk::Label>("LoginInfoUsername")),
         AvatarContainer(Ctx.GetWidget<Gtk::AspectFrame>("LoginInfoAvatarContainer")),
         Avatar(Ctx.GetModule<Modules::ImageCacheModule>(), 32)
@@ -15,7 +15,7 @@ namespace EGL3::Modules::Login {
     void HeaderModule::Hide()
     {
         Switcher.hide();
-        MenuButton.hide();
+        LoginInfo.hide();
     }
 
     void HeaderModule::Show(const Storage::Models::AuthUserData& Data)
@@ -23,6 +23,6 @@ namespace EGL3::Modules::Login {
         Switcher.show();
         Username.set_text(Data.DisplayName);
         Avatar.set_avatar(Data.KairosAvatar, Data.KairosBackground);
-        MenuButton.show();
+        LoginInfo.show();
     }
 }
