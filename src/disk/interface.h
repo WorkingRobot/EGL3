@@ -55,10 +55,10 @@ public:
 
     uint8_t* get_cluster(int64_t cluster_idx);
 
+    const std::unordered_map<uint64_t, uint8_t*>& get_data() const;
+
 private:
     std::unordered_map<uint64_t, uint8_t*> data;
-    uint32_t operation_count;
-    uint64_t written_bytes;
     size_t position;
     static constexpr size_t size = DISK_SIZE_PARTITION;
 };

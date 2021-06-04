@@ -84,6 +84,10 @@ namespace EGL3::Storage::Game {
             });
         }
 
+        size_t GetRunSize(uint32_t RunIndex) const {
+            return Runs[RunIndex].SectorCount * Header::GetSectorSize();
+        }
+
         // TODO: optimize to use some sort of binary search? I really want to make it fast
         // ByteOffset is the offset of the byte requested
         // RunIndex is the index inside the Runs array, RunByteOffset is the byte offset inside that run

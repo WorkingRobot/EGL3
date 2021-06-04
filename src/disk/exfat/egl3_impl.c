@@ -197,9 +197,9 @@ bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_cou
 	int spc_bits = -1;
 	const char* volume_label = NULL;
 	uint32_t volume_serial = 0;
-	uint64_t first_sector = 0;
+	uint64_t first_sector = 1;
 
-	if (setup(dev, 9, spc_bits, label, volume_serial, first_sector) != 0) {
+	if (setup(dev, 12, spc_bits, label, volume_serial, first_sector) != 0) {
 		exfat_close(dev);
 		return false;
 	}

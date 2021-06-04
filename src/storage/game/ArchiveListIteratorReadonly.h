@@ -103,6 +103,25 @@ namespace EGL3::Storage::Game {
             return Runlist->GetPosition(CurrentRunIdx, CurrentRunOffset);
         }
 
+        template<std::enable_if_t<std::is_trivially_copyable_v<T>, bool> = true>
+        void FastCopy(T* Output, size_t Count) const noexcept {
+            Count *= sizeof(typename ArchiveListIteratorReadonly<Id>::T);
+
+            auto Base = Runlist.GetBase();
+
+            size_t RunIdx = CurrentRunIdx;
+            size_t RunOff = CurrentRunOffset;
+            while (Count) {
+                size_t CopyAmt = std::min(Runlist->GetRunSize(RunIdx) - RunOff, Count);
+
+                memcpy(Output, Base + Runlist->GetPosition(RunIdx, 0) + RunOff, CopyAmt);
+
+                RunOff = 0;
+                RunIdx++;
+                Count -= CopyAmt;
+            }
+        }
+
     protected:
         ArchiveRef<List> Runlist;
 

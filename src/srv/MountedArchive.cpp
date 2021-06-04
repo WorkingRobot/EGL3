@@ -103,7 +103,7 @@ namespace EGL3::Service {
         return Stats{};
     }
 
-    void MountedArchive::HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const
+    void MountedArchive::HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const noexcept
     {
         auto& File = SectionLUT[(size_t)Ctx];
 
@@ -113,7 +113,8 @@ namespace EGL3::Service {
         }
 
         for(auto Itr = SectionParts.begin() + File[LCN]; Itr->IsValid(); ++Itr) {
-            std::copy(ArchiveLists.ChunkDatas.begin() + Itr->GetPtr(), ArchiveLists.ChunkDatas.begin() + Itr->GetPtr() + Itr->GetSize(), Buffer);
+            auto Ptr = ArchiveLists.ChunkDatas.begin() + Itr->GetPtr();
+            Ptr.FastCopy((char*)Buffer, Itr->GetSize());
             Buffer = (uint8_t*)Buffer + Itr->GetSize();
         }
     }

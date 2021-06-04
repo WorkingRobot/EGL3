@@ -20,7 +20,7 @@ namespace EGL3::Service {
         Stats QueryStats() const;
 
     private:
-        void HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const;
+        void HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const noexcept;
 
         struct Lists {
             const Storage::Game::ArchiveList<Storage::Game::RunlistId::File> Files;
