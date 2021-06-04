@@ -43,12 +43,12 @@ namespace EGL3 {
         }
     }
 
-    static void _EGL3_LogFunc(LogLevel Level, const char* Condition, const char* Message, const char* Filename, unsigned Line) {
+    static void _EGL3_LogFunc(LogLevel Level, const char* Condition, const char* Message, const std::string_view Filename, unsigned Line) {
         if (Condition) {
-            printf("%s: %s (%s @ %u -> %s)\n", LogLevelToString(Level), Message, Filename, Line, Condition);
+            printf("%s: %s (%.*s @ %u -> %s)\n", LogLevelToString(Level), Message, Filename.size(), Filename.data(), Line, Condition);
         }
         else {
-            printf("%s: %s (%s @ %u)\n", LogLevelToString(Level), Message, Filename, Line);
+            printf("%s: %s (%.*s @ %u)\n", LogLevelToString(Level), Message, Filename.size(), Filename.data(), Line);
         }
 
         if (Level == LogLevel::Critical) {
@@ -56,19 +56,24 @@ namespace EGL3 {
         }
     }
 
+    static consteval std::string_view _EGL3_FixFilename(const std::string_view Filename) {
+        constexpr std::string_view Pattern = "src\\";
+
+        size_t Offset = Filename.rfind(Pattern);
+        return Offset == std::string_view::npos ? Filename : Filename.substr(Offset + Pattern.size());
+    }
+
     template<LogLevel Level>
-    static __forceinline bool _EGL3_Log(bool Condition, const char* ConditionString, const char* Message, const char* Filename, unsigned Line) {
+    static __forceinline bool _EGL3_Log(bool Condition, const char* ConditionString, const char* Message, const std::string_view Filename, unsigned Line) {
         if (ConditionString && Condition) {
             return true;
         }
 
-        Filename += sizeof("..\\..\\..\\src\\") - 1;
-
-        _EGL3_LogFunc(Level, ConditionString, Message, Filename, Line);
+        _EGL3_LogFunc(Level, ConditionString, Message, Filename.data(), Line);
         if constexpr (Level == LogLevel::Critical) {
 #ifndef SERVICE_NAME
             char Text[2048];
-            sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename, Line, ConditionString ? ConditionString : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
+            sprintf_s(Text, "A critical error occurred in EGL3:\n\nMessage: %s\nAt: %.*s @ %u\nReason: %s\n\nYou can report this issue at %s/discord", Message, Filename.size(), Filename.data(), Line, ConditionString ? ConditionString : "None", Web::GetHostUrl<Web::Host::EGL3NonApi>());
             Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
 #else
             HANDLE hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
@@ -76,7 +81,7 @@ namespace EGL3 {
                 LPCSTR lpszStrings[2];
                 CHAR Buffer[2048];
 
-                sprintf_s(Buffer, "Message: %s\nAt: %s @ %u\nReason: %s", Message, Filename, Line, ConditionString ? ConditionString : "None");
+                sprintf_s(Buffer, "Message: %s\nAt: %.*s @ %u\nReason: %s", Message, Filename.size(), Filename.data(), Line, ConditionString ? ConditionString : "None");
 
                 lpszStrings[0] = SERVICE_NAME;
                 lpszStrings[1] = Buffer;
@@ -101,6 +106,6 @@ namespace EGL3 {
 }
 
 // If condition is false, return false and log error
-#define EGL3_CONDITIONAL_LOG(condition, level, message) (_EGL3_Log<level>((condition), #condition, message, __FILE__, __LINE__))
+#define EGL3_CONDITIONAL_LOG(condition, level, message) (_EGL3_Log<level>((condition), #condition, message, _EGL3_FixFilename(__FILE__), __LINE__))
 
-#define EGL3_LOG(level, message) (_EGL3_Log<level>(true, nullptr, message, __FILE__, __LINE__))
+#define EGL3_LOG(level, message) (_EGL3_Log<level>(true, nullptr, message, _EGL3_FixFilename(__FILE__), __LINE__))
