@@ -15,13 +15,13 @@ namespace EGL3::Widgets {
         set_name("kairos-avatar");
 
         Dispatcher.connect([this]() {
-            if (AvatarTask.valid()) {
+            if (AvatarTask.valid() && AvatarTask.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 AvatarPixbuf = AvatarTask.get();
                 if (get_mapped()) {
                     queue_draw();
                 }
             }
-            if (BackgroundTask.valid()) {
+            if (BackgroundTask.valid() && BackgroundTask.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 BackgroundPixbuf = BackgroundTask.get();
                 if (get_mapped()) {
                     queue_draw();
