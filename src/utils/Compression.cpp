@@ -1,6 +1,6 @@
 #include "Compression.h"
 
-#include "Assert.h"
+#include "Log.h"
 
 #include <zlib.h>
 
@@ -24,7 +24,7 @@ namespace EGL3::Utils {
 
         Result = inflate(&Stream, Z_FINISH);
         if (Result == Z_STREAM_END) {
-            EGL3_CONDITIONAL_LOG(Stream.total_out == DstSize, LogLevel::Warning, "Zlib uncompressed size does not match passed DstSize");
+            EGL3_ENSURE(Stream.total_out == DstSize, LogLevel::Warning, "Zlib uncompressed size does not match passed DstSize");
         }
 
         auto EndResult = inflateEnd(&Stream);

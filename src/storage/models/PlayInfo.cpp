@@ -77,7 +77,7 @@ namespace EGL3::Storage::Models {
         std::string ExchangeCode;
         {
             auto Resp = Client.GetExchangeCode();
-            EGL3_CONDITIONAL_LOG(!Resp.HasError(), LogLevel::Critical, "Could not get exchange code");
+            EGL3_VERIFY(!Resp.HasError(), "Could not get exchange code");
             ExchangeCode = Resp->Code;
         }
 

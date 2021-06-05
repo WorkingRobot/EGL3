@@ -1,7 +1,7 @@
 #include "MmioFile.h"
 
 #include "../Align.h"
-#include "../Assert.h"
+#include "../Log.h"
 #include "../Format.h"
 #include "ntdll.h"
 
@@ -42,8 +42,8 @@ namespace EGL3::Utils::Mmio {
     {
         HANDLE HFile = CreateFile(FilePath, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (HFile != INVALID_HANDLE_VALUE) {
-            EGL3_CONDITIONAL_LOG(GetFileSizeEx(HFile, (PLARGE_INTEGER)&SectionSize), LogLevel::Critical, "Failed to get file size");
-            EGL3_CONDITIONAL_LOG(SectionSize, LogLevel::Critical, "Trying to mmio open file without any data");
+            EGL3_VERIFY(GetFileSizeEx(HFile, (PLARGE_INTEGER)&SectionSize), "Failed to get file size");
+            EGL3_VERIFY(SectionSize, "Trying to mmio open file without any data");
 
             auto Status = NtCreateSection(&HSection, SECTION_MAP_READ,
                 NULL, (PLARGE_INTEGER)&SectionSize, PAGE_READONLY, SEC_COMMIT, HFile);
@@ -55,7 +55,7 @@ namespace EGL3::Utils::Mmio {
                 Status = NtMapViewOfSection(HSection, HProcess, &BaseAddress, 0, 0, NULL,
                     &ViewSize, ViewUnmap, 0, PAGE_READONLY);
 
-                EGL3_CONDITIONAL_LOG(0 <= Status, LogLevel::Critical, "Failed to map file");
+                EGL3_VERIFY(0 <= Status, "Failed to map file");
             }
         }
     }
@@ -65,7 +65,7 @@ namespace EGL3::Utils::Mmio {
     {
         HANDLE HFile = CreateFile(FilePath, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (HFile != INVALID_HANDLE_VALUE) {
-            EGL3_CONDITIONAL_LOG(GetFileSizeEx(HFile, (PLARGE_INTEGER)&SectionSize), LogLevel::Critical, "Failed to get file size");
+            EGL3_VERIFY(GetFileSizeEx(HFile, (PLARGE_INTEGER)&SectionSize), "Failed to get file size");
             if (SectionSize == 0) {
                 SectionSize = 0x1000;
             }
@@ -80,7 +80,7 @@ namespace EGL3::Utils::Mmio {
                 Status = NtMapViewOfSection(HSection, HProcess, &BaseAddress, 0, 0, NULL,
                     &ViewSize, ViewUnmap, MEM_RESERVE, PAGE_READWRITE);
 
-                EGL3_CONDITIONAL_LOG(0 <= Status, LogLevel::Critical, "Failed to map file");
+                EGL3_VERIFY(0 <= Status, "Failed to map file");
             }
         }
     }
@@ -149,19 +149,19 @@ namespace EGL3::Utils::Mmio {
         if (SectionSize < Size) {
             SectionSize = Size;
             auto Status = NtExtendSection(HSection, (PLARGE_INTEGER)&SectionSize);
-            EGL3_CONDITIONAL_LOG(0 <= Status, LogLevel::Critical, "Failed to extend section");
+            EGL3_VERIFY(0 <= Status, "Failed to extend section");
 
             if (Size > ViewSize) {
                 ViewSize = Utils::Align<ViewSizeIncrement>(Size);
 
                 // By not unmapping, we prevent code that is running in other threads from encountering an access error
                 //Status = NtUnmapViewOfSection(HProcess, BaseAddress);
-                //EGL3_CONDITIONAL_LOG(0 <= Status, LogLevel::Critical, "Failed to unmap view of section");
+                //EGL3_VERIFY(0 <= Status, "Failed to unmap view of section");
 
                 BaseAddress = NULL;
                 Status = NtMapViewOfSection(HSection, HProcess, &BaseAddress, 0, 0, NULL,
                     &ViewSize, ViewUnmap, MEM_RESERVE, PAGE_READWRITE);
-                EGL3_CONDITIONAL_LOG(0 <= Status, LogLevel::Critical, "Failed to remap view of section");
+                EGL3_VERIFY(0 <= Status, "Failed to remap view of section");
             }
         }
     }

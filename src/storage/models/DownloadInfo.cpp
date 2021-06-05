@@ -389,12 +389,12 @@ namespace EGL3::Storage::Models {
         auto& Data = GetStateData<StateInstalling>();
 
         auto Resp = GetChunk(Chunk);
-        EGL3_CONDITIONAL_LOG(!Resp.HasError(), LogLevel::Critical, "Could not get chunk");
-        EGL3_CONDITIONAL_LOG(!Resp->HasError(), LogLevel::Critical, "Could not parse chunk");
+        EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
+        EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
 
         Data.BytesDownloadTotal.fetch_add((uint64_t)Resp->Header.HeaderSize + Resp->Header.DataSizeCompressed, std::memory_order::relaxed);
 
-        EGL3_CONDITIONAL_LOG(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
+        EGL3_ENSURE(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
 
         auto& ChunkInfoData = Data.ArchiveChunkInfos[ReplaceIdx];
         auto OldChunkSize = ChunkInfoData.UncompressedSize;
@@ -425,12 +425,12 @@ namespace EGL3::Storage::Models {
         auto& Data = GetStateData<StateInstalling>();
         
         auto Resp = GetChunk(Chunk);
-        EGL3_CONDITIONAL_LOG(!Resp.HasError(), LogLevel::Critical, "Could not get chunk");
-        EGL3_CONDITIONAL_LOG(!Resp->HasError(), LogLevel::Critical, "Could not parse chunk");
+        EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
+        EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
 
         Data.BytesDownloadTotal.fetch_add((uint64_t)Resp->Header.HeaderSize + Resp->Header.DataSizeCompressed, std::memory_order::relaxed);
 
-        EGL3_CONDITIONAL_LOG(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
+        EGL3_ENSURE(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
 
         std::unique_lock Lock(Data.ChunkInfoMutex);
         auto& ChunkInfoData = Data.ArchiveChunkInfos.emplace_back();

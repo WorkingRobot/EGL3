@@ -100,7 +100,7 @@ namespace EGL3::Modules::Login {
     void AuthModule::OpenSignInPage()
     {
         auto Result = InstallSignInProtocol();
-        if (EGL3_CONDITIONAL_LOG(Result == ERROR_SUCCESS, LogLevel::Error, "Could not set intent protocol in registry")) {
+        if (EGL3_ENSURE(Result == ERROR_SUCCESS, LogLevel::Error, "Could not set intent protocol in registry")) {
             Utils::OpenInBrowser("https://www.epicgames.com/id/login?client_id=3f69e56c7649492c8cc29f1af08a8a12&response_type=code&display=popup&prompt=login");
         }
         else {
@@ -210,14 +210,14 @@ namespace EGL3::Modules::Login {
 
         SignInTask = std::async(std::launch::async, [this, AuthCodeString = AuthCode]() {
             Web::Epic::Auth::AuthorizationCode AuthCode(Web::AuthClientAndroid, AuthCodeString);
-            if (!EGL3_CONDITIONAL_LOG(AuthCode.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use auth code")) {
+            if (!EGL3_ENSURE(AuthCode.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use auth code")) {
                 return;
             }
             Web::Epic::EpicClientAuthed AuthCodeClient(AuthCode.GetOAuthResponse(), Web::AuthClientAndroid);
 
             auto& AuthData = AuthCodeClient.GetAuthData();
             auto KairosDataResp = AuthCodeClient.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
-            if (!EGL3_CONDITIONAL_LOG(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from android client")) {
+            if (!EGL3_ENSURE(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from android client")) {
                 return;
             }
             
@@ -241,21 +241,21 @@ namespace EGL3::Modules::Login {
             SignInDispatcher.emit();
 
             auto FortniteCodeResp = AuthCodeClient.GetExchangeCode();
-            if (!EGL3_CONDITIONAL_LOG(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #1")) {
+            if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #1")) {
                 return;
             }
             auto LauncherCodeResp = AuthCodeClient.GetExchangeCode();
-            if (!EGL3_CONDITIONAL_LOG(!LauncherCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #2")) {
+            if (!EGL3_ENSURE(!LauncherCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #2")) {
                 return;
             }
 
             Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_CONDITIONAL_LOG(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
 
             Web::Epic::Auth::ExchangeCode LauncherAuth(Web::AuthClientLauncher, LauncherCodeResp->Code);
-            if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher")) {
+            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher")) {
                 return;
             }
 
@@ -273,18 +273,18 @@ namespace EGL3::Modules::Login {
             SignInDispatcher.emit();
 
             Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, Data.RefreshToken);
-            if (!EGL3_CONDITIONAL_LOG(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::RefreshToken::SUCCESS, LogLevel::Error, "Could not use refresh token")) {
+            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::RefreshToken::SUCCESS, LogLevel::Error, "Could not use refresh token")) {
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
-            if (!EGL3_CONDITIONAL_LOG(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
+            if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
                 return;
             }
 
             Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_CONDITIONAL_LOG(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
 
@@ -323,7 +323,7 @@ namespace EGL3::Modules::Login {
             .RefreshExpireTime = AuthData.RefreshExpiresAt.value()
         };
         auto KairosDataResp = Fortnite.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
-        if (EGL3_CONDITIONAL_LOG(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from fortnite client on launcher refresh")) {
+        if (EGL3_ENSURE(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from fortnite client on launcher refresh")) {
             for (auto& Setting : KairosDataResp->Values) {
                 if (Setting.AccountId != AuthData.AccountId.value()) {
                     continue;

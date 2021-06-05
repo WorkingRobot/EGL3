@@ -1,6 +1,6 @@
 #include "FontSetup.h"
 
-#include "Assert.h"
+#include "Log.h"
 #include "Config.h"
 
 #include <fontconfig/fontconfig.h>
@@ -21,8 +21,8 @@ namespace EGL3::Utils {
         {
             std::ifstream ConfStream(FontsFolder / "fonts.conf");
             std::ofstream ConfOutStream(Config::GetFolder() / "fonts.conf");
-            EGL3_CONDITIONAL_LOG(ConfStream.good(), LogLevel::Critical, "Can't find fonts.conf template. Try reinstalling.");
-            EGL3_CONDITIONAL_LOG(ConfOutStream.good(), LogLevel::Critical, "Can't find fonts.conf template. Try reinstalling.");
+            EGL3_VERIFY(ConfStream.good(), "Can't find fonts.conf template. Try reinstalling.");
+            EGL3_VERIFY(ConfOutStream.good(), "Can't find fonts.conf template. Try reinstalling.");
 
             std::string Line;
             while (std::getline(ConfStream, Line))

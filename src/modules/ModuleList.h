@@ -1,11 +1,17 @@
 #pragma once
 
 #include "../storage/persistent/Store.h"
-#include "../utils/Assert.h"
 #include "../utils/GladeBuilder.h"
+#include "../utils/Log.h"
+#include "../utils/type_name.h"
 #include "BaseModule.h"
 
 namespace EGL3::Modules {
+    namespace Detail {
+        template<typename T, std::enable_if_t<type_name_v<T>.starts_with("class EGL3::Modules::") && std::is_base_of_v<BaseModule, T>, bool> = true>
+        inline constexpr std::string_view module_name_v = type_name_v<T>.substr(sizeof("class EGL3::Modules::") - 1);
+    }
+
     class ModuleList {
     public:
         ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath);
@@ -35,7 +41,7 @@ namespace EGL3::Modules {
                     return *Ret;
                 }
             }
-            EGL3_LOG(LogLevel::Critical, "Could not find module");
+            EGL3_ABORTF("Could not find module {}", Detail::module_name_v<T>);
         }
 
         template<typename T>
@@ -45,7 +51,7 @@ namespace EGL3::Modules {
                     return *Ret;
                 }
             }
-            EGL3_LOG(LogLevel::Critical, "Could not find module");
+            EGL3_ABORTF("Could not find module {}", Detail::module_name_v<T>);
         }
 
     private:

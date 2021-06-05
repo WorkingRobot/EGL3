@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Assert.h"
+#include "../Log.h"
 #include "OpParameters.h"
 
 #include <typeindex>
@@ -39,7 +39,7 @@ namespace EGL3::Utils::StringEx {
                 for (auto& Val : BinaryOperators) {
                     if (Val.second.Precedence == Precedence) {
                         // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Core/Public/Misc/ExpressionParserTypes.h#L553
-                        EGL3_CONDITIONAL_LOG(Val.second.Associativity == Associativity, LogLevel::Critical, "Operators of the same precedence must all have the same associativity");
+                        EGL3_VERIFY(Val.second.Associativity == Associativity, "Operators of the same precedence must all have the same associativity");
                     }
                 }
             }

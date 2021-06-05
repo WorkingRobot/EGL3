@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../utils/Assert.h"
+#include "../utils/Log.h"
 #include "../utils/Config.h"
 #include "../utils/Crc32.h"
 #include "../utils/date.h"

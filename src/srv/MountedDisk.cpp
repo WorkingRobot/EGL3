@@ -2,7 +2,7 @@
 
 #include "../disk/interface.h"
 #include "../utils/Align.h"
-#include "../utils/Assert.h"
+#include "../utils/Log.h"
 #include "../utils/Random.h"
 #include "../utils/mmio/MmioFile.h"
 #include "xorfilter/xorfilter.h"
@@ -62,7 +62,7 @@ namespace EGL3::Service {
 
         Data->Files.reserve(Files.size());
         for (auto& File : Files) {
-            EGL3_CONDITIONAL_LOG(File.Path.size() < 256, LogLevel::Critical, "File path too long");
+            EGL3_VERIFY(File.Path.size() < 256, "File path too long");
 
             auto& DataFile = Data->Files.emplace_back(EGL3File{
                 .size = File.FileSize,
@@ -141,11 +141,11 @@ namespace EGL3::Service {
             .BlockAddress = 1,
             .BlockCount = DiskSizeMegabytes * SectorsPerMegabyte - 1
         };
-        EGL3_CONDITIONAL_LOG(SpdDefinePartitionTable(&Partition, 1, Data->MBRData) == ERROR_SUCCESS, LogLevel::Critical, "Could not create MBR data");
+        EGL3_VERIFY(SpdDefinePartitionTable(&Partition, 1, Data->MBRData) == ERROR_SUCCESS, "Could not create MBR data");
 
         *(uint32_t*)(Data->MBRData + 440) = Data->DiskSignature;
 
-        EGL3_CONDITIONAL_LOG(EGL3CreateDisk("EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), LogLevel::Critical, "Could not create disk");
+        EGL3_VERIFY(EGL3CreateDisk("EGL3 Game", Data->Files.data(), Data->Files.size(), (void**)&Data->Disk), "Could not create disk");
 
         auto& DiskData = Data->Disk->get_data();
         std::vector<uint64_t> DiskKeys;
@@ -155,7 +155,7 @@ namespace EGL3::Service {
             DiskKeys.emplace_back(Key.first + 1);
         }
 
-        EGL3_CONDITIONAL_LOG(Data->DiskFilter.Initialize(DiskKeys.data(), DiskKeys.size()), LogLevel::Critical, "Could not create xor filter");
+        EGL3_VERIFY(Data->DiskFilter.Initialize(DiskKeys.data(), DiskKeys.size()), "Could not create xor filter");
     }
 
     static UINT8 ClusterCache[4096];
@@ -313,7 +313,7 @@ namespace EGL3::Service {
             // This can fail with error code 5
             // https://github.com/billziss-gh/winspd/blob/master/doc/WinSpd-Tutorial.asciidoc#testing-the-integration-with-the-operating-system
             // "This happens because mounting a storage unit requires administrator privileges."
-            EGL3_CONDITIONAL_LOG(SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit) == ERROR_SUCCESS, LogLevel::Critical, "Could not create storage unit");
+            EGL3_VERIFY(SpdStorageUnitCreate(NULL, &Params, &DiskInterface, &Data->Unit) == ERROR_SUCCESS, "Could not create storage unit");
 
             Data->Unit->UserContext = Data;
         }
@@ -323,7 +323,7 @@ namespace EGL3::Service {
         auto Data = (MountedData*)PrivateData;
 
         SpdStorageUnitSetDebugLog(Data->Unit, LogFlags);
-        EGL3_CONDITIONAL_LOG(SpdStorageUnitStartDispatcher(Data->Unit, 1) == ERROR_SUCCESS, LogLevel::Critical, "Could not mount storage unit");
+        EGL3_VERIFY(SpdStorageUnitStartDispatcher(Data->Unit, 1) == ERROR_SUCCESS, "Could not mount storage unit");
         SpdGuardSet(&Data->CloseGuard, Data->Unit);
     }
 

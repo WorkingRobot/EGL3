@@ -1,7 +1,7 @@
 #include "Server.h"
 
 #include "../../../utils/streams/BufferStream.h"
-#include "../../../utils/Assert.h"
+#include "../../../utils/Log.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -24,7 +24,7 @@ namespace EGL3::Service::Pipe {
     void Server::HandleConnectionThread() {
         PSID EveryoneSID = NULL;
         SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-        EGL3_CONDITIONAL_LOG(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &EveryoneSID), LogLevel::Critical, "Could not get SID");
+        EGL3_VERIFY(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &EveryoneSID), "Could not get SID");
 
         SECURITY_ATTRIBUTES SAttr{
             .nLength = sizeof(SECURITY_ATTRIBUTES),
@@ -44,10 +44,10 @@ namespace EGL3::Service::Pipe {
         };
 
         PACL Acl = NULL;
-        EGL3_CONDITIONAL_LOG(SetEntriesInAcl(1, &Ace, NULL, &Acl) == ERROR_SUCCESS, LogLevel::Critical, "Could not set ACL entries");
+        EGL3_VERIFY(SetEntriesInAcl(1, &Ace, NULL, &Acl) == ERROR_SUCCESS, "Could not set ACL entries");
         auto Sd = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
-        EGL3_CONDITIONAL_LOG(InitializeSecurityDescriptor(Sd, SECURITY_DESCRIPTOR_REVISION), LogLevel::Critical, "Could not allocate SD");
-        EGL3_CONDITIONAL_LOG(SetSecurityDescriptorDacl(Sd, TRUE, Acl, FALSE), LogLevel::Critical, "Could not set dacl");
+        EGL3_VERIFY(InitializeSecurityDescriptor(Sd, SECURITY_DESCRIPTOR_REVISION), "Could not allocate SD");
+        EGL3_VERIFY(SetSecurityDescriptorDacl(Sd, TRUE, Acl, FALSE), "Could not set dacl");
 
         SAttr.lpSecurityDescriptor = Sd;
 

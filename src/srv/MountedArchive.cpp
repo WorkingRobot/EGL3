@@ -64,7 +64,7 @@ namespace EGL3::Service {
                     );
                     BytesToSelect -= SectionPartSize;
                     ItrDataOffset += SectionPartSize;
-                    EGL3_CONDITIONAL_LOG(ItrDataOffset <= Itr->Size, LogLevel::Critical, "Invalid data offset");
+                    EGL3_VERIFY(ItrDataOffset <= Itr->Size, "Invalid data offset");
                 } while (BytesToSelect);
                 SectionParts.emplace_back();
             }

@@ -1,7 +1,5 @@
 #include "ModuleList.h"
 
-#include "../utils/type_name.h"
-
 #include "AsyncFF.h"
 #include "ImageCache.h"
 #include "StatsGraph.h"
@@ -102,7 +100,6 @@ namespace EGL3::Modules {
     template<typename T>
     void ModuleList::AddModule() {
         Modules.emplace_back(std::make_unique<T>(*this));
-        static constexpr std::string_view Name = type_name_v<T>.substr(sizeof("class EGL3::Modules::") - 1);
-        EGL3_LOG(LogLevel::Info, Utils::Format("%.*s loaded", Name.size(), Name.data()).c_str());
+        EGL3_LOGF(LogLevel::Info, "{} loaded", Detail::module_name_v<T>);
     }
 }

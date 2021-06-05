@@ -37,7 +37,7 @@ namespace EGL3::Modules::Friends {
 
     void ChatModule::SetUser(const Friend& Friend)
     {
-        if (!EGL3_CONDITIONAL_LOG(!SelectedFriend, LogLevel::Warning, "Trying to set selected friend before clearing. Clearing now.")) {
+        if (!EGL3_ENSURE(!SelectedFriend, LogLevel::Warning, "Trying to set selected friend before clearing. Clearing now.")) {
             ClearUser();
         }
 

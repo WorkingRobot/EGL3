@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "ArchiveListIteratorReadonly.h"
 
 namespace EGL3::Storage::Game {
@@ -24,13 +24,13 @@ namespace EGL3::Storage::Game {
 
         Ref operator*() noexcept {
             auto Pos = Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset);
-            EGL3_CONDITIONAL_LOG(Pos, LogLevel::Critical, "Writing to index 0");
+            EGL3_VERIFY(Pos, "Writing to index 0");
             return *(Ptr)(Base::Runlist.GetBase() + Pos);
         }
 
         Ptr operator->() noexcept {
             auto Pos = Base::Runlist->GetPosition(Base::CurrentRunIdx, Base::CurrentRunOffset);
-            EGL3_CONDITIONAL_LOG(Pos, LogLevel::Critical, "Writing to index 0");
+            EGL3_VERIFY(Pos, "Writing to index 0");
             return (Ptr)(Base::Runlist.GetBase() + Pos);
         }
 

@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <dpapi.h>
 
-#include "Assert.h"
+#include "Log.h"
 
 namespace EGL3::Utils {
     // Split into a seperate file so including this header doesn't include windows.h
@@ -15,7 +15,7 @@ namespace EGL3::Utils {
         DataIn.cbData = InputSize;
         DataIn.pbData = (BYTE*)Input;
 
-        if (EGL3_CONDITIONAL_LOG(CryptProtectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not encrypt data")) {
+        if (EGL3_ENSURE(CryptProtectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not encrypt data")) {
             OutputSize = DataOut.cbData;
             return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
         }
@@ -31,7 +31,7 @@ namespace EGL3::Utils {
         DataIn.cbData = InputSize;
         DataIn.pbData = (BYTE*)Input;
 
-        if (EGL3_CONDITIONAL_LOG(CryptUnprotectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not decrypt data")) {
+        if (EGL3_ENSURE(CryptUnprotectData(&DataIn, NULL, NULL, NULL, NULL, 0, &DataOut), LogLevel::Error, "Could not decrypt data")) {
             OutputSize = DataOut.cbData;
             return std::unique_ptr<char[], std::function<void(char*)>>((char*)DataOut.pbData, LocalFree);
         }

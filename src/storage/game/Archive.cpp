@@ -1,6 +1,6 @@
 #include "Archive.h"
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../../utils/Align.h"
 #include "ArchiveList.h"
 
@@ -16,20 +16,18 @@ namespace EGL3::Storage::Game {
         {
             auto IsRegularFile = std::filesystem::exists(Path, Code) && std::filesystem::is_regular_file(Path, Code);
             if (Code) {
-                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
-                EGL3_LOG(LogLevel::Error, "Could not check if regular file");
+                EGL3_LOGF(LogLevel::Error, "Could not check if regular file ({} - {})", Code.category().name(), Code.message());
                 return;
             }
-            else if (!EGL3_CONDITIONAL_LOG(!IsRegularFile, LogLevel::Warning, "Archive file already exists, overwriting")) {
+            else if (!EGL3_ENSURE(!IsRegularFile, LogLevel::Warning, "Archive file already exists, overwriting")) {
                 std::filesystem::remove(Path, Code);
                 if (Code) {
-                    printf("%s - %s\n", Code.category().name(), Code.message().c_str());
-                    EGL3_LOG(LogLevel::Critical, "Remove error");
+                    EGL3_ABORTF("Could not delete archive file to overwrite with a new one ({} - {})", Code.category().name(), Code.message());
                 }
             }
 
             Backend.emplace(Path, Utils::Mmio::OptionWrite);
-            if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
+            if (!EGL3_ENSURE(Backend->IsValid(), LogLevel::Error, "Archive file could not be created")) {
                 return;
             }
 
@@ -55,12 +53,11 @@ namespace EGL3::Storage::Game {
         case ArchiveMode::Read:
         {
             printf("Opening %s\n", Path.string().c_str());
-            if (!EGL3_CONDITIONAL_LOG(std::filesystem::is_regular_file(Path, Code), LogLevel::Error, "Archive file does not exist")) {
+            if (!EGL3_ENSURE(std::filesystem::is_regular_file(Path, Code), LogLevel::Error, "Archive file does not exist")) {
                 return;
             }
             else if (Code) {
-                printf("%s - %s\n", Code.category().name(), Code.message().c_str());
-                EGL3_LOG(LogLevel::Error, "Could not check if regular file");
+                EGL3_LOGF(LogLevel::Error, "Could not check if regular file ({} - {})", Code.category().name(), Code.message());
                 return;
             }
 
@@ -70,25 +67,25 @@ namespace EGL3::Storage::Game {
             else {
                 Backend.emplace(Path, Utils::Mmio::OptionRead);
             }
-            if (!EGL3_CONDITIONAL_LOG(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
+            if (!EGL3_ENSURE(Backend->IsValid(), LogLevel::Error, "Archive file could not be opened")) {
                 return;
             }
 
             Construct();
 
-            if (!EGL3_CONDITIONAL_LOG(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
+            if (!EGL3_ENSURE(Backend->IsValidPosition(Header::GetMinimumArchiveSize()), LogLevel::Error, "Archive file is too small")) {
                 return;
             }
 
-            if (!EGL3_CONDITIONAL_LOG(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
+            if (!EGL3_ENSURE(Header->HasValidMagic(), LogLevel::Error, "Archive has invalid magic")) {
                 return;
             }
 
-            if (!EGL3_CONDITIONAL_LOG(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
+            if (!EGL3_ENSURE(Header->HasValidHeaderSize(), LogLevel::Error, "Archive header has invalid size")) {
                 return;
             }
 
-            if (!EGL3_CONDITIONAL_LOG(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
+            if (!EGL3_ENSURE(Header->GetVersion() == ArchiveVersion::Latest, LogLevel::Error, "Archive has invalid version")) {
                 return;
             }
 
@@ -190,8 +187,8 @@ namespace EGL3::Storage::Game {
         }
 
         // We need to add a new run to the index and to the runlist
-        EGL3_CONDITIONAL_LOG(Runlist->EmplaceRun(RunIndex->GetNextAvailableSector(), MoreSectorsNeeded), LogLevel::Critical, "Runlist ran out of available runs");
-        EGL3_CONDITIONAL_LOG(RunIndex->EmplaceRun(MoreSectorsNeeded, Runlist->GetId()), LogLevel::Critical, "Run index ran out of available runs");
+        EGL3_VERIFY(Runlist->EmplaceRun(RunIndex->GetNextAvailableSector(), MoreSectorsNeeded), "Runlist ran out of available runs");
+        EGL3_VERIFY(RunIndex->EmplaceRun(MoreSectorsNeeded, Runlist->GetId()), "Run index ran out of available runs");
         Runlist->SetAllocatedSize(NewAllocatedSize);
         Backend->EnsureSize(RunIndex->GetNextAvailableSector() * Header::GetSectorSize());
     }

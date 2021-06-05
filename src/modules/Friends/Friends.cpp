@@ -55,7 +55,7 @@ namespace EGL3::Modules::Friends {
             FriendsList.FriendMenuAction.Set([this](auto Action, const auto& Friend) { OnFriendAction(Action, Friend); });
 
             FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Content) {
-                if (EGL3_CONDITIONAL_LOG(XmppClient.has_value(), LogLevel::Critical, "Didn't send user message. Xmpp client isn't created yet")) {
+                if (EGL3_VERIFY(XmppClient.has_value(), "Didn't send user message. Xmpp client isn't created yet")) {
                     XmppClient->SendChat(AccountId, Content);
                 }
             });
@@ -81,7 +81,7 @@ namespace EGL3::Modules::Friends {
 
             {
                 auto& AuthData = Auth.GetClientLauncher().GetAuthData();
-                EGL3_CONDITIONAL_LOG(AuthData.AccountId.has_value(), LogLevel::Critical, "Launcher client does not have an attached account id");
+                EGL3_VERIFY(AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
 
                 FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
 

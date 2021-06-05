@@ -1,6 +1,6 @@
 #include "Authorization.h"
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../../utils/Encrypt.h"
 #include "../../utils/streams/BufferStream.h"
 #include "../../utils/streams/MemoryStream.h"
@@ -48,7 +48,7 @@ namespace EGL3::Storage::Models {
             return Stream;
         }
         if (Version > DataVersion::Initial) {
-            EGL3_LOG(LogLevel::Critical, "Data version is too new, can't read. If you want to go back a version, don't use the same storage backend.");
+            EGL3_ABORTF("Data version ({:04x}) is too new, can't read. If you want to go back a version, don't use the same storage backend.", (uint16_t)Version);
             return Stream;
         }
 

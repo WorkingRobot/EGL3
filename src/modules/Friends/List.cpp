@@ -22,7 +22,7 @@ namespace EGL3::Modules::Friends {
                 auto APtr = (Widgets::FriendItem*)A->get_child()->get_data("EGL3_FriendBase");
                 auto BPtr = (Widgets::FriendItem*)B->get_child()->get_data("EGL3_FriendBase");
 
-                EGL3_CONDITIONAL_LOG(APtr && BPtr, LogLevel::Critical, "Widgets aren't of type FriendItem");
+                EGL3_VERIFY(APtr && BPtr, "Widgets aren't of type FriendItem");
 
                 std::weak_ordering Comp;
 
@@ -46,7 +46,7 @@ namespace EGL3::Modules::Friends {
             List.set_filter_func([this](Gtk::ListBoxRow* Row) {
                 auto Ptr = (Widgets::FriendItem*)Row->get_child()->get_data("EGL3_FriendBase");
 
-                EGL3_CONDITIONAL_LOG(Ptr, LogLevel::Critical, "Widget isn't of type FriendItem");
+                EGL3_VERIFY(Ptr, "Widget isn't of type FriendItem");
 
                 if (FilterEntry.get_text_length()) {
                     std::string Text = FilterEntry.get_text();

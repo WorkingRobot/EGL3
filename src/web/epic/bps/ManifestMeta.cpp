@@ -1,6 +1,6 @@
 #include "ManifestMeta.h"
 
-#include "../../../utils/Assert.h"
+#include "../../../utils/Log.h"
 #include "../../../utils/Base64.h"
 #include "../../../utils/SHABuilder.h"
 
@@ -56,7 +56,7 @@ namespace EGL3::Web::Epic::BPS {
         Builder.Update((char*)&LaunchCommand, sizeof(LaunchCommand));
         Builder.Finish(Hash);
 
-        if (!EGL3_CONDITIONAL_LOG(!Builder.HasError(), LogLevel::Error, "Could not get compatible build id (SHA error)")) {
+        if (!EGL3_ENSURE(!Builder.HasError(), LogLevel::Error, "Could not get compatible build id (SHA error)")) {
             return "";
         }
 

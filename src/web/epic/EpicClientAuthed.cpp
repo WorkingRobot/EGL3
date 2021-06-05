@@ -1,6 +1,6 @@
 #include "EpicClientAuthed.h"
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../Http.h"
 #include "../RunningFunctionGuard.h"
 #include "responses/ErrorInfo.h"
@@ -13,7 +13,7 @@ namespace EGL3::Web::Epic {
         AuthClient(AuthClient),
         KillTokenOnDestruct(true)
     {
-        EGL3_CONDITIONAL_LOG(Responses::OAuthToken::Parse(OAuthResponse, AuthData), LogLevel::Critical, "OAuth data failed to parse");
+        EGL3_VERIFY(Responses::OAuthToken::Parse(OAuthResponse, AuthData), "OAuth data failed to parse");
 
         AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
     }
@@ -608,7 +608,7 @@ namespace EGL3::Web::Epic {
         }
 
 
-        if (!EGL3_CONDITIONAL_LOG(Responses::OAuthToken::Parse(RespJson, AuthData), LogLevel::Error, "OAuth data failed to parse")) {
+        if (!EGL3_ENSURE(Responses::OAuthToken::Parse(RespJson, AuthData), LogLevel::Error, "OAuth data failed to parse")) {
             return false;
         }
 

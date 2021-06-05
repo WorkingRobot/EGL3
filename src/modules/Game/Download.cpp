@@ -134,7 +134,7 @@ namespace EGL3::Modules::Game {
         });
 
         auto VersionData = GameInfo.GetVersionData(Id);
-        EGL3_CONDITIONAL_LOG(VersionData, LogLevel::Critical, "Version data should be valid at this point");
+        EGL3_VERIFY(VersionData, "Version data should be valid at this point");
         auto InstallOpts = GameInfo.GetInstallOptions(Id, VersionData->Element.BuildVersion);
 
         auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();

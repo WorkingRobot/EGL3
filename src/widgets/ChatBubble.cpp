@@ -1,6 +1,6 @@
 #include "ChatBubble.h"
 
-#include "../utils/Assert.h"
+#include "../utils/Log.h"
 #include "../utils/Humanize.h"
 
 #define _USE_MATH_DEFINES

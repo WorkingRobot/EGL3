@@ -15,14 +15,14 @@ namespace EGL3::Web::Epic::Content {
         }
 
         auto Info = BaseClient.GetLauncherDownloadInfo("Windows", "Live-EternalKnight");
-        EGL3_CONDITIONAL_LOG(!Info.HasError(), LogLevel::Critical, "Could not get launcher download info");
+        EGL3_VERIFY(!Info.HasError(), "Could not get launcher download info");
 
         auto ContentInfoPtr = Info->GetElement("EpicGamesLauncherContent");
-        EGL3_CONDITIONAL_LOG(ContentInfoPtr, LogLevel::Critical, "Could not get LauncherContent element");
+        EGL3_VERIFY(ContentInfoPtr, "Could not get LauncherContent element");
 
         auto Manifest = Client.GetManifestCacheable(*ContentInfoPtr, CloudDir, CacheDir);
-        EGL3_CONDITIONAL_LOG(!Manifest.HasError(), LogLevel::Critical, "Could not download LauncherContent manifest");
-        EGL3_CONDITIONAL_LOG(!Manifest->HasError(), LogLevel::Critical, "Could not parse LauncherContent manifest");
+        EGL3_VERIFY(!Manifest.HasError(), "Could not download LauncherContent manifest");
+        EGL3_VERIFY(!Manifest->HasError(), "Could not parse LauncherContent manifest");
 
         return CurrentManifest.emplace(std::move(Manifest.Get()));
     }
@@ -38,8 +38,8 @@ namespace EGL3::Web::Epic::Content {
             auto InfoPtr = Manifest.GetChunk(Guid);
             if (InfoPtr) {
                 auto Chunk = Client.GetChunkCacheable(CloudDir, Manifest.ManifestMeta.FeatureLevel, *InfoPtr, CacheDir);
-                EGL3_CONDITIONAL_LOG(!Chunk.HasError(), LogLevel::Critical, "Could not download chunk");
-                EGL3_CONDITIONAL_LOG(!Chunk->HasError(), LogLevel::Critical, "Could not parse chunk");
+                EGL3_VERIFY(!Chunk.HasError(), "Could not download chunk");
+                EGL3_VERIFY(!Chunk->HasError(), "Could not parse chunk");
                 return DownloadedChunks.emplace(Guid, std::move(Chunk->Data)).first->second.get();
             }
             else {
@@ -102,10 +102,10 @@ namespace EGL3::Web::Epic::Content {
     {
         if (!Notifications.has_value()) {
             rapidjson::Document NotifJson;
-            EGL3_CONDITIONAL_LOG(GetJson("BuildNotificationsV2.json", NotifJson), LogLevel::Critical, "No notification json file loaded");
+            EGL3_VERIFY(GetJson("BuildNotificationsV2.json", NotifJson), "No notification json file loaded");
 
             auto& NotifList = Notifications.emplace();
-            EGL3_CONDITIONAL_LOG(NotificationList::Parse(NotifJson, NotifList), LogLevel::Critical, "Notification file has bad json");
+            EGL3_VERIFY(NotificationList::Parse(NotifJson, NotifList), "Notification file has bad json");
         }
         return Notifications.value();
     }
@@ -118,12 +118,12 @@ namespace EGL3::Web::Epic::Content {
             for (auto& File : Manifest.FileManifestList.FileList) {
                 if (File.Filename.ends_with("sdmeta")) {
                     rapidjson::Document SdJson;
-                    if (!EGL3_CONDITIONAL_LOG(GetJson(File, SdJson), LogLevel::Warning, "Could not get json from sdmeta")) {
+                    if (!EGL3_ENSURE(GetJson(File, SdJson), LogLevel::Warning, "Could not get json from sdmeta")) {
                         continue;
                     }
 
                     SdMeta SdMeta;
-                    if (!EGL3_CONDITIONAL_LOG(SdMeta::Parse(SdJson, SdMeta), LogLevel::Warning, "Sdmeta has bad json")) {
+                    if (!EGL3_ENSURE(SdMeta::Parse(SdJson, SdMeta), LogLevel::Warning, "Sdmeta has bad json")) {
                         continue;
                     }
 

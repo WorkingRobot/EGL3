@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Assert.h"
+#include "Log.h"
 
 #include <filesystem>
 #include <gtkmm.h>
@@ -18,7 +18,7 @@ namespace EGL3::Utils {
         T& GetWidget(const char* Name) const {
             T* Ret = nullptr;
             Builder->get_widget(Name, Ret);
-            EGL3_CONDITIONAL_LOG(Ret, LogLevel::Critical, "Widget does not exist. The UI file is invalid, corrupt, or misplaced.");
+            EGL3_VERIFY(Ret, "Widget does not exist. The UI file is invalid, corrupt, or misplaced.");
             return std::ref(*Ret);
         }
 

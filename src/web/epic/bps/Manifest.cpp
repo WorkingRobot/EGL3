@@ -1,6 +1,6 @@
 #include "Manifest.h"
 
-#include "../../../utils/Assert.h"
+#include "../../../utils/Log.h"
 #include "../../../utils/Compression.h"
 #include "../../../utils/Crc32.h"
 #include "../../../utils/Hex.h"

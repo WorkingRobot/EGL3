@@ -1,6 +1,6 @@
 #include "InstalledGame.h"
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 
 namespace EGL3::Storage::Models {
     Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, InstalledGame& Val)
@@ -149,11 +149,11 @@ namespace EGL3::Storage::Models {
 
         std::error_code Error;
         auto NewAbsPath = std::filesystem::absolute(NewPath, Error);
-        EGL3_CONDITIONAL_LOG(!Error, LogLevel::Critical, "Could not get absolute path");
+        EGL3_VERIFY(!Error, "Could not get absolute path");
 
         if (IsValid()) {
             std::filesystem::rename(Path, NewAbsPath, Error);
-            EGL3_CONDITIONAL_LOG(!Error, LogLevel::Critical, "Could not move installed game to new position");
+            EGL3_VERIFY(!Error, "Could not move installed game to new position");
         }
 
         Path = NewAbsPath;

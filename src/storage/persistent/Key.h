@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../../utils/Crc32.h"
 #include "../models/Authorization.h"
 #include "../models/InstalledGame.h"
@@ -85,7 +85,7 @@ namespace EGL3::Storage::Persistent {
 
         template<uint32_t Constant, class T>
         T& Get(const KeyType<Constant, T>& KeyType) const {
-            EGL3_CONDITIONAL_LOG(Item->GetConstant() == Constant, LogLevel::Critical, "Tried to get a mismatched key, constants don't match");
+            EGL3_VERIFY(Item->GetConstant() == Constant, "Tried to get a mismatched key, constants don't match");
             return std::ref<T>(*(T*)Item->Get());
         }
     };

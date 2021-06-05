@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Assert.h"
+#include "Log.h"
 #include "Callback.h"
 
 #include <condition_variable>

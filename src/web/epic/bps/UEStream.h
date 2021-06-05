@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../utils/streams/BufferStream.h"
-#include "../../../utils/Assert.h"
+#include "../../../utils/Log.h"
 #include "../../../utils/Guid.h"
 
 #include <memory>
@@ -47,7 +47,7 @@ namespace EGL3::Web::Epic::BPS {
             if (SaveNum < 0) // LoadUCS2Char
             {
                 // If SaveNum cannot be negated due to integer overflow, Ar is corrupted.
-                EGL3_CONDITIONAL_LOG(SaveNum != std::numeric_limits<int>::min(), LogLevel::Critical, "Tried to read FString with an invalid length");
+                EGL3_VERIFY(SaveNum != std::numeric_limits<int>::min(), "Tried to read FString with an invalid length");
 
                 SaveNum = -SaveNum;
 

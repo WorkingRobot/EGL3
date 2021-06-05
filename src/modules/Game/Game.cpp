@@ -1,7 +1,7 @@
 #include "Game.h"
 
 #include "../../storage/game/Archive.h"
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../../web/epic/EpicClient.h"
 
 #include <charconv>
@@ -68,7 +68,7 @@ namespace EGL3::Modules::Game {
 
         PlayStateHolder.Clicked.Set([this]() {
             auto Install = GetInstall(PrimaryGame);
-            EGL3_CONDITIONAL_LOG(Install, LogLevel::Critical, "No game, but playable?");
+            EGL3_VERIFY(Install, "No game, but playable?");
             Play.OnPlayClicked(*Install);
 
             PlayStateHolder.SetHeldState(State::Playing);

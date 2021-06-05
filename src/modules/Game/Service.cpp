@@ -1,6 +1,6 @@
 #include "Service.h"
 
-#include "../../utils/Assert.h"
+#include "../../utils/Log.h"
 #include "../../utils/Config.h"
 #include "../../utils/Format.h"
 
@@ -26,7 +26,7 @@ namespace EGL3::Modules::Game {
                 Client.Connect(ClientName);
             }
         }
-        EGL3_CONDITIONAL_LOG(Client.IsConnected(), LogLevel::Critical, "Could not connect to the service after multiple retries");
+        EGL3_VERIFY(Client.IsConnected(), "Could not connect to the service after multiple retries");
     }
 
     Service::Pipe::Client& ServiceModule::GetClient()

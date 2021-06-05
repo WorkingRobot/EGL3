@@ -1,6 +1,6 @@
 #include "Config.h"
 
-#include "Assert.h"
+#include "Log.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -27,7 +27,7 @@ namespace EGL3::Utils::Config {
 
     void SetupFolders()
     {
-        EGL3_CONDITIONAL_LOG(!GetFolder().empty(), LogLevel::Critical, "Could not get config folder path");
+        EGL3_VERIFY(!GetFolder().empty(), "Could not get config folder path");
 
         std::filesystem::create_directories(GetFolder());
         std::filesystem::create_directories(GetFolder() / "contentcache");

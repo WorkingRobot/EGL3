@@ -30,7 +30,7 @@ namespace EGL3::Storage::Persistent {
             }
 
             auto Elem = Data.emplace(Constant, Constant);
-            EGL3_CONDITIONAL_LOG(Elem.second, LogLevel::Error, "Could not emplace nor find new constant in store.");
+            EGL3_ENSURE(Elem.second, LogLevel::Error, "Could not emplace nor find new constant in store.");
             return Elem.first->second;
         }
 

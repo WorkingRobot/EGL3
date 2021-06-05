@@ -1,6 +1,6 @@
 #include "modules/ModuleList.h"
 #include "modules/Login/Auth.h"
-#include "utils/Assert.h"
+#include "utils/Log.h"
 #include "utils/Config.h"
 #include "utils/FontSetup.h"
 #include "utils/Format.h"
@@ -12,7 +12,7 @@ namespace EGL3 {
         MainApp() :
             App(Gtk::Application::create("me.workingrobot.egl3", Gio::ApplicationFlags::APPLICATION_HANDLES_COMMAND_LINE))
         {
-            EGL3_LOG(LogLevel::Info, Utils::Format("Starting up %s/%s %s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion().c_str()).c_str());
+            EGL3_LOGF(LogLevel::Info, "Starting up {}/{} {}/{}", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion());
 
             App->signal_command_line().connect(sigc::mem_fun(this, &MainApp::OnCommandLine), false);
             App->signal_startup().connect(sigc::mem_fun(this, &MainApp::OnStartup));
@@ -40,7 +40,7 @@ namespace EGL3 {
             {
                 auto StyleData = Gtk::CssProvider::create();
                 StyleData->signal_parsing_error().connect([&](const Glib::RefPtr<const Gtk::CssSection>& Section, const Glib::Error& Error) {
-                    EGL3_LOG(LogLevel::Critical, "Failed to parse style data properly");
+                    EGL3_ABORTF("Failed to parse style data properly ({}) at {} @ {}", (std::string)Error.what(), Section->get_file()->get_path(), Section->get_start_line() + 1);
                 });
                 StyleData->load_from_path("resources\\EGL3.css");
                 Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -81,6 +81,9 @@ namespace EGL3 {
 }
 
 #ifdef USE_SUBSYSTEM_CONSOLE
+
+#include "utils/Log.h"
+#include <iostream>
 
 int main(int argc, char* argv[]) {
     return EGL3::Start();

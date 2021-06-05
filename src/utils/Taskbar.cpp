@@ -1,6 +1,6 @@
 #include "Taskbar.h"
 
-#include "Assert.h"
+#include "Log.h"
 
 // This #define is for gdk_win32_pixbuf_to_hicon_libgtk_only
 // Sorry for the hacky solutions, but they're too useful to just not use
@@ -15,12 +15,12 @@ namespace EGL3::Utils {
         TaskbarImpl(nullptr)
     {
         HRESULT Result = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-        EGL3_CONDITIONAL_LOG(Result != CO_E_NOTINITIALIZED, LogLevel::Critical, "COM couldn't be initialized");
+        EGL3_VERIFY(Result != CO_E_NOTINITIALIZED, "COM couldn't be initialized");
         CoInitialized = true;
-        EGL3_CONDITIONAL_LOG(Result != RPC_E_CHANGED_MODE, LogLevel::Error, "COM has changed mode, this may be problematic");
+        EGL3_ENSURE(Result != RPC_E_CHANGED_MODE, LogLevel::Error, "COM has changed mode, this may be problematic");
 
         Result = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID*)&TaskbarImpl);
-        EGL3_CONDITIONAL_LOG(Result == S_OK, LogLevel::Critical, "Could not get taskbar COM interface");
+        EGL3_VERIFY(Result == S_OK, "Could not get taskbar COM interface");
     }
 
     Taskbar::~Taskbar() {
@@ -32,7 +32,7 @@ namespace EGL3::Utils {
 
     HWND GetHwnd(Gtk::Window& Window) {
         GdkWindow* InternalWindow = Window.get_window()->gobj();
-        EGL3_CONDITIONAL_LOG(gdk_win32_window_is_win32(InternalWindow), LogLevel::Critical, "Window is not a Win32 window");
+        EGL3_VERIFY(gdk_win32_window_is_win32(InternalWindow), "Window is not a Win32 window");
 
         return gdk_win32_window_get_impl_hwnd(InternalWindow);
     }
