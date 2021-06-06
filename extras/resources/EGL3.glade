@@ -252,6 +252,7 @@ Author: Aleks Margarian
                         <property name="can-focus">True</property>
                         <property name="headers-visible">False</property>
                         <property name="enable-search">False</property>
+                        <property name="fixed-height-mode">True</property>
                         <property name="hover-selection">True</property>
                         <property name="show-expanders">False</property>
                         <property name="activate-on-single-click">True</property>

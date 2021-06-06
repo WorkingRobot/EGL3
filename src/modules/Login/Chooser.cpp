@@ -26,13 +26,13 @@ namespace EGL3::Modules::Login {
         }
 
         {
-            int ColCount = TreeView.append_column("DisplayName", Columns.DisplayName);
+            int ColCount = TreeView.append_column("DisplayName", UsernameRenderer);
             auto Column = TreeView.get_column(ColCount - 1);
             if (Column) {
-                auto Renderer = (Gtk::CellRendererText*)Column->get_first_cell();
-                Renderer->property_scale() = 1.50;
-                Renderer->set_padding(5, 0);
+                Column->add_attribute(UsernameRenderer.property_text(), Columns.DisplayName);
             }
+            UsernameRenderer.property_scale() = 1.50;
+            UsernameRenderer.set_padding(5, 0);
         }
 
         {

@@ -40,6 +40,7 @@ namespace EGL3::Modules::Login {
         Gtk::TreeView& TreeView;
 
         Widgets::CellRendererKairosAvatar AvatarRenderer;
+        Gtk::CellRendererText UsernameRenderer;
         Widgets::CellRendererPixbufScalable ButtonRenderer;
         Glib::RefPtr<Gtk::ListStore> ListStore;
         Glib::RefPtr<Gtk::TreeModelFilter> ListFilter;
