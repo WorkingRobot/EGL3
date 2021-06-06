@@ -18,28 +18,27 @@ namespace EGL3::Service {
 
     static constexpr uint32_t SectorsPerMegabyte = (1 << 20) / 4096;
 
-    // I use sector and cluster somewhat interchangably, even though technically
-    // a sector would be 512 bytes and a cluster 4096 bytes, thanks wikipedia
+    // I use sector and cluster somewhat interchangably, both a cluster 
+    // and a sector would be 4096 bytes in this instance, thanks wikipedia
     // Sorry not sorry, I'll fix that eventually, I guess
     struct MountedData {
         uint8_t MBRData[4096];
-        uint8_t BlankData[4096];
         uint32_t DiskSignature;
         std::vector<EGL3File> Files;
         AppendingFile* Disk;
         SPD_STORAGE_UNIT* Unit;
         SPD_GUARD CloseGuard;
-        const decltype(MountedDisk::HandleFileCluster)& FileClusterCallback;
+        MountedDisk::ClusterCallback FileClusterCallback;
         XorFilter DiskFilter;
 
-        MountedData(const decltype(MountedDisk::HandleFileCluster)& Callback) :
+        MountedData() :
             MBRData{},
-            BlankData{},
             DiskSignature(),
             Disk(nullptr),
             Unit(nullptr),
             CloseGuard(SPD_GUARD_INIT),
-            FileClusterCallback(Callback)
+            FileClusterCallback(nullptr),
+            DiskFilter()
         {
 
         }
@@ -47,18 +46,11 @@ namespace EGL3::Service {
 
     static std::allocator<MountedData> DataAllocator;
 
-    MountedDisk::MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature) :
-        HandleFileCluster([](void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) {
-            memset(Buffer, 'A', 1024);
-            memset(Buffer + 1024, 'B', 1024);
-            memset(Buffer + 2048, 'C', 1024);
-            memset(Buffer + 3072, 'D', 1024);
-            *(uint64_t*)Buffer = LCN;
-        }),
+    MountedDisk::MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature, ClusterCallback Callback) :
         PrivateData(DataAllocator.allocate(1))
     {
         auto Data = (MountedData*)PrivateData;
-        std::construct_at(Data, HandleFileCluster);
+        std::construct_at(Data);
 
         Data->Files.reserve(Files.size());
         for (auto& File : Files) {
@@ -74,6 +66,7 @@ namespace EGL3::Service {
         }
 
         Data->DiskSignature = DiskSignature;
+        Data->FileClusterCallback = Callback;
     }
 
     MountedDisk::~MountedDisk()
@@ -158,16 +151,16 @@ namespace EGL3::Service {
         EGL3_VERIFY(Data->DiskFilter.Initialize(DiskKeys.data(), DiskKeys.size()), "Could not create xor filter");
     }
 
-    static UINT8 ClusterCache[4096];
-
-    static UINT8* HandleCluster(MountedData* Data, UINT64 Idx) {
+    static void HandleCluster(MountedData* Data, UINT64 Idx, UINT8 Buffer[4096]) noexcept {
         if (Data->DiskFilter.Contains(Idx)) {
             if (Idx == 0) [[unlikely]] {
-                return Data->MBRData;
+                memcpy(Buffer, Data->MBRData, 4096);
+                return;
             }
 
             if (auto ClusterPtr = Data->Disk->try_get_cluster(Idx - 1)) {
-                return ClusterPtr;
+                memcpy(Buffer, ClusterPtr, 4096);
+                return;
             }
         }
         
@@ -178,15 +171,15 @@ namespace EGL3::Service {
             uint64_t lIdx = 0;
             while (CurrentRun->count) {
                 if (CurrentRun->idx <= Idx && uint64_t(CurrentRun->idx) + CurrentRun->count > Idx) {
-                    Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, ClusterCache);
-                    return ClusterCache;
+                    Data->FileClusterCallback(File.user_context, Idx - CurrentRun->idx + lIdx, Buffer);
+                    return;
                 }
                 lIdx += CurrentRun->count;
                 CurrentRun++;
             }
         }
 
-        return Data->BlankData;
+        ZeroMemory(Buffer, 4096);
     }
 
     static inline BOOLEAN ExceptionFilter(ULONG Code, PEXCEPTION_POINTERS Pointers,
@@ -202,88 +195,27 @@ namespace EGL3::Service {
 
     static BOOLEAN ReadCallback(SPD_STORAGE_UNIT* StorageUnit,
         PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
-        SPD_STORAGE_UNIT_STATUS* Status)
+        SPD_STORAGE_UNIT_STATUS* Status) noexcept
     {
-        UINT_PTR ExceptionDataAddress;
-        UINT64 Information, * PInformation;
-
         //printf("read %llu %u\n", BlockAddress, BlockCount);
-        __try {
-            auto Data = (MountedData*)StorageUnit->UserContext;
 
-            while (BlockCount) {
-                memcpy(Buffer, HandleCluster(Data, BlockAddress), 4096);
+        auto Data = (MountedData*)StorageUnit->UserContext;
 
-                ++BlockAddress;
-                --BlockCount;
-                Buffer = (UINT8*)Buffer + 4096;
-            }
+        while (BlockCount) {
+            HandleCluster(Data, BlockAddress, (UINT8*)Buffer);
+
+            ++BlockAddress;
+            --BlockCount;
+            Buffer = (UINT8*)Buffer + 4096;
         }
-        __except (ExceptionFilter(GetExceptionCode(), GetExceptionInformation(), &ExceptionDataAddress)) {
-            printf("error!\n");
-            if (0 != Status)
-            {
-                PInformation = 0;
-                if (0 != ExceptionDataAddress)
-                {
-                    Information = 4055; //(UINT64)(ExceptionDataAddress - (UINT_PTR)RawDisk->Pointer) / RawDisk->BlockLength;
-                    PInformation = &Information;
-                }
 
-                SpdStorageUnitStatusSetSense(Status, SCSI_SENSE_MEDIUM_ERROR, SCSI_ADSENSE_UNRECOVERED_ERROR, PInformation);
-            }
-        }
-        return TRUE;
-    }
-
-    static BOOLEAN WriteCallback(SPD_STORAGE_UNIT* StorageUnit,
-        PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
-        SPD_STORAGE_UNIT_STATUS* Status)
-    {
-        UINT_PTR ExceptionDataAddress;
-        UINT64 Information, * PInformation;
-
-        //printf("write %llu %u\n", BlockAddress, BlockCount);
-        __try {
-
-            auto Data = (MountedData*)StorageUnit->UserContext;
-
-            while (BlockCount) {
-                UINT8* ClusBuf;
-                if (BlockAddress == 0) {
-                    ClusBuf = Data->MBRData;
-                }
-                else {
-                    ClusBuf = Data->Disk->get_cluster(BlockAddress - 1);
-                }
-                memcpy(ClusBuf, Buffer, 4096);
-
-                ++BlockAddress;
-                --BlockCount;
-                Buffer = (UINT8*)Buffer + 4096;
-            }
-        }
-        __except (ExceptionFilter(GetExceptionCode(), GetExceptionInformation(), &ExceptionDataAddress)) {
-            printf("error!\n");
-            if (0 != Status)
-            {
-                PInformation = 0;
-                if (0 != ExceptionDataAddress)
-                {
-                    Information = 4055; //(UINT64)(ExceptionDataAddress - (UINT_PTR)RawDisk->Pointer) / RawDisk->BlockLength;
-                    PInformation = &Information;
-                }
-
-                SpdStorageUnitStatusSetSense(Status, SCSI_SENSE_MEDIUM_ERROR, SCSI_ADSENSE_UNRECOVERED_ERROR, PInformation);
-            }
-        }
         return TRUE;
     }
 
     constexpr SPD_STORAGE_UNIT_INTERFACE DiskInterface =
     {
         ReadCallback,
-        WriteCallback,
+        0,
         0,
         0
     };

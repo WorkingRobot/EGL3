@@ -9,7 +9,9 @@ public:
 
     XorFilter(XorFilter&) = delete;
 
-    XorFilter(XorFilter&& Other) : Filter(Other.Filter) {
+    XorFilter(XorFilter&& Other) noexcept :
+        Filter(Other.Filter)
+    {
         Other.Filter.fingerprints = nullptr;
     }
 

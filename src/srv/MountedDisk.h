@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../utils/Callback.h"
-
 #include <string>
 #include <vector>
 
@@ -14,7 +12,9 @@ namespace EGL3::Service {
 
     class MountedDisk {
     public:
-        MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature);
+        using ClusterCallback = void (*)(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]);
+
+        MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature, ClusterCallback Callback);
 
         MountedDisk(const MountedDisk&) = delete;
 
@@ -29,8 +29,6 @@ namespace EGL3::Service {
         void Mount(uint32_t LogFlags = 0);
 
         void Unmount();
-
-        Utils::Callback<void(void*, uint64_t, uint8_t[4096])> HandleFileCluster;
 
     private:
         void* PrivateData;

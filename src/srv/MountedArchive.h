@@ -20,8 +20,6 @@ namespace EGL3::Service {
         Stats QueryStats() const;
 
     private:
-        void HandleFileCluster(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]) const noexcept;
-
         struct Lists {
             const Storage::Game::ArchiveList<Storage::Game::RunlistId::File> Files;
             const Storage::Game::ArchiveList<Storage::Game::RunlistId::ChunkPart> ChunkParts;
@@ -41,39 +39,60 @@ namespace EGL3::Service {
         struct SectionPart {
             uint64_t Data;
 
-            SectionPart() :
+            SectionPart() noexcept :
                 Data(0)
             {
 
             }
 
-            SectionPart(uint64_t Ptr, uint16_t Size) :
+            SectionPart(uint64_t Ptr, uint16_t Size) noexcept :
                 Data(uint64_t(Size) << 48 | Ptr)
             {
 
             }
 
-            bool IsValid() const
+            bool IsValid() const noexcept
             {
                 return Data;
             }
 
-            uint64_t GetPtr() const
+            uint64_t GetPtr() const noexcept
             {
                 return Data & (1llu << 48) - 1;
             }
 
-            uint16_t GetSize() const
+            uint16_t GetSize() const noexcept
             {
                 return Data >> 48;
             }
         };
 
+        struct SectionLUT;
+
+        struct SectionContext {
+            const std::vector<uint32_t>& const LUT;
+            const std::vector<SectionPart>& const Parts;
+            const Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData> DataBegin;
+
+            SectionContext(const std::vector<uint32_t>& const LUT, const std::vector<SectionPart>& const Parts, const Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData> DataBegin);
+        };
+
+        struct SectionLUT {
+            std::vector<SectionPart> Parts;
+            std::vector<std::vector<uint32_t>> LUT;
+            std::vector<SectionContext> Contexts;
+
+            SectionLUT(const Lists& ArchiveLists);
+        };
+
+        std::vector<MountedFile> GetMountedFiles();
+
+        static void HandleCluster(void* CtxPtr, uint64_t LCN, uint8_t Buffer[4096]) noexcept;
+
         Storage::Game::Archive Archive;
-        Lists ArchiveLists;
+        const Lists ArchiveLists;
+        const SectionLUT LUT;
         MountedDisk Disk;
-        std::vector<SectionPart> SectionParts;
-        std::vector<std::vector<uint32_t>> SectionLUT;
         mutable DriveCounter Counter;
         mutable char DriveLetter;
     };
