@@ -47,7 +47,6 @@ namespace EGL3::Modules::Login {
         bool RecentlyCleared;
 
         bool RemoveState;
-        Gtk::TreeViewColumn* LoginColumn;
 
         enum class RowType : uint8_t {
             Account,

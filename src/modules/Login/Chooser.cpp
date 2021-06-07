@@ -37,9 +37,9 @@ namespace EGL3::Modules::Login {
 
         {
             int ColCount = TreeView.append_column("Login", ButtonRenderer);
-            LoginColumn = TreeView.get_column(ColCount - 1);
-            if (LoginColumn) {
-                LoginColumn->add_attribute(ButtonRenderer.property_icon_name(), Columns.ButtonIconName);
+            auto Column = TreeView.get_column(ColCount - 1);
+            if (Column) {
+                Column->add_attribute(ButtonRenderer.property_icon_name(), Columns.ButtonIconName);
             }
             ButtonRenderer.property_scale() = 2;
             ButtonRenderer.property_xalign() = 1;
