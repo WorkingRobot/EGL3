@@ -68,7 +68,7 @@ namespace EGL3::Widgets {
         Glib::ustring Background = flags & Gtk::CellRendererState::CELL_RENDERER_SELECTED ?
             prop_background.get_value() :
             "[\"#364D63\",\"#21272C\",\"#000000\"]";
-        auto BackgroundPixbuf = ImageCache.TryGetOrQueueImage(PresenceKairosProfile::GetKairosBackgroundUrl(Background), PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), Size, Size, ImageDispatcher);
+        auto BackgroundPixbuf = ImageCache.TryGetOrQueueImage(PresenceKairosProfile::GetKairosBackgroundUrl(Background), PresenceKairosProfile::GetKairosBackgroundUrl(PresenceKairosProfile::GetDefaultKairosBackground()), Size, Size, ImageDispatcher);
         if (BackgroundPixbuf) {
             cr->save();
             cr->translate(cell_area.get_x(), cell_area.get_y());
@@ -79,7 +79,7 @@ namespace EGL3::Widgets {
         }
 
         auto Avatar = prop_avatar.get_value();
-        auto AvatarPixbuf = ImageCache.TryGetOrQueueImage(PresenceKairosProfile::GetKairosAvatarUrl(Avatar), PresenceKairosProfile::GetDefaultKairosAvatarUrl(), Size, Size, ImageDispatcher);
+        auto AvatarPixbuf = ImageCache.TryGetOrQueueImage(PresenceKairosProfile::GetKairosAvatarUrl(Avatar), PresenceKairosProfile::GetKairosAvatarUrl(PresenceKairosProfile::GetDefaultKairosAvatar()), Size, Size, ImageDispatcher);
         if (AvatarPixbuf) {
             cr->save();
             cr->translate(cell_area.get_x(), cell_area.get_y());

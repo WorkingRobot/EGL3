@@ -1972,15 +1972,16 @@ Author: Aleks Margarian
                                     <property name="shadow-type">in</property>
                                     <property name="propagate-natural-width">True</property>
                                     <child>
-                                      <object class="GtkViewport">
+                                      <object class="GtkTreeView" id="FriendsTree">
                                         <property name="visible">True</property>
-                                        <property name="can-focus">False</property>
-                                        <child>
-                                          <object class="GtkListBox" id="FriendsListBox">
-                                            <property name="visible">True</property>
-                                            <property name="can-focus">False</property>
-                                            <property name="selection-mode">none</property>
-                                          </object>
+                                        <property name="can-focus">True</property>
+                                        <property name="headers-visible">False</property>
+                                        <property name="enable-search">False</property>
+                                        <property name="hover-selection">True</property>
+                                        <property name="show-expanders">False</property>
+                                        <property name="activate-on-single-click">True</property>
+                                        <child internal-child="selection">
+                                          <object class="GtkTreeSelection"/>
                                         </child>
                                       </object>
                                     </child>

@@ -27,7 +27,7 @@ namespace EGL3::Modules::Friends {
             StatusWidgets.clear();
             StatusWidgets.reserve(Statuses.size());
             for (auto Status : Statuses) {
-                auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, "", 48, 48, &Json::ShowStatusToUrl, ImageCache));
+                auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, Json::ShowStatus::Offline, 48, 48, &Json::ShowStatusToUrl, ImageCache));
                 StatusBox.add(*Widget);
             }
 
@@ -161,7 +161,7 @@ namespace EGL3::Modules::Friends {
             AvatarsWidgets.reserve(AvatarsData.size());
 
             for (auto& Avatar : AvatarsData) {
-                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, Json::PresenceKairosProfile::GetDefaultKairosAvatarUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
+                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, Json::PresenceKairosProfile::GetDefaultKairosAvatar(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
                 AvatarBox.add(*Widget);
             }
 
@@ -176,7 +176,7 @@ namespace EGL3::Modules::Friends {
             BackgroundsWidgets.reserve(BackgroundsData.size());
 
             for (auto& Background : BackgroundsData) {
-                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, Json::PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
+                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, Json::PresenceKairosProfile::GetDefaultKairosBackground(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
                 BackgroundBox.add(*Widget);
             }
 

@@ -15,25 +15,25 @@ namespace EGL3::Web::Xmpp::Json {
 
     }
 
-    std::string PresenceKairosProfile::GetDefaultKairosAvatarUrl() {
+    std::string PresenceKairosProfile::GetDefaultKairosAvatar() {
         uint32_t Id = Utils::Random(1, 8);
-        return Utils::Format("%sKairos/portraits/cid_%03d_athena_commando_%c_default.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Id, Id > 4 ? 'm' : 'f');
+        return Utils::Format("cid_%03d_athena_commando_%c_default", Id, Id > 4 ? 'm' : 'f');
     }
 
     std::string PresenceKairosProfile::GetKairosAvatarUrl(const std::string& Avatar) {
         if (Avatar.empty()) {
-            return GetDefaultKairosAvatarUrl();
+            return GetKairosAvatarUrl(GetDefaultKairosAvatar());
         }
         return Utils::Format("%sKairos/portraits/%s.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Avatar.c_str());
     }
 
-    std::string PresenceKairosProfile::GetDefaultKairosBackgroundUrl() {
-        return Utils::Format("%sbackgrounds/EB869345.png", Web::GetHostUrl<Web::Host::EGL3>());
+    std::string PresenceKairosProfile::GetDefaultKairosBackground() {
+        return "[\"#AEC1D3\",\"#687B8E\",\"#36404A\"]";
     }
 
     std::string PresenceKairosProfile::GetKairosBackgroundUrl(const std::string& Background) {
         if (Background.empty()) {
-            return GetDefaultKairosBackgroundUrl();
+            return GetKairosBackgroundUrl(GetDefaultKairosBackground());
         }
         auto Hash = Utils::Crc32(Background.c_str(), Background.size());
         return Utils::Format("%sbackgrounds/%04X.png", Web::GetHostUrl<Web::Host::EGL3>(), Hash);

@@ -5,6 +5,8 @@
 #include "../../widgets/CurrentUserItem.h"
 #include "../../widgets/FriendItem.h"
 #include "../../widgets/FriendItemMenu.h"
+#include "../../widgets/CellRendererAvatarStatus.h"
+#include "../../widgets/CellRendererCenterText.h"
 #include "../ModuleList.h"
 #include "../ImageCache.h"
 #include "Options.h"
@@ -16,10 +18,6 @@ namespace EGL3::Modules::Friends {
     class ListModule : public BaseModule {
     public:
         ListModule(ModuleList& Ctx);
-
-        void ResortEntireList();
-
-        void RefreshList();
 
         Storage::Models::Friend* GetUser(const std::string& AccountId);
 
@@ -34,20 +32,56 @@ namespace EGL3::Modules::Friends {
 
         void DisplayFriend(Storage::Models::Friend& Friend);
 
+        void RefreshFilter();
+
+        void RefreshList();
+
         Utils::Callback<void(Widgets::FriendItemMenu::ClickAction, const Storage::Models::Friend&)> FriendMenuAction;
 
     private:
+        void SetupColumns();
+
+        void UpdateFriendRow(const Gtk::TreeRow& Row);
+
         void SetKairosMenuWindow(Gtk::Window& Window);
         friend class KairosMenuModule;
-
-        void ResortList();
-
-        void ResortWidget(Widgets::FriendItem& Widget);
 
         ImageCacheModule& ImageCache;
         OptionsModule& Options;
 
-        Gtk::ListBox& List;
+        Gtk::TreeView& TreeView;
+
+        Glib::RefPtr<Gtk::ListStore> ListStore;
+        Glib::RefPtr<Gtk::TreeModelFilter> ListFilter;
+
+        Widgets::CellRendererAvatarStatus<std::string, std::string, EGL3::Web::Xmpp::Json::ShowStatus> AvatarRenderer;
+        Widgets::CellRendererCenterText CenterTextRenderer;
+        Widgets::CellRendererAvatarStatus<std::string, void, std::string> ProductRenderer;
+
+        struct ModelColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            ModelColumns()
+            {
+                add(Data);
+                add(KairosAvatar);
+                add(KairosBackground);
+                add(Status);
+                add(DisplayNameMarkup);
+                add(Description);
+                add(Product);
+                add(Platform);
+            }
+
+            Gtk::TreeModelColumn<Storage::Models::Friend*> Data;
+            Gtk::TreeModelColumn<Glib::ustring> KairosAvatar;
+            Gtk::TreeModelColumn<Glib::ustring> KairosBackground;
+            Gtk::TreeModelColumn<EGL3::Web::Xmpp::Json::ShowStatus> Status;
+            Gtk::TreeModelColumn<Glib::ustring> DisplayNameMarkup;
+            Gtk::TreeModelColumn<Glib::ustring> Description;
+            Gtk::TreeModelColumn<Glib::ustring> Product;
+            Gtk::TreeModelColumn<Glib::ustring> Platform;
+        };
+        ModelColumns Columns;
 
         Widgets::FriendItemMenu FriendMenu;
 
@@ -58,7 +92,6 @@ namespace EGL3::Modules::Friends {
         Gtk::SearchEntry& FilterEntry;
 
         std::vector<std::unique_ptr<Storage::Models::Friend>> FriendsData;
-        std::vector<std::unique_ptr<Widgets::FriendItem>> FriendsWidgets;
 
         std::mutex ResortListMutex;
         std::vector<std::reference_wrapper<Widgets::FriendItem>> ResortListData;

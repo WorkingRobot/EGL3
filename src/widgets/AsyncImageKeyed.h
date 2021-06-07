@@ -10,11 +10,11 @@ namespace EGL3::Widgets {
     class AsyncImageKeyed {
     public:
         template<typename UrlCallback>
-        AsyncImageKeyed(const KeyType& Key, const std::string& FallbackUrl, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
+        AsyncImageKeyed(const KeyType& Key, const KeyType& FallbackKey, int Width, int Height, const UrlCallback& GetUrl, Modules::ImageCacheModule& ImageCache) :
             Key(Key),
             ImageCache(ImageCache)
         {
-            Construct(GetUrl(Key), FallbackUrl, Width, Height);
+            Construct(GetUrl(Key), GetUrl(FallbackKey), Width, Height);
         }
 
         operator Gtk::Widget& () {

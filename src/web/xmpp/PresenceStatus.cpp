@@ -1,5 +1,7 @@
 #include "PresenceStatus.h"
 
+#include "../../utils/Format.h"
+
 #include <rapidjson/writer.h>
 
 namespace EGL3::Web::Xmpp::Json {
@@ -78,5 +80,41 @@ namespace EGL3::Web::Xmpp::Json {
             ProductName.c_str(),
             (int)Buf.GetLength(), Buf.GetString()
         );
+    }
+
+    std::string PresenceStatus::GetProductImageUrl(std::string_view ProductId) {
+        switch (Utils::Crc32(ProductId.data(), ProductId.size())) {
+        case Utils::Crc32("EGL3"):
+            return Utils::Format("%slauncher-icon.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("Fortnite"):
+            ProductId = "fortnite";
+            [[fallthrough]];
+        default:
+            return Utils::Format("%slauncher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/%.*s/icon.png", Web::GetHostUrl<Web::Host::UnrealEngineCdn1>(), ProductId.size(), ProductId.data());
+        }
+    }
+
+    // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
+    std::string PresenceStatus::GetPlatformImageUrl(const std::string_view Platform) {
+        switch (Utils::Crc32(Platform.data(), Platform.size()))
+        {
+        case Utils::Crc32("PSN"):
+        case Utils::Crc32("PS5"):
+            return Utils::Format("%splatforms/ps4.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("XBL"):
+            return Utils::Format("%splatforms/xbox.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("WIN"):
+        case Utils::Crc32("MAC"):
+        case Utils::Crc32("LNX"): // In the future? :)
+            return Utils::Format("%splatforms/pc.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("IOS"):
+        case Utils::Crc32("AND"):
+            return Utils::Format("%splatforms/mobile.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("SWT"):
+            return Utils::Format("%splatforms/switch.png", Web::GetHostUrl<Web::Host::EGL3>());
+        case Utils::Crc32("OTHER"):
+        default:
+            return Utils::Format("%splatforms/earth.png", Web::GetHostUrl<Web::Host::EGL3>());
+        }
     }
 }

@@ -43,7 +43,7 @@ namespace EGL3::Modules::Friends {
 
                 AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
 
-                Options.OnUpdate.Set([this]() { FriendsList.ResortEntireList(); });
+                Options.OnUpdate.Set([this]() { FriendsList.RefreshFilter(); });
             }
 
             KairosMenu.UpdateXmppPresence.Set([this]() {

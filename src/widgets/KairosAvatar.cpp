@@ -39,11 +39,11 @@ namespace EGL3::Widgets {
     {
         if (Avatar != NewAvatar) {
             Avatar = NewAvatar;
-            AvatarTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosAvatarUrl(Avatar), PresenceKairosProfile::GetDefaultKairosAvatarUrl(), Size, Size, Dispatcher);
+            AvatarTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosAvatarUrl(Avatar), PresenceKairosProfile::GetKairosAvatarUrl(PresenceKairosProfile::GetDefaultKairosAvatar()), Size, Size, Dispatcher);
         }
         if (Background != NewBackground) {
             Background = NewBackground;
-            BackgroundTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosBackgroundUrl(Background), PresenceKairosProfile::GetDefaultKairosBackgroundUrl(), Size, Size, Dispatcher);
+            BackgroundTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosBackgroundUrl(Background), PresenceKairosProfile::GetKairosBackgroundUrl(PresenceKairosProfile::GetDefaultKairosBackground()), Size, Size, Dispatcher);
         }
     }
 

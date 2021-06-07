@@ -17,11 +17,11 @@ namespace EGL3::Web::Xmpp::Json {
 
         PresenceKairosProfile(const std::string& Avatar, const std::string& Background);
 
-        static std::string GetDefaultKairosAvatarUrl();
+        static std::string GetDefaultKairosAvatar();
 
         static std::string GetKairosAvatarUrl(const std::string& Avatar);
 
-        static std::string GetDefaultKairosBackgroundUrl();
+        static std::string GetDefaultKairosBackground();
 
         static std::string GetKairosBackgroundUrl(const std::string& Background);
 
