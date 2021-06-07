@@ -1,7 +1,5 @@
 #include "RegistryInfo.h"
 
-#include "../../utils/Format.h"
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -169,7 +167,7 @@ namespace EGL3::Installer::Backend {
 
     std::string RegistryInfo::GetSubKey() const
     {
-        return Utils::Format("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\%s", ProductGuid.c_str());
+        return std::format("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}", ProductGuid);
     }
 
     std::filesystem::path RegistryInfo::GetShortcutPath() const

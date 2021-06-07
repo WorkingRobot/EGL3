@@ -3,7 +3,6 @@
 #include "utils/Log.h"
 #include "utils/Config.h"
 #include "utils/FontSetup.h"
-#include "utils/Format.h"
 #include "utils/Platform.h"
 
 namespace EGL3 {

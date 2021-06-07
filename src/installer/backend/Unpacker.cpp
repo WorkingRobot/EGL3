@@ -1,7 +1,7 @@
 #include "Unpacker.h"
 
+#include "../../utils/formatters/Path.h"
 #include "../../utils/streams/FileStream.h"
-#include "../../utils/Format.h"
 #include "streams/LZ4DecompStream.h"
 #include "Constants.h"
 #include "RegistryInfo.h"
@@ -54,7 +54,7 @@ namespace EGL3::Installer::Backend {
 
                 Utils::Streams::FileStream FileStream;
                 if (!FileStream.open(FilePath, "wb")) {
-                    OnProgressError(Utils::Format("Could not open file %s", FilePath.string().c_str()));
+                    OnProgressError(std::format("Could not open file {}", FilePath));
                     return;
                 }
 
@@ -120,7 +120,7 @@ namespace EGL3::Installer::Backend {
             };
 
             auto ExePath = TargetDirectory / "EGL3_SRV.exe";
-            std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), Args);
+            auto CommandLineString = std::format("\"{}\" {}", ExePath, Args);
             PROCESS_INFORMATION ProcInfo;
 
             BOOL Ret = CreateProcess(

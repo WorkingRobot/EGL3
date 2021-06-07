@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../utils/Format.h"
 #include "../../web/Hosts.h"
 
 namespace EGL3::Web::Xmpp::Json {
@@ -40,18 +39,18 @@ namespace EGL3::Web::Xmpp::Json {
         switch (Status)
         {
         case ShowStatus::Chat:
-            return Utils::Format("%sstatus/chat.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/chat.png", Web::GetHostUrl<Web::Host::EGL3>());
         case ShowStatus::DoNotDisturb:
-            return Utils::Format("%sstatus/dnd.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/dnd.png", Web::GetHostUrl<Web::Host::EGL3>());
         case ShowStatus::Online:
-            return Utils::Format("%sstatus/online.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/online.png", Web::GetHostUrl<Web::Host::EGL3>());
         case ShowStatus::Away:
-            return Utils::Format("%sstatus/away.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/away.png", Web::GetHostUrl<Web::Host::EGL3>());
         case ShowStatus::ExtendedAway:
-            return Utils::Format("%sstatus/xa.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/xa.png", Web::GetHostUrl<Web::Host::EGL3>());
         case ShowStatus::Offline:
         default:
-            return Utils::Format("%sstatus/offline.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/offline.png", Web::GetHostUrl<Web::Host::EGL3>());
         }
     }
 }

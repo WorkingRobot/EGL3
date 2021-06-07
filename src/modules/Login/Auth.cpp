@@ -1,5 +1,6 @@
 #include "Auth.h"
 
+#include "../../utils/formatters/Path.h"
 #include "../../utils/Config.h"
 #include "../../utils/OpenBrowser.h"
 #include "../../utils/Quote.h"
@@ -162,7 +163,7 @@ namespace EGL3::Modules::Login {
         }
 
         // Set command subkey's default value to the right command line
-        std::string CommandLine = Utils::Format(R"("%s" auth "%%1")", Utils::Config::GetExePath().string().c_str());
+        std::string CommandLine = std::format(R"("{}" auth "%1")", Utils::Config::GetExePath());
         Error = RegSetValueEx(CommandKey, NULL, 0, REG_SZ, (const uint8_t*)CommandLine.c_str(), CommandLine.size() + 1);
         if (Error != ERROR_SUCCESS) {
             return Error;

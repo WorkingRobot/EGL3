@@ -1,5 +1,7 @@
 #include "GameInfo.h"
 
+#include "../../utils/formatters/Regex.h"
+
 #include <charconv>
 #include <regex>
 
@@ -48,7 +50,7 @@ namespace EGL3::Modules::Game {
             const static std::regex VersionRegex("\\+\\+Fortnite\\+Release-(\\d+)\\.(\\d+).*-CL-(\\d+)-.*");
             std::smatch Matches;
             if (std::regex_search(Version, Matches, VersionRegex)) {
-                VersionHR = Utils::Format("%s.%s", Matches[1].str().c_str(), Matches[2].str().c_str());
+                VersionHR = std::format("{}.{}", Matches[1], Matches[2]);
                 VersionNum = -1;
                 auto VersionStr = Matches[3].str();
                 std::from_chars(VersionStr.c_str(), VersionStr.c_str() + VersionStr.size(), VersionNum);

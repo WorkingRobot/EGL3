@@ -1,7 +1,4 @@
 #include "Humanize.h"
-#pragma once
-
-#include "Format.h"
 
 #include <chrono>
 #define WIN32_LEAN_AND_MEAN
@@ -9,7 +6,7 @@
 #include <Windows.h>
 
 namespace EGL3::Utils {
-    constexpr LPCWSTR SelectedLocale = LOCALE_NAME_USER_DEFAULT;// LOCALE_NAME_USER_DEFAULT;
+    constexpr LPCWSTR SelectedLocale = LOCALE_NAME_USER_DEFAULT;
     constexpr LPCWSTR DurationFormat = L"hh:mm:ss";
 
     std::wstring HumanizeDuration(uint64_t Ticks)

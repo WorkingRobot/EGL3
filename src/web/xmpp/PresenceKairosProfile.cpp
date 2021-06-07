@@ -1,7 +1,6 @@
 #include "PresenceKairosProfile.h"
 
 #include "../../utils/Crc32.h"
-#include "../../utils/Format.h"
 #include "../../utils/Random.h"
 #include "../../web/Hosts.h"
 
@@ -17,14 +16,14 @@ namespace EGL3::Web::Xmpp::Json {
 
     std::string PresenceKairosProfile::GetDefaultKairosAvatar() {
         uint32_t Id = Utils::Random(1, 8);
-        return Utils::Format("cid_%03d_athena_commando_%c_default", Id, Id > 4 ? 'm' : 'f');
+        return std::format("cid_{:03}_athena_commando_{}_default", Id, Id > 4 ? 'm' : 'f');
     }
 
     std::string PresenceKairosProfile::GetKairosAvatarUrl(const std::string& Avatar) {
         if (Avatar.empty()) {
             return GetKairosAvatarUrl(GetDefaultKairosAvatar());
         }
-        return Utils::Format("%sKairos/portraits/%s.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Avatar.c_str());
+        return std::format("{}Kairos/portraits/{}.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Avatar);
     }
 
     std::string PresenceKairosProfile::GetDefaultKairosBackground() {
@@ -36,7 +35,7 @@ namespace EGL3::Web::Xmpp::Json {
             return GetKairosBackgroundUrl(GetDefaultKairosBackground());
         }
         auto Hash = Utils::Crc32(Background.c_str(), Background.size());
-        return Utils::Format("%sbackgrounds/%04X.png", Web::GetHostUrl<Web::Host::EGL3>(), Hash);
+        return std::format("{}backgrounds/{:04X}.png", Web::GetHostUrl<Web::Host::EGL3>(), Hash);
     }
 
     rapidjson::StringBuffer PresenceKairosProfile::ToProperty() const {

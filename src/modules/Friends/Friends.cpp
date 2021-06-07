@@ -178,7 +178,7 @@ namespace EGL3::Modules::Friends {
 
     void FriendsModule::OnOpenSetNicknamePage(const Friend& FriendData) {
         SetNicknameAccountId = FriendData.Get().GetAccountId();
-        SetNicknameLabel.set_text(Utils::Format("Set Nickname for %s", FriendData.Get().GetDisplayName().c_str()));
+        SetNicknameLabel.set_text(std::format("Set Nickname for {}", FriendData.Get().GetDisplayName()));
         SetNicknameEntry.set_placeholder_text(FriendData.Get().GetUsername());
         SetNicknameEntry.set_text(FriendData.Get().GetNickname());
         SetNicknameStatusLabel.set_text("");
@@ -281,32 +281,32 @@ namespace EGL3::Modules::Friends {
         auto Resp = Auth.GetClientLauncher().AddFriend(Account.Id);
         if (!Resp.HasError()) {
             FriendRequestStatus = AsyncWebRequestStatusType::Success;
-            FriendRequestStatusText = Utils::Format("Sent %s a friend request!", Account.GetDisplayName().c_str());
+            FriendRequestStatusText = std::format("Sent {} a friend request!", Account.GetDisplayName().c_str());
         }
         else {
             FriendRequestStatus = AsyncWebRequestStatusType::Failure;
             switch (Utils::Crc32(Resp.GetError().GetErrorCode()))
             {
             case Utils::Crc32("errors.com.epicgames.friends.duplicate_friendship"):
-                FriendRequestStatusText = Utils::Format("You're already friends with %s!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = std::format("You're already friends with {}!", Account.GetDisplayName());
                 break;
             case Utils::Crc32("errors.com.epicgames.friends.friend_request_already_sent"):
-                FriendRequestStatusText = Utils::Format("You've already sent a friend request to %s!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = std::format("You've already sent a friend request to {}!", Account.GetDisplayName());
                 break;
             case Utils::Crc32("errors.com.epicgames.friends.inviter_friendships_limit_exceeded"):
-                FriendRequestStatusText = Utils::Format("You have too many friends!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = "You have too many friends!";
                 break;
             case Utils::Crc32("errors.com.epicgames.friends.invitee_friendships_limit_exceeded"):
-                FriendRequestStatusText = Utils::Format("%s has too many friends!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = std::format("{} has too many friends!", Account.GetDisplayName());
                 break;
             case Utils::Crc32("errors.com.epicgames.friends.incoming_friendships_limit_exceeded"):
-                FriendRequestStatusText = Utils::Format("%s has too many friend requests!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = std::format("{} has too many friend requests!", Account.GetDisplayName());
                 break;
             case Utils::Crc32("errors.com.epicgames.friends.cannot_friend_due_to_target_settings"):
-                FriendRequestStatusText = Utils::Format("%s has disabled friend requests!", Account.GetDisplayName().c_str());
+                FriendRequestStatusText = std::format("{} has disabled friend requests!", Account.GetDisplayName());
                 break;
             default:
-                FriendRequestStatusText = Utils::Format("An error occurred: %s", Resp.GetError().GetErrorCode().c_str());
+                FriendRequestStatusText = std::format("An error occurred: {}", Resp.GetError().GetErrorCode());
                 break;
             }
         }
@@ -356,7 +356,7 @@ namespace EGL3::Modules::Friends {
                     SetNicknameStatusText = "The nickname must be 3 to 16 letters, digits, spaces, -, _, . or emoji.";
                     break;
                 default:
-                    SetNicknameStatusText = Utils::Format("An error occurred: %s", Resp.GetError().GetErrorCode().c_str());
+                    SetNicknameStatusText = std::format("An error occurred: {}", Resp.GetError().GetErrorCode());
                     break;
                 }
             }

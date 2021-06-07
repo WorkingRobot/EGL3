@@ -127,7 +127,7 @@ namespace EGL3::Web::Epic {
     cpr::Response GetChunkData(const std::string& CloudDir, BPS::FeatureLevel FeatureLevel, const BPS::ChunkInfo& ChunkInfo)
     {
         return Http::Get(
-            cpr::Url{ Utils::Format("%s/%s/%02d/%016llX_%08X%08X%08X%08X.chunk",
+            cpr::Url{ std::format("{}/{}/{:02}/{:016X}_{:08X}{:08X}{:08X}{:08X}.chunk",
                 CloudDir.c_str(),
                 BPS::GetChunkSubdir(FeatureLevel),
                 ChunkInfo.GroupNumber,
@@ -172,7 +172,7 @@ namespace EGL3::Web::Epic {
             return 400;
         }
 
-        auto CachedPath = (CacheDir / Utils::Format("%08X%08X%08X%08X", ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D)).replace_extension("chunk");
+        auto CachedPath = (CacheDir / std::format("{:08X}{:08X}{:08X}{:08X}", ChunkInfo.Guid.A, ChunkInfo.Guid.B, ChunkInfo.Guid.C, ChunkInfo.Guid.D)).replace_extension("chunk");
         std::error_code Error;
         if (std::filesystem::is_regular_file(CachedPath, Error)) {
             Utils::Streams::FileStream Stream;

@@ -1,5 +1,7 @@
 #include "PlayInfo.h"
 
+#include "../../utils/formatters/Path.h"
+#include "../../utils/formatters/StringStream.h"
 #include "../../utils/Align.h"
 #include "../../utils/StringCompare.h"
 #include "../../utils/Hex.h"
@@ -123,7 +125,7 @@ namespace EGL3::Storage::Models {
         };
 
         auto ExePath = Game.GetMountPath() / Game.GetManifestData()->GetLaunchExe();
-        std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), CommandLine.str().c_str());
+        auto CommandLineString = std::format("\"{}\" {}", ExePath, CommandLine);
         printf("%s\n", CommandLineString.c_str());
         PROCESS_INFORMATION ProcInfo;
 

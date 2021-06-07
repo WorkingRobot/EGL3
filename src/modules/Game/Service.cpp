@@ -1,8 +1,8 @@
 #include "Service.h"
 
+#include "../../utils/formatters/Path.h"
 #include "../../utils/Log.h"
 #include "../../utils/Config.h"
-#include "../../utils/Format.h"
 
 #include <thread>
 
@@ -13,7 +13,7 @@
 namespace EGL3::Modules::Game {
     ServiceModule::ServiceModule(ModuleList& Ctx)
     {
-        auto ClientName = Utils::Format("%s/%s", Utils::Config::GetAppName(), Utils::Config::GetAppVersion());
+        auto ClientName = std::format("{}/{}", Utils::Config::GetAppName(), Utils::Config::GetAppVersion());
 
         for (int Idx = 0; Idx < 3 && !Client.IsConnected(); ++Idx) {
             if (Idx != 0) {
@@ -47,7 +47,7 @@ namespace EGL3::Modules::Game {
         };
 
         auto ExePath = std::filesystem::path(FilePath).parent_path() / "EGL3_SRV.exe";
-        std::string CommandLineString = Utils::Format("\"%s\" %s", ExePath.string().c_str(), "patch nowait");
+        auto CommandLineString = std::format("\"{}\" {}", ExePath, "patch nowait");
         PROCESS_INFORMATION ProcInfo;
 
         BOOL Ret = CreateProcess(

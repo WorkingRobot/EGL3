@@ -138,7 +138,7 @@ namespace EGL3::Widgets {
     template<class TransformerT>
     std::string CombineList(const std::vector<std::string>& Gamemodes, const TransformerT& Transformer) {
         if (Gamemodes.size() == 2) {
-            return Utils::Format("%s and %s", Transformer(Gamemodes[0]), Transformer(Gamemodes[1]));
+            return std::format("{} and {}", Transformer(Gamemodes[0]), Transformer(Gamemodes[1]));
         }
         else {
             std::stringstream Ret;

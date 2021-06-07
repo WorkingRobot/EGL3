@@ -35,11 +35,6 @@ namespace EGL3::Widgets {
 
         void UpdateDispatch();
 
-        static std::string GetProductImageUrl(std::string_view ProductId);
-
-        // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
-        static std::string GetPlatformImageUrl(const std::string_view Platform);
-
         Glib::Dispatcher UpdateDispatcher;
         const Storage::Models::Friend* UpdateData;
 

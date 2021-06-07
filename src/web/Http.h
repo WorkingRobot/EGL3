@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../utils/Format.h"
 #include "Hosts.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -8,8 +7,8 @@
 #include <cpr/cpr.h>
 #include <rapidjson/document.h>
 
-#define SUFFFIX_SSL
-//#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
+//#define SUFFFIX_SSL
+#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
 
 namespace EGL3::Web::Http {
     const cpr::UserAgent& GetUserAgent();
@@ -37,12 +36,12 @@ namespace EGL3::Web::Http {
 
     template<Host SelectedHost>
     static cpr::Url FormatUrl(const char* Input) {
-        return Utils::Format("%s%s", GetHostUrl<SelectedHost>(), Input);
+        return std::format("{}{}", GetHostUrl<SelectedHost>(), Input);
     }
 
     template<Host SelectedHost, typename... Args>
     static cpr::Url FormatUrl(const char* Input, Args&&... FormatArgs) {
-        return Utils::Format("%s%s", GetHostUrl<SelectedHost>(), Utils::Format(Input, std::move(FormatArgs)...).c_str());
+        return std::format("{}{}", GetHostUrl<SelectedHost>(), std::format(Input, std::move(FormatArgs)...));
     }
 
     // Make sure to check validity with Json.HasParseError()

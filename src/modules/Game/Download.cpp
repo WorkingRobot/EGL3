@@ -341,7 +341,7 @@ namespace EGL3::Modules::Game {
 
             InfoState.set_text(DownloadInfoStateToString(StatsData.State));
 
-            InfoPercent.set_text(Utils::Format("%.f%%", CompletionPercent * 100));
+            InfoPercent.set_text(std::format("{:.0f}%", CompletionPercent * 100));
             InfoProgressBar.set_fraction(CompletionPercent);
 
             InfoTimeElapsed.set_text(Utils::Humanize(BeginTimestamp, CurrentTimestamp));

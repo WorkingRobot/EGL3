@@ -4,7 +4,6 @@
 #include "../../web/epic/EpicClient.h"
 #include "../../utils/Align.h"
 #include "../../utils/Config.h"
-#include "../../utils/Format.h"
 #include "../../utils/Taskbar.h"
 
 #include <charconv>

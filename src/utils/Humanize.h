@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Format.h"
-
 #include <chrono>
 #include <sstream>
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../utils/Callback.h"
-#include "../utils/Format.h"
 
 #include <gtkmm.h>
 

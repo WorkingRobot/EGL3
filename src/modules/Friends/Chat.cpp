@@ -82,7 +82,7 @@ namespace EGL3::Modules::Friends {
     void ChatModule::OnSelectedFriendUpdate()
     {
         SelectedFriendWidget.Update();
-        ChatEntry.set_placeholder_text(Utils::Format("Message %s", SelectedFriend->Get().GetDisplayName().c_str()));
+        ChatEntry.set_placeholder_text(std::format("Message {}", SelectedFriend->Get().GetDisplayName()));
     }
 
     void ChatModule::OnNewChatUpdate()

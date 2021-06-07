@@ -2,7 +2,6 @@
 
 #include "../Align.h"
 #include "../Log.h"
-#include "../Format.h"
 #include "ntdll.h"
 
 #include <Psapi.h>

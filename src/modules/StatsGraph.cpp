@@ -1,13 +1,11 @@
 #include "StatsGraph.h"
 
-#include "../utils/Format.h"
-
 namespace EGL3::Modules {
     StatsGraphModule::StatsGraphModule(ModuleList& Ctx) :
         Graph(Ctx.GetWidget<Gtk::DrawingArea>("StatsGraph"))
     {
         Graph.OnFormatTooltip = [](int Idx, const auto& Data) {
-            return Utils::Format("%d, %.2f", Idx, Data[0]);
+            return std::format("{}, {:.2f}", Idx, Data[0]);
         };
 
         TimerConnection = Glib::signal_timeout().connect([this]() {

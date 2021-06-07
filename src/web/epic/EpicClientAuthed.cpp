@@ -38,7 +38,7 @@ namespace EGL3::Web::Epic {
             // This will return a 204
             // If it fails, it's on epic's blame. We don't really need any handling
             Http::Delete(
-                Http::FormatUrl<Host::Account>("oauth/sessions/kill/%s", AuthData.AccessToken.c_str()),
+                Http::FormatUrl<Host::Account>("oauth/sessions/kill/{}", AuthData.AccessToken),
                 cpr::Header{ { "Authorization", AuthHeader } }
             );
         }
@@ -49,7 +49,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAccount, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/%s", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -61,7 +61,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAccountExternalAuths, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/%s/externalAuths", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}/externalAuths", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -91,7 +91,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAccounts::Account, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/%s", Id.c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}", Id),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -103,7 +103,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAccounts::Account, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/displayName/%s", DisplayName.c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/displayName/{}", DisplayName),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -115,7 +115,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAccounts::Account, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/email/%s", Email.c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/email/{}", Email),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -127,7 +127,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetDeviceAuths, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}/deviceAuth", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -139,7 +139,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetDeviceAuths::DeviceAuth, 200, true>(
             [this]() {
                 return Http::Post(
-                    Http::FormatUrl<Host::Account>("public/account/%s/deviceAuth", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}/deviceAuth", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
                     cpr::Body{ "{}" }
                 );
@@ -152,7 +152,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetExchangeCode, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("oauth/exchange", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("oauth/exchange", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -164,7 +164,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetDefaultBillingAccount, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Account>("public/account/%s/billingaccounts/default", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Account>("public/account/{}/billingaccounts/default", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -176,7 +176,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAssets, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Launcher>("public/assets/%s", Platform.c_str()),
+                    Http::FormatUrl<Host::Launcher>("public/assets/{}", Platform),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "label", Label } }
                 );
@@ -189,7 +189,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetLauncherDownloadInfo::BuildStatus, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Launcher>("public/assets/info/launcher/%s", CurrentVersion.c_str()),
+                    Http::FormatUrl<Host::Launcher>("public/assets/info/launcher/{}", CurrentVersion),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -201,7 +201,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetLauncherDownloadInfo, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/%s/launcher", Platform.c_str()),
+                    Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/{}/launcher", Platform),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
                     cpr::Parameters{ { "label", Label }, { "clientVersion", ClientVersion.value_or("") }, { "machineId", MachineId.value_or("") } }
                 );
@@ -214,7 +214,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetDownloadInfo, 200, false>(
             [&, this]() {
                 return Http::Post(
-                    Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/%s/catalogItem/%s/app/%s/label/%s", Platform.c_str(), CatalogItemId.c_str(), AppName.c_str(), Label.c_str()),
+                    Http::FormatUrl<Host::Launcher>("public/assets/v2/platform/{}/catalogItem/{}/app/{}/label/{}", Platform, CatalogItemId, AppName, Label),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
                     cpr::Body{ "{}" }
                 );
@@ -250,7 +250,7 @@ namespace EGL3::Web::Epic {
                 }
 
                 return Http::Get(
-                    Http::FormatUrl<Host::Catalog>("shared/namespace/%s/bulk/items", Namespace.c_str()),
+                    Http::FormatUrl<Host::Catalog>("shared/namespace/{}/bulk/items", Namespace),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     Parameters
                 );
@@ -263,7 +263,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetEntitlements, 200, true>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Entitlement>("account/%s/entitlements", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Entitlement>("account/{}/entitlements", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "start", std::to_string(Start) }, { "count", std::to_string(Count) } }
                 );
@@ -276,7 +276,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriendsSummary, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/summary", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/summary", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -289,7 +289,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriends, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -302,7 +302,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriendsRequested, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/incoming", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/incoming", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -315,7 +315,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriendsRequested, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/outgoing", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/outgoing", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -328,7 +328,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriendsSuggested, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/suggested", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/suggested", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -341,7 +341,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetBlockedUsers, 200, true>(
             [this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/blocklist", AuthData.AccountId->c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/blocklist", *AuthData.AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -354,7 +354,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetFriendsSummary::RealFriend, 200, true>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Parameters{ { "displayNames", "true" } }
                 );
@@ -367,7 +367,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Post(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -380,7 +380,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Delete(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -393,7 +393,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Put(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}/alias", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
                     cpr::Body{ Nickname }
                 );
@@ -406,7 +406,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Delete(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/alias", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}/alias", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -419,7 +419,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Put(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}/note", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "text/plain" } },
                     cpr::Body{ Note }
                 );
@@ -432,7 +432,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Delete(
-                    Http::FormatUrl<Host::Friends>("v1/%s/friends/%s/note", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/friends/{}/note", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -445,7 +445,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Post(
-                    Http::FormatUrl<Host::Friends>("v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/blocklist/{}", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -458,7 +458,7 @@ namespace EGL3::Web::Epic {
         return Call<void, 204, true>(
             [&, this]() {
                 return Http::Delete(
-                    Http::FormatUrl<Host::Friends>("v1/%s/blocklist/%s", AuthData.AccountId->c_str(), AccountId.c_str()),
+                    Http::FormatUrl<Host::Friends>("v1/{}/blocklist/{}", *AuthData.AccountId, AccountId),
                     cpr::Header{ { "Authorization", AuthHeader } },
                     cpr::Body{ "" }
                 );
@@ -471,7 +471,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetAvailableSettingValues, 200, true>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Channels>("v1/user/%s/setting/%s/available", AuthData.AccountId->c_str(), Setting.c_str()),
+                    Http::FormatUrl<Host::Channels>("v1/user/{}/setting/{}/available", *AuthData.AccountId, Setting),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
@@ -518,7 +518,7 @@ namespace EGL3::Web::Epic {
                 }
 
                 return Http::Put(
-                    Http::FormatUrl<Host::Channels>("v1/user/%s/setting/%s", AuthData.AccountId->c_str(), Setting.c_str()),
+                    Http::FormatUrl<Host::Channels>("v1/user/{}/setting/{}", *AuthData.AccountId, Setting),
                     cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
                     cpr::Body{ Buf.GetString(), Buf.GetSize() }
                 );
@@ -531,7 +531,7 @@ namespace EGL3::Web::Epic {
         return Call<Responses::GetLightswitchStatus::ServiceStatus, 200, false>(
             [&, this]() {
                 return Http::Get(
-                    Http::FormatUrl<Host::Lightswitch>("service/%s/status", AppName.c_str()),
+                    Http::FormatUrl<Host::Lightswitch>("service/{}/status", AppName),
                     cpr::Header{ { "Authorization", AuthHeader } }
                 );
             }
