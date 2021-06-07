@@ -403,8 +403,6 @@ namespace EGL3::Modules::Friends {
             else {
                 // FriendsResp handling
                 {
-                    FriendsList.ClearFriends();
-
                     // Chunking account ids to send, maximum 100 ids per request
                     std::vector<std::string> AccountIds;
                     AccountIds.reserve(FriendsResp->Friends.size() + 1);
