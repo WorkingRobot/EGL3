@@ -103,7 +103,7 @@ namespace EGL3::Widgets {
         auto& FriendContainer = *(EGL3::Storage::Models::Friend*)Row[Columns.Data];
         auto& Friend = FriendContainer.Get();
 
-        Row[Columns.DisplayNameMarkup] = std::format("{} {}", (std::string)Glib::Markup::escape_text(Friend.GetDisplayName()), (std::string)Glib::Markup::escape_text(Friend.GetSecondaryName()));
+        Row[Columns.DisplayNameMarkup] = std::format("<b>{}</b> <small><i>{}</i></small>", (std::string)Glib::Markup::escape_text(Friend.GetDisplayName()), (std::string)Glib::Markup::escape_text(Friend.GetSecondaryName()));
 
         Row[Columns.KairosAvatar] = Friend.GetKairosAvatar();
         Row[Columns.KairosBackground] = Friend.GetKairosBackground();
