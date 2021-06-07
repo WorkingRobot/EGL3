@@ -182,17 +182,6 @@ namespace EGL3::Service {
         ZeroMemory(Buffer, 4096);
     }
 
-    static inline BOOLEAN ExceptionFilter(ULONG Code, PEXCEPTION_POINTERS Pointers,
-        PUINT_PTR PDataAddress)
-    {
-        if (EXCEPTION_IN_PAGE_ERROR != Code)
-            return EXCEPTION_CONTINUE_SEARCH;
-
-        *PDataAddress = 2 <= Pointers->ExceptionRecord->NumberParameters ?
-            Pointers->ExceptionRecord->ExceptionInformation[1] : 0;
-        return EXCEPTION_EXECUTE_HANDLER;
-    }
-
     static BOOLEAN ReadCallback(SPD_STORAGE_UNIT* StorageUnit,
         PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
         SPD_STORAGE_UNIT_STATUS* Status) noexcept

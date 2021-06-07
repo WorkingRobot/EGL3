@@ -49,8 +49,8 @@ VOID SvcInit(DWORD argc, LPSTR* argv)
         return;
     }
 
-    // Minimum of 64 MB, maximum of 2 GB
-    if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 31, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
+    // Minimum of 64 MB, maximum of 256 MB
+    if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 28, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
         SvcReportEvent("SetProcessWorkingSetSizeEx");
     }
 
@@ -156,8 +156,8 @@ namespace EGL3::Service {
 
     int RunUsermode()
     {
-        // Minimum of 64 MB, maximum of 2 GB
-        if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 31, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
+        // Minimum of 64 MB, maximum of 256 MB
+        if (!SetProcessWorkingSetSizeEx(GetCurrentProcess(), 1ull << 26, 1ull << 28, QUOTA_LIMITS_HARDWS_MIN_DISABLE | QUOTA_LIMITS_HARDWS_MAX_ENABLE)) {
             printf("Could not set working size\n");
         }
 
