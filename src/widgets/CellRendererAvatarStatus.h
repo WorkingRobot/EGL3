@@ -4,7 +4,7 @@
 #include "../utils/Callback.h"
 
 namespace EGL3::Widgets {
-    template<class Fore, class Back, class Icon>
+    template<class ForeV, class BackV, class IconV>
     class CellRendererAvatarStatus : public Gtk::CellRenderer
     {
         struct PropDisabled {
@@ -12,9 +12,9 @@ namespace EGL3::Widgets {
         };
 
     public:
-        using ForeT = std::conditional_t<std::is_void_v<Fore>, PropDisabled, Fore>;
-        using BackT = std::conditional_t<std::is_void_v<Back>, PropDisabled, Back>;
-        using IconT = std::conditional_t<std::is_void_v<Icon>, PropDisabled, Icon>;
+        using ForeT = std::conditional_t<std::is_void_v<ForeV>, PropDisabled, ForeV>;
+        using BackT = std::conditional_t<std::is_void_v<BackV>, PropDisabled, BackV>;
+        using IconT = std::conditional_t<std::is_void_v<IconV>, PropDisabled, IconV>;
 
         CellRendererAvatarStatus(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache, int GroundSize, int IconSize, int CellSize) :
             Glib::ObjectBase(typeid(CellRendererAvatarStatus)),
@@ -123,13 +123,20 @@ namespace EGL3::Widgets {
             }
 
             if constexpr (IconEnabled) {
-                if (auto IconPixbuf = ImageCache.TryGetOrQueueImage(GetIconUrl(prop_icon.get_value()), GetIconUrl(DefaultIcon), IconSize, IconSize, ImageDispatcher)) {
-                    cr->save();
-                    cr->translate(cell_area.get_x() + cell_area.get_width() - IconOutputSize, cell_area.get_y() + cell_area.get_height() - IconOutputSize);
-                    cr->scale(IconOutputSize / IconPixbuf->get_width(), IconOutputSize / IconPixbuf->get_height());
-                    Gdk::Cairo::set_source_pixbuf(cr, IconPixbuf, 0, 0);
-                    cr->paint();
-                    cr->restore();
+                auto Icon = prop_icon.get_value();
+                bool ShouldRender = true;
+                if constexpr (std::is_same_v<IconT, std::string>) {
+                    ShouldRender = !Icon.empty();
+                }
+                if (ShouldRender) {
+                    if (auto IconPixbuf = ImageCache.TryGetOrQueueImage(GetIconUrl(Icon), GetIconUrl(DefaultIcon), IconSize, IconSize, ImageDispatcher)) {
+                        cr->save();
+                        cr->translate(cell_area.get_x() + cell_area.get_width() - IconOutputSize, cell_area.get_y() + cell_area.get_height() - IconOutputSize);
+                        cr->scale(IconOutputSize / IconPixbuf->get_width(), IconOutputSize / IconPixbuf->get_height());
+                        Gdk::Cairo::set_source_pixbuf(cr, IconPixbuf, 0, 0);
+                        cr->paint();
+                        cr->restore();
+                    }
                 }
             }
         }
@@ -146,9 +153,9 @@ namespace EGL3::Widgets {
         BackT DefaultBackground;
         IconT DefaultIcon;
 
-        static constexpr bool ForegroundEnabled = !std::is_void_v<Fore>;
-        static constexpr bool BackgroundEnabled = !std::is_void_v<Back>;
-        static constexpr bool IconEnabled = !std::is_void_v<Icon>;
+        static constexpr bool ForegroundEnabled = !std::is_void_v<ForeV>;
+        static constexpr bool BackgroundEnabled = !std::is_void_v<BackV>;
+        static constexpr bool IconEnabled = !std::is_void_v<IconV>;
 
         Glib::Property<ForeT> prop_foreground;
         Glib::Property<BackT> prop_background;
