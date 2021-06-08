@@ -100,10 +100,11 @@ namespace EGL3::Web::Xmpp::Json {
         case Utils::Crc32("PS5"):
             return std::format("{}platforms/ps4.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("XBL"):
+        case Utils::Crc32("XSX"):
             return std::format("{}platforms/xbox.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("WIN"):
         case Utils::Crc32("MAC"):
-        case Utils::Crc32("LNX"): // In the future? :)
+        case Utils::Crc32("LIN"): // In the future? :)
             return std::format("{}platforms/pc.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("IOS"):
         case Utils::Crc32("AND"):
