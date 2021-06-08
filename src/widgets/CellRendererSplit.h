@@ -34,46 +34,50 @@ namespace EGL3::Widgets {
     protected:
         void get_preferred_width_vfunc(Gtk::Widget& widget, int& minimum_width, int& natural_width) const override
         {
-            RendererA.get_preferred_width(widget, minimum_width, natural_width);
+            int minA, natA;
+            RendererA.get_preferred_width(widget, minA, natA);
 
-            int minimum_widthB, natural_widthB;
-            RendererB.get_preferred_width(widget, minimum_widthB, natural_widthB);
+            int minB, natB;
+            RendererB.get_preferred_width(widget, minB, natB);
 
-            minimum_width = std::max(minimum_width, minimum_widthB);
-            natural_width = std::max(natural_width, natural_widthB);
+            minimum_width = std::max(minA, minB);
+            natural_width = std::max(natA, natB);
         }
 
         void get_preferred_width_for_height_vfunc(Gtk::Widget& widget, int height, int& minimum_width, int& natural_width) const override
         {
-            RendererA.get_preferred_width_for_height(widget, height, minimum_width, natural_width);
+            int minA, natA;
+            RendererA.get_preferred_width_for_height(widget, height, minA, natA);
 
-            int minimum_widthB, natural_widthB;
-            RendererB.get_preferred_width_for_height(widget, height, minimum_widthB, natural_widthB);
+            int minB, natB;
+            RendererB.get_preferred_width_for_height(widget, height, minB, natB);
 
-            minimum_width = std::max(minimum_width, minimum_widthB);
-            natural_width = std::max(natural_width, natural_widthB);
+            minimum_width = std::max(minA, minB);
+            natural_width = std::max(natA, natB);
         }
 
         void get_preferred_height_vfunc(Gtk::Widget& widget, int& minimum_height, int& natural_height) const override
         {
-            RendererA.get_preferred_height(widget, minimum_height, natural_height);
+            int minA, natA;
+            RendererA.get_preferred_height(widget, minA, natA);
 
-            int minimum_heightB, natural_heightB;
-            RendererB.get_preferred_height(widget, minimum_heightB, natural_heightB);
+            int minB, natB;
+            RendererB.get_preferred_height(widget, minB, natB);
 
-            minimum_height += minimum_heightB;
-            natural_height += natural_heightB;
+            minimum_height = minA + minB;
+            natural_height = natA + natB;
         }
 
         void get_preferred_height_for_width_vfunc(Gtk::Widget& widget, int width, int& minimum_height, int& natural_height) const override
         {
-            RendererA.get_preferred_height_for_width(widget, width, minimum_height, natural_height);
+            int minA, natA;
+            RendererA.get_preferred_height_for_width(widget, width, minA, natA);
 
-            int minimum_heightB, natural_heightB;
-            RendererB.get_preferred_height_for_width(widget, width, minimum_heightB, natural_heightB);
+            int minB, natB;
+            RendererB.get_preferred_height_for_width(widget, width, minB, natB);
 
-            minimum_height += minimum_heightB;
-            natural_height += natural_heightB;
+            minimum_height = minA + minB;
+            natural_height = natA + natB;
         }
 
         virtual void connect_props() = 0;

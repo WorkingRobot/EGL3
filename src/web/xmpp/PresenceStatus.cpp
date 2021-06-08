@@ -116,4 +116,35 @@ namespace EGL3::Web::Xmpp::Json {
             return std::format("{}platforms/earth.png", Web::GetHostUrl<Web::Host::EGL3>());
         }
     }
+
+    const char* PresenceStatus::GetPlatformName(const std::string_view Platform)
+    {
+        switch (Utils::Crc32(Platform.data(), Platform.size()))
+        {
+        case Utils::Crc32("PSN"):
+            return "PS4";
+        case Utils::Crc32("PS5"):
+            return "PS5";
+        case Utils::Crc32("XBL"):
+            return "Xbox One";
+        case Utils::Crc32("XSX"):
+            return "Xbox Series X";
+        case Utils::Crc32("WIN"):
+            return "Windows";
+        case Utils::Crc32("MAC"):
+            return "macOS";
+        case Utils::Crc32("LIN"): // In the future? :)
+            return "Linux";
+        case Utils::Crc32("IOS"):
+            return "iOS";
+        case Utils::Crc32("AND"):
+            return "Android";
+        case Utils::Crc32("SWT"):
+            return "Switch";
+        case Utils::Crc32("OTHER"):
+            return "Other";
+        default:
+            return "Unknown";
+        }
+    }
 }

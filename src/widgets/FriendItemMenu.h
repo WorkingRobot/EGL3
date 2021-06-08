@@ -26,10 +26,14 @@ namespace EGL3::Widgets {
 
         void PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget);
 
+        void PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget, Gdk::Rectangle& TargetRect);
+
         Utils::Callback<void(ClickAction, const Storage::Models::Friend&)> OnAction;
 
     private:
         void Construct();
+
+        void SetupFriendForPopup(const Storage::Models::Friend& Friend);
 
         const Storage::Models::Friend* SelectedFriend;
 

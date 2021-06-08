@@ -7,43 +7,22 @@ namespace EGL3::Widgets {
         Construct();
     }
 
-    FriendItemMenu::operator Gtk::Menu&() {
+    FriendItemMenu::operator Gtk::Menu&()
+    {
         return Container;
     }
 
     void FriendItemMenu::PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget) {
-        SelectedFriend = &Friend;
-
-        ItemChat.hide();
-        ItemRemove.hide();
-        ItemNickname.hide();
-        ItemAccept.hide();
-        ItemDecline.hide();
-        ItemCancel.hide();
-        ItemUnblock.hide();
-        ItemBlock.show();
-
-        switch (SelectedFriend->GetType())
-        {
-        case Storage::Models::FriendType::NORMAL:
-            ItemChat.show();
-            ItemRemove.show();
-            ItemNickname.show();
-            break;
-        case Storage::Models::FriendType::INBOUND:
-            ItemAccept.show();
-            ItemDecline.show();
-            break;
-        case Storage::Models::FriendType::OUTBOUND:
-            ItemCancel.show();
-            break;
-        case Storage::Models::FriendType::BLOCKED:
-            ItemBlock.hide();
-            ItemUnblock.show();
-            break;
-        }
+        SetupFriendForPopup(Friend);
 
         Container.popup_at_widget(&TargetWidget, Gdk::GRAVITY_SOUTH_WEST, Gdk::GRAVITY_NORTH_WEST, nullptr);
+    }
+
+    void FriendItemMenu::PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget, Gdk::Rectangle& TargetRect)
+    {
+        SetupFriendForPopup(Friend);
+
+        Container.popup_at_rect(TargetWidget.get_window(), TargetRect, Gdk::GRAVITY_SOUTH_WEST, Gdk::GRAVITY_NORTH_WEST, nullptr);
     }
 
     void FriendItemMenu::Construct() {
@@ -82,5 +61,39 @@ namespace EGL3::Widgets {
         Container.add(ItemCopyId);
 
         Container.show_all();
+    }
+
+    void FriendItemMenu::SetupFriendForPopup(const Storage::Models::Friend& Friend)
+    {
+        SelectedFriend = &Friend;
+
+        ItemChat.hide();
+        ItemRemove.hide();
+        ItemNickname.hide();
+        ItemAccept.hide();
+        ItemDecline.hide();
+        ItemCancel.hide();
+        ItemUnblock.hide();
+        ItemBlock.show();
+
+        switch (SelectedFriend->GetType())
+        {
+        case Storage::Models::FriendType::NORMAL:
+            ItemChat.show();
+            ItemRemove.show();
+            ItemNickname.show();
+            break;
+        case Storage::Models::FriendType::INBOUND:
+            ItemAccept.show();
+            ItemDecline.show();
+            break;
+        case Storage::Models::FriendType::OUTBOUND:
+            ItemCancel.show();
+            break;
+        case Storage::Models::FriendType::BLOCKED:
+            ItemBlock.hide();
+            ItemUnblock.show();
+            break;
+        }
     }
 }

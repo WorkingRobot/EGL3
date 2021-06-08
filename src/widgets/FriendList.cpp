@@ -7,12 +7,77 @@ namespace EGL3::Widgets {
         ImageCache(ImageCache),
         TreeView(TreeView),
         AvatarRenderer(TreeView, ImageCache, 64, 24, 72),
-        ProductRenderer(TreeView, ImageCache, 64, 24, 72)
+        ProductRenderer(TreeView, ImageCache, 64, 24, 72),
+        FriendTooltipped([](Storage::Models::Friend&, CellType, int, int, const Glib::RefPtr<Gtk::Tooltip>&) { return false; })
     {
         ListStore = Gtk::ListStore::create(Columns);
         ListFilter = Gtk::TreeModelFilter::create(ListStore);
 
         TreeView.set_model(ListFilter);
+        TreeView.set_headers_visible(false);
+        TreeView.set_fixed_height_mode(true);
+        TreeView.signal_query_tooltip().connect([this](int X, int Y, bool KeyboardTooltip, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
+            Gtk::TreeModel::Path Path;
+            Gtk::TreeViewColumn* Column;
+            int CellX = 0, CellY = 0;
+            if (KeyboardTooltip) {
+                this->TreeView.get_cursor(Path, Column);
+                if (Path.empty()) {
+                    return false;
+                }
+            }
+            else {
+                int BinX, BinY;
+                this->TreeView.convert_widget_to_bin_window_coords(X, Y, BinX, BinY);
+                this->TreeView.is_blank_at_pos(BinX, BinY, Path, Column, CellX, CellY);
+                if (Path.empty()) {
+                    return false;
+                }
+            }
+
+            auto Itr = ListFilter->get_iter(Path);
+            if (!Itr) {
+                return false;
+            }
+
+            auto& Row = *Itr;
+            auto FriendPtr = (Storage::Models::Friend*)Row[Columns.Data];
+            if (FriendPtr) {
+                auto Renderer = Column->get_first_cell();
+                if (FriendTooltipped(*FriendPtr, GetCellType(Renderer), CellX, CellY, Tooltip)) {
+                    this->TreeView.set_tooltip_cell(Tooltip, &Path, Column, Renderer);
+                    return true;
+                }
+            }
+            return false;
+        });
+        TreeView.set_has_tooltip(true);
+        TreeView.signal_button_release_event().connect([this](GdkEventButton* Event) {
+            Gtk::TreeModel::Path Path;
+            Gtk::TreeViewColumn* Column;
+            int CellX = 0, CellY = 0;
+
+            int BinX, BinY;
+            this->TreeView.convert_widget_to_bin_window_coords(Event->x, Event->y, BinX, BinY);
+            this->TreeView.is_blank_at_pos(BinX, BinY, Path, Column, CellX, CellY);
+            if (Path.empty()) {
+                return false;
+            }
+
+            auto Itr = ListFilter->get_iter(Path);
+            if (!Itr) {
+                return false;
+            }
+
+            auto& Row = *Itr;
+            auto FriendPtr = (Storage::Models::Friend*)Row[Columns.Data];
+            if (FriendPtr) {
+                Gdk::Rectangle Rect;
+                this->TreeView.get_background_area(Path, *this->TreeView.get_column(0), Rect);
+                FriendClicked(*FriendPtr, GetCellType(Column->get_first_cell()), CellX, CellY, Rect);
+            }
+            return false;
+        });
 
         SetupColumns();
     }
@@ -28,7 +93,7 @@ namespace EGL3::Widgets {
         auto Ref = Gtk::TreeRowReference(ListStore, ListStore->get_path(Itr));
         auto& Row = *Itr;
         Row[Columns.Data] = &Friend;
-        Friend.Get().OnUpdate.connect(
+        Row[Columns.UpdateSlot] = Friend.Get().OnUpdate.connect(
             [this, Ref = std::move(Ref)]() {
                 Glib::signal_idle().connect_once(
                     [this, &Ref]() {
@@ -47,8 +112,13 @@ namespace EGL3::Widgets {
 
     void FriendList::Resort()
     {
-        ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
-        ListStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
+        ListStore->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
+        ListStore->set_sort_column(Gtk::TreeSortable::DEFAULT_SORT_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
+    }
+
+    Gtk::TreeView& FriendList::Get()
+    {
+        return TreeView;
     }
 
     void FriendList::SetupColumns()
@@ -150,6 +220,22 @@ namespace EGL3::Widgets {
                 Row[Columns.Description] = "Unknown User";
                 break;
             }
+        }
+    }
+
+    FriendList::CellType FriendList::GetCellType(const Gtk::CellRenderer* Renderer) const noexcept
+    {
+        if (Renderer == &AvatarRenderer) {
+            return CellType::Avatar;
+        }
+        else if (Renderer == &CenterTextRenderer) {
+            return CellType::CenterText;
+        }
+        else if (Renderer == &ProductRenderer) {
+            return CellType::Product;
+        }
+        else {
+            return CellType::Invalid;
         }
     }
 }

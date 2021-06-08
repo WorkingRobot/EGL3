@@ -15,6 +15,55 @@ namespace EGL3::Modules::Friends {
         CurrentUserWidget(CurrentUserModel, ImageCache),
         FilterEntry(Ctx.GetWidget<Gtk::SearchEntry>("FriendsFilterEntry"))
     {
+        FriendList.FriendClicked.Set([this](Storage::Models::Friend& Friend, Widgets::FriendList::CellType Cell, int CellX, int CellY, Gdk::Rectangle& PopupRect) {
+            FriendMenu.PopupMenu(Friend, FriendList.Get(), PopupRect);
+        });
+
+        FriendList.FriendTooltipped.Set([this](Storage::Models::Friend& Friend, Widgets::FriendList::CellType Cell, int, int, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
+            switch (Cell)
+            {
+            // TODO: connect this to set the avatar tooltip to the character name instead of show status (with game files?)
+            case Widgets::FriendList::CellType::Avatar:
+            {
+                if (Friend.GetType() == FriendType::NORMAL) {
+                    auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
+                    Tooltip->set_text(Json::ShowStatusToString(FriendData.GetShowStatus()));
+                }
+                else {
+                    Tooltip->set_text(Json::ShowStatusToString(Json::ShowStatus::Offline));
+                }
+                return true;
+            }
+            case Widgets::FriendList::CellType::CenterText:
+            {
+                if (Friend.GetType() == FriendType::NORMAL) {
+                    auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
+                    auto& Status = FriendData.GetStatus();
+                    if (!Status.empty()) {
+                        Tooltip->set_text(FriendData.GetStatus());
+                        return true;
+                    }
+                }
+                return false;
+            }
+            case Widgets::FriendList::CellType::Product:
+            {
+                if (Friend.GetType() == FriendType::NORMAL) {
+                    auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
+                    auto Platform = FriendData.GetPlatform();
+                    if (!Platform.empty()) {
+                        Tooltip->set_text(Json::PresenceStatus::GetPlatformName(Platform));
+                        return true;
+                    }
+                    return true;
+                }
+                return false;
+            }
+            default:
+                return false;
+            }
+        });
+
         FriendMenu.OnAction.Set([this](auto Action, const auto& Friend) { FriendMenuAction(Action, Friend); });
 
         FilterEntry.signal_changed().connect([this]() { FriendList.Refilter(); FriendList.Resort(); });

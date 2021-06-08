@@ -34,6 +34,8 @@ namespace EGL3::Web::Xmpp::Json {
         // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
         static std::string GetPlatformImageUrl(const std::string_view Platform);
 
+        static const char* GetPlatformName(const std::string_view Platform);
+
         PARSE_DEFINE(PresenceStatus)
             PARSE_ITEM_DEF("Status", Status, "")
             PARSE_ITEM_DEF("bIsPlaying", Playing, false)

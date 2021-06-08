@@ -9,6 +9,15 @@
 namespace EGL3::Widgets {
     class FriendList {
     public:
+        enum class CellType : uint8_t {
+            Avatar,
+            CenterText,
+            Product,
+
+            Count,
+            Invalid
+        };
+
         FriendList(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache);
 
         template<class Sort, class Filt>
@@ -35,7 +44,7 @@ namespace EGL3::Widgets {
 
                 return Comp._Value;
             });
-            ListStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
+            ListStore->set_sort_column(Gtk::TreeSortable::DEFAULT_SORT_COLUMN_ID, Gtk::SortType::SORT_DESCENDING);
 
             ListFilter->set_visible_func([this, Filter](const Gtk::TreeModel::const_iterator& Itr) {
                 auto& Row = *Itr;
@@ -57,12 +66,17 @@ namespace EGL3::Widgets {
 
         void Resort();
 
-        Utils::Callback<void(Storage::Models::Friend&)> FriendClicked;
+        Gtk::TreeView& Get();
+
+        Utils::Callback<void(Storage::Models::Friend&, CellType, int, int, Gdk::Rectangle&)> FriendClicked;
+        Utils::Callback<bool(Storage::Models::Friend&, CellType, int, int, const Glib::RefPtr<Gtk::Tooltip>&)> FriendTooltipped;
 
     private:
         void SetupColumns();
 
         void UpdateFriendRow(const Gtk::TreeRow& Row);
+
+        CellType GetCellType(const Gtk::CellRenderer* Renderer) const noexcept;
 
         Modules::ImageCacheModule& ImageCache;
 
@@ -75,11 +89,28 @@ namespace EGL3::Widgets {
         CellRendererCenterText CenterTextRenderer;
         CellRendererAvatarStatus<std::string, void, std::string> ProductRenderer;
 
+        template<class Signal>
+        struct SlotRAII {
+            SlotRAII(const sigc::slot_iterator<Signal>& Itr) :
+                Base(new sigc::slot_iterator<Signal>(Itr), [](sigc::slot_iterator<Signal>* Ptr) {
+                    (*Ptr)->disconnect();
+                    delete Ptr;
+                })
+            {
+
+            }
+
+            SlotRAII() = default;
+
+            std::shared_ptr<sigc::slot_iterator<Signal>> Base;
+        };
+
         struct ModelColumns : public Gtk::TreeModel::ColumnRecord
         {
             ModelColumns()
             {
                 add(Data);
+                add(UpdateSlot);
                 add(KairosAvatar);
                 add(KairosBackground);
                 add(Status);
@@ -90,6 +121,7 @@ namespace EGL3::Widgets {
             }
 
             Gtk::TreeModelColumn<Storage::Models::Friend*> Data;
+            Gtk::TreeModelColumn<SlotRAII<sigc::slot<void()>>> UpdateSlot;
             Gtk::TreeModelColumn<Glib::ustring> KairosAvatar;
             Gtk::TreeModelColumn<Glib::ustring> KairosBackground;
             Gtk::TreeModelColumn<EGL3::Web::Xmpp::Json::ShowStatus> Status;
