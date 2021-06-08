@@ -27,8 +27,9 @@ namespace EGL3::Web::Xmpp::Json {
     std::weak_ordering ResourceId::operator<=>(const ResourceId& that) const {
         if (auto cmp = CompareApps(AppId, that.AppId); cmp != 0)
             return cmp;
-        if (auto cmp = ComparePlatforms(Platform, that.Platform); cmp != 0)
-            return cmp;
+        // No need to really sort by platform, you're all playing the same game anyway
+        //if (auto cmp = ComparePlatforms(Platform, that.Platform); cmp != 0)
+        //    return cmp;
 
         return std::weak_ordering::equivalent;
     }
