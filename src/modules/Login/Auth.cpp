@@ -101,11 +101,8 @@ namespace EGL3::Modules::Login {
     void AuthModule::OpenSignInPage()
     {
         auto Result = InstallSignInProtocol();
-        if (EGL3_ENSURE(Result == ERROR_SUCCESS, LogLevel::Error, "Could not set intent protocol in registry")) {
+        if (EGL3_ENSUREF(Result == ERROR_SUCCESS, LogLevel::Error, "Could not set intent protocol in registry (GLE: {})", Result)) {
             Utils::OpenInBrowser("https://www.epicgames.com/id/login?client_id=3f69e56c7649492c8cc29f1af08a8a12&response_type=code&display=popup&prompt=login");
-        }
-        else {
-            printf("GLE = %d\n", Result);
         }
     }
 

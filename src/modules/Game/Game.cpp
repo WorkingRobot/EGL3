@@ -77,7 +77,7 @@ namespace EGL3::Modules::Game {
         UpdateCheck.OnUpdateAvailable.connect([this](Storage::Game::GameId Id, const Storage::Models::VersionData& Data) {
             if (Id == PrimaryGame) {
                 InstallStateHolder.SetHeldState(State::Update);
-                printf("Update available to %zu (%s)\n", Data.VersionNum, Data.VersionHR.c_str());
+                EGL3_LOGF(LogLevel::Info, "Update available to {} ({})", Data.VersionHR, Data.VersionNum);
             }
         });
 

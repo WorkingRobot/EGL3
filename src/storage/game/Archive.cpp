@@ -1,5 +1,6 @@
 #include "Archive.h"
 
+#include "../../utils/formatters/Path.h"
 #include "../../utils/Log.h"
 #include "../../utils/Align.h"
 #include "ArchiveList.h"
@@ -52,7 +53,7 @@ namespace EGL3::Storage::Game {
         case ArchiveMode::Load:
         case ArchiveMode::Read:
         {
-            printf("Opening %s\n", Path.string().c_str());
+            EGL3_LOGF(LogLevel::Info, "Opening {}", Path);
             if (!EGL3_ENSURE(std::filesystem::is_regular_file(Path, Code), LogLevel::Error, "Archive file does not exist")) {
                 return;
             }

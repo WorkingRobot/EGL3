@@ -81,9 +81,6 @@ namespace EGL3 {
 
 #ifdef USE_SUBSYSTEM_CONSOLE
 
-#include "utils/Log.h"
-#include <iostream>
-
 int main(int argc, char* argv[]) {
     return EGL3::Start();
 }

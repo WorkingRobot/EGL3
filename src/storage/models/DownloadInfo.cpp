@@ -116,7 +116,7 @@ namespace EGL3::Storage::Models {
 
                 auto Archive = GameConfig->OpenArchive();
                 if (Archive == nullptr) {
-                    printf("Couldn't open for writing\n");
+                    EGL3_LOG(LogLevel::Error, "Couldn't open for writing");
                     return;
                 }
 
@@ -378,7 +378,8 @@ namespace EGL3::Storage::Models {
         else {
             // remove unused deleted chunks later, that's too much work atm
             // for now, we only replace them
-            printf("Done, %zu to delete though\n", Data.DeletedChunkIdxs.size());
+            auto Size = Data.DeletedChunkIdxs.size();
+            EGL3_ENSUREF(Size == 0, LogLevel::Warning, "{} undeleted chunks remain. This is untested, in the worst case, your install could become corrupted", Size);
             return false;
         }
     }

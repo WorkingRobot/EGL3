@@ -70,10 +70,19 @@ namespace EGL3::Storage::Models {
 
     void PlayInfo::OnPlay(Web::Epic::EpicClientAuthed& Client)
     {
-        // TODO: make this a retry system?
-        while (Game.GetMountPath().empty()) {
-            printf("Searching for mounted drive\n");
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        {
+            int Idx;
+            for (Idx = 0; Idx < 15 && Game.GetMountPath().empty(); ++Idx) {
+                if (Idx == 0) {
+                    EGL3_LOG(LogLevel::Info, "Searching for mounted drive...");
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+            if (Game.GetMountPath().empty()) {
+                EGL3_LOG(LogLevel::Error, "Could not find mounted drive. Your archive may be corrupt, or the service may be misconfigured. I've yet to add anything to help people recover from this error.");
+                return;
+            }
+            EGL3_LOGF(LogLevel::Info, "Found mounted drive after {} tries", Idx + 1);
         }
 
         std::string ExchangeCode;
@@ -126,7 +135,7 @@ namespace EGL3::Storage::Models {
 
         auto ExePath = Game.GetMountPath() / Game.GetManifestData()->GetLaunchExe();
         auto CommandLineString = std::format("\"{}\" {}", ExePath, CommandLine);
-        printf("%s\n", CommandLineString.c_str());
+        EGL3_LOGF(LogLevel::Info, "Launching {} {} ({})", Game.GetHeader()->GetGame(), Game.GetHeader()->GetVersionHR(), Game.GetHeader()->GetVersionNum());
         PROCESS_INFORMATION ProcInfo;
 
         BOOL Ret = CreateProcess(
@@ -141,12 +150,12 @@ namespace EGL3::Storage::Models {
             &ProcInfo
         );
         if (!Ret) {
-            DWORD ErrorCode = GetLastError();
-            printf("%u\n", ErrorCode);
+            EGL3_LOGF(LogLevel::Error, "Failed to launch game (GLE: {})", GetLastError());
+            return;
         }
-        else {
-            CloseHandle(ProcInfo.hThread);
-            ProcessHandle = ProcInfo.hProcess;
-        }
+
+        CloseHandle(ProcInfo.hThread);
+        ProcessHandle = ProcInfo.hProcess;
+        EGL3_LOG(LogLevel::Info, "Launched successfully");
     }
 }

@@ -1,5 +1,8 @@
 #include "Humanize.h"
 
+#include "formatters/WString.h"
+#include "Log.h"
+
 #include <chrono>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -48,8 +51,7 @@ namespace EGL3::Utils {
         auto fmt = GetCurrentNumberFormat();
         fmt.NumDigits = std::max(Precision, 0);
         int64_t BufSize = GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, NULL, 0);
-        if (BufSize == 0) {
-            wprintf(L"Couldn't humanize number (%s) GLE %d\n", ValueString.c_str(), GetLastError());
+        if (!EGL3_ENSUREF(BufSize != 0, LogLevel::Error, "Couldn't humanize number \"{}\" (GLE: {})", ValueString, GetLastError())) {
             return L"";
         }
         auto Buf = std::make_unique<wchar_t[]>(BufSize);

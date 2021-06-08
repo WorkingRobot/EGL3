@@ -38,7 +38,7 @@ namespace EGL3::Modules::Game {
     {
         CHAR FilePath[MAX_PATH];
         if (!GetModuleFileName(NULL, FilePath, MAX_PATH)) {
-            printf("Cannot patch service (%d)\n", GetLastError());
+            EGL3_LOGF(LogLevel::Error, "Could not patch service ({})", GetLastError());
             return GetLastError();
         }
 
