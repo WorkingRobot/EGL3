@@ -52,7 +52,7 @@ namespace EGL3::Modules::Friends {
                 }
             });
 
-            FriendsList.FriendMenuAction.Set([this](auto Action, const auto& Friend) { OnFriendAction(Action, Friend); });
+            FriendsList.FriendMenuAction.Set([this](auto Action, auto& Friend) { OnFriendAction(Action, Friend); });
 
             FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Content) {
                 if (EGL3_VERIFY(XmppClient.has_value(), "Didn't send user message. Xmpp client isn't created yet")) {
@@ -132,7 +132,7 @@ namespace EGL3::Modules::Friends {
         FriendsRealizeDispatcher.emit();
     }
 
-    void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Friend& FriendData) {
+    void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Friend& FriendData) {
         auto& Friend = FriendData.Get();
         switch (Action)
         {
@@ -187,7 +187,7 @@ namespace EGL3::Modules::Friends {
         SwitchStack.set_visible_child(SwitchStackPage3);
     }
 
-    void FriendsModule::OnOpenChatPage(const Friend& FriendData)
+    void FriendsModule::OnOpenChatPage(Friend& FriendData)
     {
         FriendsChat.SetUser(FriendData);
 

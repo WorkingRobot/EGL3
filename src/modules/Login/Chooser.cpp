@@ -1,10 +1,14 @@
 #include "Chooser.h"
 
+#include "../../web/xmpp/PresenceKairosProfile.h"
+
 namespace EGL3::Modules::Login {
+    using namespace Web::Xmpp;
+
     ChooserModule::ChooserModule(ModuleList& Ctx) :
         Icon(Ctx.GetWidget<Gtk::Image>("AccountChooserIcon")),
         TreeView(Ctx.GetWidget<Gtk::TreeView>("AccountChooserTree")),
-        AvatarRenderer(TreeView, Ctx.GetModule<Modules::ImageCacheModule>(), 64),
+        AvatarRenderer(TreeView, Ctx.GetModule<Modules::ImageCacheModule>(), 64, 0, 64),
         RecentlyCleared(true),
         RemoveState(false)
     {
@@ -20,9 +24,14 @@ namespace EGL3::Modules::Login {
             int ColCount = TreeView.append_column("Avatar", AvatarRenderer);
             auto Column = TreeView.get_column(ColCount - 1);
             if (Column) {
-                Column->add_attribute(AvatarRenderer.property_avatar(), Columns.KairosAvatar);
+                Column->add_attribute(AvatarRenderer.property_foreground(), Columns.KairosAvatar);
                 Column->add_attribute(AvatarRenderer.property_background(), Columns.KairosBackground);
             }
+            AvatarRenderer.SetDefaultForeground(Json::PresenceKairosProfile::GetDefaultKairosAvatar());
+            AvatarRenderer.SetDefaultBackground(Json::PresenceKairosProfile::GetDefaultKairosBackground());
+
+            AvatarRenderer.GetForegroundUrl.Set(Json::PresenceKairosProfile::GetKairosAvatarUrl);
+            AvatarRenderer.GetBackgroundUrl.Set(Json::PresenceKairosProfile::GetKairosBackgroundUrl);
         }
 
         {

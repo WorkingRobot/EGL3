@@ -1,10 +1,7 @@
 #pragma once
 
 #include "../../storage/models/Friend.h"
-#include "../../web/epic/EpicClientAuthed.h"
 #include "../../web/xmpp/XmppClient.h"
-#include "../../widgets/CurrentUserItem.h"
-#include "../../widgets/FriendItem.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
@@ -27,7 +24,7 @@ namespace EGL3::Modules::Friends {
 
         void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
 
-        void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, const Storage::Models::Friend& FriendData);
+        void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Storage::Models::Friend& FriendData);
 
         void OnOpenViewFriends();
 
@@ -35,7 +32,7 @@ namespace EGL3::Modules::Friends {
 
         void OnOpenSetNicknamePage(const Storage::Models::Friend& FriendData);
 
-        void OnOpenChatPage(const Storage::Models::Friend& FriendData);
+        void OnOpenChatPage(Storage::Models::Friend& FriendData);
 
         void OnSendFriendRequest();
 

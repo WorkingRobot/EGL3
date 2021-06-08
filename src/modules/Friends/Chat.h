@@ -4,7 +4,7 @@
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
 #include "../../widgets/ChatBubble.h"
-#include "../../widgets/FriendItem.h"
+#include "../../widgets/FriendList.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../ImageCache.h"
@@ -16,7 +16,7 @@ namespace EGL3::Modules::Friends {
     public:
         ChatModule(ModuleList& Ctx);
 
-        void SetUser(const Storage::Models::Friend& Friend);
+        void SetUser(Storage::Models::Friend& Friend);
 
         void ClearUser();
 
@@ -25,8 +25,6 @@ namespace EGL3::Modules::Friends {
         Utils::Callback<void(const std::string& AccountId, const std::string& Content)> SendChatMessage;
 
     private:
-        void OnSelectedFriendUpdate();
-
         void OnNewChatUpdate();
 
         void OnSendMessageClicked();
@@ -44,10 +42,8 @@ namespace EGL3::Modules::Friends {
         Gtk::EventBox& ChatEntryContainer;
         Gtk::Entry& ChatEntry;
 
-        const Storage::Models::Friend* SelectedFriend;
-        Gtk::Box& SelectedFriendContainer;
-        Widgets::FriendItem SelectedFriendWidget;
-        sigc::signal<void()>::iterator SelectedFriendUpdateConn;
+        Widgets::FriendList SelectedUserList;
+        Storage::Models::Friend* SelectedUserModel;
 
         std::vector<std::unique_ptr<Widgets::ChatBubble>> ChatBubbles;
         std::mutex NewChatMutex;

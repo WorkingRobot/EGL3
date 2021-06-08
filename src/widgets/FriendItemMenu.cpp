@@ -12,13 +12,13 @@ namespace EGL3::Widgets {
         return Container;
     }
 
-    void FriendItemMenu::PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget) {
+    void FriendItemMenu::PopupMenu(Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget) {
         SetupFriendForPopup(Friend);
 
         Container.popup_at_widget(&TargetWidget, Gdk::GRAVITY_SOUTH_WEST, Gdk::GRAVITY_NORTH_WEST, nullptr);
     }
 
-    void FriendItemMenu::PopupMenu(const Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget, Gdk::Rectangle& TargetRect)
+    void FriendItemMenu::PopupMenu(Storage::Models::Friend& Friend, Gtk::Widget& TargetWidget, Gdk::Rectangle& TargetRect)
     {
         SetupFriendForPopup(Friend);
 
@@ -63,7 +63,7 @@ namespace EGL3::Widgets {
         Container.show_all();
     }
 
-    void FriendItemMenu::SetupFriendForPopup(const Storage::Models::Friend& Friend)
+    void FriendItemMenu::SetupFriendForPopup(Storage::Models::Friend& Friend)
     {
         SelectedFriend = &Friend;
 

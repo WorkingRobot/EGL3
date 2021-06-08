@@ -2,7 +2,6 @@
 
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
-#include "../../widgets/CurrentUserItem.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../../widgets/FriendList.h"
 #include "../ModuleList.h"
@@ -32,7 +31,7 @@ namespace EGL3::Modules::Friends {
 
         void RefreshList();
 
-        Utils::Callback<void(Widgets::FriendItemMenu::ClickAction, const Storage::Models::Friend&)> FriendMenuAction;
+        Utils::Callback<void(Widgets::FriendItemMenu::ClickAction, Storage::Models::Friend&)> FriendMenuAction;
 
     private:
         std::weak_ordering CompareFriends(Storage::Models::Friend& A, Storage::Models::Friend& B) const;
@@ -48,9 +47,8 @@ namespace EGL3::Modules::Friends {
 
         Widgets::FriendItemMenu FriendMenu;
 
-        Gtk::Box& CurrentUserContainer;
+        Widgets::FriendList CurrentUserList;
         Storage::Models::Friend CurrentUserModel;
-        Widgets::CurrentUserItem CurrentUserWidget;
 
         Gtk::SearchEntry& FilterEntry;
 

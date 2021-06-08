@@ -2,7 +2,7 @@
 
 #include "../ModuleList.h"
 #include "../../storage/models/Authorization.h"
-#include "../../widgets/CellRendererKairosAvatar.h"
+#include "../../widgets/CellRendererAvatarStatus.h"
 #include "../../widgets/CellRendererPixbufScalable.h"
 #include "../../utils/Callback.h"
 
@@ -39,7 +39,7 @@ namespace EGL3::Modules::Login {
         Gtk::Image& Icon;
         Gtk::TreeView& TreeView;
 
-        Widgets::CellRendererKairosAvatar AvatarRenderer;
+        Widgets::CellRendererAvatarStatus<std::string, std::string, void> AvatarRenderer;
         Gtk::CellRendererText UsernameRenderer;
         Widgets::CellRendererPixbufScalable ButtonRenderer;
         Glib::RefPtr<Gtk::ListStore> ListStore;

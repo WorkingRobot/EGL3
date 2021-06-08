@@ -10,12 +10,9 @@ namespace EGL3::Modules::Friends {
         ChatBox(Ctx.GetWidget<Gtk::Box>("FriendsChatBox")),
         ChatEntryContainer(Ctx.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
         ChatEntry(Ctx.GetWidget<Gtk::Entry>("FriendsChatEntry")),
-        SelectedFriendContainer(Ctx.GetWidget<Gtk::Box>("FriendsChatSelectedUserContainer")),
-        SelectedFriendWidget(ImageCache),
-        SelectedFriend(nullptr)
+        SelectedUserList(Ctx.GetWidget<Gtk::TreeView>("FriendsChatTree"), ImageCache),
+        SelectedUserModel(nullptr)
     {
-        SelectedFriendContainer.pack_start(SelectedFriendWidget, true, true);
-
         ChatEntryContainer.set_events(Gdk::KEY_PRESS_MASK);
         ChatEntry.signal_key_press_event().connect([this](GdkEventKey* evt) {
             // https://gitlab.gnome.org/GNOME/gtk/blob/master/gdk/gdkkeysyms.h
@@ -35,16 +32,15 @@ namespace EGL3::Modules::Friends {
         NewChatDispatcher.connect([this]() { OnNewChatUpdate(); });
     }
 
-    void ChatModule::SetUser(const Friend& Friend)
+    void ChatModule::SetUser(Friend& Friend)
     {
-        if (!EGL3_ENSURE(!SelectedFriend, LogLevel::Warning, "Trying to set selected friend before clearing. Clearing now.")) {
+        if (!EGL3_ENSURE(!SelectedUserModel, LogLevel::Warning, "Trying to set selected user before clearing. Clearing now.")) {
             ClearUser();
         }
 
-        SelectedFriend = &Friend;
+        SelectedUserModel = &Friend;
 
-        SelectedFriendUpdateConn = Friend.Get().OnUpdate.connect([this]() { OnSelectedFriendUpdate(); });
-        SelectedFriendWidget.SetData(Friend);
+        SelectedUserList.Add(Friend);
 
         {
             auto& Conv = GetOrCreateConversation(Friend.Get().GetAccountId());
@@ -61,28 +57,18 @@ namespace EGL3::Modules::Friends {
             ChatBox.show_all_children();
         }
 
-        OnSelectedFriendUpdate();
+        ChatEntry.set_placeholder_text(std::format("Message {}", Friend.Get().GetDisplayName()));
     }
 
     void ChatModule::ClearUser()
     {
-        if (!SelectedFriend) {
-            return;
-        }
-
-        SelectedFriendUpdateConn->disconnect();
-        SelectedFriend = nullptr;
+        SelectedUserList.Clear();
+        SelectedUserModel = nullptr;
     }
 
     void ChatModule::RecieveChatMessage(const std::string& AccountId, std::string&& NewMessage)
     {
         OnRecieveChatMessage(AccountId, std::forward<std::string>(NewMessage), true);
-    }
-
-    void ChatModule::OnSelectedFriendUpdate()
-    {
-        SelectedFriendWidget.Update();
-        ChatEntry.set_placeholder_text(std::format("Message {}", SelectedFriend->Get().GetDisplayName()));
     }
 
     void ChatModule::OnNewChatUpdate()
@@ -105,7 +91,7 @@ namespace EGL3::Modules::Friends {
             return;
         }
 
-        auto& AccountId = SelectedFriend->Get().GetAccountId();
+        auto& AccountId = SelectedUserModel->Get().GetAccountId();
         OnRecieveChatMessage(AccountId, Content, false);
         SendChatMessage(AccountId, Content);
     }
@@ -114,7 +100,7 @@ namespace EGL3::Modules::Friends {
     {
         auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = std::chrono::utc_clock::now(), .Recieved = Recieved });
 
-        if (SelectedFriend && AccountId == SelectedFriend->Get().GetAccountId()) {
+        if (SelectedUserModel && AccountId == SelectedUserModel->Get().GetAccountId()) {
             std::lock_guard Lock(NewChatMutex);
             NewChatData.emplace_back(std::ref(Message));
 
@@ -132,6 +118,6 @@ namespace EGL3::Modules::Friends {
             return *Itr;
         }
 
-        return Conversations.emplace_back(ChatConversation{.AccountId = AccountId });
+        return Conversations.emplace_back(ChatConversation{ .AccountId = AccountId });
     }
 }

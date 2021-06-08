@@ -10,9 +10,8 @@ namespace EGL3::Modules::Friends {
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
         Options(Ctx.GetModule<OptionsModule>()),
         FriendList(Ctx.GetWidget<Gtk::TreeView>("FriendsTree"), ImageCache, [this](Storage::Models::Friend& A, Storage::Models::Friend& B) { return CompareFriends(A, B); }, [this](Storage::Models::Friend& Friend) { return FilterFriend(Friend); }),
-        CurrentUserContainer(Ctx.GetWidget<Gtk::Box>("FriendsCurrentUserContainer")),
+        CurrentUserList(Ctx.GetWidget<Gtk::TreeView>("FriendsCurrentUserTree"), ImageCache),
         CurrentUserModel(Friend::ConstructCurrent),
-        CurrentUserWidget(CurrentUserModel, ImageCache),
         FilterEntry(Ctx.GetWidget<Gtk::SearchEntry>("FriendsFilterEntry"))
     {
         FriendList.FriendClicked.Set([this](Storage::Models::Friend& Friend, Widgets::FriendList::CellType Cell, int CellX, int CellY, Gdk::Rectangle& PopupRect) {
@@ -64,15 +63,11 @@ namespace EGL3::Modules::Friends {
             }
         });
 
-        FriendMenu.OnAction.Set([this](auto Action, const auto& Friend) { FriendMenuAction(Action, Friend); });
+        FriendMenu.OnAction.Set([this](auto Action, auto& Friend) { FriendMenuAction(Action, Friend); });
 
         FilterEntry.signal_changed().connect([this]() { FriendList.Refilter(); FriendList.Resort(); });
 
-        {
-            CurrentUserModel.Get().OnUpdate.connect([this]() { CurrentUserWidget.Update(); });
-            CurrentUserContainer.pack_start(CurrentUserWidget, true, true);
-            // When KairosMenuModule is created, it'll run SetKairosMenuWindow
-        }
+        CurrentUserList.Add(CurrentUserModel);
     }
 
     Storage::Models::Friend* ListModule::GetUser(const std::string& AccountId)
@@ -160,8 +155,21 @@ namespace EGL3::Modules::Friends {
         }
     }
 
-    void ListModule::SetKairosMenuWindow(Gtk::Window& Window)
+    void ListModule::SetKairosMenuWindow(Gtk::Window& KairosMenu)
     {
-        CurrentUserWidget.SetAsCurrentUser(Window);
+        CurrentUserList.FriendClicked.Set([this, &KairosMenu](Storage::Models::Friend& Friend, Widgets::FriendList::CellType Cell, int CellX, int CellY, Gdk::Rectangle& PopupRect) {
+            if (Cell == Widgets::FriendList::CellType::Avatar) {
+                auto& Window = CurrentUserList.Get();
+
+                KairosMenu.set_attached_to(Window);
+                KairosMenu.show();
+                KairosMenu.present();
+
+                int x, y;
+                Window.get_window()->get_origin(x, y);
+                // Moved after show/present because get_height returns 1 when hidden (couldn't find other workarounds for that, and I'm not bothered since there's no flickering)
+                KairosMenu.move(x, y - KairosMenu.get_height());
+            }
+        });
     }
 }
