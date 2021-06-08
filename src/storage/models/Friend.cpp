@@ -205,8 +205,11 @@ namespace EGL3::Storage::Models {
         return Type;
     }
 
-    std::weak_ordering Friend::operator<=>(const Friend& that) const {
-        std::shared_lock Lock(Mutex);
+    std::weak_ordering Friend::operator<=>(const Friend& that) const
+    {
+        std::shared_lock ThisLock(Mutex, std::defer_lock);
+        std::shared_lock ThatLock(that.Mutex, std::defer_lock);
+        std::lock(ThisLock, ThatLock);
 
         if (auto cmp = Type <=> that.Type; cmp != 0)
             return cmp;
