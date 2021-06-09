@@ -216,7 +216,7 @@ namespace EGL3::Installer {
 			break;
 		case InstallState::Complete:
 		{
-			ShellExecute(NULL, "open", Backend->GetLaunchPath().string().c_str(), NULL, NULL, SW_SHOWNORMAL);
+			LaunchUnelevated(Backend->GetLaunchPath());
 			DestroyWindow();
 			break;
 		}
@@ -426,5 +426,27 @@ namespace EGL3::Installer {
 		});
 
 		Backend->Run();
+	}
+
+	// https://docs.microsoft.com/en-us/archive/blogs/aaron_margosis/faq-how-do-i-start-a-program-as-the-desktop-user-from-an-elevated-app
+	// Scroll all the way down to EricLaw's comment
+	bool CinstallerAppDlg::LaunchUnelevated(const std::filesystem::path& Path)
+	{
+		std::filesystem::path ExplorerPath;
+		{
+			CHAR PathBuf[MAX_PATH];
+			if (SHGetFolderPath(NULL, CSIDL_WINDOWS, NULL, SHGFP_TYPE_CURRENT, PathBuf) == S_OK) {
+				ExplorerPath = PathBuf;
+			}
+			else {
+				ExplorerPath = getenv("SystemRoot");
+			}
+		}
+		if (ExplorerPath.empty()) {
+			return false;
+		}
+		ExplorerPath /= "explorer.exe";
+		ShellExecute(NULL, "open", ExplorerPath.string().c_str(), Path.string().c_str(), NULL, SW_SHOWNORMAL);
+		return true;
 	}
 }

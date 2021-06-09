@@ -35,6 +35,8 @@ namespace EGL3::Installer {
 		void UpdateLicenseCheck();
 		void RunInstaller();
 
+		static bool LaunchUnelevated(const std::filesystem::path& Path);
+
 		DECLARE_MESSAGE_MAP()
 		BOOL OnInitDialog();
 		afx_msg void OnPaint();
