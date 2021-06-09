@@ -59,12 +59,9 @@ namespace EGL3 {
         int OnCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& CommandLine) {
             App->activate();
 
-            if (CommandLine->is_remote()) {
-                return PrimaryData->GetModule<Modules::Login::AuthModule>().HandleCommandLine(CommandLine);
-            }
-            else {
-                return 0;
-            }
+            PrimaryData->GetModule<Modules::Login::AuthModule>().HandleCommandLine(CommandLine);
+
+            return 0;
         }
 
         Glib::RefPtr<Gtk::Application> App;
