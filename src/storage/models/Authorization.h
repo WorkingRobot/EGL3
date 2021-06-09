@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../utils/streams/Stream.h"
+#include "../../web/JsonParsing.h"
 
 namespace EGL3::Storage::Models {
     struct AuthUserData {
@@ -13,7 +14,7 @@ namespace EGL3::Storage::Models {
         std::string KairosAvatar;
         std::string KairosBackground;
         std::string RefreshToken;
-        std::chrono::utc_clock::time_point RefreshExpireTime;
+        Web::TimePoint RefreshExpireTime;
     };
 
     class Authorization {

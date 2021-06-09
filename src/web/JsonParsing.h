@@ -3,7 +3,6 @@
 #include "../utils/Log.h"
 #include "../utils/Config.h"
 #include "../utils/Crc32.h"
-#include "../utils/date.h"
 #include "../utils/map.h"
 
 #include <chrono>
@@ -14,7 +13,7 @@
 #include <unordered_map>
 
 namespace EGL3::Web {
-    using TimePoint = std::chrono::utc_clock::time_point;
+    using TimePoint = std::chrono::system_clock::time_point;
     using JsonObject = rapidjson::Document;
 
     template<class Enum, class Converter, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
@@ -45,12 +44,10 @@ namespace EGL3::Web {
         return GetTimePoint(TimePoint::clock::now());
     }
 
+    bool from_stream(const std::string& String, TimePoint& Obj);
+
     __forceinline bool GetTimePoint(const char* Str, size_t StrSize, TimePoint& Obj) {
-        std::istringstream istr(std::string(Str, StrSize));
-        std::chrono::system_clock::time_point SysTime;
-        date::from_stream(istr, "%FT%TZ", SysTime);
-        Obj = std::chrono::utc_clock::from_sys(SysTime);
-        return !istr.fail();
+        return from_stream({ Str, StrSize }, Obj);
     }
 
     template<typename T>

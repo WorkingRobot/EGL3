@@ -26,7 +26,7 @@ namespace EGL3::Storage::Models {
             Web::Epic::Responses::GetPageInfo::EmergencyNoticePost
         > Item;
 
-        std::chrono::utc_clock::time_point Date;
+        Web::TimePoint Date;
 
         ItemSource Source;
 

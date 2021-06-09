@@ -225,12 +225,12 @@ namespace EGL3::Modules {
     template<>
     Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
         // Just hash the id, it isn't used anywhere and I assume it's unique anyway
-        return Storage.try_emplace(std::hash<std::string>{}(Value.Id), std::chrono::utc_clock::now()).first->second;
+        return Storage.try_emplace(std::hash<std::string>{}(Value.Id), Web::TimePoint::clock::now()).first->second;
     }
 
     template<>
     Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
         // Only used for stw at this point, if any of these change, it's going to look different visually
-        return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), std::chrono::utc_clock::now()).first->second;
+        return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), Web::TimePoint::clock::now()).first->second;
     }
 }

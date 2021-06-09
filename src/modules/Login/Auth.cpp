@@ -223,7 +223,7 @@ namespace EGL3::Modules::Login {
                 .AccountId = AuthData.AccountId.value(),
                 .DisplayName = AuthData.DisplayName.value(),
                 .RefreshToken = "",
-                .RefreshExpireTime = std::chrono::utc_clock::time_point::max()
+                .RefreshExpireTime = Web::TimePoint::max()
             };
             for (auto& Setting : KairosDataResp->Values) {
                 if (Setting.AccountId != AuthData.AccountId.value()) {

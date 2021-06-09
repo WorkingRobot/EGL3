@@ -580,7 +580,7 @@ namespace EGL3::Web::Xmpp {
                 }
                 {
                     auto DelayNode = Node->first_node("delay", 5);
-                    ParsedPresence.LastUpdated = std::chrono::utc_clock::now(); // Set as default
+                    ParsedPresence.LastUpdated = Web::TimePoint::clock::now(); // Set as default
                     if (DelayNode) {
                         auto XmlnsAttr = DelayNode->first_attribute("xmlns", 5);
                         if (EGL3_ENSURE(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <delay>, xmlns=\"urn:xmpp:delay\" expected")) {
