@@ -16,6 +16,8 @@ namespace EGL3::Service {
             return GetLastError();
         }
 
+        std::string QuotedFilePath = "\"" + std::string(FilePath) + "\"";
+
         // Get a handle to the SCM database. 
 
         SCManager = OpenSCManager(
@@ -39,7 +41,7 @@ namespace EGL3::Service {
             SERVICE_WIN32_OWN_PROCESS, // service type 
             SERVICE_AUTO_START,        // start type 
             SERVICE_ERROR_NORMAL,      // error control type 
-            FilePath,                  // path to service's binary 
+            QuotedFilePath.c_str(),    // path to service's binary 
             NULL,                      // no load ordering group 
             NULL,                      // no tag identifier 
             NULL,                      // no dependencies 

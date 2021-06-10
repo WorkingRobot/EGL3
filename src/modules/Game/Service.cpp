@@ -17,7 +17,8 @@ namespace EGL3::Modules::Game {
 
         for (int Idx = 0; Idx < 3 && !Client.IsConnected(); ++Idx) {
             if (Idx != 0) {
-                if (PatchService() == 0) {
+                int ServiceRet = PatchService();
+                if (EGL3_ENSUREF(ServiceRet == ERROR_SUCCESS, LogLevel::Error, "Could not start service (GLE: {})", ServiceRet)) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(500));
                     Client.Connect(ClientName);
                 }
@@ -36,17 +37,11 @@ namespace EGL3::Modules::Game {
 
     int ServiceModule::PatchService()
     {
-        CHAR FilePath[MAX_PATH];
-        if (!GetModuleFileName(NULL, FilePath, MAX_PATH)) {
-            EGL3_LOGF(LogLevel::Error, "Could not patch service ({})", GetLastError());
-            return GetLastError();
-        }
-
         STARTUPINFO StartupInfo{
             .cb = sizeof(STARTUPINFO),
         };
 
-        auto ExePath = std::filesystem::path(FilePath).parent_path() / "EGL3_SRV.exe";
+        auto ExePath = Utils::Config::GetExeFolder() / "EGL3_SRV.exe";
         auto CommandLineString = std::format("\"{}\" {}", ExePath, "patch nowait");
         PROCESS_INFORMATION ProcInfo;
 
