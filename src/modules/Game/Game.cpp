@@ -23,6 +23,7 @@ namespace EGL3::Modules::Game {
         PlayMenuModifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
         PlayMenuSignOutOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
         CurrentStateHolder(),
+        ConfirmInstallStateHolder(*this),
         InstallStateHolder(*this),
         PlayStateHolder(*this)
     {
@@ -45,6 +46,11 @@ namespace EGL3::Modules::Game {
             }
         }
 
+        ConfirmInstallStateHolder.Clicked.Set([this]() {
+            Download.OnDownloadOkClicked();
+            ConfirmInstallStateHolder.ClearHeldState();
+        });
+
         InstallStateHolder.Clicked.Set([this]() {
             auto& Info = Download.OnDownloadClicked(PrimaryGame);
             Info.OnStateUpdate.connect([this](Storage::Models::DownloadInfoState NewState) {
@@ -64,6 +70,7 @@ namespace EGL3::Modules::Game {
                     break;
                 }
             });
+            ConfirmInstallStateHolder.SetHeldState(State::Continue);
         });
 
         PlayStateHolder.Clicked.Set([this]() {
@@ -120,6 +127,9 @@ namespace EGL3::Modules::Game {
             break;
         case State::Install:
             UpdateToState("Install", true);
+            break;
+        case State::Continue:
+            UpdateToState("Continue", true);
             break;
         case State::Playing:
             UpdateToState("Playing");

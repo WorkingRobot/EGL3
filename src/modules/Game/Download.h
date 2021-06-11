@@ -53,8 +53,6 @@ namespace EGL3::Modules::Game {
         Gtk::CheckButton& OptionsAutoUpdate;
         Gtk::CheckButton& OptionsCreateShortcut;
         Widgets::SdTree OptionsSdMeta;
-        Gtk::Button& OptionsButtonOk;
-        Gtk::Button& OptionsButtonCancel;
 
         Gtk::ScrolledWindow& SwitchStackPageInfo;
         Gtk::Button& InfoButtonPause;

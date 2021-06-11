@@ -20,6 +20,7 @@ namespace EGL3::Modules::Game {
             Play,
             Update,
             Install,
+            Continue,
 
             Playing,
             Updating,
@@ -89,6 +90,7 @@ namespace EGL3::Modules::Game {
         std::shared_mutex StateHolderMtx;
         std::vector<StateHolder*> StateHolders;
 
+        StateHolder ConfirmInstallStateHolder;
         StateHolder InstallStateHolder;
         StateHolder PlayStateHolder;
     };

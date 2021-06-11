@@ -24,8 +24,6 @@ namespace EGL3::Modules::Game {
         OptionsAutoUpdate(Ctx.GetWidget<Gtk::CheckButton>("DownloadOptionsAutoUpdate")),
         OptionsCreateShortcut(Ctx.GetWidget<Gtk::CheckButton>("DownloadOptionsCreateShortcut")),
         OptionsSdMeta(Ctx.GetWidget<Gtk::TreeView>("DownloadOptionsSelector")),
-        OptionsButtonOk(Ctx.GetWidget<Gtk::Button>("DownloadOptionsOk")),
-        OptionsButtonCancel(Ctx.GetWidget<Gtk::Button>("DownloadOptionsCancel")),
         SwitchStackPageInfo(Ctx.GetWidget<Gtk::ScrolledWindow>("DownloadStackPage1")),
         InfoButtonPause(Ctx.GetWidget<Gtk::Button>("DownloadInfoPauseBtn")),
         InfoButtonStop(Ctx.GetWidget<Gtk::Button>("DownloadInfoStopBtn")),
@@ -64,9 +62,6 @@ namespace EGL3::Modules::Game {
                 Data.ArchivePath = NewFile;
             }
         });
-
-        OptionsButtonOk.signal_clicked().connect([this]() { OnDownloadOkClicked(); });
-        OptionsButtonCancel.signal_clicked().connect([this]() { OnDownloadCancelClicked(); });
 
         InfoButtonPause.signal_clicked().connect([this]() { OnDownloadPauseClicked(); });
         InfoButtonStop.signal_clicked().connect([this]() { OnDownloadStopClicked(); });

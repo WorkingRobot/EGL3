@@ -44,7 +44,6 @@ namespace EGL3::Widgets {
         Dialog->add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_OK);
         Dialog->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
 
-        Dialog->set_do_overwrite_confirmation(true);
         Dialog->set_current_name("Fortnite.egia");
         Dialog->set_modal(true);
 
