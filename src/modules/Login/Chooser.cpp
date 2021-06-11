@@ -38,6 +38,8 @@ namespace EGL3::Modules::Login {
             int ColCount = TreeView.append_column("DisplayName", UsernameRenderer);
             auto Column = TreeView.get_column(ColCount - 1);
             if (Column) {
+                Column->set_expand(true);
+
                 Column->add_attribute(UsernameRenderer.property_text(), Columns.DisplayName);
             }
             UsernameRenderer.property_scale() = 1.50;
@@ -48,6 +50,8 @@ namespace EGL3::Modules::Login {
             int ColCount = TreeView.append_column("Login", ButtonRenderer);
             auto Column = TreeView.get_column(ColCount - 1);
             if (Column) {
+                Column->set_fixed_width(64);
+
                 Column->add_attribute(ButtonRenderer.property_icon_name(), Columns.ButtonIconName);
             }
             ButtonRenderer.property_scale() = 2;
@@ -87,6 +91,9 @@ namespace EGL3::Modules::Login {
                 }
                 break;
             }
+            case RowType::EGL:
+                AccountClickedEGL(RememberMe);
+                break;
             case RowType::Add:
                 AccountAddRequest();
                 break;
@@ -122,6 +129,31 @@ namespace EGL3::Modules::Login {
 
     void ChooserModule::FinalizeList(size_t AccountsSize)
     {
+        {
+            auto ProfilePtr = RememberMe.GetProfile();
+            if (ProfilePtr != nullptr) {
+                auto& Profile = *ProfilePtr;
+                bool ProfileFound = false;
+                ListStore->foreach_iter([this, &ProfileFound, &Profile](const Gtk::TreeModel::iterator& Itr) {
+                    auto& Row = *Itr;
+                    auto Data = (Storage::Models::AuthUserData*)Row[Columns.Data];
+                    return ProfileFound = Data->DisplayName == Profile.DisplayName;
+                });
+
+                if (!ProfileFound) {
+                    auto Itr = ListStore->append();
+                    auto& Row = *Itr;
+                    Row[Columns.Data] = nullptr;
+                    Row[Columns.KairosAvatar] = "cid_486_741d7965509eb9b4f859e758d12a23ea8b30221d5a3a6b731dbbe471bb7b4138";
+                    Row[Columns.KairosBackground] = "[\"#E93FEB\",\"#7B009C\",\"#500066\"]";
+                    Row[Columns.DisplayName] = Profile.DisplayName + " (EGL)";
+                    Row[Columns.ButtonIconName] = "go-next-symbolic";
+                    Row[Columns.IsVisible] = true;
+                    Row[Columns.Type] = RowType::EGL;
+                }
+            }
+        }
+
         {
             auto Itr = ListStore->append();
             auto& Row = *Itr;
@@ -165,6 +197,7 @@ namespace EGL3::Modules::Login {
             case RowType::Account:
                 Row[Columns.ButtonIconName] = "edit-delete-symbolic";
                 break;
+            case RowType::EGL:
             case RowType::Add:
                 Row[Columns.IsVisible] = false;
                 break;
@@ -190,6 +223,7 @@ namespace EGL3::Modules::Login {
             case RowType::Account:
                 Row[Columns.ButtonIconName] = "go-next-symbolic";
                 break;
+            case RowType::EGL:
             case RowType::Add:
                 Row[Columns.IsVisible] = true;
                 break;

@@ -29,6 +29,9 @@ namespace EGL3::Modules::Login {
         Chooser.AccountClicked.Set([this](Storage::Models::AuthUserData* DataPtr) {
             AccountSelected(*DataPtr);
         });
+        Chooser.AccountClickedEGL.Set([this](Utils::EGL::RememberMe& RememberMe) {
+            AccountSelectedEGL(RememberMe);
+        });
         Chooser.AccountRemoved.Set([this](Storage::Models::AuthUserData* DataPtr) {
             auto Itr = std::find_if(UserData.begin(), UserData.end(), [DataPtr](const Storage::Models::AuthUserData& Data) {
                 return Data.AccountId == DataPtr->AccountId;
@@ -285,6 +288,71 @@ namespace EGL3::Modules::Login {
             if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
+
+            Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
+            LoggedIn.emit();
+        });
+    }
+
+    void AuthModule::AccountSelectedEGL(Utils::EGL::RememberMe& RememberMe)
+    {
+        SignInTask = std::async(std::launch::async, [this, &RememberMe]() {
+            Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
+            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use EGL refresh token")) {
+                return;
+            }
+            Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
+
+            auto& AuthData = LauncherClient.GetAuthData();
+            auto KairosDataResp = LauncherClient.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
+            if (!EGL3_ENSURE(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from launcher client")) {
+                return;
+            }
+
+            SignInData = {
+                .AccountId = AuthData.AccountId.value(),
+                .DisplayName = AuthData.DisplayName.value(),
+                .RefreshToken = "",
+                .RefreshExpireTime = Web::TimePoint::max()
+            };
+            for (auto& Setting : KairosDataResp->Values) {
+                if (Setting.AccountId != AuthData.AccountId.value()) {
+                    continue;
+                }
+                if (Setting.Key == "avatar") {
+                    SignInData.KairosAvatar = Setting.Value;
+                }
+                else if (Setting.Key == "avatarBackground") {
+                    SignInData.KairosBackground = Setting.Value;
+                }
+            }
+            SignInDispatcher.emit();
+
+            auto FortniteCodeResp = LauncherClient.GetExchangeCode();
+            if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client #1")) {
+                return;
+            }
+
+            //auto EGLCodeResp = LauncherClient.GetExchangeCode();
+            //if (!EGL3_ENSURE(!LauncherCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client #2")) {
+            //    return;
+            //}
+
+            Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
+            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+                return;
+            }
+
+            //Web::Epic::Auth::ExchangeCode EGLAuth(Web::AuthClientLauncher, EGLCodeResp->Code);
+            //if (!EGL3_ENSURE(EGLAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for EGL")) {
+            //    return;
+            //}
+
+            //Web::Epic::Responses::OAuthToken EGLAuthData;
+            //if (!EGL3_ENSURE(Web::Epic::Responses::OAuthToken::Parse(EGLAuth.GetOAuthResponse(), EGLAuthData), LogLevel::Error, "Could not parse auth data for EGL")) {
+            //    return;
+            //}
+            //RememberMe.ReplaceToken(EGLAuthData.RefreshToken.value());
 
             Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
             LoggedIn.emit();

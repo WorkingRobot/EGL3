@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Hosts.h"
+#include "JsonParsing.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <cpr/cpr.h>
-#include <rapidjson/document.h>
 
 #define SUFFFIX_SSL
 //#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
@@ -44,15 +44,7 @@ namespace EGL3::Web::Http {
         return std::format("{}{}", GetHostUrl<SelectedHost>(), std::format(Input, std::move(FormatArgs)...));
     }
 
-    // Make sure to check validity with Json.HasParseError()
-    // Use something similar to printf("%d @ %zu\n", Json.GetParseError(), Json.GetErrorOffset());
-    static rapidjson::Document ParseJson(const std::string& Data) {
-        rapidjson::Document Json;
-        Json.Parse(Data.data(), Data.size());
-        return Json;
-    }
-
     static rapidjson::Document ParseJson(const cpr::Response& Response) {
-        return ParseJson(Response.text);
+        return Web::ParseJson(Response.text);
     }
 }

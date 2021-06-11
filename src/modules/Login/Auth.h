@@ -32,6 +32,8 @@ namespace EGL3::Modules::Login {
 
         void AccountSelected(Storage::Models::AuthUserData Data);
 
+        void AccountSelectedEGL(Utils::EGL::RememberMe& RememberMe);
+
         sigc::signal<void()> LoggedIn;
 
     private:

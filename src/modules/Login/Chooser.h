@@ -4,6 +4,7 @@
 #include "../../storage/models/Authorization.h"
 #include "../../widgets/CellRendererAvatarStatus.h"
 #include "../../widgets/CellRendererPixbufScalable.h"
+#include "../../utils/egl/RememberMe.h"
 #include "../../utils/Callback.h"
 
 #include <gtkmm.h>
@@ -21,6 +22,7 @@ namespace EGL3::Modules::Login {
             FinalizeList(std::distance(Begin, End));
         }
 
+        Utils::Callback<void(Utils::EGL::RememberMe&)> AccountClickedEGL;
         Utils::Callback<void(Storage::Models::AuthUserData*)> AccountClicked;
         Utils::Callback<void(Storage::Models::AuthUserData*)> AccountRemoved;
         Utils::Callback<void()> AccountAddRequest;
@@ -48,8 +50,11 @@ namespace EGL3::Modules::Login {
 
         bool RemoveState;
 
+        Utils::EGL::RememberMe RememberMe;
+
         enum class RowType : uint8_t {
             Account,
+            EGL,
             Add,
             Remove
         };

@@ -50,6 +50,14 @@ namespace EGL3::Web {
         return from_stream({ Str, StrSize }, Obj);
     }
 
+    // Make sure to check validity with Json.HasParseError()
+    // Use something similar to printf("%d @ %zu\n", Json.GetParseError(), Json.GetErrorOffset());
+    static rapidjson::Document ParseJson(const std::string& Data) {
+        rapidjson::Document Json;
+        Json.Parse(Data.data(), Data.size());
+        return Json;
+    }
+
     template<typename T>
     struct Parser {
         __forceinline bool operator()(const rapidjson::Value& Json, T& Obj) const {
@@ -270,8 +278,8 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
 #endif
 
 #define PARSE_DEFINE(ClassName) \
-    static bool Parse(const rapidjson::Value& Json, ClassName& Obj) { \
-        rapidjson::Document::ConstMemberIterator Itr;
+    static bool Parse(const ::rapidjson::Value& Json, ClassName& Obj) { \
+        ::rapidjson::Document::ConstMemberIterator Itr;
 
 #define PARSE_END \
         return true; \
@@ -283,18 +291,18 @@ typedef JsonEnum<ClassName, ClassName##Converter<>> ClassName##Json;
 #define PARSE_ITEM(JsonName, TargetVariable) \
         Itr = Json.FindMember(JsonName); \
         if (Itr == Json.MemberEnd()) { PRINT_JSON_ERROR_NOTFOUND; return false; } \
-        if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
+        if (!::EGL3::Web::Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 #define PARSE_ITEM_OPT(JsonName, TargetVariable) \
         Itr = Json.FindMember(JsonName); \
-        if (Itr != Json.MemberEnd()) { if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
+        if (Itr != Json.MemberEnd()) { if (!::EGL3::Web::Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; } }
 
 #define PARSE_ITEM_DEF(JsonName, TargetVariable, Default) \
         Itr = Json.FindMember(JsonName); \
-        if (Itr != Json.MemberEnd()) { if (!Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
+        if (Itr != Json.MemberEnd()) { if (!::EGL3::Web::Parser<decltype(Obj.TargetVariable)>{}(Itr->value, Obj.TargetVariable)) { Obj.TargetVariable = Default; } }
 
 #define PARSE_ITEM_LOC(JsonName, TargetVariable) \
-        if (!JsonLocalized::Parse(Json, Obj.TargetVariable, JsonName)) { PRINT_JSON_ERROR_PARSE; return false; }
+        if (!::EGL3::Web::JsonLocalized::Parse(Json, Obj.TargetVariable, JsonName)) { PRINT_JSON_ERROR_PARSE; return false; }
 
 #define PARSE_ITEM_ROOT(TargetVariable) \
-        if (!Parser<decltype(Obj.TargetVariable)>{}(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
+        if (!::EGL3::Web::Parser<decltype(Obj.TargetVariable)>{}(Json, Obj.TargetVariable)) { PRINT_JSON_ERROR_PARSE; return false; }
