@@ -2,12 +2,8 @@
 
 #include "../Base64.h"
 #include "../IniFile.h"
+#include "../KnownFolders.h"
 #include "../Platform.h"
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#include <ShlObj_core.h>
 
 namespace EGL3::Utils::EGL {
     RememberMe::RememberMe()
@@ -54,20 +50,11 @@ namespace EGL3::Utils::EGL {
 
     std::filesystem::path RememberMe::GetIniPath()
     {
-        std::filesystem::path Path;
-        {
-            CHAR PathBuf[MAX_PATH];
-            if (SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, PathBuf) == S_OK) {
-                Path = PathBuf;
-            }
-            else {
-                Path = getenv("LOCALAPPDATA");
-            }
-        }
+        auto Path = Platform::GetKnownFolderPath(FOLDERID_LocalAppData);
         if (Path.empty()) {
             return Path;
         }
         
-        return Path / "EpicGamesLauncher" / "Saved" / "Config" / Utils::Platform::GetOSName() / "GameUserSettings.ini";
+        return Path / "EpicGamesLauncher" / "Saved" / "Config" / Platform::GetOSName() / "GameUserSettings.ini";
     }
 }

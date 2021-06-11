@@ -1,18 +1,14 @@
 #include "FontSetup.h"
 
-#include "Log.h"
 #include "Config.h"
+#include "KnownFolders.h"
+#include "Log.h"
 
 #include <fontconfig/fontconfig.h>
 #include <gtkmm.h>
 #include <pango/pangofc-fontmap.h>
 #include <string>
 #include <fstream>
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#include <ShlObj_core.h>
 
 namespace EGL3::Utils {
     void SetupFonts() {
@@ -42,9 +38,9 @@ namespace EGL3::Utils {
         FcConfigParseAndLoad(Config, (FcChar8*)(Config::GetFolder() / "fonts.conf").string().c_str(), true);
         FcConfigAppFontAddDir(Config, (FcChar8*)FontsFolder.string().c_str());
 
-        CHAR Path[MAX_PATH];
-        if (SHGetFolderPath(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, Path) == S_OK) {
-            FcConfigAppFontAddDir(Config, (FcChar8*)Path);
+        auto Path = Platform::GetKnownFolderPath(FOLDERID_Fonts);
+        if (!Path.empty()) {
+            FcConfigAppFontAddDir(Config, (FcChar8*)Path.string().c_str());
         }
 
         auto FontMap = (PangoFcFontMap*)pango_cairo_font_map_new_for_font_type(CAIRO_FONT_TYPE_FT);
