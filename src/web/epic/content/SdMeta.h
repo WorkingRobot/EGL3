@@ -5,6 +5,8 @@
 namespace EGL3::Web::Epic::Content {
     struct SdMeta {
         struct Build {
+            std::string Namespace;
+
             std::string Item;
 
             std::string Asset;
@@ -12,6 +14,7 @@ namespace EGL3::Web::Epic::Content {
             std::string Version;
 
             PARSE_DEFINE(Build)
+                PARSE_ITEM("Namespace", Namespace)
                 PARSE_ITEM("Item", Item)
                 PARSE_ITEM("Asset", Asset)
                 PARSE_ITEM("Version", Version)

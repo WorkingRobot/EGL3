@@ -25,8 +25,8 @@ namespace EGL3::Modules::Game {
     std::chrono::seconds UpdateCheckModule::GetFrequency() const
     {
         auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
-        if (Freq < std::chrono::seconds(10)) {
-            Freq = std::chrono::seconds(10);
+        if (Freq < std::chrono::seconds(30)) {
+            Freq = std::chrono::seconds(30);
             Storage.Flush();
         }
         return Freq;

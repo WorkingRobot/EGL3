@@ -88,5 +88,25 @@ namespace EGL3::Storage::Game {
         bool operator>=(const ArchiveListIterator& that) const noexcept {
             return std::is_gteq(*this <=> that);
         }
+
+        template<std::enable_if_t<std::is_trivially_copyable_v<T>, bool> = true>
+        void FastWrite(const T* Source, size_t Count) const noexcept {
+            Count *= sizeof(typename ArchiveListIterator<Id>::T);
+
+            auto Base = this->Runlist.GetBase();
+
+            size_t RunIdx = this->CurrentRunIdx;
+            size_t RunOff = this->CurrentRunOffset;
+            while (Count) {
+                size_t WriteAmt = std::min(this->Runlist->GetRunSize(RunIdx) - RunOff, Count);
+
+                memcpy(Base + this->Runlist->GetPosition(RunIdx, 0) + RunOff, Source, WriteAmt);
+
+                RunOff = 0;
+                RunIdx++;
+                Count -= WriteAmt;
+                Source = (T*)((uint8_t*)Source + WriteAmt);
+            }
+        }
     };
 }

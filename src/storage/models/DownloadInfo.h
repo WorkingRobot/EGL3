@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../utils/egl/ChunkProvider.h"
 #include "../../utils/Callback.h"
 #include "../../utils/TaskPool.h"
 #include "../../storage/models/InstalledGame.h"
@@ -27,13 +28,24 @@ namespace EGL3::Storage::Models {
             InstallFlags Flags;
             std::vector<std::string> SelectedIds;
             std::vector<std::string> InstallTags;
+
+            Utils::EGL::ChunkProvider EGLProvider;
+
+            StateOptions(Storage::Game::GameId Id) :
+                EGLProvider(Id)
+            {
+
+            }
         };
 
         struct StateInitializing {
             std::vector<std::string> InstallTags;
 
-            StateInitializing(std::vector<std::string>&& InstallTags) :
-                InstallTags(std::move(InstallTags))
+            Utils::EGL::ChunkProvider EGLProvider;
+
+            StateInitializing(std::vector<std::string>&& InstallTags, Utils::EGL::ChunkProvider&& EGLProvider) :
+                InstallTags(std::move(InstallTags)),
+                EGLProvider(std::move(EGLProvider))
             {
 
             }
@@ -51,6 +63,8 @@ namespace EGL3::Storage::Models {
             Game::Archive& Archive;
 
             Utils::TaskPool Pool;
+
+            Utils::EGL::ChunkProvider EGLProvider;
 
             // For stats
             uint32_t PiecesTotal;
@@ -73,7 +87,7 @@ namespace EGL3::Storage::Models {
             Game::ArchiveList<Game::RunlistId::ChunkInfo> ArchiveChunkInfos;
             Game::ArchiveList<Game::RunlistId::ChunkData> ArchiveChunkDatas;
 
-            StateInstalling(std::string&& CloudDir, Web::Epic::BPS::Manifest&& Manifest, std::vector<std::reference_wrapper<const Web::Epic::BPS::FileManifest>>&& ManifestFiles, Game::Archive& Archive, std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>>&& UpdatedChunks, std::vector<uint32_t>&& DeletedChunkIdxs) :
+            StateInstalling(std::string&& CloudDir, Web::Epic::BPS::Manifest&& Manifest, std::vector<std::reference_wrapper<const Web::Epic::BPS::FileManifest>>&& ManifestFiles, Game::Archive& Archive, std::vector<std::reference_wrapper<const Web::Epic::BPS::ChunkInfo>>&& UpdatedChunks, std::vector<uint32_t>&& DeletedChunkIdxs, Utils::EGL::ChunkProvider&& EGLProvider) :
                 Cancelled(false),
                 CloudDir(std::move(CloudDir)),
                 Manifest(std::move(Manifest)),
@@ -82,6 +96,7 @@ namespace EGL3::Storage::Models {
                 UpdatedChunks(std::move(UpdatedChunks)),
                 DeletedChunkIdxs(std::move(DeletedChunkIdxs)),
                 Pool(WorkerCount),
+                EGLProvider(std::move(EGLProvider)),
                 PiecesTotal(this->UpdatedChunks.size()),
                 DownloadTotal(std::accumulate(this->UpdatedChunks.begin(), this->UpdatedChunks.end(), 0ull, [](uint64_t Val, const auto& Chunk) { return Val + Chunk.get().FileSize; })),
                 PiecesComplete(0),
@@ -135,9 +150,7 @@ namespace EGL3::Storage::Models {
 
         bool InstallOne();
 
-        void ReplaceInstallOne(const Web::Epic::BPS::ChunkInfo& Chunk, uint32_t ReplaceIdx);
-
-        void AppendInstallOne(const Web::Epic::BPS::ChunkInfo& Chunk);
+        void InstallOne(const Web::Epic::BPS::ChunkInfo& Chunk, Storage::Game::ChunkInfo& ChunkInfoData);
 
         Utils::Callback<void(const DownloadInfoStats&)> OnStatsUpdate;
 
@@ -145,6 +158,8 @@ namespace EGL3::Storage::Models {
 
     private:
         Web::Response<Web::Epic::BPS::ChunkData> GetChunk(const Web::Epic::BPS::ChunkInfo& Chunk) const;
+
+        Storage::Game::ChunkInfo& AllocateChunkInfo();
 
         // Returns the data sector to use for the chunk data runlist
         uint32_t AllocateChunkData(uint32_t WindowSize);

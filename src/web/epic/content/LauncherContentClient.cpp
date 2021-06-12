@@ -77,7 +77,7 @@ namespace EGL3::Web::Epic::Content {
         rapidjson::MemoryStream DataStream(Data.get(), FileStream.size());
         rapidjson::EncodedInputStream<rapidjson::UTF8<>, decltype(DataStream)> JsonStream(DataStream);
 
-        Out.ParseStream(JsonStream);
+        Out.ParseStream<rapidjson::kParseTrailingCommasFlag>(JsonStream);
         return !Out.HasParseError();
     }
 
@@ -123,7 +123,7 @@ namespace EGL3::Web::Epic::Content {
                     }
 
                     SdMeta SdMeta;
-                    if (!EGL3_ENSURE(SdMeta::Parse(SdJson, SdMeta), LogLevel::Warning, "Sdmeta has bad json")) {
+                    if (!EGL3_ENSUREF(SdMeta::Parse(SdJson, SdMeta), LogLevel::Warning, "Sdmeta has bad json ({})", File.Filename)) {
                         continue;
                     }
 
@@ -133,13 +133,13 @@ namespace EGL3::Web::Epic::Content {
         }
     }
 
-    const std::vector<SdMeta::Data>* LauncherContentClient::GetSdMetaData(const std::string& AppName, const std::string& Version)
+    const std::vector<SdMeta::Data>* LauncherContentClient::GetSdMetaData(const std::string& CatalogItemId, const std::string& AppName, const std::string& Version)
     {
         LoadSdMetaData();
 
         auto Itr = std::find_if(SdMetas->begin(), SdMetas->end(), [&](const SdMeta& Meta) {
             return std::any_of(Meta.Builds.begin(), Meta.Builds.end(), [&](const SdMeta::Build& Build) {
-                if (Build.Asset != AppName) {
+                if (Build.Item != CatalogItemId || Build.Asset != AppName) {
                     return false;
                 }
                 if (Build.Version == Version) {

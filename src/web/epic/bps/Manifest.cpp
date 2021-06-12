@@ -477,6 +477,7 @@ namespace EGL3::Web::Epic::BPS {
     Stream& operator>>(Stream& Stream, Manifest& Val)
     {
         // Check if JSON and parse accordingly
+        // Not the best speed if Stream is a FileStream since rapidjson loves caling JsonWrapperStream's Tell which in turn calls fseek/ftell
         {
             char PeekChar;
             Stream.read(&PeekChar, 1);

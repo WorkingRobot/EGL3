@@ -18,7 +18,7 @@ namespace EGL3::Storage::Models {
         GameConfig(nullptr),
         GetInstalledGames(GetInstalledGames),
         CurrentState(DownloadInfoState::Options),
-        StateData(StateOptions())
+        StateData(StateOptions(Id))
     {
         auto& Data = GetStateData<StateOptions>();
 
@@ -42,6 +42,10 @@ namespace EGL3::Storage::Models {
     {
         if (std::holds_alternative<StateInstalling>(StateData)) {
             SetDownloadCancelled();
+        }
+
+        if (PrimaryTask.valid()) {
+            PrimaryTask.get();
         }
     }
 
@@ -105,7 +109,8 @@ namespace EGL3::Storage::Models {
                 // Move install tags to a temporary since we can't emplace a variant
                 // with arguments that are already replaced by the new type
                 std::vector<std::string> InstallTags(std::move(Data.InstallTags));
-                StateData.emplace<StateInitializing>(std::move(InstallTags));
+                Utils::EGL::ChunkProvider EGLProvider(std::move(Data.EGLProvider));
+                StateData.emplace<StateInitializing>(std::move(InstallTags), std::move(EGLProvider));
             }
 
             std::chrono::steady_clock::time_point BeginTimestamp = std::chrono::steady_clock::now();
@@ -177,7 +182,8 @@ namespace EGL3::Storage::Models {
                     }
                 }
 
-                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), std::move(ManifestFiles), *Archive, std::move(UpdatedChunks), std::move(DeletedChunkIdxs));
+                Utils::EGL::ChunkProvider EGLProvider(std::move(Data.EGLProvider));
+                StateData.emplace<StateInstalling>(std::move(CloudDir), std::move(Manifest.value()), std::move(ManifestFiles), *Archive, std::move(UpdatedChunks), std::move(DeletedChunkIdxs), std::move(EGLProvider));
             }
 
             {
@@ -358,20 +364,33 @@ namespace EGL3::Storage::Models {
         }
 
         if (!Data.UpdatedChunks.empty()) {
-            auto Chunk = Pop(Data.UpdatedChunks);
+            auto& Chunk = Pop(Data.UpdatedChunks).get();
             if (!Data.DeletedChunkIdxs.empty()) {
                 uint32_t ReplaceIdx = Pop(Data.DeletedChunkIdxs);
                 Lock.unlock();
-                ReplaceInstallOne(Chunk, ReplaceIdx);
+
+                auto& ChunkInfoData = Data.ArchiveChunkInfos[ReplaceIdx];
+
+                // Original chunk doesn't have enough space for the new chunk data
+                if (Chunk.WindowSize > ChunkInfoData.UncompressedSize) {
+                    ChunkInfoData.DataSector = AllocateChunkData(Chunk.WindowSize);
+                }
+
+                Data.BytesReadTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
+
+                InstallOne(Chunk, ChunkInfoData);
                 ++Data.PiecesComplete;
-                //Data.Archive.Flush();
                 return true;
             }
             else {
                 Lock.unlock();
-                AppendInstallOne(Chunk);
+
+                auto& ChunkInfoData = AllocateChunkInfo();
+
+                ChunkInfoData.DataSector = AllocateChunkData(Chunk.WindowSize);
+
+                InstallOne(Chunk, ChunkInfoData);
                 ++Data.PiecesComplete;
-                //Data.Archive.Flush();
                 return true;
             }
         }
@@ -384,22 +403,28 @@ namespace EGL3::Storage::Models {
         }
     }
 
-    void DownloadInfo::ReplaceInstallOne(const Web::Epic::BPS::ChunkInfo& Chunk, uint32_t ReplaceIdx)
+    void DownloadInfo::InstallOne(const Web::Epic::BPS::ChunkInfo& Chunk, Storage::Game::ChunkInfo& ChunkInfoData)
     {
         auto& Data = GetStateData<StateInstalling>();
 
-        auto Resp = GetChunk(Chunk);
-        EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
-        EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
+        std::unique_ptr<char[]> ChunkData;
 
-        Data.BytesDownloadTotal.fetch_add((uint64_t)Resp->Header.HeaderSize + Resp->Header.DataSizeCompressed, std::memory_order::relaxed);
+        if (Data.EGLProvider.IsValid()) {
+            ChunkData = Data.EGLProvider.GetChunk(Chunk.Guid);
+            Data.BytesReadTotal.fetch_add((uint64_t)Chunk.WindowSize, std::memory_order::relaxed);
+        }
 
-        EGL3_ENSURE(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
+        if (!ChunkData) {
+            auto Resp = GetChunk(Chunk);
+            EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
+            EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
 
-        auto& ChunkInfoData = Data.ArchiveChunkInfos[ReplaceIdx];
-        auto OldChunkSize = ChunkInfoData.UncompressedSize;
+            Data.BytesDownloadTotal.fetch_add((uint64_t)Resp->Header.HeaderSize + Resp->Header.DataSizeCompressed, std::memory_order::relaxed);
 
-        Data.BytesReadTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
+            EGL3_ENSURE(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
+
+            ChunkData = std::move(Resp->Data);
+        }
 
         ChunkInfoData.Guid = Chunk.Guid;
         memcpy(ChunkInfoData.SHA, Chunk.SHAHash, 20);
@@ -411,44 +436,9 @@ namespace EGL3::Storage::Models {
 
         Data.BytesWriteTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
 
-        if (ChunkInfoData.UncompressedSize > OldChunkSize) { // Original chunk doesn't have enough space for the new chunk data
-            ChunkInfoData.DataSector = AllocateChunkData(Chunk.WindowSize);
-        }
-
-        std::copy(Resp->Data.get(), Resp->Data.get() + Chunk.WindowSize, Data.ArchiveChunkDatas.begin() + ChunkInfoData.DataSector * Game::Header::GetSectorSize());
-
-        Data.BytesWriteTotal.fetch_add(Chunk.WindowSize, std::memory_order::relaxed);
-    }
-
-    void DownloadInfo::AppendInstallOne(const Web::Epic::BPS::ChunkInfo& Chunk)
-    {
-        auto& Data = GetStateData<StateInstalling>();
-        
-        auto Resp = GetChunk(Chunk);
-        EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
-        EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
-
-        Data.BytesDownloadTotal.fetch_add((uint64_t)Resp->Header.HeaderSize + Resp->Header.DataSizeCompressed, std::memory_order::relaxed);
-
-        EGL3_ENSURE(Resp->Header.DataSizeUncompressed == Chunk.WindowSize, LogLevel::Error, "Decompressed size is not equal to window size");
-
-        std::unique_lock Lock(Data.ChunkInfoMutex);
-        auto& ChunkInfoData = Data.ArchiveChunkInfos.emplace_back();
-        Lock.unlock();
-
-        ChunkInfoData.Guid = Chunk.Guid;
-        memcpy(ChunkInfoData.SHA, Chunk.SHAHash, 20);
-        ChunkInfoData.UncompressedSize = Chunk.WindowSize;
-        ChunkInfoData.CompressedSize = Chunk.WindowSize;
-        ChunkInfoData.DataSector = AllocateChunkData(Chunk.WindowSize);
-        ChunkInfoData.Hash = Chunk.Hash;
-        ChunkInfoData.DataGroup = Chunk.GroupNumber;
-
-        Data.BytesWriteTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
-
         auto BeginChunkDataItr = Data.ArchiveChunkDatas.begin() + ChunkInfoData.DataSector * Game::Header::GetSectorSize();
-        std::copy(Resp->Data.get(), Resp->Data.get() + Chunk.WindowSize, BeginChunkDataItr);
-        Data.ArchiveChunkDatas.flush(BeginChunkDataItr, Chunk.WindowSize);
+        BeginChunkDataItr.FastWrite(ChunkData.get(), Chunk.WindowSize);
+        // Data.ArchiveChunkDatas.flush(BeginChunkDataItr, Chunk.WindowSize);
 
         Data.BytesWriteTotal.fetch_add(Chunk.WindowSize, std::memory_order::relaxed);
     }
@@ -470,6 +460,15 @@ namespace EGL3::Storage::Models {
         }
 
         return Resp;
+    }
+
+    Storage::Game::ChunkInfo& DownloadInfo::AllocateChunkInfo()
+    {
+        auto& Data = GetStateData<StateInstalling>();
+
+        std::lock_guard Guard(Data.ChunkInfoMutex);
+
+        return Data.ArchiveChunkInfos.emplace_back();
     }
 
     uint32_t DownloadInfo::AllocateChunkData(uint32_t WindowSize)
@@ -502,9 +501,11 @@ namespace EGL3::Storage::Models {
         Header->GetUpdateInfo().BytesDownloadTotal = 0;
 
         std::string GameName;
+        EGL3_VERIFY(Modules::Game::GameInfoModule::GetGameName(Id, GameName), "Could not get game name");
+
         uint64_t VersionNum;
         std::string VersionHR;
-        Modules::Game::GameInfoModule::ParseGameVersion(Id, Meta.BuildVersion, GameName, VersionNum, VersionHR);
+        Modules::Game::GameInfoModule::ParseGameVersion(Id, Meta.BuildVersion, VersionNum, VersionHR);
 
         Header->SetGame(GameName);
         Header->SetVersionLong(Meta.BuildVersion);

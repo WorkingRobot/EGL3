@@ -18,6 +18,8 @@ namespace EGL3::Modules::Game {
     public:
         DownloadModule(ModuleList& Ctx);
 
+        ~DownloadModule();
+
         Storage::Models::DownloadInfo& OnDownloadClicked(Storage::Game::GameId Id);
 
         void OnDownloadOkClicked();
@@ -53,6 +55,7 @@ namespace EGL3::Modules::Game {
         Gtk::CheckButton& OptionsAutoUpdate;
         Gtk::CheckButton& OptionsCreateShortcut;
         Widgets::SdTree OptionsSdMeta;
+        std::optional<Gtk::Label> OptionsIsUsingEGL;
 
         Gtk::ScrolledWindow& SwitchStackPageInfo;
         Gtk::Button& InfoButtonPause;

@@ -165,7 +165,7 @@ namespace EGL3::Utils {
 
             // If the first character in the line is [ and last char is ], this line indicates a section name
             if (Line.front() == '[' && Line.back() == ']') {
-                CurrentSection = &Sections.try_emplace(std::string(Line.substr(1, Line.size() - 2))).first->second;;
+                CurrentSection = &Sections.try_emplace(std::string(Line.substr(1, Line.size() - 2))).first->second;
             }
             else if (CurrentSection) {
                 size_t AssignPos = Line.find('=');

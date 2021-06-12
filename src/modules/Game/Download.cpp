@@ -103,6 +103,14 @@ namespace EGL3::Modules::Game {
         Utils::Mmio::MmioFile::SetWorkingSize(Utils::Mmio::MmioFile::DownloadWorkingSize);
     }
 
+    DownloadModule::~DownloadModule()
+    {
+        if (CurrentDownload) {
+            CurrentDownload->OnStateUpdate.clear();
+            CurrentDownload->OnStatsUpdate.Set([](const auto& Stats) {});
+        }
+    }
+
     DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id)
     {
         ResetStats();
@@ -110,6 +118,13 @@ namespace EGL3::Modules::Game {
         CurrentDownload = std::make_unique<DownloadInfo>(Id, [this]() -> std::vector<InstalledGame>& { return Storage.Get(Storage::Persistent::Key::InstalledGames); });
 
         CurrentDownload->OnStateUpdate.connect([this](DownloadInfoState NewState) {
+            if (NewState == DownloadInfoState::Initializing && OptionsIsUsingEGL.has_value()) {
+                Glib::signal_idle().connect_once([this]() {
+                    SwitchStackPageOptions.remove(OptionsIsUsingEGL.value());
+                    OptionsIsUsingEGL.reset();
+                });
+            }
+
             {
                 std::lock_guard Lock(StatsMutex);
 
@@ -145,6 +160,13 @@ namespace EGL3::Modules::Game {
         }
         else {
             OptionsSdMeta.SetAllOptions();
+        }
+        if (Data.EGLProvider.IsValid()) {
+            auto& Label = OptionsIsUsingEGL.emplace();
+            Label.set_markup(std::format("An existing install was found at <b>{}</b>.\nAny usable data found there will be used instead of redownloaded.", (std::string)Glib::Markup::escape_text(Data.EGLProvider.GetInstallLocation().string())));
+            Label.set_justify(Gtk::JUSTIFY_CENTER);
+            SwitchStackPageOptions.pack_end(Label, false, false);
+            Label.show();
         }
 
         SwitchStack.set_visible_child(SwitchStackPageOptions);

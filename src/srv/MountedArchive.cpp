@@ -121,7 +121,7 @@ namespace EGL3::Service {
 
         for (auto Itr = Ctx.Parts.begin() + Ctx.LUT[LCN]; Itr->IsValid(); ++Itr) {
             auto Ptr = Ctx.DataBegin + Itr->GetPtr();
-            Ptr.FastCopy((char*)Buffer, Itr->GetSize());
+            Ptr.FastRead((char*)Buffer, Itr->GetSize());
             Buffer = (uint8_t*)Buffer + Itr->GetSize();
         }
     }

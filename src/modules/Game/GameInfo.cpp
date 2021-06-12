@@ -1,8 +1,8 @@
 #include "GameInfo.h"
 
 #include "../../utils/formatters/Regex.h"
+#include "../../utils/Platform.h"
 
-#include <charconv>
 #include <regex>
 
 namespace EGL3::Modules::Game {
@@ -30,23 +30,46 @@ namespace EGL3::Modules::Game {
 
     const std::vector<Web::Epic::Content::SdMeta::Data>* GameInfoModule::GetInstallOptions(Storage::Game::GameId Id, const std::string& Version, bool ForceUpdate)
     {
+        std::string CatalogItemId, AppName;
+        EGL3_VERIFY(GetCatalogInfo(Id, CatalogItemId, AppName), "Could not get catalog info");
+
+        return Auth.GetClientLauncherContent().GetSdMetaData(CatalogItemId, AppName, Version);
+    }
+
+    bool GameInfoModule::GetCatalogInfo(Storage::Game::GameId Id, std::string& CatalogItemId, std::string& AppName)
+    {
         switch (Id)
         {
         case Storage::Game::GameId::Fortnite:
-            return Auth.GetClientLauncherContent().GetSdMetaData("Fortnite", Version);
+            CatalogItemId = "4fe75bbc5a674f4f9b356b5c90567da5";
+            AppName = "Fortnite";
+            return true;
         default:
-            return nullptr;
+            CatalogItemId = "00000000000000000000000000000000";
+            AppName = "Unknown";
+            return false;
         }
     }
 
-    bool GameInfoModule::ParseGameVersion(Storage::Game::GameId Id, const std::string& Version, std::string& GameName, uint64_t& VersionNum, std::string& VersionHR)
+    bool GameInfoModule::GetGameName(Storage::Game::GameId Id, std::string& GameName)
+    {
+        switch (Id)
+        {
+        case Storage::Game::GameId::Fortnite:
+            GameName = "Fortnite";
+            return true;
+        default:
+            GameName = "Unknown";
+            return false;
+        }
+    }
+
+    bool GameInfoModule::ParseGameVersion(Storage::Game::GameId Id, const std::string& Version, uint64_t& VersionNum, std::string& VersionHR)
     {
         switch (Id)
         {
         case Storage::Game::GameId::Fortnite:
         {
-            GameName = "Fortnite";
-
             const static std::regex VersionRegex("\\+\\+Fortnite\\+Release-(\\d+)\\.(\\d+).*-CL-(\\d+)-.*");
             std::smatch Matches;
             if (std::regex_search(Version, Matches, VersionRegex)) {
@@ -63,7 +86,6 @@ namespace EGL3::Modules::Game {
             }
         }
         default:
-            GameName = "Unknown";
             VersionHR = "Unknown";
             VersionNum = -1;
             return false;
@@ -76,19 +98,21 @@ namespace EGL3::Modules::Game {
         {
         case Storage::Game::GameId::Fortnite:
         {
-            auto InfoResp = Auth.GetClientLauncher().GetDownloadInfo("Windows", "Live", "4fe75bbc5a674f4f9b356b5c90567da5", "Fortnite");
+            std::string CatalogItemId, AppName;
+            EGL3_VERIFY(GetCatalogInfo(Id, CatalogItemId, AppName), "Could not get catalog info");
+
+            auto InfoResp = Auth.GetClientLauncher().GetDownloadInfo(Utils::Platform::GetOSName(), "Live", CatalogItemId, AppName);
             if (InfoResp.HasError()) {
                 return InfoResp.GetError();
             }
-            auto Element = InfoResp->GetElement("Fortnite");
+            auto Element = InfoResp->GetElement(AppName);
             if (!Element) {
                 return Web::ErrorData::Status::Failure;
             }
 
             Storage::Models::VersionData Ret{};
             Ret.Element = *Element;
-            std::string GameName;
-            if (!ParseGameVersion(Id, Element->BuildVersion, GameName, Ret.VersionNum, Ret.VersionHR)) {
+            if (!ParseGameVersion(Id, Element->BuildVersion, Ret.VersionNum, Ret.VersionHR)) {
                 return Web::ErrorData::Status::Failure;
             }
             return Ret;

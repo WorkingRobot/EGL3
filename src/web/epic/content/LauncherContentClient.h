@@ -33,7 +33,7 @@ namespace EGL3::Web::Epic::Content {
 
         void LoadSdMetaData();
 
-        const std::vector<SdMeta::Data>* GetSdMetaData(const std::string& AppName, const std::string& Version);
+        const std::vector<SdMeta::Data>* GetSdMetaData(const std::string& CatalogItemId, const std::string& AppName, const std::string& Version);
 
     private:
         std::optional<BPS::Manifest> CurrentManifest;

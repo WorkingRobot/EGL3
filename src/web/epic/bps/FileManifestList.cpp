@@ -12,9 +12,7 @@ namespace EGL3::Web::Epic::BPS {
         int32_t ElementCount;
         {
             Stream >> DataSize;
-            uint8_t DataVersionRaw;
-            Stream >> DataVersionRaw;
-            DataVersion = (FileManifestListVersion)DataVersionRaw;
+            Stream >> DataVersion;
             Stream >> ElementCount;
         }
 
@@ -24,7 +22,7 @@ namespace EGL3::Web::Epic::BPS {
             for (auto& File : Val.FileList) { Stream >> File.Filename; }
             for (auto& File : Val.FileList) { Stream >> File.SymlinkTarget; }
             for (auto& File : Val.FileList) { Stream >> File.FileHash; }
-            for (auto& File : Val.FileList) { uint8_t FileMetaFlags; Stream >> FileMetaFlags; File.FileMetaFlags = (BPS::FileMetaFlags)FileMetaFlags; }
+            for (auto& File : Val.FileList) { Stream >> File.FileMetaFlags; }
             for (auto& File : Val.FileList) { Stream >> File.InstallTags; }
             for (auto& File : Val.FileList) { Stream >> File.ChunkParts; }
         }

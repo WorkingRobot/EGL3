@@ -389,7 +389,7 @@ namespace EGL3::Modules::Login {
             .RefreshExpireTime = AuthData.RefreshExpiresAt.value()
         };
         auto KairosDataResp = Fortnite.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
-        if (EGL3_ENSURE(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from fortnite client on launcher refresh")) {
+        if (EGL3_ENSUREF(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from fortnite client on launcher refresh (Error {} {})", (int)KairosDataResp.GetError().GetStatusCode(), KairosDataResp.GetError().GetErrorCode())) {
             for (auto& Setting : KairosDataResp->Values) {
                 if (Setting.AccountId != AuthData.AccountId.value()) {
                     continue;
