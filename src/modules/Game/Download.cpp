@@ -163,7 +163,7 @@ namespace EGL3::Modules::Game {
         }
         if (Data.EGLProvider.IsValid()) {
             auto& Label = OptionsIsUsingEGL.emplace();
-            Label.set_markup(std::format("An existing install was found at <b>{}</b>.\nAny usable data found there will be used instead of redownloaded.", (std::string)Glib::Markup::escape_text(Data.EGLProvider.GetInstallLocation().string())));
+            Label.set_markup(std::format("An existing install was found at <b>{}</b>.\nAny compatible data found there will be used, otherwise the remaining data will be redownloaded.", (std::string)Glib::Markup::escape_text(Data.EGLProvider.GetInstallLocation().string())));
             Label.set_justify(Gtk::JUSTIFY_CENTER);
             SwitchStackPageOptions.pack_end(Label, false, false);
             Label.show();
