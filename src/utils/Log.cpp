@@ -21,7 +21,7 @@ namespace EGL3 {
         if (!GetConsoleMode(StdOutHandle, &CurrentMode)) {
             return;
         }
-        Detail::LogColorsEnabled = true; // SetConsoleMode(StdOutHandle, CurrentMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        Detail::LogColorsEnabled = SetConsoleMode(StdOutHandle, CurrentMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     }
 
 }
