@@ -20,12 +20,12 @@ namespace EGL3::Utils {
         return std::wstring(Buf.get(), BufSize - 1);
     }
 
-    NUMBERFMTW GetCurrentNumberFormat() {
+    NUMBERFMTW GetCurrentNumberFormat(WCHAR szDecimal[16], WCHAR szThousand[16]) {
         NUMBERFMTW fmt{};
         GetLocaleInfoEx(SelectedLocale, LOCALE_IDIGITS | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&fmt.NumDigits), sizeof(fmt.NumDigits) / sizeof(WCHAR));
         GetLocaleInfoEx(SelectedLocale, LOCALE_ILZERO | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&fmt.LeadingZero), sizeof(fmt.LeadingZero) / sizeof(WCHAR));
         WCHAR szGrouping[32] = L"";
-        GetLocaleInfoEx(SelectedLocale, LOCALE_SGROUPING, szGrouping, ARRAYSIZE(szGrouping));
+        GetLocaleInfoEx(SelectedLocale, LOCALE_SGROUPING, szGrouping, 32);
         if (lstrcmpW(szGrouping, L"3;0") == 0 || lstrcmpW(szGrouping, L"30") == 0) {
             fmt.Grouping = 3;
         }
@@ -35,11 +35,9 @@ namespace EGL3::Utils {
         else {
             fmt.Grouping = 3; // default
         }
-        WCHAR szDecimal[16] = L"";
-        GetLocaleInfoEx(SelectedLocale, LOCALE_SDECIMAL, szDecimal, ARRAYSIZE(szDecimal));
+        GetLocaleInfoEx(SelectedLocale, LOCALE_SDECIMAL, szDecimal, 16);
         fmt.lpDecimalSep = szDecimal;
-        WCHAR szThousand[16] = L"";
-        GetLocaleInfoEx(SelectedLocale, LOCALE_STHOUSAND, szThousand, ARRAYSIZE(szThousand));
+        GetLocaleInfoEx(SelectedLocale, LOCALE_STHOUSAND, szThousand, 16);
         fmt.lpThousandSep = szThousand;
         GetLocaleInfoEx(SelectedLocale, LOCALE_INEGNUMBER | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&fmt.NegativeOrder), sizeof(fmt.NegativeOrder) / sizeof(WCHAR));
 
@@ -48,14 +46,16 @@ namespace EGL3::Utils {
 
     std::wstring Detail::HumanizeNumber(const std::wstring& ValueString, int Precision)
     {
-        auto fmt = GetCurrentNumberFormat();
+        WCHAR szDecimal[16] = L"";
+        WCHAR szThousand[16] = L"";
+        auto fmt = GetCurrentNumberFormat(szDecimal, szThousand);
         fmt.NumDigits = std::max(Precision, 0);
         int64_t BufSize = GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, NULL, 0);
         if (!EGL3_ENSUREF(BufSize != 0, LogLevel::Error, "Couldn't humanize number \"{}\" (GLE: {})", ValueString, GetLastError())) {
             return L"";
         }
         auto Buf = std::make_unique<wchar_t[]>(BufSize);
-        GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, Buf.get(), BufSize);
+        EGL3_ENSUREF(GetNumberFormatEx(SelectedLocale, 0, ValueString.c_str(), &fmt, Buf.get(), BufSize) != 0, LogLevel::Error, "Couldn't humanize number \"{}\" (GLE: {})", ValueString, GetLastError());
         return std::wstring(Buf.get(), BufSize - 1);
     }
 
