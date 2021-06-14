@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.18)
+cmake_minimum_required (VERSION 3.18)
 
 ## Project Definition and Options ##
 
@@ -13,6 +13,7 @@ add_dir_recursive(EGL3_SRV pipe/server)
 add_dir_recursive(EGL3_SRV ../disk)
 add_dir_recursive(EGL3_SRV ../storage/game)
 add_dir_recursive(EGL3_SRV ../utils/mmio)
+add_file(EGL3_SRV ../utils/Log.cpp)
 add_file(EGL3_SRV ../utils/Random.cpp)
 add_file(EGL3_SRV ../utils/StackTrace.cpp)
 add_file(EGL3_SRV srv_main.cpp)

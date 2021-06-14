@@ -9,7 +9,6 @@
 #include <Windows.h>
 #endif
 
-#include "Log.h"
 #include "StackTrace.h"
 #include <format>
 
@@ -24,7 +23,6 @@ namespace EGL3 {
         Critical,
         Error,
         Warning,
-        Message,
         Info,
         Debug
     };
@@ -39,8 +37,6 @@ namespace EGL3 {
                 return "Error";
             case LogLevel::Warning:
                 return "Warning";
-            case LogLevel::Message:
-                return "Message";
             case LogLevel::Info:
                 return "Info";
             case LogLevel::Debug:
@@ -49,6 +45,28 @@ namespace EGL3 {
                 return "Unknown";
             }
         }
+
+        static consteval std::string_view ToColorPrefix(LogLevel Level) {
+            switch (Level)
+            {
+            case LogLevel::Critical:
+                return "\33[31m"; // Dark Red
+            case LogLevel::Error:
+                return "\33[31;1m"; // Bold/Bright Red
+            case LogLevel::Warning:
+                return "\33[33;1m"; // Bold/Bright Yellow
+            case LogLevel::Info:
+                return "\33[37;1m"; // Bold/Bright White
+            case LogLevel::Debug:
+                return "\33[36;1m"; // Bold/Bright Aqua
+            default:
+                return "\33[32;1m"; // Bold/Bright Green
+            }
+        }
+
+        static constexpr std::string_view ResetColorPrefix = "\33[0m";
+
+        extern bool LogColorsEnabled;
 
         static consteval std::string_view FixFilename(const std::string_view Filename) {
             constexpr std::string_view Pattern = "src\\";
@@ -61,6 +79,7 @@ namespace EGL3 {
         template<LogLevel LogLevelLiteral>
         struct LogContextBase {
             constexpr static const std::string_view LogLevel = ToString(LogLevelLiteral);
+            constexpr static const std::string_view ColorPrefix = ToColorPrefix(LogLevelLiteral);
             std::string_view Filename;
             unsigned Line;
 
@@ -117,11 +136,21 @@ namespace EGL3 {
 
         template<class Ctx>
         void UseContextPrintf(const Ctx& Context, const std::string_view Message) {
-            if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
-                printf("%s\n", std::format("{}\n\n{}", Context(Message), Ctx::GetStackTrace()).c_str());
+            if (LogColorsEnabled) {
+                if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
+                    printf("%s%s%s\n", Ctx::ColorPrefix.data(), std::format("{}\n\n{}", Context(Message), Ctx::GetStackTrace()).c_str(), ResetColorPrefix.data());
+                }
+                else {
+                    printf("%s%s%s\n", Ctx::ColorPrefix.data(), Context(Message).c_str(), ResetColorPrefix.data());
+                }
             }
             else {
-                printf("%s\n", Context(Message).c_str());
+                if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
+                    printf("%s\n", std::format("{}\n\n{}", Context(Message), Ctx::GetStackTrace()).c_str());
+                }
+                else {
+                    printf("%s\n", Context(Message).c_str());
+                }
             }
         }
 
@@ -220,6 +249,8 @@ namespace EGL3 {
             return UseContextConditional(CreateContext<LogLevelLiteral>(std::forward<Args>(args)...));
         }
     }
+
+    void EnableLogColors();
 }
 
 // Log a formatted message

@@ -70,6 +70,8 @@ namespace EGL3 {
     };
 
     __forceinline int Start() {
+        EnableLogColors();
+
         //_putenv_s("GTK_DEBUG", "interactive");
         MainApp App;
 
