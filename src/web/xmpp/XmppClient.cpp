@@ -741,6 +741,42 @@ namespace EGL3::Web::Xmpp {
         return false;
     }
 
+    bool XmppClient::HandlePong(const rapidxml::xml_node<>* Node) {
+        if (XmlNameEqual(Node, "iq")) {
+            auto TypeAttr = Node->first_attribute("type", 4);
+            if (!TypeAttr) {
+                return false;
+            }
+            if (!XmlValueEqual(TypeAttr, "result")) {
+                return false;
+            }
+
+            auto FromAttr = Node->first_attribute("from", 4);
+            if (!FromAttr) {
+                return false;
+            }
+            EGL3_ENSURE(XmlValueEqual(FromAttr, "prod.ol.epicgames.com"), LogLevel::Warning, "Bad from attr value with <iq>, from=\"prod.ol.epicgames.com\" expected");
+
+            auto XmlnsAttr = Node->first_attribute("xmlns", 5);
+            if (EGL3_ENSURE(XmlnsAttr, LogLevel::Warning, "No xmlns recieved with <iq>, xmlns=\"jabber:client\" expected")) {
+                EGL3_ENSURE(XmlValueEqual(XmlnsAttr, "jabber:client"), LogLevel::Warning, "Bad xmlns attr value with <iq>, xmlns=\"jabber:client\" expected");
+            }
+
+            auto ToAttr = Node->first_attribute("to", 2);
+            if (EGL3_ENSURE(ToAttr, LogLevel::Warning, "No to jid recieved with <iq>")) {
+                EGL3_ENSURE(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad type attr value with <iq>, expected JID does not match");
+            }
+
+            auto IdAttr = Node->first_attribute("id", 2);
+            if (EGL3_ENSURE(IdAttr, LogLevel::Warning, "No id recieved with <iq>")) {
+                EGL3_ENSURE(ToAttr->value_size() == 32, LogLevel::Warning, "Bad type attr value with <iq>, expected some 32 character hex string");
+            }
+
+            return true;
+        }
+        return false;
+    }
+
     // https://github.com/EpicGames/UnrealEngine/blob/df84cb430f38ad08ad831f31267d8702b2fefc3e/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L88
     std::string GenerateResourceId() {
         char Guid[16];
@@ -848,6 +884,10 @@ namespace EGL3::Web::Xmpp {
         }
 
         if (HandleChat(Node)) {
+            return true;
+        }
+
+        if (HandlePong(Node)) {
             return true;
         }
 

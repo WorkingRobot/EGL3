@@ -49,6 +49,8 @@ namespace EGL3::Web::Xmpp {
 
         bool HandleChat(const rapidxml::xml_node<>* Node);
 
+        bool HandlePong(const rapidxml::xml_node<>* Node);
+
         void BackgroundPingTask();
 
         void ReceivedMessage(const ix::WebSocketMessagePtr& Message);
