@@ -1,6 +1,7 @@
 #include "Client.h"
 
 #include "../../../utils/streams/BufferStream.h"
+#include "../../../utils/Log.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -31,27 +32,23 @@ namespace EGL3::Service::Pipe {
                 break;
             }
 
-            if (GetLastError() != ERROR_PIPE_BUSY) {
-                printf("CreateFile failed, GLE=%d.\n", GetLastError());
+            if (!EGL3_ENSUREF(GetLastError() == ERROR_PIPE_BUSY, LogLevel::Error, "CreateFile failed (GLE: {})", GetLastError())) {
                 return false;
             }
 
-            if (!WaitNamedPipe(Name, 1000)) {
-                printf("WaitNamedPipe timed out, GLE=%d.\n", GetLastError());
+            if (!EGL3_ENSUREF(WaitNamedPipe(Name, 1000), LogLevel::Error, "WaitNamedPipe timed out (GLE: {})", GetLastError())) {
                 return false;
             }
         }
 
         DWORD PipeMode = PIPE_READMODE_MESSAGE;
         bool Success = SetNamedPipeHandleState(PipeHandle, &PipeMode, NULL, NULL);
-        if (!Success) {
-            printf("SetNamedPipeHandleState failed, GLE=%d.\n", GetLastError());
+        if (!EGL3_ENSUREF(Success, LogLevel::Error, "SetNamedPipeHandleState failed (GLE: {})", GetLastError())) {
             return false;
         }
 
         auto Resp = Handshake(PacketProtocol::Latest, ClientName, ServerName);
-        if (Resp != PacketResponse::Success) {
-            printf("Handshake failed, GLE=%d, Response=%hu.\n", GetLastError(), Resp);
+        if (!EGL3_ENSUREF(Resp == PacketResponse::Success, LogLevel::Error, "Handshake failed (GLE: {}, Response: {})", GetLastError(), (uint16_t)Resp)) {
             return false;
         }
 
@@ -139,8 +136,7 @@ namespace EGL3::Service::Pipe {
         {
             Utils::Streams::BufferStream Stream(RequestBuffer + sizeof(PacketHeader), BufferSize - sizeof(PacketHeader));
             Stream << Request;
-            if (Stream.tell() + sizeof(PacketHeader) > BufferSize) {
-                printf("Request is too large (%zu)\n", Stream.tell() + sizeof(PacketHeader));
+            if (!EGL3_ENSUREF(Stream.tell() + sizeof(PacketHeader) <= BufferSize, LogLevel::Error, "Request is too large ({})", Stream.tell() + sizeof(PacketHeader))) {
                 return false;
             }
             RequestHeader.SetSize(Stream.tell());
@@ -150,21 +146,17 @@ namespace EGL3::Service::Pipe {
         char ResponseBuffer[BufferSize];
         DWORD BytesRead = 0;
         bool Success = TransactNamedPipe(PipeHandle, RequestBuffer, RequestHeader.GetSize() + sizeof(PacketHeader), ResponseBuffer, sizeof(ResponseBuffer), &BytesRead, NULL);
-        if (!Success) {
-            printf("TransactNamedPipe failed, GLE=%d.\n", GetLastError());
+        if (!EGL3_ENSUREF(Success, LogLevel::Error, "TransactNamedPipe failed (GLE: {})", GetLastError())) {
             return false;
         }
-        if (BytesRead < sizeof(PacketHeader)) {
-            printf("Response too small to even include a message type\n");
+        if (!EGL3_ENSURE(BytesRead >= sizeof(PacketHeader), LogLevel::Error, "Response too small to even include a message type")) {
             return false;
         }
         PacketHeader ResponseHeader = *(PacketHeader*)ResponseBuffer;
-        if (BytesRead != ResponseHeader.GetSize() + sizeof(PacketHeader)) {
-            printf("Response's packet header does not match the number of bytes read\n");
+        if (!EGL3_ENSURE(BytesRead == ResponseHeader.GetSize() + sizeof(PacketHeader), LogLevel::Error, "Response's packet header does not match the number of bytes read")) {
             return false;
         }
-        if (Id != ResponseHeader.GetId()) {
-            printf("Response returned the wrong packet type (returned %hu)\n", ResponseHeader.GetId());
+        if (!EGL3_ENSUREF(Id == ResponseHeader.GetId(), LogLevel::Error, "Response returned the wrong packet type ({})", (uint16_t)ResponseHeader.GetId())) {
             return false;
         }
         {
