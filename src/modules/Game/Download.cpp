@@ -9,6 +9,46 @@ namespace EGL3::Modules::Game {
     static constexpr std::chrono::milliseconds RefreshTime(500);
     static constexpr double DivideRate = std::chrono::duration_cast<std::chrono::duration<double>>(RefreshTime) / std::chrono::seconds(1);
 
+    namespace Colors {
+        static constexpr Widgets::StateColor Unknown = 0xFFC3C2C2;
+        static constexpr Widgets::StateColor PendingLocalChunkDbData = 0xFFA390CB;
+        static constexpr Widgets::StateColor RetrievingLocalChunkDbData = 0xFFB1A6D6;
+        static constexpr Widgets::StateColor PendingLocalInstallData = 0xFFA390CB;
+        static constexpr Widgets::StateColor RetrievingLocalInstallData = 0xFFB1A6D6;
+        static constexpr Widgets::StateColor PendingRemoteCloudData = 0xFF90B1CB;
+        static constexpr Widgets::StateColor RetrievingRemoteCloudData = 0xFFA6C6D6;
+        static constexpr Widgets::StateColor PendingLocalDataStore = 0xFFA390CB;
+        static constexpr Widgets::StateColor RetrievingLocalDataStore = 0xFFB1A6D6;
+        static constexpr Widgets::StateColor DataInMemoryStore = 0xFFC3C2C2;
+        static constexpr Widgets::StateColor Staged = 0xFFC8E2BF;
+        static constexpr Widgets::StateColor Installed = 0xFFC8E2BF;
+        static constexpr Widgets::StateColor Verifying = 0xFFAFD6A6;
+        static constexpr Widgets::StateColor VerifiedFail = 0xFFD62728;
+        static constexpr Widgets::StateColor VerifiedSuccess = 0xFF95CB90;
+    }
+
+    static constexpr Widgets::StateColor ChunkStateToColor(ChunkState State) {
+        switch (State)
+        {
+        case ChunkState::Scheduled:
+            return Colors::PendingRemoteCloudData;
+        case ChunkState::Initializing:
+            return Colors::Unknown;
+        case ChunkState::Transferring:
+            return Colors::RetrievingLocalInstallData;
+        case ChunkState::Downloading:
+            return Colors::RetrievingRemoteCloudData;
+        case ChunkState::WritingMetadata:
+            return Colors::DataInMemoryStore;
+        case ChunkState::WritingData:
+            return Colors::Installed;
+        case ChunkState::Completed:
+            return Colors::VerifiedSuccess;
+        default:
+            return Colors::Unknown;
+        }
+    }
+
     DownloadModule::DownloadModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
@@ -41,7 +81,7 @@ namespace EGL3::Modules::Game {
         InfoReadPeak(Ctx.GetWidget<Gtk::Label>("DownloadInfoReadPeak")),
         InfoWriteCurrent(Ctx.GetWidget<Gtk::Label>("DownloadInfoWriteCurrent")),
         InfoWritePeak(Ctx.GetWidget<Gtk::Label>("DownloadInfoWritePeak")),
-        InfoGraph(Ctx.GetWidget<Gtk::DrawingArea>("DownloadInfoGraph"))
+        InfoStateGrid(Ctx.GetWidget<Gtk::DrawingArea>("DownloadInfoGraph"), ChunkStateToColor)
     {
         OptionsBrowseBtn.signal_clicked().connect([this]() {
             OptionsFileDialog.Show();
@@ -68,14 +108,6 @@ namespace EGL3::Modules::Game {
 
         StatsDispatcher.connect([this]() { OnStatsUpdate(); });
 
-        InfoGraph.OnFormatTooltip.Set([this](int Idx, const auto& Data) {
-            return Glib::ustring::compose("Network: %1/s\nRead: %2/s\nWrite: %3/s",
-                Utils::HumanizeByteSize(Data[0] * GraphScale),
-                Utils::HumanizeByteSize(Data[1] * GraphScale),
-                Utils::HumanizeByteSize(Data[2] * GraphScale)
-            );
-        });
-
         MainStackBefore = MainStackCurrent = MainStack.get_focus_child();
 
         MainStack.signal_set_focus_child().connect([this](Gtk::Widget* NewChild) {
@@ -100,7 +132,7 @@ namespace EGL3::Modules::Game {
             }
         });
 
-        Utils::Mmio::MmioFile::SetWorkingSize(Utils::Mmio::MmioFile::DownloadWorkingSize);
+        Utils::Mmio::MmioFile::SetWorkingSize(384ull * 1024 * 1024);
     }
 
     DownloadModule::~DownloadModule()
@@ -124,6 +156,10 @@ namespace EGL3::Modules::Game {
                     OptionsIsUsingEGL.reset();
                 });
             }
+            if (NewState == DownloadInfoState::Installing) {
+                auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateInstalling>();
+                InfoStateGrid.Initialize(Data.UpdatedChunks.size());
+            }
 
             {
                 std::lock_guard Lock(StatsMutex);
@@ -141,6 +177,21 @@ namespace EGL3::Modules::Game {
                 StatsData = NewStats;
             }
             StatsDispatcher.emit();
+        });
+
+        CurrentDownload->OnChunkUpdate.Set([this](const Utils::Guid& Guid, ChunkState NewState) {
+            switch (NewState)
+            {
+            case ChunkState::Initializing:
+                InfoStateGrid.BeginCtx(Guid, NewState);
+                break;
+            case ChunkState::Completed:
+                InfoStateGrid.EndCtx(Guid);
+                break;
+            default:
+                InfoStateGrid.UpdateCtx(Guid, NewState);
+                break;
+            }
         });
 
         auto VersionData = GameInfo.GetVersionData(Id);
@@ -239,7 +290,7 @@ namespace EGL3::Modules::Game {
         InfoReadPeak.set_text("");
         InfoWriteCurrent.set_text("");
         InfoWritePeak.set_text("");
-        InfoGraph.Clear();
+        InfoStateGrid.Initialize(0);
     }
 
     template<>
@@ -393,8 +444,6 @@ namespace EGL3::Modules::Game {
             InfoWriteCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsData.BytesWriteRate)));
             InfoWritePeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesWritePeak)));
             InfoWritePeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesWritePeak)));
-
-            InfoGraph.Add({ float(StatsData.BytesDownloadRate / GraphScale), float(StatsData.BytesReadRate / GraphScale), float(StatsData.BytesWriteRate / GraphScale) });
         }
     }
 }

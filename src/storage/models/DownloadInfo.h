@@ -153,6 +153,7 @@ namespace EGL3::Storage::Models {
         void InstallOne(const Web::Epic::BPS::ChunkInfo& Chunk, Storage::Game::ChunkInfo& ChunkInfoData);
 
         Utils::Callback<void(const DownloadInfoStats&)> OnStatsUpdate;
+        Utils::Callback<void(const Utils::Guid&, ChunkState)> OnChunkUpdate;
 
         sigc::signal<void(DownloadInfoState)> OnStateUpdate;
 

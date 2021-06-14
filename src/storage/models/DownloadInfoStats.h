@@ -28,6 +28,16 @@ namespace EGL3::Storage::Models {
         uint64_t BytesWriteRate;
     };
 
+    enum class ChunkState : uint8_t {
+        Scheduled,
+        Initializing,
+        Transferring,
+        Downloading,
+        WritingMetadata,
+        WritingData,
+        Completed
+    };
+
     static constexpr const char* DownloadInfoStateToString(DownloadInfoState State) {
         switch (State)
         {

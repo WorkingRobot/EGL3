@@ -365,6 +365,8 @@ namespace EGL3::Storage::Models {
 
         if (!Data.UpdatedChunks.empty()) {
             auto& Chunk = Pop(Data.UpdatedChunks).get();
+            OnChunkUpdate(Chunk.Guid, ChunkState::Initializing);
+
             if (!Data.DeletedChunkIdxs.empty()) {
                 uint32_t ReplaceIdx = Pop(Data.DeletedChunkIdxs);
                 Lock.unlock();
@@ -379,8 +381,6 @@ namespace EGL3::Storage::Models {
                 Data.BytesReadTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
 
                 InstallOne(Chunk, ChunkInfoData);
-                ++Data.PiecesComplete;
-                return true;
             }
             else {
                 Lock.unlock();
@@ -390,9 +390,10 @@ namespace EGL3::Storage::Models {
                 ChunkInfoData.DataSector = AllocateChunkData(Chunk.WindowSize);
 
                 InstallOne(Chunk, ChunkInfoData);
-                ++Data.PiecesComplete;
-                return true;
             }
+
+            ++Data.PiecesComplete;
+            return true;
         }
         else {
             // remove unused deleted chunks later, that's too much work atm
@@ -410,11 +411,15 @@ namespace EGL3::Storage::Models {
         std::unique_ptr<char[]> ChunkData;
 
         if (Data.EGLProvider.IsValid()) {
+            OnChunkUpdate(Chunk.Guid, ChunkState::Transferring);
+
             ChunkData = Data.EGLProvider.GetChunk(Chunk.Guid);
             Data.BytesReadTotal.fetch_add((uint64_t)Chunk.WindowSize, std::memory_order::relaxed);
         }
 
         if (!ChunkData) {
+            OnChunkUpdate(Chunk.Guid, ChunkState::Downloading);
+
             auto Resp = GetChunk(Chunk);
             EGL3_VERIFY(!Resp.HasError(), "Could not get chunk");
             EGL3_VERIFY(!Resp->HasError(), "Could not parse chunk");
@@ -426,6 +431,8 @@ namespace EGL3::Storage::Models {
             ChunkData = std::move(Resp->Data);
         }
 
+        OnChunkUpdate(Chunk.Guid, ChunkState::WritingMetadata);
+
         ChunkInfoData.Guid = Chunk.Guid;
         memcpy(ChunkInfoData.SHA, Chunk.SHAHash, 20);
         ChunkInfoData.UncompressedSize = Chunk.WindowSize;
@@ -436,11 +443,15 @@ namespace EGL3::Storage::Models {
 
         Data.BytesWriteTotal.fetch_add(sizeof(ChunkInfoData), std::memory_order::relaxed);
 
+        OnChunkUpdate(Chunk.Guid, ChunkState::WritingData);
+
         auto BeginChunkDataItr = Data.ArchiveChunkDatas.begin() + ChunkInfoData.DataSector * Game::Header::GetSectorSize();
         BeginChunkDataItr.FastWrite(ChunkData.get(), Chunk.WindowSize);
         // Data.ArchiveChunkDatas.flush(BeginChunkDataItr, Chunk.WindowSize);
 
         Data.BytesWriteTotal.fetch_add(Chunk.WindowSize, std::memory_order::relaxed);
+
+        OnChunkUpdate(Chunk.Guid, ChunkState::Completed);
     }
 
     Web::Response<Web::Epic::BPS::ChunkData> DownloadInfo::GetChunk(const Web::Epic::BPS::ChunkInfo& Chunk) const
