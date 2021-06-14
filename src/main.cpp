@@ -12,6 +12,7 @@ namespace EGL3 {
             App(Gtk::Application::create("me.workingrobot.egl3", Gio::ApplicationFlags::APPLICATION_HANDLES_COMMAND_LINE))
         {
             EGL3_LOGF(LogLevel::Info, "Starting up {}/{} {}/{}", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion());
+            EGL3_ENSUREF(!Utils::Platform::IsProcessElevated(), LogLevel::Warning, "EGL3 is running as admin. Any files created (config files, install files, etc.) will be readonly when run without admin in the future.");
 
             App->signal_command_line().connect(sigc::mem_fun(this, &MainApp::OnCommandLine), false);
             App->signal_startup().connect(sigc::mem_fun(this, &MainApp::OnStartup));

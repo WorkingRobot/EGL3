@@ -1,6 +1,6 @@
 #include "Platform.h"
 
-#include <format>
+#include "Log.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -16,10 +16,9 @@ namespace EGL3::Utils::Platform {
         Info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 #pragma warning( push )
 #pragma warning( disable : 28159 )
-        if (GetVersionEx((LPOSVERSIONINFO)&Info)) {
+        EGL3_VERIFYF(GetVersionEx((LPOSVERSIONINFO)&Info), "Could not get system version info (GLE: {})", GetLastError());
 #pragma warning( pop )
-            return std::format("{}.{}.{}.{}.{}.{}", Info.dwMajorVersion, Info.dwMinorVersion, Info.dwBuildNumber, Info.wProductType, Info.wSuiteMask, "64bit");
-        }
+        return std::format("{}.{}.{}.{}.{}.{}", Info.dwMajorVersion, Info.dwMinorVersion, Info.dwBuildNumber, Info.wProductType, Info.wSuiteMask, "64bit");
     }
 
     const std::string& GetOSVersion()
@@ -77,5 +76,42 @@ namespace EGL3::Utils::Platform {
         static MemoryConstants Constants = GetMemoryConstantsInternal();
 
         return Constants;
+    }
+
+    // https://github.com/modzero/fix-windows-privacy/blob/e85cfc1937ff576c9b9ff4bfe9fae270acf3ba55/fix-privacy-base/SelfElevate.cpp#L259
+    bool IsProcessElevated()
+    {
+        BOOL fIsRunAsAdmin = FALSE;
+        DWORD dwError = ERROR_SUCCESS;
+        PSID pAdministratorsGroup = NULL;
+
+        SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+        if (!AllocateAndInitializeSid(
+            &NtAuthority,
+            2,
+            SECURITY_BUILTIN_DOMAIN_RID,
+            DOMAIN_ALIAS_RID_ADMINS,
+            0, 0, 0, 0, 0, 0,
+            &pAdministratorsGroup)) {
+            dwError = GetLastError();
+            goto Cleanup;
+        }
+
+        if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin)) {
+            dwError = GetLastError();
+            goto Cleanup;
+        }
+
+    Cleanup:
+        if (pAdministratorsGroup) {
+            FreeSid(pAdministratorsGroup);
+            pAdministratorsGroup = NULL;
+        }
+
+        if (dwError != ERROR_SUCCESS) {
+            throw dwError;
+        }
+
+        return fIsRunAsAdmin;
     }
 }

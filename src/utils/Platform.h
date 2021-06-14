@@ -21,4 +21,6 @@ namespace EGL3::Utils::Platform {
     };
 
     const MemoryConstants& GetMemoryConstants();
+
+	bool IsProcessElevated();
 }
