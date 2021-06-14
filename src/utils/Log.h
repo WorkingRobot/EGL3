@@ -193,7 +193,8 @@ namespace EGL3 {
                 if (Result) {
                     return true;
                 }
-                std::string_view Message = UseMessageArgument(MessageValue);
+                auto MessageArg = UseMessageArgument(MessageValue);
+                std::string_view Message = MessageArg;
 
                 UseContextPrintf(Context, Message);
                 if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
