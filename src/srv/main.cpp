@@ -1,6 +1,6 @@
 #include "Service.h"
-#include "ServiceConfig.h"
-#include "ServiceControl.h"
+#include "Config.h"
+#include "Control.h"
 #include "../utils/Crc32.h"
 
 #include <conio.h>

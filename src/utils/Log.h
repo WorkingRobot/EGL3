@@ -1,9 +1,11 @@
 #pragma once
 
-#ifndef SERVICE_NAME
+#ifndef IS_SERVICE
 #include "../web/Hosts.h"
 #include "AsyncMessageBox.h"
 #else
+#include "../srv/Consts.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -13,7 +15,7 @@
 #include <format>
 
 namespace EGL3 {
-#ifndef SERVICE_NAME
+#ifndef IS_SERVICE
     static constexpr bool HasUI = true;
 #else
     static constexpr bool HasUI = false;
@@ -154,7 +156,7 @@ namespace EGL3 {
             }
         }
 
-#ifndef SERVICE_NAME
+#ifndef IS_SERVICE
         template<class Ctx>
         void UseContextMessageBox(const Ctx& Context, const std::string_view Message) {
             char Text[2048]{};
@@ -164,14 +166,14 @@ namespace EGL3 {
 #else
         template<class Ctx>
         void UseContextService(const Ctx& Context, const std::string_view Message) {
-            HANDLE hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
+            HANDLE hEventSource = RegisterEventSource(NULL, Service::GetServiceName());
             if (hEventSource) {
                 LPCSTR lpszStrings[2];
                 CHAR Buffer[2048]{};
 
                 std::format_to_n(Buffer, 2048, "A critical error occurred in EGL3:\n{}", Context(Message));
 
-                lpszStrings[0] = SERVICE_NAME;
+                lpszStrings[0] = Service::GetServiceName();
                 lpszStrings[1] = Buffer;
 
                 ReportEvent(hEventSource,// event log handle

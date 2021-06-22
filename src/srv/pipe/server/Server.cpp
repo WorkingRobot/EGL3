@@ -3,11 +3,12 @@
 #include "../../../utils/streams/BufferStream.h"
 #include "../../../utils/Log.h"
 #include "../../../utils/Version.h"
+#include "../../Consts.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
-#include <aclapi.h>
+#include <AclAPI.h>
 
 namespace EGL3::Service::Pipe {
     Server::Server(const char* Name) :
@@ -130,7 +131,7 @@ namespace EGL3::Service::Pipe {
         else {
             Output.Response = PacketResponse::Success;
         }
-        Output.ServerName = std::format("{}/{}", SERVICE_NAME, Utils::Version::GetAppVersion());
+        Output.ServerName = std::format("{}/{}", GetServiceName(), Utils::Version::GetAppVersion());
     }
 
     template<>

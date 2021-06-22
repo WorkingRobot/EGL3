@@ -1,6 +1,9 @@
-#include "ServiceControl.h"
+#include "Control.h"
+
+#include "Consts.h"
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <AclAPI.h>
 
@@ -27,8 +30,8 @@ namespace EGL3::Service {
         // Get a handle to the service.
 
         Service = OpenService(
-            SCManager,           // SCM database 
-            SERVICE_NAME,        // name of service 
+            SCManager,           // SCM database
+            GetServiceName(),    // name of service 
             SERVICE_ALL_ACCESS); // full access
 
         if (Service == NULL)
@@ -226,7 +229,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,           // SCM database 
-            SERVICE_NAME,        // name of service 
+            GetServiceName(),    // name of service 
             SERVICE_STOP |
             SERVICE_QUERY_STATUS |
             SERVICE_ENUMERATE_DEPENDENTS);
@@ -372,7 +375,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,                 // SCM database 
-            SERVICE_NAME,              // name of service 
+            GetServiceName(),          // name of service 
             READ_CONTROL | WRITE_DAC);
 
         if (Service == NULL)

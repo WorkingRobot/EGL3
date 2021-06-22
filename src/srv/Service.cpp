@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include "pipe/server/Server.h"
+#include "Consts.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -20,7 +21,7 @@ VOID SvcReportEvent(LPCSTR Function);
 
 VOID WINAPI SvcMain(DWORD argc, LPSTR* argv)
 {
-    SvcStatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, SvcCtrlHandler);
+    SvcStatusHandle = RegisterServiceCtrlHandler(EGL3::Service::GetServiceName(), SvcCtrlHandler);
 
     if (SvcStatusHandle == NULL) {
         SvcReportEvent("RegisterServiceCtrlHandler");
@@ -118,13 +119,13 @@ VOID SvcReportEvent(LPCSTR Function)
     LPCSTR lpszStrings[2];
     CHAR Buffer[80];
 
-    hEventSource = RegisterEventSource(NULL, SERVICE_NAME);
+    hEventSource = RegisterEventSource(NULL, EGL3::Service::GetServiceName());
 
     if (NULL != hEventSource)
     {
         sprintf_s(Buffer, "%s failed with %d", Function, GetLastError());
 
-        lpszStrings[0] = SERVICE_NAME;
+        lpszStrings[0] = EGL3::Service::GetServiceName();
         lpszStrings[1] = Buffer;
 
         ReportEvent(hEventSource,// event log handle
@@ -145,7 +146,7 @@ namespace EGL3::Service {
     void RunMain()
     {
         SERVICE_TABLE_ENTRY DispatchTable[] = {
-            { (LPSTR)SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)SvcMain },
+            { (LPSTR)EGL3::Service::GetServiceName(), (LPSERVICE_MAIN_FUNCTION)SvcMain },
             { NULL, NULL }
         };
 

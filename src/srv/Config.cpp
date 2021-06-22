@@ -1,6 +1,9 @@
-#include "ServiceConfig.h"
+#include "Config.h"
+
+#include "Consts.h"
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 
 namespace EGL3::Service {
@@ -35,8 +38,8 @@ namespace EGL3::Service {
 
         Service = CreateService(
             SCManager,                 // SCM database 
-            SERVICE_NAME,              // name of service 
-            SERVICE_NAME,              // service name to display 
+            GetServiceName(),          // name of service 
+            GetServiceName(),          // service name to display 
             SERVICE_ALL_ACCESS,        // desired access 
             SERVICE_WIN32_OWN_PROCESS, // service type 
             SERVICE_AUTO_START,        // start type 
@@ -86,7 +89,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,             // SCM database 
-            SERVICE_NAME,          // name of service 
+            GetServiceName(),      // name of service 
             SERVICE_QUERY_CONFIG); // need query config access 
 
         if (Service == NULL)
@@ -144,7 +147,7 @@ namespace EGL3::Service {
 
         // Print the configuration information.
 
-        printf("%s configuration: \n", SERVICE_NAME);
+        printf("%s configuration: \n", GetServiceName());
         printf("  Type: 0x%x\n", ServiceConfig->dwServiceType);
         printf("  Start Type: 0x%x\n", ServiceConfig->dwStartType);
         printf("  Error Control: 0x%x\n", ServiceConfig->dwErrorControl);
@@ -193,7 +196,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,              // SCM database 
-            SERVICE_NAME,           // name of service 
+            GetServiceName(),       // name of service 
             SERVICE_CHANGE_CONFIG); // need change config access 
 
         if (Service == NULL)
@@ -205,7 +208,7 @@ namespace EGL3::Service {
 
         // Change the service description.
 
-        ServiceDesc.lpDescription = (LPSTR)SERVICE_DESC;
+        ServiceDesc.lpDescription = (LPSTR)GetServiceDescription();
 
         if (!ChangeServiceConfig2(Service, SERVICE_CONFIG_DESCRIPTION, &ServiceDesc))
         {
@@ -243,7 +246,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,              // SCM database 
-            SERVICE_NAME,           // name of service 
+            GetServiceName(),       // name of service 
             SERVICE_CHANGE_CONFIG); // need change config access 
 
         if (Service == NULL)
@@ -291,7 +294,7 @@ namespace EGL3::Service {
 
         Service = OpenService(
             SCManager,              // SCM database 
-            SERVICE_NAME,           // name of service 
+            GetServiceName(),       // name of service 
             SERVICE_CHANGE_CONFIG); // need change config access 
 
         if (Service == NULL)
@@ -338,9 +341,9 @@ namespace EGL3::Service {
         // Get a handle to the service.
 
         Service = OpenService(
-            SCManager,      // SCM database 
-            SERVICE_NAME,   // name of service 
-            DELETE);        // need delete access 
+            SCManager,        // SCM database 
+            GetServiceName(), // name of service 
+            DELETE);          // need delete access 
 
         if (Service == NULL)
         {
