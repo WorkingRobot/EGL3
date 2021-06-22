@@ -5,13 +5,17 @@
 #include <Windows.h>
 
 namespace EGL3 {
-    bool Detail::LogColorsEnabled = false;
+    bool Detail::ConsoleEnabled = false;
 
-    void EnableLogColors()
+    void EnableConsole()
     {
-        if (Detail::LogColorsEnabled) {
+        if (Detail::ConsoleEnabled) {
             return;
         }
+
+        AllocConsole();
+        freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+
         auto StdOutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         if (StdOutHandle == INVALID_HANDLE_VALUE) {
             return;
@@ -21,7 +25,7 @@ namespace EGL3 {
         if (!GetConsoleMode(StdOutHandle, &CurrentMode)) {
             return;
         }
-        Detail::LogColorsEnabled = SetConsoleMode(StdOutHandle, CurrentMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        Detail::ConsoleEnabled = SetConsoleMode(StdOutHandle, CurrentMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     }
 
 }

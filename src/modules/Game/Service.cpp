@@ -2,7 +2,7 @@
 
 #include "../../utils/formatters/Path.h"
 #include "../../utils/Log.h"
-#include "../../utils/Config.h"
+#include "../../utils/Version.h"
 
 #include <thread>
 
@@ -13,7 +13,7 @@
 namespace EGL3::Modules::Game {
     ServiceModule::ServiceModule(ModuleList& Ctx)
     {
-        auto ClientName = std::format("{}/{}", Utils::Config::GetAppName(), Utils::Config::GetAppVersion());
+        auto ClientName = std::format("{}/{}", Utils::Version::GetAppName(), Utils::Version::GetAppVersion());
 
         for (int Idx = 0; Idx < 3 && !Client.IsConnected(); ++Idx) {
             if (Idx != 0) {

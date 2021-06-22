@@ -4,6 +4,7 @@
 #include "utils/Config.h"
 #include "utils/FontSetup.h"
 #include "utils/Platform.h"
+#include "utils/Version.h"
 
 namespace EGL3 {
     class MainApp {
@@ -11,7 +12,7 @@ namespace EGL3 {
         MainApp() :
             App(Gtk::Application::create("me.workingrobot.egl3", Gio::ApplicationFlags::APPLICATION_HANDLES_COMMAND_LINE))
         {
-            EGL3_LOGF(LogLevel::Info, "Starting up {}/{} {}/{}", Utils::Config::GetAppName(), Utils::Config::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion());
+            EGL3_LOGF(LogLevel::Info, "Starting up {}/{} {}/{}", Utils::Version::GetAppName(), Utils::Version::GetAppVersion(), Utils::Platform::GetOSName(), Utils::Platform::GetOSVersion());
             EGL3_ENSUREF(!Utils::Platform::IsProcessElevated(), LogLevel::Warning, "EGL3 is running as admin. Any files created (config files, install files, etc.) will be readonly when run without admin in the future.");
 
             App->signal_command_line().connect(sigc::mem_fun(this, &MainApp::OnCommandLine), false);
@@ -70,7 +71,7 @@ namespace EGL3 {
     };
 
     __forceinline int Start() {
-        EnableLogColors();
+        EnableConsole();
 
         //_putenv_s("GTK_DEBUG", "interactive");
         MainApp App;
@@ -79,14 +80,6 @@ namespace EGL3 {
     }
 }
 
-#ifdef USE_SUBSYSTEM_CONSOLE
-
-int main(int argc, char* argv[]) {
-    return EGL3::Start();
-}
-
-#elif USE_SUBSYSTEM_WIN32
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -94,5 +87,3 @@ int main(int argc, char* argv[]) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
     return EGL3::Start();
 }
-
-#endif

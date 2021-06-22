@@ -19,10 +19,13 @@ add_file(EGL3 main.cpp)
 add_file(EGL3 main.rc)
 add_file(EGL3 main.manifest)
 
+ADD_VERSION_DEFS(utils/Version.cpp)
+ADD_VERSION_DEFS(main.rc)
+
 
 ## Define EGL3 executable ##
 
-add_executable(EGL3 ${SUBSYSTEM} ${EGL3_SOURCES})
+add_executable(EGL3 WIN32 ${EGL3_SOURCES})
 
 
 ## Dependencies ##

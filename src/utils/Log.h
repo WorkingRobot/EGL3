@@ -66,7 +66,7 @@ namespace EGL3 {
 
         static constexpr std::string_view ResetColorPrefix = "\33[0m";
 
-        extern bool LogColorsEnabled;
+        extern bool ConsoleEnabled;
 
         static consteval std::string_view FixFilename(const std::string_view Filename) {
             constexpr std::string_view Pattern = "src\\";
@@ -136,7 +136,7 @@ namespace EGL3 {
 
         template<class Ctx>
         void UseContextPrintf(const Ctx& Context, const std::string_view Message) {
-            if (LogColorsEnabled) {
+            if (ConsoleEnabled) {
                 if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
                     printf("%s%s%s\n", Ctx::ColorPrefix.data(), std::format("{}\n\n{}", Context(Message), Ctx::GetStackTrace()).c_str(), ResetColorPrefix.data());
                 }
@@ -250,8 +250,29 @@ namespace EGL3 {
         }
     }
 
-    void EnableLogColors();
+    void EnableConsole();
 }
+
+// Because intellisense can't read valid constexpr C++20
+#if __INTELLISENSE__
+
+#define EGL3_LOGF(level, message, ...) do {} while(0)
+
+#define EGL3_LOG(level, message) do {} while(0)
+
+#define EGL3_ENSUREF(condition, level, message, ...) (condition)
+
+#define EGL3_ENSURE(condition, level, message) (condition)
+
+#define EGL3_ABORTF(message, ...) do {} while(0)
+
+#define EGL3_ABORT(message) do {} while(0)
+
+#define EGL3_VERIFYF(condition, message, ...) (condition)
+
+#define EGL3_VERIFY(condition, message) (condition)
+
+#else
 
 // Log a formatted message
 #define EGL3_LOGF(level, message, ...) (::EGL3::Detail::UseContext<level>(__FILE__, __LINE__)([&]() { return std::format((message), __VA_ARGS__); }))
@@ -276,3 +297,5 @@ namespace EGL3 {
 
 // A failure will cause a critical error with a message
 #define EGL3_VERIFY(condition, message) EGL3_ENSURE(condition, ::EGL3::LogLevel::Critical, (message))
+
+#endif
