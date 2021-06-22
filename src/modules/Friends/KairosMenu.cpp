@@ -1,6 +1,5 @@
 #include "KairosMenu.h"
 
-#include "../../web/xmpp/PresenceKairosProfile.h"
 #include "List.h"
 
 namespace EGL3::Modules::Friends {
@@ -161,7 +160,7 @@ namespace EGL3::Modules::Friends {
             AvatarsWidgets.reserve(AvatarsData.size());
 
             for (auto& Avatar : AvatarsData) {
-                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, Json::PresenceKairosProfile::GetDefaultKairosAvatar(), 64, 64, &Json::PresenceKairosProfile::GetKairosAvatarUrl, ImageCache));
+                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, GetDefaultKairosAvatar(), 64, 64, &GetKairosAvatarUrl, ImageCache));
                 AvatarBox.add(*Widget);
             }
 
@@ -176,12 +175,36 @@ namespace EGL3::Modules::Friends {
             BackgroundsWidgets.reserve(BackgroundsData.size());
 
             for (auto& Background : BackgroundsData) {
-                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, Json::PresenceKairosProfile::GetDefaultKairosBackground(), 64, 64, &Json::PresenceKairosProfile::GetKairosBackgroundUrl, ImageCache));
+                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, GetDefaultKairosBackground(), 64, 64, &GetKairosBackgroundUrl, ImageCache));
                 BackgroundBox.add(*Widget);
             }
 
             BackgroundBox.show_all_children();
         }
+    }
+
+    std::string KairosMenuModule::GetDefaultKairosAvatar() {
+        uint32_t Id = Utils::Random(1, 8);
+        return std::format("cid_{:03}_athena_commando_{}_default", Id, Id > 4 ? 'm' : 'f');
+    }
+
+    std::string KairosMenuModule::GetKairosAvatarUrl(const std::string& Avatar) {
+        if (Avatar.empty()) {
+            return GetKairosAvatarUrl(GetDefaultKairosAvatar());
+        }
+        return std::format("{}Kairos/portraits/{}.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Avatar);
+    }
+
+    std::string KairosMenuModule::GetDefaultKairosBackground() {
+        return "[\"#AEC1D3\",\"#687B8E\",\"#36404A\"]";
+    }
+
+    std::string KairosMenuModule::GetKairosBackgroundUrl(const std::string& Background) {
+        if (Background.empty()) {
+            return GetKairosBackgroundUrl(GetDefaultKairosBackground());
+        }
+        auto Hash = Utils::Crc32(Background.c_str(), Background.size());
+        return std::format("{}backgrounds/{:04X}.png", Web::GetHostUrl<Web::Host::EGL3>(), Hash);
     }
 
     Storage::Models::FriendCurrent& KairosMenuModule::GetCurrentUser() const

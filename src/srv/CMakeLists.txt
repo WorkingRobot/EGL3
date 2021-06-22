@@ -16,8 +16,12 @@ add_dir_recursive(EGL3_SRV ../utils/mmio)
 add_file(EGL3_SRV ../utils/Log.cpp)
 add_file(EGL3_SRV ../utils/Random.cpp)
 add_file(EGL3_SRV ../utils/StackTrace.cpp)
+add_file(EGL3_SRV ../utils/Version.cpp)
 add_file(EGL3_SRV srv_main.cpp)
 add_file(EGL3_SRV srv_main.rc)
+
+ADD_VERSION_DEFS(../utils/Version.cpp)
+ADD_VERSION_DEFS(srv_main.rc)
 
 
 ## Define EGL3 executable ##

@@ -45,8 +45,6 @@ namespace EGL3::Storage::Models {
         Ret.ShowStatus = GetShowStatus();
         Ret.Status.SetProductName("EGL3");
         Ret.Status.SetStatus(GetStatus());
-        PresenceKairosProfile NewKairosProfile(GetKairosAvatar(), GetKairosBackground());
-        Ret.Status.SetKairosProfile(NewKairosProfile);
         return Ret;
     }
 

@@ -2,6 +2,7 @@
 
 #include "../../../utils/streams/BufferStream.h"
 #include "../../../utils/Log.h"
+#include "../../../utils/Version.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -129,7 +130,7 @@ namespace EGL3::Service::Pipe {
         else {
             Output.Response = PacketResponse::Success;
         }
-        Output.ServerName = SERVICE_NAME "/" CONFIG_VERSION_LONG;
+        Output.ServerName = std::format("{}/{}", SERVICE_NAME, Utils::Version::GetAppVersion());
     }
 
     template<>

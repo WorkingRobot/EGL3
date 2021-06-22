@@ -170,8 +170,8 @@ namespace EGL3::Web::Epic::Responses {
 
         struct PlaylistItem {
             std::optional<std::string> Image;
-            std::string PlaylistName;
-            bool Hidden;
+            std::optional<std::string> PlaylistName;
+            std::optional<bool> Hidden;
             std::optional<std::string> Violator;
             std::optional<std::string> Description;
             std::optional<std::string> DisplaySubname;
@@ -180,8 +180,8 @@ namespace EGL3::Web::Epic::Responses {
 
             PARSE_DEFINE(PlaylistItem)
                 PARSE_ITEM_OPT("image", Image)
-                PARSE_ITEM("playlist_name", PlaylistName)
-                PARSE_ITEM("hidden", Hidden)
+                PARSE_ITEM_OPT("playlist_name", PlaylistName)
+                PARSE_ITEM_OPT("hidden", Hidden)
                 PARSE_ITEM_OPT("violator", Violator)
                 PARSE_ITEM_OPT("description", Description)
                 PARSE_ITEM_OPT("display_subname", DisplaySubname)

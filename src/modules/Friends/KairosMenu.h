@@ -26,6 +26,14 @@ namespace EGL3::Modules::Friends {
 
         void UpdateAvailableSettings();
 
+        static std::string GetDefaultKairosAvatar();
+
+        static std::string GetKairosAvatarUrl(const std::string& Avatar);
+
+        static std::string GetDefaultKairosBackground();
+
+        static std::string GetKairosBackgroundUrl(const std::string& Background);
+
         Utils::Callback<void()> UpdateXmppPresence;
 
     private:

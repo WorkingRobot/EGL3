@@ -31,35 +31,12 @@ namespace EGL3::Web::Xmpp::Json {
         return Joinable;
     }
 
-    const PresenceKairosProfile* PresenceStatus::GetKairosProfile() const {
-        if (!KairosProfileParsed) {
-            std::string KairosString;
-            if (Properties.GetValue("KairosProfile", KairosString)) {
-                rapidjson::Document KairosJson;
-                KairosJson.Parse(KairosString.c_str(), KairosString.size());
-                if (!KairosJson.HasParseError()) {
-                    if (!PresenceKairosProfile::Parse(KairosJson, KairosProfile.emplace())) {
-                        KairosProfile.reset();
-                        // TODO: Provide warning here and basically everywhere else with invalid json relating to presences
-                    }
-                }
-            }
-            KairosProfileParsed = true;
-        }
-        return KairosProfile.has_value() ? &KairosProfile.value() : nullptr;
-    }
-
     void PresenceStatus::SetProductName(const std::string& NewProduct) {
         ProductName = NewProduct;
     }
 
     void PresenceStatus::SetStatus(const std::string& NewStatus) {
         Status = NewStatus;
-    }
-
-    void PresenceStatus::SetKairosProfile(const PresenceKairosProfile& NewProfile) {
-        KairosProfileParsed = true;
-        Properties.SetValue("KairosProfile", KairosProfile.emplace(NewProfile));
     }
 
     void PresenceStatus::Dump() const {

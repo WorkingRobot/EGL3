@@ -1,10 +1,11 @@
 #include "MountedDisk.h"
 
 #include "../disk/interface.h"
+#include "../utils/mmio/MmioFile.h"
 #include "../utils/Align.h"
 #include "../utils/Log.h"
 #include "../utils/Random.h"
-#include "../utils/mmio/MmioFile.h"
+#include "../utils/Version.h"
 #include "xorfilter/xorfilter.h"
 
 #include <memory>
@@ -229,7 +230,7 @@ namespace EGL3::Service {
             Utils::GenerateRandomGuid((char*)&Params.Guid);
 
             strcpy_s((char*)Params.ProductId, sizeof(Params.ProductId), "EGL3");
-            strncpy_s((char*)Params.ProductRevisionLevel, sizeof(Params.ProductRevisionLevel), CONFIG_VERSION_SHORT, _TRUNCATE);
+            strncpy_s((char*)Params.ProductRevisionLevel, sizeof(Params.ProductRevisionLevel), Utils::Version::GetShortAppVersion(), _TRUNCATE);
 
             // This can fail with error code 5
             // https://github.com/billziss-gh/winspd/blob/master/doc/WinSpd-Tutorial.asciidoc#testing-the-integration-with-the-operating-system

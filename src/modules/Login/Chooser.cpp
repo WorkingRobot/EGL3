@@ -1,6 +1,6 @@
 #include "Chooser.h"
 
-#include "../../web/xmpp/PresenceKairosProfile.h"
+#include "../Friends/KairosMenu.h"
 
 namespace EGL3::Modules::Login {
     using namespace Web::Xmpp;
@@ -27,11 +27,11 @@ namespace EGL3::Modules::Login {
                 Column->add_attribute(AvatarRenderer.property_foreground(), Columns.KairosAvatar);
                 Column->add_attribute(AvatarRenderer.property_background(), Columns.KairosBackground);
             }
-            AvatarRenderer.SetDefaultForeground(Json::PresenceKairosProfile::GetDefaultKairosAvatar());
-            AvatarRenderer.SetDefaultBackground(Json::PresenceKairosProfile::GetDefaultKairosBackground());
+            AvatarRenderer.SetDefaultForeground(Friends::KairosMenuModule::GetDefaultKairosAvatar());
+            AvatarRenderer.SetDefaultBackground(Friends::KairosMenuModule::GetDefaultKairosBackground());
 
-            AvatarRenderer.GetForegroundUrl.Set(Json::PresenceKairosProfile::GetKairosAvatarUrl);
-            AvatarRenderer.GetBackgroundUrl.Set(Json::PresenceKairosProfile::GetKairosBackgroundUrl);
+            AvatarRenderer.GetForegroundUrl.Set(Friends::KairosMenuModule::GetKairosAvatarUrl);
+            AvatarRenderer.GetBackgroundUrl.Set(Friends::KairosMenuModule::GetKairosBackgroundUrl);
         }
 
         {

@@ -1,5 +1,7 @@
 #include "FriendList.h"
 
+#include "../modules/Friends/KairosMenu.h"
+
 namespace EGL3::Widgets {
     using namespace Web::Xmpp::Json;
 
@@ -131,12 +133,12 @@ namespace EGL3::Widgets {
                 Column->add_attribute(AvatarRenderer.property_background(), Columns.KairosBackground);
                 Column->add_attribute(AvatarRenderer.property_icon(), Columns.Status);
             }
-            AvatarRenderer.SetDefaultForeground(PresenceKairosProfile::GetDefaultKairosAvatar());
-            AvatarRenderer.SetDefaultBackground(PresenceKairosProfile::GetDefaultKairosBackground());
+            AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetDefaultKairosAvatar());
+            AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetDefaultKairosBackground());
             AvatarRenderer.SetDefaultIcon(ShowStatus::Offline);
 
-            AvatarRenderer.GetForegroundUrl.Set(PresenceKairosProfile::GetKairosAvatarUrl);
-            AvatarRenderer.GetBackgroundUrl.Set(PresenceKairosProfile::GetKairosBackgroundUrl);
+            AvatarRenderer.GetForegroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosAvatarUrl);
+            AvatarRenderer.GetBackgroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosBackgroundUrl);
             AvatarRenderer.GetIconUrl.Set(ShowStatusToUrl);
         }
 

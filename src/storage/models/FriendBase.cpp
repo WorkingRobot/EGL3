@@ -1,11 +1,9 @@
 #include "FriendBase.h"
 
+#include "../../modules/Friends/KairosMenu.h"
 #include "../../utils/Crc32.h"
-#include "../../web/xmpp/PresenceKairosProfile.h"
 
 namespace EGL3::Storage::Models {
-    using namespace Web::Xmpp::Json;
-
     const std::string& FriendBase::GetKairosAvatar() const {
         return KairosAvatar;
     }
@@ -23,11 +21,11 @@ namespace EGL3::Storage::Models {
     }
 
     const std::string FriendBase::GetKairosAvatarUrl() const {
-        return PresenceKairosProfile::GetKairosAvatarUrl(GetKairosAvatar());
+        return Modules::Friends::KairosMenuModule::GetKairosAvatarUrl(GetKairosAvatar());
     }
 
     const std::string FriendBase::GetKairosBackgroundUrl() const {
-        return PresenceKairosProfile::GetKairosBackgroundUrl(GetKairosBackground());
+        return Modules::Friends::KairosMenuModule::GetKairosBackgroundUrl(GetKairosBackground());
     }
 
     const std::string& FriendBase::GetDisplayName() const {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "PresenceKairosProfile.h"
 #include "PresenceProperties.h"
 
 namespace EGL3::Web::Xmpp::Json {
@@ -19,13 +18,9 @@ namespace EGL3::Web::Xmpp::Json {
 
         bool HasVoiceSupport() const;
 
-        const PresenceKairosProfile* GetKairosProfile() const;
-
         void SetProductName(const std::string& NewProduct);
 
         void SetStatus(const std::string& NewStatus);
-
-        void SetKairosProfile(const PresenceKairosProfile& NewProfile);
 
         void Dump() const;
 
@@ -60,9 +55,5 @@ namespace EGL3::Web::Xmpp::Json {
         std::string ProductName;
 
         PresenceProperties Properties;
-
-        // Dynamically made
-        mutable bool KairosProfileParsed = false;
-        mutable std::optional<PresenceKairosProfile> KairosProfile;
     };
 }

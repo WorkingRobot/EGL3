@@ -1,11 +1,11 @@
 #include "KairosAvatar.h"
 
-#include "../web/xmpp/PresenceKairosProfile.h"
+#include "../modules/Friends/KairosMenu.h"
 
 namespace EGL3::Widgets {
-    using namespace Web::Xmpp::Json;
+    using namespace Modules;
 
-    KairosAvatar::KairosAvatar(Modules::ImageCacheModule& ImageCache, int Size) :
+    KairosAvatar::KairosAvatar(ImageCacheModule& ImageCache, int Size) :
         Glib::ObjectBase("KairosAvatar"),
         Gtk::Widget(),
         ImageCache(ImageCache),
@@ -39,11 +39,11 @@ namespace EGL3::Widgets {
     {
         if (Avatar != NewAvatar) {
             Avatar = NewAvatar;
-            AvatarTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosAvatarUrl(Avatar), PresenceKairosProfile::GetKairosAvatarUrl(PresenceKairosProfile::GetDefaultKairosAvatar()), Size, Size, Dispatcher);
+            AvatarTask = ImageCache.GetImageAsync(Friends::KairosMenuModule::GetKairosAvatarUrl(Avatar), Friends::KairosMenuModule::GetKairosAvatarUrl(Friends::KairosMenuModule::GetDefaultKairosAvatar()), Size, Size, Dispatcher);
         }
         if (Background != NewBackground) {
             Background = NewBackground;
-            BackgroundTask = ImageCache.GetImageAsync(PresenceKairosProfile::GetKairosBackgroundUrl(Background), PresenceKairosProfile::GetKairosBackgroundUrl(PresenceKairosProfile::GetDefaultKairosBackground()), Size, Size, Dispatcher);
+            BackgroundTask = ImageCache.GetImageAsync(Friends::KairosMenuModule::GetKairosBackgroundUrl(Background), Friends::KairosMenuModule::GetKairosBackgroundUrl(Friends::KairosMenuModule::GetDefaultKairosBackground()), Size, Size, Dispatcher);
         }
     }
 
