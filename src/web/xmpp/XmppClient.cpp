@@ -830,10 +830,8 @@ namespace EGL3::Web::Xmpp {
         case ix::WebSocketMessageType::Message:
         {
             auto Document = CreateDocument();
-            auto Data = std::make_unique<char[]>(Message->str.size() + 1);
-            memcpy(Data.get(), Message->str.c_str(), Message->str.size() + 1); // c_str is required to have a \0 at the end
             // I'd use rapidxml::parse_fastest, but entity translation is pretty necessary
-            Document->parse<rapidxml::parse_no_string_terminators | rapidxml::parse_no_data_nodes>(Data.get());
+            Document->parse<rapidxml::parse_no_string_terminators | rapidxml::parse_no_data_nodes>((char*)Message->str.data());
 
             EGL3_ENSUREF(ParseMessage(Document->first_node()), LogLevel::Warning, "Unrecognized xmpp message: {}", Message->str);
             break;
