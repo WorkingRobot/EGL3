@@ -992,7 +992,7 @@ Author: Aleks Margarian
                                         <property name="halign">start</property>
                                         <property name="label" translatable="yes">Network Usage</property>
                                         <style>
-                                          <class name="font-h1"/>
+                                          <class name="font-h2"/>
                                           <class name="font-bold"/>
                                         </style>
                                       </object>
@@ -1018,7 +1018,7 @@ Author: Aleks Margarian
                                                 <property name="halign">start</property>
                                                 <property name="label" translatable="yes">Current</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
@@ -1062,7 +1062,7 @@ Author: Aleks Margarian
                                                 <property name="halign">end</property>
                                                 <property name="label" translatable="yes">Peak</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
@@ -1133,7 +1133,7 @@ Author: Aleks Margarian
                                         <property name="halign">start</property>
                                         <property name="label" translatable="yes">Disk Usage (Read)</property>
                                         <style>
-                                          <class name="font-h1"/>
+                                          <class name="font-h2"/>
                                           <class name="font-bold"/>
                                         </style>
                                       </object>
@@ -1159,7 +1159,7 @@ Author: Aleks Margarian
                                                 <property name="halign">start</property>
                                                 <property name="label" translatable="yes">Current</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
@@ -1203,7 +1203,7 @@ Author: Aleks Margarian
                                                 <property name="halign">end</property>
                                                 <property name="label" translatable="yes">Peak</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
@@ -1274,7 +1274,7 @@ Author: Aleks Margarian
                                         <property name="halign">start</property>
                                         <property name="label" translatable="yes">Disk Usage (Write)</property>
                                         <style>
-                                          <class name="font-h1"/>
+                                          <class name="font-h2"/>
                                           <class name="font-bold"/>
                                         </style>
                                       </object>
@@ -1300,7 +1300,7 @@ Author: Aleks Margarian
                                                 <property name="halign">start</property>
                                                 <property name="label" translatable="yes">Current</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
@@ -1344,7 +1344,7 @@ Author: Aleks Margarian
                                                 <property name="halign">end</property>
                                                 <property name="label" translatable="yes">Peak</property>
                                                 <style>
-                                                  <class name="font-h2"/>
+                                                  <class name="font-h3"/>
                                                 </style>
                                               </object>
                                               <packing>
