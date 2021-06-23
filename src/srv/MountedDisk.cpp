@@ -52,7 +52,7 @@ namespace EGL3::Service {
         SPD_STORAGE_UNIT* Unit;
         SPD_GUARD CloseGuard;
         MountedDisk::ClusterCallback FileClusterCallback;
-        IntervalTree<uint64_t, IntervalContext> DiskIntervals;
+        IntervalTree<uint32_t, IntervalContext> DiskIntervals;
 
         MountedData() :
             MBRData{},
@@ -169,7 +169,7 @@ namespace EGL3::Service {
         Intervals.push_back({ 0, 0, IntervalContext::Type::MBR });
 
         auto& DiskData = Data->Disk->get_data();
-        std::vector<uint64_t> DiskKeys;
+        std::vector<uint32_t> DiskKeys;
         DiskKeys.reserve(1 + DiskData.size());
         for (auto& Key : DiskData) {
             DiskKeys.emplace_back(Key.first + 1);
@@ -177,7 +177,7 @@ namespace EGL3::Service {
         std::sort(DiskKeys.begin(), DiskKeys.end());
 
         {
-            uint64_t First, Prev;
+            uint32_t First, Prev;
             First = Prev = DiskKeys.front();
             for (auto Itr = DiskKeys.begin() + 1; Itr != DiskKeys.end(); ++Itr) {
                 if (*Itr - Prev == 1) {
@@ -194,7 +194,7 @@ namespace EGL3::Service {
         {
             for (auto& File : Data->Files) {
                 if (File.run_size != 0) {
-                    Intervals.push_back({ uint64_t(File.run_idx) + 1, uint64_t(File.run_idx) + File.run_size, {IntervalContext::Type::File, File.user_context} });
+                    Intervals.push_back({ File.run_idx + 1, File.run_idx + File.run_size, {IntervalContext::Type::File, File.user_context} });
                 }
             }
         }
@@ -202,7 +202,7 @@ namespace EGL3::Service {
         Data->DiskIntervals = std::move(Intervals);
     }
 
-    static void HandleInterval(const MountedData& Data, const Interval<uint64_t, IntervalContext>& Interval, UINT64 Offset, UINT32 Count, PUINT8 Buffer) {
+    static void HandleInterval(const MountedData& Data, const Interval<uint32_t, IntervalContext>& Interval, UINT32 Offset, UINT32 Count, PUINT8 Buffer) {
         switch (Interval.value.ContextType)
         {
         case IntervalContext::Type::File:
@@ -236,8 +236,8 @@ namespace EGL3::Service {
             [&](const auto& Interval) {
                 HandleInterval(Data, Interval,
                     BlockAddress - Interval.start,
-                    std::min(BlockAddress + BlockCount, Interval.stop + 1) - BlockAddress,
-                    (PUINT8)Buffer + 4096 * (std::max(BlockAddress, Interval.start) - BlockAddress));
+                    std::min<uint32_t>(BlockAddress + BlockCount, Interval.stop + 1) - BlockAddress,
+                    (PUINT8)Buffer + 4096 * (std::max<uint32_t>(BlockAddress, Interval.start) - BlockAddress));
             });
 
         return TRUE;

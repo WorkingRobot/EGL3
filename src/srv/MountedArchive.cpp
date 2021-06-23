@@ -114,8 +114,8 @@ namespace EGL3::Service {
     }
 
 #if 1
-    void MountedArchive::HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
-        size_t ByteCount = Count * 4096ull;
+    void MountedArchive::HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
+        Count *= 4096;
 
         auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
 
@@ -128,9 +128,9 @@ namespace EGL3::Service {
         Storage::Game::PrefetchTableSrcEntry* SrcTablePtr = SrcTable;
         void** DstTablePtr = DstTable;
 
-        while (ByteCount && PartItr != Ctx.Parts.end()) {
+        while (Count && PartItr != Ctx.Parts.end()) {
             auto Ptr = PartItr->first + PartOffset;
-            auto ReadAmt = std::min((size_t)PartItr->second - PartOffset, ByteCount);
+            auto ReadAmt = std::min(PartItr->second - PartOffset, Count);
 
             auto TableCnt = Ptr.QueueFastPrefetch((char*)Buffer, ReadAmt, SrcTablePtr, DstTablePtr);
             SrcTablePtr += TableCnt;
@@ -139,7 +139,7 @@ namespace EGL3::Service {
             Buffer += ReadAmt;
             PartOffset = 0;
             ++PartItr;
-            ByteCount -= ReadAmt;
+            Count -= ReadAmt;
         }
 
         // printf("%d\n", DstTablePtr - DstTable);
@@ -149,8 +149,8 @@ namespace EGL3::Service {
         }
     }
 #else
-    void MountedArchive::HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
-        size_t ByteCount = Count * 4096ull;
+    void MountedArchive::HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
+        Count *= 4096;
 
         auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
 
@@ -159,14 +159,14 @@ namespace EGL3::Service {
 
         while (ByteCount && PartItr != Ctx.Parts.end()) {
             auto Ptr = PartItr->first + PartOffset;
-            auto ReadAmt = std::min((size_t)PartItr->second - PartOffset, ByteCount);
+            auto ReadAmt = std::min(PartItr->second - PartOffset, Count);
 
             Ptr.FastRead((char*)Buffer, ReadAmt);
 
             Buffer += ReadAmt;
             PartOffset = 0;
             ++PartItr;
-            ByteCount -= ReadAmt;
+            Count -= ReadAmt;
         }
     }
 #endif

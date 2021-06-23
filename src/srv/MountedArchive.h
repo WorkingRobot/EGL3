@@ -36,37 +36,6 @@ namespace EGL3::Service {
             }
         };
 
-        struct SectionPart {
-            uint64_t Data;
-
-            SectionPart() noexcept :
-                Data(0)
-            {
-
-            }
-
-            SectionPart(uint64_t Ptr, uint16_t Size) noexcept :
-                Data(uint64_t(Size) << 48 | Ptr)
-            {
-
-            }
-
-            bool IsValid() const noexcept
-            {
-                return Data;
-            }
-
-            uint64_t GetPtr() const noexcept
-            {
-                return Data & (1llu << 48) - 1;
-            }
-
-            uint16_t GetSize() const noexcept
-            {
-                return Data >> 48;
-            }
-        };
-
         struct SectionContext {
             // Idx is LCN, stores a pair of (PartIdx, Offset)
             const std::vector<std::pair<uint32_t, uint32_t>> LUT;
@@ -85,7 +54,7 @@ namespace EGL3::Service {
 
         std::vector<MountedFile> GetMountedFiles();
 
-        static void HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept;
+        static void HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept;
 
         Storage::Game::Archive Archive;
         const Lists ArchiveLists;

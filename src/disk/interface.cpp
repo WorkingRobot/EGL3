@@ -87,7 +87,7 @@ size_t AppendingFile::write(const uint8_t* buf, size_t size) {
     return ret;
 }
 
-uint8_t* AppendingFile::try_get_cluster(int64_t cluster_idx) {
+uint8_t* AppendingFile::try_get_cluster(uint32_t cluster_idx) {
     auto search = data.find(cluster_idx);
     if (search != data.end()) {
         return search->second;
@@ -96,7 +96,7 @@ uint8_t* AppendingFile::try_get_cluster(int64_t cluster_idx) {
     return NULL;
 }
 
-uint8_t* AppendingFile::get_cluster(int64_t cluster_idx) {
+uint8_t* AppendingFile::get_cluster(uint32_t cluster_idx) {
     auto search = data.find(cluster_idx);
     if (search != data.end()) {
         return search->second;
@@ -107,7 +107,7 @@ uint8_t* AppendingFile::get_cluster(int64_t cluster_idx) {
     return ret;
 }
 
-const std::unordered_map<uint64_t, uint8_t*>& AppendingFile::get_data() const
+const std::unordered_map<uint32_t, uint8_t*>& AppendingFile::get_data() const
 {
     return data;
 }

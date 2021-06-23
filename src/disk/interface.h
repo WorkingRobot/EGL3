@@ -46,14 +46,14 @@ public:
 
     size_t write(const uint8_t* buf, size_t size);
 
-    uint8_t* try_get_cluster(int64_t cluster_idx);
+    uint8_t* try_get_cluster(uint32_t cluster_idx);
 
-    uint8_t* get_cluster(int64_t cluster_idx);
+    uint8_t* get_cluster(uint32_t cluster_idx);
 
-    const std::unordered_map<uint64_t, uint8_t*>& get_data() const;
+    const std::unordered_map<uint32_t, uint8_t*>& get_data() const;
 
 private:
-    std::unordered_map<uint64_t, uint8_t*> data;
+    std::unordered_map<uint32_t, uint8_t*> data;
     size_t position;
     static constexpr size_t size = DISK_SIZE_PARTITION;
 };
