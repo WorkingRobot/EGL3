@@ -50,51 +50,48 @@ namespace EGL3::Service {
 
     MountedArchive::SectionLUT::SectionLUT(const Lists& ArchiveLists)
     {
-        LUT.reserve(ArchiveLists.Files.size());
+        Contexts.reserve(ArchiveLists.Files.size());
 
         for (auto& File : ArchiveLists.Files) {
-            auto& Sections = LUT.emplace_back();
+            std::vector<std::pair<uint32_t, uint32_t>> LUT;
+            std::vector<std::pair<Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData>, uint32_t>> Parts;
+
             uint32_t ClusterCount = Utils::Align<4096>(File.FileSize) / 4096;
-            Sections.reserve(ClusterCount);
+            LUT.reserve(ClusterCount);
+            Parts.reserve(File.ChunkPartDataSize);
 
             auto GetDataItr = [&](uint32_t ChunkIdx) -> uint64_t {
                 auto& Info = ArchiveLists.ChunkInfos[ChunkIdx];
                 return Info.DataSector * Game::Header::GetSectorSize();
             };
 
-            auto Itr = ArchiveLists.ChunkParts.begin() + File.ChunkPartDataStartIdx;
-            auto EndItr = Itr + File.ChunkPartDataSize;
-            uint32_t ItrDataOffset = 0;
-            for (uint32_t i = 0; i < ClusterCount; ++i) {
-                uint32_t BytesToSelect = std::min(4096llu, File.FileSize - i * 4096llu);
+            auto PartBegin = ArchiveLists.ChunkParts.begin() + File.ChunkPartDataStartIdx;
+            auto PartEnd = PartBegin + File.ChunkPartDataSize;
+            uint32_t PartIdx = 0;
+            uint32_t Offset = 0;
+            for (auto PartItr = PartBegin; PartItr != PartEnd; ++PartItr) {
+                auto& Part = *PartItr;
+                Parts.emplace_back(ArchiveLists.ChunkDatas.begin() + GetDataItr(Part.ChunkIdx) + Part.Offset, Part.Size);
 
-                Sections.emplace_back(Parts.size());
-                do {
-                    if (ItrDataOffset == Itr->Size) {
-                        ++Itr;
-                        ItrDataOffset = 0;
+                while (LUT.size() < ClusterCount) {
+                    LUT.emplace_back(PartIdx, Offset);
+                    Offset += 4096;
+                    if (Offset >= Part.Size) {
+                        Offset -= Part.Size;
+                        break;
                     }
-                    auto& ChunkPart = *Itr;
-                    auto SectionPartSize = std::min(ChunkPart.Size - ItrDataOffset, BytesToSelect);
-                    Parts.emplace_back(
-                        GetDataItr(ChunkPart.ChunkIdx) + ChunkPart.Offset + ItrDataOffset,
-                        SectionPartSize
-                    );
-                    BytesToSelect -= SectionPartSize;
-                    ItrDataOffset += SectionPartSize;
-                    EGL3_VERIFY(ItrDataOffset <= Itr->Size, "Invalid data offset");
-                } while (BytesToSelect);
-                Parts.emplace_back();
+                }
+
+                ++PartIdx;
             }
 
-            Contexts.emplace_back(Sections, Parts, ArchiveLists.ChunkDatas.begin());
+            Contexts.emplace_back(std::move(LUT), std::move(Parts));
         }
     }
 
-    MountedArchive::SectionContext::SectionContext(const std::vector<uint32_t>& const LUT, const std::vector<SectionPart>& const Parts, const Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData> DataBegin) :
-        LUT(LUT),
-        Parts(Parts),
-        DataBegin(DataBegin)
+    MountedArchive::SectionContext::SectionContext(std::vector<std::pair<uint32_t, uint32_t>>&& LUT, std::vector<std::pair<Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData>, uint32_t>>&& Parts) :
+        LUT(std::move(LUT)),
+        Parts(std::move(Parts))
     {
 
     }
@@ -116,13 +113,61 @@ namespace EGL3::Service {
         return MountedFiles;
     }
 
-    void MountedArchive::HandleCluster(void* CtxPtr, uint64_t LCN, uint8_t Buffer[4096]) noexcept {
+#if 1
+    void MountedArchive::HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
+        size_t ByteCount = Count * 4096ull;
+
         auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
 
-        for (auto Itr = Ctx.Parts.begin() + Ctx.LUT[LCN]; Itr->IsValid(); ++Itr) {
-            auto Ptr = Ctx.DataBegin + Itr->GetPtr();
-            Ptr.FastRead((char*)Buffer, Itr->GetSize());
-            Buffer = (uint8_t*)Buffer + Itr->GetSize();
+        auto PartItr = Ctx.Parts.begin() + Ctx.LUT[LCN].first;
+        uint32_t PartOffset = Ctx.LUT[LCN].second;
+
+        Storage::Game::PrefetchTableSrcEntry SrcTable[16];
+        void* DstTable[16];
+
+        Storage::Game::PrefetchTableSrcEntry* SrcTablePtr = SrcTable;
+        void** DstTablePtr = DstTable;
+
+        while (ByteCount && PartItr != Ctx.Parts.end()) {
+            auto Ptr = PartItr->first + PartOffset;
+            auto ReadAmt = std::min((size_t)PartItr->second - PartOffset, ByteCount);
+
+            auto TableCnt = Ptr.QueueFastPrefetch((char*)Buffer, ReadAmt, SrcTablePtr, DstTablePtr);
+            SrcTablePtr += TableCnt;
+            DstTablePtr += TableCnt;
+
+            Buffer += ReadAmt;
+            PartOffset = 0;
+            ++PartItr;
+            ByteCount -= ReadAmt;
+        }
+
+        // printf("%d\n", DstTablePtr - DstTable);
+        PrefetchVirtualMemory(GetCurrentProcess(), DstTablePtr - DstTable, (PWIN32_MEMORY_RANGE_ENTRY)SrcTable, 0);
+        for (int i = 0; i < DstTablePtr - DstTable; ++i) {
+            memcpy(DstTable[i], SrcTable[i].VirtualAddress, SrcTable[i].NumberOfBytes);
         }
     }
+#else
+    void MountedArchive::HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
+        size_t ByteCount = Count * 4096ull;
+
+        auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
+
+        auto PartItr = Ctx.Parts.begin() + Ctx.LUT[LCN].first;
+        uint32_t PartOffset = Ctx.LUT[LCN].second;
+
+        while (ByteCount && PartItr != Ctx.Parts.end()) {
+            auto Ptr = PartItr->first + PartOffset;
+            auto ReadAmt = std::min((size_t)PartItr->second - PartOffset, ByteCount);
+
+            Ptr.FastRead((char*)Buffer, ReadAmt);
+
+            Buffer += ReadAmt;
+            PartOffset = 0;
+            ++PartItr;
+            ByteCount -= ReadAmt;
+        }
+    }
+#endif
 }

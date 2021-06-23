@@ -217,7 +217,7 @@ bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_cou
 
 	for (uint32_t i = 0; i < file_count; ++i) {
 		const EGL3File* file = files + i;
-		exfat_mknod_reserve(&ef, file->path, file->size, file->runs);
+		exfat_mknod_reserve(&ef, file->path, file->size, &file->run_idx, &file->run_size);
 	}
 
 	exfat_unmount(&ef);

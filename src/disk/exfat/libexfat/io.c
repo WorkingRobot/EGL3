@@ -477,21 +477,24 @@ static uint32_t c2i(const struct exfat* ef, cluster_t c) {
 
 #define ALIGN(N, Value, Alignment) (N)(((uint64_t)Value + Alignment - 1) & ~(Alignment - 1))
 
-int exfat_get_runlist(const struct exfat* ef, struct exfat_node* node, EGL3Run o_runs[16]) {
+int exfat_get_runlist(const struct exfat* ef, struct exfat_node* node, uint32_t* o_idx, uint32_t* o_size) {
 	cluster_t cluster;
 	uint64_t cluster_count = ALIGN(uint64_t, node->size, CLUSTER_SIZE(*ef->sb)) / CLUSTER_SIZE(*ef->sb);
 
 	if (node->size == 0) {
-		o_runs[0].count = 0;
+		*o_size = 0;
 		return 0;
 	}
 
 	if (node->is_contiguous) {
-		o_runs[0].idx = c2i(ef, node->start_cluster);
-		o_runs[0].count = c2i(ef, node->start_cluster + cluster_count) - o_runs[0].idx;
+		*o_idx = c2i(ef, node->start_cluster);
+		*o_size = c2i(ef, node->start_cluster + cluster_count) - *o_idx;
 		return 0;
 	}
 
+	exfat_error("node is not contiguous");
+	return -EOVERFLOW;
+	/*
 	cluster = node->start_cluster;
 	int run_idx = 0;
 	for(uint64_t i = 0; i < cluster_count; ++i, cluster = exfat_next_cluster(ef, node, cluster)) {
@@ -517,4 +520,5 @@ int exfat_get_runlist(const struct exfat* ef, struct exfat_node* node, EGL3Run o
 		}
 	}
 	return 0;
+	*/
 }

@@ -1040,7 +1040,7 @@ static int create(struct exfat* ef, const char* path, uint16_t attrib)
 }
 
 
-int exfat_mknod_reserve(struct exfat* ef, const char* path, uint64_t size, EGL3Run o_runs[16])
+int exfat_mknod_reserve(struct exfat* ef, const char* path, uint64_t size, uint32_t* o_idx, uint32_t* o_size)
 {
 	struct exfat_node* node;
 	int rc;
@@ -1073,7 +1073,7 @@ int exfat_mknod_reserve(struct exfat* ef, const char* path, uint64_t size, EGL3R
 		return rc;
 	}
 
-	rc = exfat_get_runlist(ef, node, o_runs);
+	rc = exfat_get_runlist(ef, node, o_idx, o_size);
 	if (rc != 0)
 	{
 		delete(ef, node);

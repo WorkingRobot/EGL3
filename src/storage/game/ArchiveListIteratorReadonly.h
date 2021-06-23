@@ -4,6 +4,12 @@
 #include "Runlist.h"
 
 namespace EGL3::Storage::Game {
+    // Must be ABI compatible with WIN32_MEMORY_RANGE_ENTRY
+    struct PrefetchTableSrcEntry {
+        void* VirtualAddress;
+        size_t NumberOfBytes;
+    };
+
     template<RunlistId Id>
     class ArchiveListIteratorReadonly {
     public:
@@ -114,13 +120,42 @@ namespace EGL3::Storage::Game {
             while (Count) {
                 size_t ReadAmt = std::min(Runlist->GetRunSize(RunIdx) - RunOff, Count);
 
-                memcpy(Dest, Base + Runlist->GetPosition(RunIdx, 0) + RunOff, ReadAmt);
+                void* Ptr = Base + Runlist->GetPosition(RunIdx, 0) + RunOff;
+                memcpy(Dest, Ptr, ReadAmt);
 
                 RunOff = 0;
                 RunIdx++;
                 Count -= ReadAmt;
                 Dest = (T*)((uint8_t*)Dest + ReadAmt);
             }
+        }
+
+        template<std::enable_if_t<std::is_trivially_copyable_v<T>, bool> = true>
+        size_t QueueFastPrefetch(T* Dest, size_t Count, PrefetchTableSrcEntry* SrcTable, void** DstTable) const noexcept {
+            Count *= sizeof(typename ArchiveListIteratorReadonly<Id>::T);
+
+            auto Base = Runlist.GetBase();
+
+            size_t RunIdx = CurrentRunIdx;
+            size_t RunOff = CurrentRunOffset;
+            size_t Idx = 0;
+            while (Count) {
+                size_t ReadAmt = std::min(Runlist->GetRunSize(RunIdx) - RunOff, Count);
+
+                void* Ptr = Base + Runlist->GetPosition(RunIdx, 0) + RunOff;
+                *SrcTable = { Ptr, ReadAmt };
+                *DstTable = Dest;
+                SrcTable++;
+                DstTable++;
+                Idx++;
+
+                RunOff = 0;
+                RunIdx++;
+                Count -= ReadAmt;
+                Dest = (T*)((uint8_t*)Dest + ReadAmt);
+            }
+
+            return Idx;
         }
 
     protected:

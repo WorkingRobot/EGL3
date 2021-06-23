@@ -12,7 +12,7 @@ namespace EGL3::Service {
 
     class MountedDisk {
     public:
-        using ClusterCallback = void (*)(void* Ctx, uint64_t LCN, uint8_t Buffer[4096]);
+        using ClusterCallback = void (*)(void* Ctx, uint64_t LCN, uint32_t Count, uint8_t* Buffer);
 
         MountedDisk(const std::vector<MountedFile>& Files, uint32_t DiskSignature, ClusterCallback Callback);
 

@@ -67,19 +67,17 @@ namespace EGL3::Service {
             }
         };
 
-        struct SectionLUT;
-
         struct SectionContext {
-            const std::vector<uint32_t>& const LUT;
-            const std::vector<SectionPart>& const Parts;
-            const Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData> DataBegin;
+            // Idx is LCN, stores a pair of (PartIdx, Offset)
+            const std::vector<std::pair<uint32_t, uint32_t>> LUT;
+            // One for every corresponding ChunkPart, stored as (Itr [with its offset already added], Size)
+            const std::vector<std::pair<Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData>, uint32_t>> Parts;
 
-            SectionContext(const std::vector<uint32_t>& const LUT, const std::vector<SectionPart>& const Parts, const Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData> DataBegin);
+            SectionContext(std::vector<std::pair<uint32_t, uint32_t>>&& LUT, std::vector<std::pair<Storage::Game::ArchiveListIteratorReadonly<Storage::Game::RunlistId::ChunkData>, uint32_t>>&& Parts);
         };
 
         struct SectionLUT {
-            std::vector<SectionPart> Parts;
-            std::vector<std::vector<uint32_t>> LUT;
+            // One per file
             std::vector<SectionContext> Contexts;
 
             SectionLUT(const Lists& ArchiveLists);
@@ -87,7 +85,7 @@ namespace EGL3::Service {
 
         std::vector<MountedFile> GetMountedFiles();
 
-        static void HandleCluster(void* CtxPtr, uint64_t LCN, uint8_t Buffer[4096]) noexcept;
+        static void HandleCluster(void* CtxPtr, uint64_t LCN, uint32_t Count, uint8_t* Buffer) noexcept;
 
         Storage::Game::Archive Archive;
         const Lists ArchiveLists;

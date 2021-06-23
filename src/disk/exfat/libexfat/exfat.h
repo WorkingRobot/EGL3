@@ -168,7 +168,7 @@ ssize_t exfat_generic_pread(const struct exfat* ef, struct exfat_node* node,
 		void* buffer, size_t size, off_t offset);
 ssize_t exfat_generic_pwrite(struct exfat* ef, struct exfat_node* node,
 		const void* buffer, size_t size, off_t offset);
-int exfat_get_runlist(const struct exfat* ef, struct exfat_node* node, EGL3Run o_runs[16]);
+int exfat_get_runlist(const struct exfat* ef, struct exfat_node* node, uint32_t* o_idx, uint32_t* o_size);
 
 int exfat_opendir(struct exfat* ef, struct exfat_node* dir,
 		struct exfat_iterator* it);
@@ -221,7 +221,7 @@ void exfat_reset_cache(struct exfat* ef);
 int exfat_flush_node(struct exfat* ef, struct exfat_node* node);
 int exfat_unlink(struct exfat* ef, struct exfat_node* node);
 int exfat_rmdir(struct exfat* ef, struct exfat_node* node);
-int exfat_mknod_reserve(struct exfat* ef, const char* path, uint64_t size, EGL3Run o_runs[16]);
+int exfat_mknod_reserve(struct exfat* ef, const char* path, uint64_t size, uint32_t* o_idx, uint32_t* o_size);
 int exfat_mknod(struct exfat* ef, const char* path);
 int exfat_mkdir(struct exfat* ef, const char* path);
 int exfat_rename(struct exfat* ef, const char* old_path, const char* new_path);

@@ -7,19 +7,14 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct _EGL3Run EGL3Run;
 typedef struct _EGL3File EGL3File;
-
-struct _EGL3Run {
-    uint32_t idx;
-    uint32_t count;
-};
 
 struct _EGL3File {
     char path[256]; // Must be null terminated
     uint64_t size;
     void* user_context;
-    EGL3Run runs[16];
+    uint32_t run_idx;
+    uint32_t run_size;
 };
 
 #define DISK_SIZE 1024ull * 1024 * 1024 * 64

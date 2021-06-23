@@ -1,11 +1,21 @@
 #include "Log.h"
 
+#include <conio.h>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 
 namespace EGL3 {
     bool Detail::ConsoleEnabled = false;
+
+    struct CloseWaiter {
+        ~CloseWaiter() {
+            if (Detail::ConsoleEnabled) {
+                _getch();
+            }
+        }
+    };
+    static CloseWaiter Waiter;
 
     void EnableConsole()
     {
