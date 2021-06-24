@@ -764,12 +764,12 @@ namespace EGL3::Web::Xmpp {
 
             auto ToAttr = Node->first_attribute("to", 2);
             if (EGL3_ENSURE(ToAttr, LogLevel::Warning, "No to jid recieved with <iq>")) {
-                EGL3_ENSURE(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad type attr value with <iq>, expected JID does not match");
+                EGL3_ENSURE(XmlValueEqual(ToAttr, CurrentJid), LogLevel::Warning, "Bad to attr value with <iq>, expected JID does not match");
             }
 
             auto IdAttr = Node->first_attribute("id", 2);
             if (EGL3_ENSURE(IdAttr, LogLevel::Warning, "No id recieved with <iq>")) {
-                EGL3_ENSURE(ToAttr->value_size() == 32, LogLevel::Warning, "Bad type attr value with <iq>, expected some 32 character hex string");
+                EGL3_ENSURE(IdAttr->value_size() == 32, LogLevel::Warning, "Bad id attr value with <iq>, expected some 32 character hex string");
             }
 
             return true;
