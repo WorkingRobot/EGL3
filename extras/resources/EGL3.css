@@ -90,6 +90,27 @@ headerbar {
     color: shade(@fg_color, 1.1);
 }
 
+/* Login info header hover animations */
+.login-info-container label, .login-info-container image {
+    transition: opacity 150ms;
+}
+
+.login-info-container:hover image {
+    transition: opacity 400ms;
+}
+
+.login-info-container image {
+    opacity: 0;
+}
+
+.login-info-container label {
+    opacity: 0.5;
+}
+
+.login-info-container:hover label, .login-info-container:hover image {
+    opacity: 1;
+}
+
 @define-color graph_color_0 mix(#FF0000, @fg_color, .7);
 @define-color graph_color_1 mix(#00FF00, @fg_color, .7);
 @define-color graph_color_2 mix(#0000FF, @fg_color, .7);

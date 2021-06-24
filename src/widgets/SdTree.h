@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/stringex/ExpressionEvaluator.h"
+#include "../utils/SlotHolder.h"
 #include "../web/epic/content/SdMeta.h"
 
 #include <gtkmm.h>
@@ -9,6 +10,8 @@ namespace EGL3::Widgets {
     class SdTree {
     public:
         SdTree(Gtk::TreeView& TreeView);
+
+        ~SdTree();
 
         void Initialize(const std::vector<Web::Epic::Content::SdMeta::Data>* Options);
 
@@ -25,6 +28,8 @@ namespace EGL3::Widgets {
         Gtk::CellRendererText RequiredRenderer;
         Glib::RefPtr<Gtk::TreeModelFilter> TreeFilter;
         Glib::RefPtr<Gtk::TreeStore> TreeStore;
+
+        Utils::SlotHolder SlotTooltip;
 
         struct ModelColumns : public Gtk::TreeModel::ColumnRecord
         {

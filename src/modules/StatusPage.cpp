@@ -14,13 +14,13 @@ namespace EGL3::Modules {
         LabelEGS(Ctx.GetWidget<Gtk::Label>("StatusPageEGS"))
     {
         Dispatcher.connect([this]() { UpdateLabels(); });
-        RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
-        LabelTitleEventBox.signal_enter_notify_event().connect([this](GdkEventCrossing* Evt) {
+        SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
+        SlotHoverPointer = LabelTitleEventBox.signal_enter_notify_event().connect([this](GdkEventCrossing* Evt) {
             auto Wnd = LabelTitle.get_window();
             Wnd->set_cursor(Gdk::Cursor::create(Wnd->get_display(), "pointer"));
             return true;
         });
-        LabelTitleEventBox.signal_button_release_event().connect([this](GdkEventButton* Evt) {
+        SlotOpenInBrowser = LabelTitleEventBox.signal_button_release_event().connect([this](GdkEventButton* Evt) {
             Utils::OpenInBrowser(Web::GetHostUrl<Web::Host::StatuspageNonApi>());
             return true;
         });

@@ -3,6 +3,7 @@
 #include "../../storage/models/ChatConversation.h"
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
+#include "../../utils/SlotHolder.h"
 #include "../../widgets/ChatBubble.h"
 #include "../../widgets/FriendList.h"
 #include "../ModuleList.h"
@@ -44,6 +45,9 @@ namespace EGL3::Modules::Friends {
 
         Widgets::FriendList SelectedUserList;
         Storage::Models::Friend* SelectedUserModel;
+
+        Utils::SlotHolder SlotSendKeybind;
+        Utils::SlotHolder SlotAutoScroll;
 
         std::vector<std::unique_ptr<Widgets::ChatBubble>> ChatBubbles;
         std::mutex NewChatMutex;

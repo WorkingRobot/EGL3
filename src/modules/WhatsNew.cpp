@@ -16,7 +16,7 @@ namespace EGL3::Modules {
         Selection(Storage.Get(Storage::Persistent::Key::WhatsNewSelection))
     {
         Dispatcher.connect([this]() { UpdateBox(); });
-        RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
+        SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
 
         CheckBR.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::BR>());
         CheckBlog.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::BLOG>());
@@ -24,11 +24,11 @@ namespace EGL3::Modules {
         CheckNotice.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::NOTICE>());
         CheckSTW.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::STW>());
 
-        CheckBR.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckBlog.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckCreative.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckNotice.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckSTW.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotBR = CheckBR.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotBlog = CheckBlog.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotCreative = CheckCreative.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotNotice = CheckNotice.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotSTW = CheckSTW.signal_toggled().connect([this]() { UpdateSelection(); });
 
         Refresh();
     }

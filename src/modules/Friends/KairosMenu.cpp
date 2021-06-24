@@ -34,7 +34,7 @@ namespace EGL3::Modules::Friends {
         }
 
         {
-            Window.signal_show().connect([this]() {
+            SlotWindowShown = Window.signal_show().connect([this]() {
                 Focused = false;
 
                 AvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
@@ -65,7 +65,7 @@ namespace EGL3::Modules::Friends {
                 StatusEntry.set_text(Options.GetStorageData().GetStatus());
                 StatusEditBtn.set_sensitive(false);
             });
-            Window.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
+            SlotWindowUnfocused = Window.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
                 if (!Focused) {
                     // This is always called once for some reason
                     // The first event is a fake
@@ -79,7 +79,7 @@ namespace EGL3::Modules::Friends {
         }
 
         {
-            AvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+            SlotAvatarClicked = AvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
                 auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
                 if (Data->GetKey() == GetCurrentUser().GetKairosAvatar()) {
                     return;
@@ -95,7 +95,7 @@ namespace EGL3::Modules::Friends {
                     }
                 });
             });
-            BackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+            SlotBackgroundClicked = BackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
                 auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
                 if (Data->GetKey() == GetCurrentUser().GetKairosBackground()) {
                     return;
@@ -111,7 +111,7 @@ namespace EGL3::Modules::Friends {
                     }
                 });
             });
-            StatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
+            SlotStatusClicked = StatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
                 auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)child->get_child()->get_data("EGL3_ImageBase");
                 if (Data->GetKey() == GetCurrentUser().GetShowStatus()) {
                     return;
@@ -123,11 +123,11 @@ namespace EGL3::Modules::Friends {
                 UpdateXmppPresence();
             });
 
-            StatusEntry.signal_changed().connect([this]() {
+            SlotStatusTextChanged = StatusEntry.signal_changed().connect([this]() {
                 StatusEditBtn.set_sensitive(true);
             });
 
-            StatusEditBtn.signal_clicked().connect([this]() {
+            SlotStatusTextClicked = StatusEditBtn.signal_clicked().connect([this]() {
                 StatusEditBtn.set_sensitive(false);
 
                 Options.GetStorageData().SetStatus(StatusEntry.get_text());

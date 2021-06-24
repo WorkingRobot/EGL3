@@ -17,31 +17,11 @@
 
 namespace EGL3::Modules::Login {
     AuthModule::AuthModule(ModuleList& Ctx) :
-        Chooser(Ctx.GetModule<ChooserModule>()),
-        Header(Ctx.GetModule<HeaderModule>()),
         Stack(Ctx.GetModule<StackModule>()),
         Storage(Ctx.GetStorage()),
-        UserData(Storage.Get(Storage::Persistent::Key::Auth).GetUsers())
+        UserData(Storage.Get(Storage::Persistent::Key::Auth).GetUsers()),
+        SelectedUserData(nullptr)
     {
-        Chooser.AccountAddRequest.Set([this]() {
-            OpenSignInPage();
-        });
-        Chooser.AccountClicked.Set([this](Storage::Models::AuthUserData* DataPtr) {
-            AccountSelected(*DataPtr);
-        });
-        Chooser.AccountClickedEGL.Set([this](Utils::EGL::RememberMe& RememberMe) {
-            AccountSelectedEGL(RememberMe);
-        });
-        Chooser.AccountRemoved.Set([this](Storage::Models::AuthUserData* DataPtr) {
-            auto Itr = std::find_if(UserData.begin(), UserData.end(), [DataPtr](const Storage::Models::AuthUserData& Data) {
-                return Data.AccountId == DataPtr->AccountId;
-            });
-            if (Itr != UserData.end()) {
-                UserData.erase(Itr);
-            }
-        });
-        Chooser.SetAccounts(UserData.begin(), UserData.end());
-
         LoggedIn.connect([this]() {
             Clients->OnUserDataUpdate.Set([this](const Storage::Models::AuthUserData& NewData) {
                 if (SelectedUserData) {
@@ -73,12 +53,8 @@ namespace EGL3::Modules::Login {
         });
 
         LoggedInDispatcher.connect([this]() {
-            Header.Show(*SelectedUserData);
             Stack.DisplayPrimary();
         });
-
-        Header.Hide();
-        Stack.DisplaySignIn();
     }
 
     bool AuthModule::IsLoggedIn() const
@@ -269,6 +245,10 @@ namespace EGL3::Modules::Login {
 
     void AuthModule::AccountSelected(Storage::Models::AuthUserData Data)
     {
+        if (IsLoggedIn()) {
+            LogOut(false);
+        }
+
         SignInTask = std::async(std::launch::async, [this, Data]() {
             SignInData = Data;
             SignInDispatcher.emit();
@@ -294,9 +274,13 @@ namespace EGL3::Modules::Login {
         });
     }
 
-    void AuthModule::AccountSelectedEGL(Utils::EGL::RememberMe& RememberMe)
+    void AuthModule::AccountSelectedEGL()
     {
-        SignInTask = std::async(std::launch::async, [this, &RememberMe]() {
+        if (IsLoggedIn()) {
+            LogOut(false);
+        }
+
+        SignInTask = std::async(std::launch::async, [this]() {
             Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
             if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use EGL refresh token")) {
                 return;
@@ -357,6 +341,41 @@ namespace EGL3::Modules::Login {
             Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
             LoggedIn.emit();
         });
+    }
+
+    void AuthModule::AccountRemoved(const std::string& AccountId)
+    {
+        auto Itr = std::find_if(UserData.begin(), UserData.end(), [&](const Storage::Models::AuthUserData& Data) {
+            return Data.AccountId == AccountId;
+        });
+        if (Itr != UserData.end()) {
+            UserData.erase(Itr);
+        }
+    }
+
+    void AuthModule::LogOut(bool DisplaySignIn)
+    {
+        if (DisplaySignIn) {
+            Stack.DisplaySignIn();
+        }
+        LoggedOut.emit();
+        Clients.reset();
+        SelectedUserData = nullptr;
+    }
+
+    std::vector<Storage::Models::AuthUserData>& AuthModule::GetUserData()
+    {
+        return UserData;
+    }
+
+    Storage::Models::AuthUserData* AuthModule::GetSelectedUserData()
+    {
+        return SelectedUserData;
+    }
+
+    Utils::EGL::RememberMe& AuthModule::GetRememberMe()
+    {
+        return RememberMe;
     }
 
     AuthModule::ClientData::ClientData(const rapidjson::Document& FortniteOAuthResp, const rapidjson::Document& LauncherOAuthResp) :

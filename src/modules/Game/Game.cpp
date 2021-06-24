@@ -92,7 +92,7 @@ namespace EGL3::Modules::Game {
             PlayStateHolder.SetHeldState(Playing ? State::Playing : State::Play);
         });
 
-        PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
+        SlotPlayClicked = PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
 
         CurrentStateDispatcher.connect([this]() { OnUpdateToCurrentState(); });
 

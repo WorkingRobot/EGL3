@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/Friend.h"
+#include "../utils/SlotHolder.h"
 #include "CellRendererAvatarStatus.h"
 #include "CellRendererCenterText.h"
 
@@ -19,6 +20,8 @@ namespace EGL3::Widgets {
         };
 
         FriendList(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache);
+
+        ~FriendList();
 
         template<class Sort, class Filt>
         FriendList(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache, Sort Sorter, Filt Filter) :
@@ -89,21 +92,8 @@ namespace EGL3::Widgets {
         CellRendererCenterText CenterTextRenderer;
         CellRendererAvatarStatus<std::string, void, std::string> ProductRenderer;
 
-        template<class Signal>
-        struct SlotRAII {
-            SlotRAII(const sigc::slot_iterator<Signal>& Itr) :
-                Base(new sigc::slot_iterator<Signal>(Itr), [](sigc::slot_iterator<Signal>* Ptr) {
-                    (*Ptr)->disconnect();
-                    delete Ptr;
-                })
-            {
-
-            }
-
-            SlotRAII() = default;
-
-            std::shared_ptr<sigc::slot_iterator<Signal>> Base;
-        };
+        Utils::SlotHolder SlotTooltip;
+        Utils::SlotHolder SlotClick;
 
         struct ModelColumns : public Gtk::TreeModel::ColumnRecord
         {
@@ -121,7 +111,7 @@ namespace EGL3::Widgets {
             }
 
             Gtk::TreeModelColumn<Storage::Models::Friend*> Data;
-            Gtk::TreeModelColumn<SlotRAII<sigc::slot<void()>>> UpdateSlot;
+            Gtk::TreeModelColumn<Utils::SharedSlotHolder> UpdateSlot;
             Gtk::TreeModelColumn<Glib::ustring> KairosAvatar;
             Gtk::TreeModelColumn<Glib::ustring> KairosBackground;
             Gtk::TreeModelColumn<EGL3::Web::Xmpp::Json::ShowStatus> Status;

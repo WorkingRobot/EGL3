@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/GladeBuilder.h"
+#include "../utils/SlotHolder.h"
 #include "../web/Response.h"
 #include "../web/epic/responses/GetStatuspageSummary.h"
 #include "ModuleList.h"
@@ -26,6 +27,10 @@ namespace EGL3::Modules {
         Gtk::Label& LabelFortnite;
         Gtk::Label& LabelEOS;
         Gtk::Label& LabelEGS;
+
+        Utils::SlotHolder SlotRefresh;
+        Utils::SlotHolder SlotHoverPointer;
+        Utils::SlotHolder SlotOpenInBrowser;
 
         std::future<void> RefreshTask;
         Glib::Dispatcher Dispatcher;

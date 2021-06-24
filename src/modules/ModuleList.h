@@ -59,12 +59,15 @@ namespace EGL3::Modules {
 
         void AddModulesLoggedIn();
 
+        void RemoveModulesLoggedIn();
+
         template<typename T>
         void AddModule();
 
         Utils::GladeBuilder Builder;
         Storage::Persistent::Store Storage;
         std::vector<std::unique_ptr<BaseModule>> Modules;
+        uint32_t AuthedModulesIdx;
         Glib::Dispatcher LoggedInDispatcher;
     };
 }

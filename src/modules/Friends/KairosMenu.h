@@ -2,6 +2,7 @@
 
 #include "../../storage/models/FriendCurrent.h"
 #include "../../utils/Callback.h"
+#include "../../utils/SlotHolder.h"
 #include "../../web/xmpp/ShowStatus.h"
 #include "../../widgets/AsyncImageKeyed.h"
 #include "../ModuleList.h"
@@ -52,6 +53,14 @@ namespace EGL3::Modules::Friends {
         Gtk::FlowBox& StatusBox;
         Gtk::Entry& StatusEntry;
         Gtk::Button& StatusEditBtn;
+
+        Utils::SlotHolder SlotWindowShown;
+        Utils::SlotHolder SlotWindowUnfocused;
+        Utils::SlotHolder SlotAvatarClicked;
+        Utils::SlotHolder SlotBackgroundClicked;
+        Utils::SlotHolder SlotStatusClicked;
+        Utils::SlotHolder SlotStatusTextChanged;
+        Utils::SlotHolder SlotStatusTextClicked;
 
         std::future<void> UpdateAvatarTask;
         std::future<void> UpdateBackgroundTask;

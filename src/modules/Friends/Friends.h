@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../storage/models/Friend.h"
+#include "../../utils/SlotHolder.h"
 #include "../../web/xmpp/XmppClient.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../ModuleList.h"
@@ -82,6 +83,11 @@ namespace EGL3::Modules::Friends {
         Gtk::Widget& SwitchStackPage1;
         Gtk::Widget& SwitchStackPage2;
         Gtk::Widget& SwitchStackPage3;
+
+        Utils::SlotHolder SlotViewFriends;
+        Utils::SlotHolder SlotAddFriend;
+        Utils::SlotHolder SlotAddFriendSend;
+        Utils::SlotHolder SlotSetNickname;
 
         std::optional<Web::Xmpp::XmppClient> XmppClient;
 

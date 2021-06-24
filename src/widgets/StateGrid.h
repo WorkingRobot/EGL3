@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/Callback.h"
+#include "../utils/SlotHolder.h"
 
 #include <gtkmm.h>
 
@@ -37,7 +38,7 @@ namespace EGL3::Widgets {
             DrawDispatcher.connect([this]() { this->DrawArea.queue_draw(); });
             TrimDispatcher.connect([this]() { TryTrimFront(); });
 
-            DrawArea.signal_draw().connect([this](const Cairo::RefPtr<Cairo::Context>& Ctx) { return OnDraw(Ctx); });
+            SlotDraw = DrawArea.signal_draw().connect([this](const Cairo::RefPtr<Cairo::Context>& Ctx) { return OnDraw(Ctx); });
         }
 
         ~StateGrid() {
@@ -161,6 +162,8 @@ namespace EGL3::Widgets {
         Gtk::DrawingArea& DrawArea;
         Glib::Dispatcher DrawDispatcher;
         Glib::Dispatcher TrimDispatcher;
+
+        Utils::SlotHolder SlotDraw;
 
         std::mutex DataMtx;
         size_t ExtraItemCount;

@@ -29,7 +29,7 @@ namespace EGL3::Widgets {
 
         TreeView.set_model(TreeFilter);
         TreeView.set_headers_visible(false);
-        TreeView.signal_query_tooltip().connect([this](int X, int Y, bool KeyboardTooltip, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
+        SlotTooltip = TreeView.signal_query_tooltip().connect([this](int X, int Y, bool KeyboardTooltip, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
             Gtk::TreeModel::Path Path;
             if (KeyboardTooltip) {
                 Gtk::TreeViewColumn* Column;
@@ -100,6 +100,12 @@ namespace EGL3::Widgets {
         });
 
         TreeView.show_all();
+    }
+
+    SdTree::~SdTree()
+    {
+        TreeView.remove_all_columns();
+        TreeView.unset_model();
     }
 
     void SdTree::Initialize(const std::vector<Web::Epic::Content::SdMeta::Data>* Options)

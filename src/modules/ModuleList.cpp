@@ -28,15 +28,20 @@
 namespace EGL3::Modules {
     ModuleList::ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath) :
         Builder(BuilderPath),
-        Storage(StoragePath)
+        Storage(StoragePath),
+        AuthedModulesIdx(0)
     {
         AddModulesCore();
 
         LoggedInDispatcher.connect([this]() {
             AddModulesLoggedIn();
         });
-        GetModule<Login::AuthModule>().LoggedIn.connect([this]() {
+        auto& Auth = GetModule<Login::AuthModule>();
+        Auth.LoggedIn.connect([this]() {
             LoggedInDispatcher.emit();
+        });
+        Auth.LoggedOut.connect([this]() {
+            RemoveModulesLoggedIn();
         });
     }
 
@@ -71,14 +76,18 @@ namespace EGL3::Modules {
         AddModule<ImageCacheModule>();
         AddModule<TaskbarModule>();
 
-        AddModule<Login::HeaderModule>();
-        AddModule<Login::ChooserModule>();
         AddModule<Login::StackModule>();
         AddModule<Login::AuthModule>();
+        AddModule<Login::HeaderModule>();
+        AddModule<Login::ChooserModule>();
     }
 
     void ModuleList::AddModulesLoggedIn()
     {
+        EGL3_VERIFY(AuthedModulesIdx == 0, "Attempted to log in twice without logging out first");
+
+        AuthedModulesIdx = Modules.size();
+
         AddModule<StatsGraphModule>();
         AddModule<StatusPageModule>();
         AddModule<WhatsNewModule>();
@@ -95,6 +104,18 @@ namespace EGL3::Modules {
         AddModule<Game::PlayModule>();
         AddModule<Game::UpdateCheckModule>();
         AddModule<Game::GameModule>();
+    }
+
+    void ModuleList::RemoveModulesLoggedIn()
+    {
+        EGL3_VERIFY(AuthedModulesIdx != 0, "Attempted to log out without logging in first");
+        // Delete in reverse to perserve dependencies
+        // std::vector doesn't guarantee reverse destruction like std::array does
+        decltype(Modules.rbegin()) Itr;
+        while ((Itr = Modules.rbegin()) != Modules.rend() - AuthedModulesIdx) {
+            Modules.erase(--(Itr.base()));
+        }
+        AuthedModulesIdx = 0;
     }
 
     template<typename T>

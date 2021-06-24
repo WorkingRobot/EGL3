@@ -14,7 +14,7 @@ namespace EGL3::Modules::Friends {
         SelectedUserModel(nullptr)
     {
         ChatEntryContainer.set_events(Gdk::KEY_PRESS_MASK);
-        ChatEntry.signal_key_press_event().connect([this](GdkEventKey* evt) {
+        SlotSendKeybind = ChatEntry.signal_key_press_event().connect([this](GdkEventKey* evt) {
             // https://gitlab.gnome.org/GNOME/gtk/blob/master/gdk/gdkkeysyms.h
             if (evt->keyval != GDK_KEY_Return) {
                 return false;
@@ -24,7 +24,7 @@ namespace EGL3::Modules::Friends {
         }, false);
 
         // scroll to the bottom
-        ChatBox.signal_size_allocate().connect([this](auto& Alloc) {
+        SlotAutoScroll = ChatBox.signal_size_allocate().connect([this](auto& Alloc) {
             auto Adj = ChatScrollWindow.get_vadjustment();
             Adj->set_value(Adj->get_upper());
         });

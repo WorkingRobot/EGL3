@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/WhatsNew.h"
+#include "../utils/SlotHolder.h"
 #include "../web/ErrorData.h"
 #include "../widgets/WhatsNewItem.h"
 #include "ModuleList.h"
@@ -46,6 +47,13 @@ namespace EGL3::Modules {
         Gtk::CheckMenuItem& CheckNotice;
         Gtk::CheckMenuItem& CheckSTW;
         uint8_t& Selection;
+
+        Utils::SlotHolder SlotRefresh;
+        Utils::SlotHolder SlotBR;
+        Utils::SlotHolder SlotBlog;
+        Utils::SlotHolder SlotCreative;
+        Utils::SlotHolder SlotNotice;
+        Utils::SlotHolder SlotSTW;
 
         std::future<void> RefreshTask;
         Glib::Dispatcher Dispatcher;

@@ -83,9 +83,7 @@ namespace EGL3::Modules::Game {
         InfoWritePeak(Ctx.GetWidget<Gtk::Label>("DownloadInfoWritePeak")),
         InfoStateGrid(Ctx.GetWidget<Gtk::DrawingArea>("DownloadInfoGraph"), ChunkStateToColor)
     {
-        OptionsBrowseBtn.signal_clicked().connect([this]() {
-            OptionsFileDialog.Show();
-        });
+        SlotBrowse = OptionsBrowseBtn.signal_clicked().connect([this]() { OptionsFileDialog.Show(); });
 
         OptionsFileDialog.LocationChosen.Set([this](const std::string& NewFile) {
             auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
@@ -103,14 +101,14 @@ namespace EGL3::Modules::Game {
             }
         });
 
-        InfoButtonPause.signal_clicked().connect([this]() { OnDownloadPauseClicked(); });
-        InfoButtonStop.signal_clicked().connect([this]() { OnDownloadStopClicked(); });
+        SlotPause = InfoButtonPause.signal_clicked().connect([this]() { OnDownloadPauseClicked(); });
+        SlotStop = InfoButtonStop.signal_clicked().connect([this]() { OnDownloadStopClicked(); });
 
         StatsDispatcher.connect([this]() { OnStatsUpdate(); });
 
         MainStackBefore = MainStackCurrent = MainStack.get_focus_child();
 
-        MainStack.signal_set_focus_child().connect([this](Gtk::Widget* NewChild) {
+        SlotSwitchedFocus = MainStack.signal_set_focus_child().connect([this](Gtk::Widget* NewChild) {
             MainStackBefore = MainStackCurrent;
             MainStackCurrent = NewChild;
             if (MainStackBefore == &SwitchStack) {

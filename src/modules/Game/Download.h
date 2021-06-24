@@ -3,6 +3,7 @@
 #include "../Login/Auth.h" // Weird rapidjson vs windows schemery, this is here (and not lower) for a reason
 #include "../../storage/models/DownloadInfo.h"
 #include "../../utils/Callback.h"
+#include "../../utils/SlotHolder.h"
 #include "../../widgets/InstallLocationDialog.h"
 #include "../../widgets/SdTree.h"
 #include "../../widgets/StateGrid.h"
@@ -75,6 +76,11 @@ namespace EGL3::Modules::Game {
         Gtk::Label& InfoWriteCurrent;
         Gtk::Label& InfoWritePeak;
         Widgets::StateGrid<10, Utils::Guid, Storage::Models::ChunkState, Storage::Models::ChunkState::Scheduled, Storage::Models::ChunkState::Completed> InfoStateGrid;
+
+        Utils::SlotHolder SlotBrowse;
+        Utils::SlotHolder SlotPause;
+        Utils::SlotHolder SlotStop;
+        Utils::SlotHolder SlotSwitchedFocus;
 
         Gtk::Widget* MainStackBefore;
         Gtk::Widget* MainStackCurrent;

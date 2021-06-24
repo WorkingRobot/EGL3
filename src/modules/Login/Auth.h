@@ -2,9 +2,8 @@
 
 #include "../../web/epic/EpicClientAuthed.h"
 #include "../../web/epic/content/LauncherContentClient.h"
+#include "../../utils/egl/RememberMe.h"
 #include "../ModuleList.h"
-#include "Chooser.h"
-#include "Header.h"
 #include "Stack.h"
 
 #include <gtkmm.h>
@@ -32,13 +31,23 @@ namespace EGL3::Modules::Login {
 
         void AccountSelected(Storage::Models::AuthUserData Data);
 
-        void AccountSelectedEGL(Utils::EGL::RememberMe& RememberMe);
+        void AccountSelectedEGL();
+
+        void AccountRemoved(const std::string& AccountId);
+
+        void LogOut(bool DisplaySignIn = true);
+
+        std::vector<Storage::Models::AuthUserData>& GetUserData();
+
+        Storage::Models::AuthUserData* GetSelectedUserData();
+
+        Utils::EGL::RememberMe& GetRememberMe();
 
         sigc::signal<void()> LoggedIn;
 
+        sigc::signal<void()> LoggedOut;
+
     private:
-        ChooserModule& Chooser;
-        HeaderModule& Header;
         StackModule& Stack;
         Storage::Persistent::Store& Storage;
         std::vector<Storage::Models::AuthUserData>& UserData;
@@ -48,6 +57,8 @@ namespace EGL3::Modules::Login {
         Glib::Dispatcher SignInDispatcher;
         Storage::Models::AuthUserData SignInData;
         Glib::Dispatcher LoggedInDispatcher;
+
+        Utils::EGL::RememberMe RememberMe;
 
         struct ClientData {
             Web::Epic::EpicClientAuthed Fortnite;

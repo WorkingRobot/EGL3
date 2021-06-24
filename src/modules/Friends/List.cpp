@@ -65,7 +65,7 @@ namespace EGL3::Modules::Friends {
 
         FriendMenu.OnAction.Set([this](auto Action, auto& Friend) { FriendMenuAction(Action, Friend); });
 
-        FilterEntry.signal_changed().connect([this]() { FriendList.Refilter(); FriendList.Resort(); });
+        SlotFilterChanged = FilterEntry.signal_changed().connect([this]() { FriendList.Refilter(); FriendList.Resort(); });
 
         CurrentUserList.Add(CurrentUserModel);
     }

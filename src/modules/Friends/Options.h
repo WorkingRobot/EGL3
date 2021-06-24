@@ -2,6 +2,7 @@
 
 #include "../../storage/models/StoredFriendData.h"
 #include "../../utils/Callback.h"
+#include "../../utils/SlotHolder.h"
 #include "../ModuleList.h"
 
 #include <gtkmm.h>
@@ -29,5 +30,13 @@ namespace EGL3::Modules::Friends {
         Gtk::CheckMenuItem& CheckFriendsOverride;
         Gtk::CheckMenuItem& CheckDeclineReqs;
         Gtk::CheckMenuItem& CheckProfanity;
+
+        Utils::SlotHolder SlotFriendsOffline;
+        Utils::SlotHolder SlotFriendsOutgoing;
+        Utils::SlotHolder SlotFriendsIncoming;
+        Utils::SlotHolder SlotFriendsBlocked;
+        Utils::SlotHolder SlotFriendsOverride;
+        Utils::SlotHolder SlotDeclineReqs;
+        Utils::SlotHolder SlotProfanity;
     };
 }

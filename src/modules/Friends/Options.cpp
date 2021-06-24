@@ -21,13 +21,13 @@ namespace EGL3::Modules::Friends {
         CheckDeclineReqs.set_active(StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>());
         CheckProfanity.set_active(StorageData.HasFlag<StoredFriendData::CensorProfanity>());
 
-        CheckFriendsOffline.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckFriendsOutgoing.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckFriendsIncoming.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckFriendsBlocked.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckFriendsOverride.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckDeclineReqs.signal_toggled().connect([this]() { UpdateSelection(); });
-        CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotFriendsOffline = CheckFriendsOffline.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotFriendsOutgoing = CheckFriendsOutgoing.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotFriendsIncoming = CheckFriendsIncoming.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotFriendsBlocked = CheckFriendsBlocked.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotFriendsOverride = CheckFriendsOverride.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotDeclineReqs = CheckDeclineReqs.signal_toggled().connect([this]() { UpdateSelection(); });
+        SlotProfanity = CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
     }
 
     const StoredFriendData& OptionsModule::GetStorageData() const

@@ -39,9 +39,9 @@ namespace EGL3::Modules::Friends {
             SwitchStackPage3(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage3"))
         {
             {
-                ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
+                SlotViewFriends = ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
 
-                AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
+                SlotAddFriend = AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
 
                 Options.OnUpdate.Set([this]() { FriendsList.RefreshFilter(); });
             }
@@ -61,13 +61,13 @@ namespace EGL3::Modules::Friends {
             });
 
             {
-                AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
+                SlotAddFriendSend = AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
 
                 FriendRequestDispatcher.connect([this]() { DisplaySendFriendRequestStatus(); });
             }
 
             {
-                SetNicknameBtn.signal_clicked().connect([this]() { OnSetNickname(); });
+                SlotSetNickname = SetNicknameBtn.signal_clicked().connect([this]() { OnSetNickname(); });
 
                 SetNicknameDispatcher.connect([this]() { DisplaySetNicknameStatus(); });
             }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../storage/models/InstalledGame.h"
+#include "../../utils/SlotHolder.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../Login/Auth.h"
@@ -84,6 +85,8 @@ namespace EGL3::Modules::Game {
         Gtk::MenuItem& PlayMenuVerifyOpt;
         Gtk::MenuItem& PlayMenuModifyOpt;
         Gtk::MenuItem& PlayMenuSignOutOpt;
+
+        Utils::SlotHolder SlotPlayClicked;
 
         Glib::Dispatcher CurrentStateDispatcher;
         StateHolder* CurrentStateHolder;

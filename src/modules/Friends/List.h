@@ -2,6 +2,7 @@
 
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
+#include "../../utils/SlotHolder.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../../widgets/FriendList.h"
 #include "../ModuleList.h"
@@ -51,6 +52,8 @@ namespace EGL3::Modules::Friends {
         Storage::Models::Friend CurrentUserModel;
 
         Gtk::SearchEntry& FilterEntry;
+
+        Utils::SlotHolder SlotFilterChanged;
 
         std::vector<std::unique_ptr<Storage::Models::Friend>> FriendsData;
     };

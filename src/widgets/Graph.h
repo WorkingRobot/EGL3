@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/Callback.h"
+#include "../utils/SlotHolder.h"
 
 #include <gtkmm.h>
 
@@ -21,9 +22,9 @@ namespace EGL3::Widgets {
         {
             DrawDispatcher.connect([this]() { OnSnapshotAdded(); });
 
-            DrawArea.signal_draw().connect([this](const Cairo::RefPtr<Cairo::Context>& Ctx) { return OnDraw(Ctx); });
+            SlotDraw = DrawArea.signal_draw().connect([this](const Cairo::RefPtr<Cairo::Context>& Ctx) { return OnDraw(Ctx); });
 
-            DrawArea.signal_query_tooltip().connect([this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
+            SlotTooltip = DrawArea.signal_query_tooltip().connect([this](int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
                 std::lock_guard Guard(DrawMutex);
 
                 if (DrawData.empty()) {
@@ -151,5 +152,8 @@ namespace EGL3::Widgets {
         std::mutex DrawMutex;
         std::deque<std::array<float, LineCount>> DrawData;
         Glib::Dispatcher DrawDispatcher;
+
+        Utils::SlotHolder SlotDraw;
+        Utils::SlotHolder SlotTooltip;
     };
 }

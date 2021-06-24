@@ -12,6 +12,8 @@ namespace EGL3::Modules::Login {
     {
         IntermediateAvatarContainer.add(IntermediateAvatar);
         IntermediateAvatar.show();
+
+        DisplaySignIn();
     }
 
     void StackModule::DisplaySignIn()

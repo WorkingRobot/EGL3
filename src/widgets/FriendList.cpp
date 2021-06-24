@@ -18,7 +18,7 @@ namespace EGL3::Widgets {
         TreeView.set_model(ListFilter);
         TreeView.set_headers_visible(false);
         TreeView.set_fixed_height_mode(true);
-        TreeView.signal_query_tooltip().connect([this](int X, int Y, bool KeyboardTooltip, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
+        SlotTooltip = TreeView.signal_query_tooltip().connect([this](int X, int Y, bool KeyboardTooltip, const Glib::RefPtr<Gtk::Tooltip>& Tooltip) {
             Gtk::TreeModel::Path Path;
             Gtk::TreeViewColumn* Column;
             int CellX = 0, CellY = 0;
@@ -54,7 +54,7 @@ namespace EGL3::Widgets {
             return false;
         });
         TreeView.set_has_tooltip(true);
-        TreeView.signal_button_release_event().connect([this](GdkEventButton* Event) {
+        SlotClick = TreeView.signal_button_release_event().connect([this](GdkEventButton* Event) {
             Gtk::TreeModel::Path Path;
             Gtk::TreeViewColumn* Column;
             int CellX = 0, CellY = 0;
@@ -82,6 +82,12 @@ namespace EGL3::Widgets {
         });
 
         SetupColumns();
+    }
+
+    FriendList::~FriendList()
+    {
+        TreeView.remove_all_columns();
+        TreeView.unset_model();
     }
 
     void FriendList::Clear()
