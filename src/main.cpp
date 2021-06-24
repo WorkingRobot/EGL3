@@ -84,6 +84,6 @@ namespace EGL3 {
 #define NOMINMAX
 #include <Windows.h>
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     return EGL3::Start();
 }
