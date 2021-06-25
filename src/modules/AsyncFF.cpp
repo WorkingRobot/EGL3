@@ -1,7 +1,7 @@
 #include "AsyncFF.h"
 
 namespace EGL3::Modules {
-    constexpr size_t Capacity = 30;
+    constexpr size_t Capacity = 32;
 
     AsyncFFModule::AsyncFFModule(ModuleList& Ctx) {
         Futures.reserve(Capacity);

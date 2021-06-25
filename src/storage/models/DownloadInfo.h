@@ -19,7 +19,7 @@
 
 namespace EGL3::Storage::Models {
     class DownloadInfo {
-        constexpr static int WorkerCount = 30;
+        constexpr static size_t WorkerCount = 32;
 
     public:
         struct StateOptions {
