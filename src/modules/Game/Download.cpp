@@ -131,6 +131,23 @@ namespace EGL3::Modules::Game {
         });
 
         Utils::Mmio::MmioFile::SetWorkingSize(384ull * 1024 * 1024);
+
+        SlotLogOutPreflight = Auth.LogOutPreflight.connect([this, &Ctx]() {
+            if (CurrentDownload) {
+                if (CurrentDownload->GetState() == DownloadInfoState::Options ||
+                    CurrentDownload->GetState() == DownloadInfoState::Finished ||
+                    CurrentDownload->GetState() == DownloadInfoState::Cancelled) {
+                    return true;
+                }
+
+                if (!Ctx.DisplayConfirmation("A download is currently active. Are you sure you want to quit?" "<i>You can resume it at a later time.</i>", "Download Currently Active", true)) {
+                    return false;
+                }
+
+                CurrentDownload->SetDownloadCancelled();
+            }
+            return true;
+        });
     }
 
     DownloadModule::~DownloadModule()

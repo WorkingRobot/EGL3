@@ -70,6 +70,40 @@ namespace EGL3::Modules {
         return Storage;
     }
 
+    bool ModuleList::DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup) const
+    {
+        Gtk::MessageDialog Dialog(GetWidget<Gtk::Window>("EGL3App"), Message, UseMarkup, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
+        Dialog.set_title(Title);
+        Dialog.set_size_request(300, 200);
+        return Dialog.run() == Gtk::RESPONSE_YES;
+    }
+
+    bool ModuleList::DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& SecondaryMessage, const Glib::ustring& Title, bool UseMarkup) const
+    {
+        Gtk::MessageDialog Dialog(GetWidget<Gtk::Window>("EGL3App"), Message, UseMarkup, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
+        Dialog.set_title(Title);
+        Dialog.set_secondary_text(SecondaryMessage, UseMarkup);
+        Dialog.set_size_request(300, 200);
+        return Dialog.run() == Gtk::RESPONSE_YES;
+    }
+
+    void ModuleList::DisplayError(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup) const
+    {
+        Gtk::MessageDialog Dialog(GetWidget<Gtk::Window>("EGL3App"), Message, UseMarkup, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        Dialog.set_title(Title);
+        Dialog.set_size_request(300, 200);
+        Dialog.run();
+    }
+
+    void ModuleList::DisplayError(const Glib::ustring& Message, const Glib::ustring& SecondaryMessage, const Glib::ustring& Title, bool UseMarkup) const
+    {
+        Gtk::MessageDialog Dialog(GetWidget<Gtk::Window>("EGL3App"), Message, UseMarkup, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        Dialog.set_title(Title);
+        Dialog.set_secondary_text(SecondaryMessage, UseMarkup);
+        Dialog.set_size_request(300, 200);
+        Dialog.run();
+    }
+
     void ModuleList::AddModulesCore()
     {
         AddModule<AsyncFFModule>();
@@ -80,6 +114,8 @@ namespace EGL3::Modules {
         AddModule<Login::AuthModule>();
         AddModule<Login::HeaderModule>();
         AddModule<Login::ChooserModule>();
+
+        AddModule<Game::ServiceModule>();
     }
 
     void ModuleList::AddModulesLoggedIn()
@@ -98,7 +134,6 @@ namespace EGL3::Modules {
         AddModule<Friends::ChatModule>();
         AddModule<Friends::FriendsModule>();
 
-        AddModule<Game::ServiceModule>();
         AddModule<Game::GameInfoModule>();
         AddModule<Game::DownloadModule>();
         AddModule<Game::PlayModule>();

@@ -18,6 +18,18 @@ namespace EGL3::Modules::Game {
                 OnStateUpdate(false);
             }
         });
+
+        SlotLogOutPreflight = Auth.LogOutPreflight.connect([this, &Ctx]() {
+            if (CurrentPlay) {
+                if (CurrentPlay->GetState() == PlayInfoState::Playable) {
+                    return true;
+                }
+
+                Ctx.DisplayError("You're currently playing Fortnite right now, you can't quit yet.", "<i><small>If you wish to play on multiple accounts,\nhold \"Shift\" when clicking the play button.</small></i>", "Currently Playing", true);
+                return false;
+            }
+            return true;
+        });
     }
 
     PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game)

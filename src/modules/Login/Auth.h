@@ -10,6 +10,20 @@
 
 namespace EGL3::Modules::Login {
     class AuthModule : public BaseModule {
+        struct PreflightAccumulator
+        {
+            using result_type = bool;
+
+            template<typename Itr>
+            bool operator()(Itr Begin, Itr End) const {
+                for (; Begin != End; ++Begin) {
+                    if (!*Begin) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        };
     public:
         AuthModule(ModuleList& Ctx);
 
@@ -35,7 +49,7 @@ namespace EGL3::Modules::Login {
 
         bool AccountRemoved(const std::string& AccountId);
 
-        void LogOut(bool DisplaySignIn = true);
+        bool LogOut(bool DisplaySignIn = true);
 
         std::deque<Storage::Models::AuthUserData>& GetUserData();
 
@@ -44,6 +58,8 @@ namespace EGL3::Modules::Login {
         Utils::EGL::RememberMe& GetRememberMe();
 
         sigc::signal<void()> LoggedIn;
+
+        sigc::signal0<bool, PreflightAccumulator> LogOutPreflight;
 
         sigc::signal<void()> LoggedOut;
 

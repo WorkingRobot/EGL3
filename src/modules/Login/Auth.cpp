@@ -62,6 +62,10 @@ namespace EGL3::Modules::Login {
             Stack.DisplayPrimary();
         });
 
+        Ctx.GetWidget<Gtk::Window>("EGL3App").signal_delete_event().connect([this](GdkEventAny* Event) {
+            return IsLoggedIn() && !LogOutPreflight.emit();
+        });
+
         if (AuthData.IsUserSelected()) {
             AccountSelected(AuthData.GetSelectedUser());
         }
@@ -198,8 +202,8 @@ namespace EGL3::Modules::Login {
             return true;
         }
 
-        if (IsLoggedIn()) {
-            LogOut(false);
+        if (IsLoggedIn() && !LogOut(false)) {
+            return true;
         }
 
         SignInTask = std::async(std::launch::async, [this, AuthCodeString = AuthCode]() {
@@ -263,8 +267,8 @@ namespace EGL3::Modules::Login {
 
     void AuthModule::AccountSelected(Storage::Models::AuthUserData Data)
     {
-        if (IsLoggedIn()) {
-            LogOut(false);
+        if (IsLoggedIn() && !LogOut(false)) {
+            return;
         }
 
         SignInTask = std::async(std::launch::async, [this, Data]() {
@@ -296,8 +300,8 @@ namespace EGL3::Modules::Login {
 
     void AuthModule::AccountSelectedEGL()
     {
-        if (IsLoggedIn()) {
-            LogOut(false);
+        if (IsLoggedIn() && !LogOut(false)) {
+            return;
         }
 
         SignInTask = std::async(std::launch::async, [this]() {
@@ -362,14 +366,20 @@ namespace EGL3::Modules::Login {
         return true;
     }
 
-    void AuthModule::LogOut(bool DisplaySignIn)
+    bool AuthModule::LogOut(bool DisplaySignIn)
     {
+        if (!LogOutPreflight.emit()) {
+            return false;
+        }
+
         if (DisplaySignIn) {
             Stack.DisplaySignIn();
         }
         LoggedOut.emit();
         Clients.reset();
         SelectedUserData = nullptr;
+
+        return true;
     }
 
     std::deque<Storage::Models::AuthUserData>& AuthModule::GetUserData()

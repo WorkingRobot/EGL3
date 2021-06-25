@@ -9,7 +9,6 @@
 #define NOMINMAX
 #include <ixwebsocket/IXWebSocket.h>
 #include <rapidxml/rapidxml.hpp>
-#include <shared_mutex>
 
 namespace EGL3::Web::Xmpp {
     // Standards used are listed in comments inside the cpp file and in asserts
@@ -84,8 +83,8 @@ namespace EGL3::Web::Xmpp {
         std::string CurrentJidWithoutResource;
         std::string CurrentJid;
 
-        std::shared_mutex BackgroundPingMutex;
-        std::condition_variable_any BackgroundPingCV;
+        std::mutex BackgroundPingMutex;
+        std::condition_variable BackgroundPingCV;
         std::chrono::steady_clock::time_point BackgroundPingNextTime;
         std::future<void> BackgroundPingFuture;
 

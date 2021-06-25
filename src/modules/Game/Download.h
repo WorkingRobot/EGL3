@@ -81,6 +81,7 @@ namespace EGL3::Modules::Game {
         Utils::SlotHolder SlotPause;
         Utils::SlotHolder SlotStop;
         Utils::SlotHolder SlotSwitchedFocus;
+        Utils::SlotHolder SlotLogOutPreflight;
 
         Gtk::Widget* MainStackBefore;
         Gtk::Widget* MainStackCurrent;

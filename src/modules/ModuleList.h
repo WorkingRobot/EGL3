@@ -54,6 +54,14 @@ namespace EGL3::Modules {
             EGL3_ABORTF("Could not find module {}", Detail::module_name_v<T>);
         }
 
+        bool DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup = false) const;
+
+        bool DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& SecondaryMessage, const Glib::ustring& Title, bool UseMarkup = false) const;
+
+        void DisplayError(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup = false) const;
+
+        void DisplayError(const Glib::ustring& Message, const Glib::ustring& SecondaryMessage, const Glib::ustring& Title, bool UseMarkup = false) const;
+
     private:
         void AddModulesCore();
 

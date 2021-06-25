@@ -40,9 +40,7 @@ namespace EGL3::Storage::Models {
 
     DownloadInfo::~DownloadInfo()
     {
-        if (std::holds_alternative<StateInstalling>(StateData)) {
-            SetDownloadCancelled();
-        }
+        SetDownloadCancelled();
 
         if (PrimaryTask.valid()) {
             PrimaryTask.get();
@@ -327,23 +325,29 @@ namespace EGL3::Storage::Models {
 
     void DownloadInfo::SetDownloadRunning(bool Running)
     {
-        auto& Data = GetStateData<StateInstalling>();
+        auto DataPtr = TryGetStateData<StateInstalling>();
+        if (!DataPtr) {
+            return;
+        }
 
-        Data.Pool.SetRunning(Running);
+        DataPtr->Pool.SetRunning(Running);
         SetState(Running ? DownloadInfoState::Installing : DownloadInfoState::Paused);
     }
 
     void DownloadInfo::SetDownloadCancelled()
     {
-        auto& Data = GetStateData<StateInstalling>();
+        auto DataPtr = TryGetStateData<StateInstalling>();
+        if (!DataPtr) {
+            return;
+        }
 
         {
-            std::unique_lock Lock(Data.DataMutex);
-            Data.Cancelled = true;
+            std::unique_lock Lock(DataPtr->DataMutex);
+            DataPtr->Cancelled = true;
         }
         SetState(DownloadInfoState::Cancelling);
 
-        Data.Pool.SetRunning(); // They need to run in order to exit
+        DataPtr->Pool.SetRunning(); // They need to run in order to exit
     }
 
     template<class T>

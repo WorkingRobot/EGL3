@@ -807,7 +807,7 @@ namespace EGL3::Web::Xmpp {
         while (true) {
             std::chrono::steady_clock::time_point NextTime;
             {
-                std::shared_lock Lock(BackgroundPingMutex);
+                std::unique_lock Lock(BackgroundPingMutex);
                 NextTime = BackgroundPingNextTime;
                 BackgroundPingCV.wait_until(Lock, NextTime, [&, this]() {
                     return NextTime != BackgroundPingNextTime || BackgroundPingNextTime == std::chrono::steady_clock::time_point::max();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../storage/models/PlayInfo.h"
+#include "../../utils/SlotHolder.h"
 #include "../ModuleList.h"
 #include "../Login/Auth.h"
 #include "Service.h"
@@ -18,6 +19,8 @@ namespace EGL3::Modules::Game {
         Storage::Persistent::Store& Storage;
         Login::AuthModule& Auth;
         ServiceModule& Service;
+
+        Utils::SlotHolder SlotLogOutPreflight;
 
         std::atomic<bool> PlayQueued;
         Glib::Dispatcher PlayQueuedDispatcher;

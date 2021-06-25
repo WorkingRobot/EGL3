@@ -140,6 +140,16 @@ namespace EGL3::Storage::Models {
             return std::get<T>(StateData);
         }
 
+        template<class T>
+        const T* TryGetStateData() const {
+            return std::get_if<T>(&StateData);
+        }
+
+        template<class T>
+        T* TryGetStateData() {
+            return std::get_if<T>(&StateData);
+        }
+
         void CancelDownloadSetup();
 
         void BeginDownload(const LatestManifestRequest& GetLatestManifest);
