@@ -89,7 +89,7 @@ namespace EGL3::Storage::Models {
 
     bool Authorization::IsUserSelected() const
     {
-        return SelectedUserIdx == InvalidUserIdx;
+        return SelectedUserIdx != InvalidUserIdx && SelectedUserIdx < UserData.size();
     }
 
     const AuthUserData& Authorization::GetSelectedUser() const
@@ -102,12 +102,22 @@ namespace EGL3::Storage::Models {
         return UserData[SelectedUserIdx];
     }
 
-    const std::vector<AuthUserData>& Authorization::GetUsers() const
+    void Authorization::SetSelectedUser(uint32_t Idx)
+    {
+        SelectedUserIdx = Idx;
+    }
+
+    void Authorization::ClearSelectedUser()
+    {
+        SetSelectedUser(InvalidUserIdx);
+    }
+
+    const std::deque<AuthUserData>& Authorization::GetUsers() const
     {
         return UserData;
     }
 
-    std::vector<AuthUserData>& Authorization::GetUsers()
+    std::deque<AuthUserData>& Authorization::GetUsers()
     {
         return UserData;
     }

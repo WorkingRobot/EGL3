@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
@@ -123,6 +124,15 @@ namespace EGL3::Utils::Streams {
 
         template<class T>
         Stream& operator<<(const std::vector<T>& Val) {
+            *this << Val.size();
+            for (auto& Item : Val) {
+                *this << Item;
+            }
+            return *this;
+        }
+
+        template<class T>
+        Stream& operator<<(const std::deque<T>& Val) {
             *this << Val.size();
             for (auto& Item : Val) {
                 *this << Item;
@@ -259,6 +269,17 @@ namespace EGL3::Utils::Streams {
             size_t Size;
             *this >> Size;
             Val.reserve(Size);
+            for (size_t i = 0; i < Size; ++i) {
+                *this >> Val.emplace_back();
+            }
+            return *this;
+        }
+
+        template<class T>
+        Stream& operator>>(std::deque<T>& Val) {
+            Val.clear();
+            size_t Size;
+            *this >> Size;
             for (size_t i = 0; i < Size; ++i) {
                 *this >> Val.emplace_back();
             }

@@ -106,7 +106,8 @@ namespace EGL3::Widgets {
                 Glib::signal_idle().connect_once(
                     [this, &Ref]() {
                         UpdateFriendRow(*ListStore->get_iter(Ref.get_path()));
-                    }
+                    },
+                    Glib::PRIORITY_DEFAULT
                 );
             }
         );

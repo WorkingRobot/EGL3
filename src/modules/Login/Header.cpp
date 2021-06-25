@@ -39,12 +39,17 @@ namespace EGL3::Modules::Login {
             return false;
         });
 
+        LoggedInDispatcher.connect([this]() {
+            Show(*Auth.GetSelectedUserData());
+        });
+
         Auth.LoggedIn.connect([this]() {
             LoggedInDispatcher.emit();
         });
 
-        LoggedInDispatcher.connect([this]() {
-            Show(*Auth.GetSelectedUserData());
+        Auth.LoggedOut.connect([this]() {
+            AccountListWindow.hide();
+            Hide();
         });
 
         {

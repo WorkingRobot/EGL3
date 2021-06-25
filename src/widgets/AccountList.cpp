@@ -82,8 +82,9 @@ namespace EGL3::Widgets {
             {
                 auto& User = *Row[Columns.Data];
                 if (RemoveState) {
-                    this->Auth.AccountRemoved(User.AccountId);
-                    ListStore->erase(ListFilter->convert_iter_to_child_iter(Itr));
+                    if (this->Auth.AccountRemoved(User.AccountId)) {
+                        ListStore->erase(ListFilter->convert_iter_to_child_iter(Itr));
+                    }
                 }
                 else {
                     this->Auth.AccountSelected(User);

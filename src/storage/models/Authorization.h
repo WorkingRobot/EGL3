@@ -31,14 +31,18 @@ namespace EGL3::Storage::Models {
 
         AuthUserData& GetSelectedUser();
 
-        const std::vector<AuthUserData>& GetUsers() const;
+        void SetSelectedUser(uint32_t Idx);
 
-        std::vector<AuthUserData>& GetUsers();
+        void ClearSelectedUser();
+
+        const std::deque<AuthUserData>& GetUsers() const;
+
+        std::deque<AuthUserData>& GetUsers();
 
     private:
         static constexpr uint32_t InvalidUserIdx = -1;
 
         uint32_t SelectedUserIdx = InvalidUserIdx;
-        std::vector<AuthUserData> UserData;
+        std::deque<AuthUserData> UserData;
     };
 }

@@ -37,8 +37,6 @@ namespace EGL3::Utils::EGL {
 
         RememberMeData::Profile* GetProfile();
 
-        // void ReplaceToken(const std::string& NewToken);
-
     private:
         static std::filesystem::path GetIniPath();
 

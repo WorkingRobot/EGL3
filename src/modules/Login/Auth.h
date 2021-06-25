@@ -33,11 +33,11 @@ namespace EGL3::Modules::Login {
 
         void AccountSelectedEGL();
 
-        void AccountRemoved(const std::string& AccountId);
+        bool AccountRemoved(const std::string& AccountId);
 
         void LogOut(bool DisplaySignIn = true);
 
-        std::vector<Storage::Models::AuthUserData>& GetUserData();
+        std::deque<Storage::Models::AuthUserData>& GetUserData();
 
         Storage::Models::AuthUserData* GetSelectedUserData();
 
@@ -50,7 +50,7 @@ namespace EGL3::Modules::Login {
     private:
         StackModule& Stack;
         Storage::Persistent::Store& Storage;
-        std::vector<Storage::Models::AuthUserData>& UserData;
+        Storage::Models::Authorization& AuthData;
         Storage::Models::AuthUserData* SelectedUserData;
 
         std::future<void> SignInTask;

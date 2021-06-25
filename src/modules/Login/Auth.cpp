@@ -19,7 +19,7 @@ namespace EGL3::Modules::Login {
     AuthModule::AuthModule(ModuleList& Ctx) :
         Stack(Ctx.GetModule<StackModule>()),
         Storage(Ctx.GetStorage()),
-        UserData(Storage.Get(Storage::Persistent::Key::Auth).GetUsers()),
+        AuthData(Storage.Get(Storage::Persistent::Key::Auth)),
         SelectedUserData(nullptr)
     {
         LoggedIn.connect([this]() {
@@ -32,6 +32,7 @@ namespace EGL3::Modules::Login {
             });
 
             Storage::Models::AuthUserData NewData = Clients->GetUserData();
+            auto& UserData = AuthData.GetUsers();
             auto Itr = std::find_if(UserData.begin(), UserData.end(), [&NewData](const Storage::Models::AuthUserData& Data) {
                 return Data.AccountId == NewData.AccountId;
             });
@@ -40,11 +41,18 @@ namespace EGL3::Modules::Login {
             }
             else {
                 SelectedUserData = &UserData.emplace_back();
+                Itr = UserData.end() - 1;
             }
             *SelectedUserData = NewData;
 
             LoggedInDispatcher.emit();
+            
+            AuthData.SetSelectedUser(std::distance(UserData.begin(), Itr));
+            Storage.Flush();
+        });
 
+        LoggedOut.connect([this]() {
+            AuthData.ClearSelectedUser();
             Storage.Flush();
         });
 
@@ -55,6 +63,13 @@ namespace EGL3::Modules::Login {
         LoggedInDispatcher.connect([this]() {
             Stack.DisplayPrimary();
         });
+
+        if (AuthData.IsUserSelected()) {
+            AccountSelected(AuthData.GetSelectedUser());
+        }
+        else {
+            Stack.DisplaySignIn();
+        }
     }
 
     bool AuthModule::IsLoggedIn() const
@@ -185,9 +200,13 @@ namespace EGL3::Modules::Login {
             return true;
         }
 
+        if (IsLoggedIn()) {
+            LogOut(false);
+        }
+
         SignInTask = std::async(std::launch::async, [this, AuthCodeString = AuthCode]() {
             Web::Epic::Auth::AuthorizationCode AuthCode(Web::AuthClientAndroid, AuthCodeString);
-            if (!EGL3_ENSURE(AuthCode.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use auth code")) {
+            if (!EGL3_ENSUREF(AuthCode.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use auth code (Error code {})", (int)AuthCode.GetOAuthResponseFuture().get())) {
                 return;
             }
             Web::Epic::EpicClientAuthed AuthCodeClient(AuthCode.GetOAuthResponse(), Web::AuthClientAndroid);
@@ -227,12 +246,12 @@ namespace EGL3::Modules::Login {
             }
 
             Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
 
             Web::Epic::Auth::ExchangeCode LauncherAuth(Web::AuthClientLauncher, LauncherCodeResp->Code);
-            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher")) {
+            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
 
@@ -254,7 +273,7 @@ namespace EGL3::Modules::Login {
             SignInDispatcher.emit();
 
             Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, Data.RefreshToken);
-            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::RefreshToken::SUCCESS, LogLevel::Error, "Could not use refresh token")) {
+            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::RefreshToken::SUCCESS, LogLevel::Error, "Could not use refresh token (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
@@ -265,7 +284,7 @@ namespace EGL3::Modules::Login {
             }
 
             Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
 
@@ -282,7 +301,7 @@ namespace EGL3::Modules::Login {
 
         SignInTask = std::async(std::launch::async, [this]() {
             Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
-            if (!EGL3_ENSURE(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use EGL refresh token")) {
+            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use EGL refresh token (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
@@ -317,40 +336,27 @@ namespace EGL3::Modules::Login {
                 return;
             }
 
-            //auto EGLCodeResp = LauncherClient.GetExchangeCode();
-            //if (!EGL3_ENSURE(!LauncherCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client #2")) {
-            //    return;
-            //}
-
             Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSURE(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite")) {
+            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
                 return;
             }
-
-            //Web::Epic::Auth::ExchangeCode EGLAuth(Web::AuthClientLauncher, EGLCodeResp->Code);
-            //if (!EGL3_ENSURE(EGLAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for EGL")) {
-            //    return;
-            //}
-
-            //Web::Epic::Responses::OAuthToken EGLAuthData;
-            //if (!EGL3_ENSURE(Web::Epic::Responses::OAuthToken::Parse(EGLAuth.GetOAuthResponse(), EGLAuthData), LogLevel::Error, "Could not parse auth data for EGL")) {
-            //    return;
-            //}
-            //RememberMe.ReplaceToken(EGLAuthData.RefreshToken.value());
 
             Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
             LoggedIn.emit();
         });
     }
 
-    void AuthModule::AccountRemoved(const std::string& AccountId)
+    bool AuthModule::AccountRemoved(const std::string& AccountId)
     {
+        auto& UserData = AuthData.GetUsers();
         auto Itr = std::find_if(UserData.begin(), UserData.end(), [&](const Storage::Models::AuthUserData& Data) {
             return Data.AccountId == AccountId;
         });
-        if (Itr != UserData.end()) {
-            UserData.erase(Itr);
+        if (Itr == UserData.end() || &*Itr == SelectedUserData) {
+            return false;
         }
+        UserData.erase(Itr);
+        return true;
     }
 
     void AuthModule::LogOut(bool DisplaySignIn)
@@ -363,9 +369,9 @@ namespace EGL3::Modules::Login {
         SelectedUserData = nullptr;
     }
 
-    std::vector<Storage::Models::AuthUserData>& AuthModule::GetUserData()
+    std::deque<Storage::Models::AuthUserData>& AuthModule::GetUserData()
     {
-        return UserData;
+        return AuthData.GetUsers();
     }
 
     Storage::Models::AuthUserData* AuthModule::GetSelectedUserData()
