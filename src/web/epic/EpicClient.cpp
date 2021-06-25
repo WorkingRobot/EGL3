@@ -1,7 +1,6 @@
 #include "EpicClient.h"
 
 #include "../../utils/streams/FileStream.h"
-#include "../Http.h"
 #include "../RunningFunctionGuard.h"
 
 namespace EGL3::Web::Epic {
@@ -200,6 +199,71 @@ namespace EGL3::Web::Epic {
         }
 
         return BPS::ChunkData(Response.text.data(), Response.text.size());
+    }
+
+    Response<Responses::OAuthToken> EpicClient::AuthorizationCode(const cpr::Authentication& AuthClient, const std::string& Code)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::Account>("oauth/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "authorization_code" }, { "token_type", "eg1" }, { "code", Code } }
+                );
+            }
+        );
+    }
+
+    Response<Responses::OAuthToken> EpicClient::ClientCredentials(const cpr::Authentication& AuthClient)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::Account>("oauth/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "client_credentials" }, { "token_type", "eg1" } }
+                );
+            }
+        );
+    }
+
+    Response<Responses::OAuthToken> EpicClient::DeviceAuth(const cpr::Authentication& AuthClient, const std::string& AccountId, const std::string& DeviceId, const std::string& Secret)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::Account>("oauth/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "device_auth" }, {"token_type", "eg1"}, { "account_id", AccountId }, { "device_id", DeviceId }, { "secret", Secret } }
+                );
+            }
+        );
+    }
+
+    Response<Responses::OAuthToken> EpicClient::ExchangeCode(const cpr::Authentication& AuthClient, const std::string& Code)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::Account>("oauth/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "exchange_code" }, { "token_type", "eg1" }, { "exchange_code", Code } }
+                );
+            }
+        );
+    }
+
+    Response<Responses::OAuthToken> EpicClient::RefreshToken(const cpr::Authentication& AuthClient, const std::string& Token)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::Account>("oauth/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "refresh_token" }, { "token_type", "eg1" }, { "refresh_token", Token } }
+                );
+            }
+        );
     }
 
     template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>

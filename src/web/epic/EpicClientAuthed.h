@@ -30,7 +30,7 @@
 namespace EGL3::Web::Epic {
     class EpicClientAuthed : public BaseClient {
     public:
-        EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient);
+        EpicClientAuthed(const Responses::OAuthToken& AuthData, const cpr::Authentication& AuthClient);
         EpicClientAuthed(EpicClientAuthed&&);
 
         ~EpicClientAuthed();

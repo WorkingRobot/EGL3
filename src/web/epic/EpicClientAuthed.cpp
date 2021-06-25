@@ -9,13 +9,13 @@
 #include <rapidjson/writer.h>
 
 namespace EGL3::Web::Epic {
-    EpicClientAuthed::EpicClientAuthed(const rapidjson::Document& OAuthResponse, const cpr::Authentication& AuthClient) :
+    EpicClientAuthed::EpicClientAuthed(const Responses::OAuthToken& AuthData, const cpr::Authentication& AuthClient) :
+        AuthData(AuthData),
+        AuthHeader(std::format("{} {}", AuthData.TokenType, AuthData.AccessToken)),
         AuthClient(AuthClient),
         KillTokenOnDestruct(true)
     {
-        EGL3_VERIFY(Responses::OAuthToken::Parse(OAuthResponse, AuthData), "OAuth data failed to parse");
 
-        AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
     }
 
     EpicClientAuthed::EpicClientAuthed(EpicClientAuthed&& Other) :

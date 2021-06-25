@@ -6,10 +6,8 @@
 #include "../../utils/Quote.h"
 #include "../../utils/UrlEncode.h"
 #include "../../web/ClientSecrets.h"
+#include "../../web/epic/EpicClient.h"
 #include "../../web/epic/EpicClientAuthed.h"
-#include "../../web/epic/auth/AuthorizationCode.h"
-#include "../../web/epic/auth/ExchangeCode.h"
-#include "../../web/epic/auth/RefreshToken.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -205,26 +203,27 @@ namespace EGL3::Modules::Login {
         }
 
         SignInTask = std::async(std::launch::async, [this, AuthCodeString = AuthCode]() {
-            Web::Epic::Auth::AuthorizationCode AuthCode(Web::AuthClientAndroid, AuthCodeString);
-            if (!EGL3_ENSUREF(AuthCode.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use auth code (Error code {})", (int)AuthCode.GetOAuthResponseFuture().get())) {
+            Web::Epic::EpicClient AuthClient;
+
+            auto AuthDataResp = AuthClient.AuthorizationCode(Web::AuthClientAndroid, AuthCodeString);
+            if (!EGL3_ENSURE(!AuthDataResp.HasError(), LogLevel::Error, "Could not use auth code")) {
                 return;
             }
-            Web::Epic::EpicClientAuthed AuthCodeClient(AuthCode.GetOAuthResponse(), Web::AuthClientAndroid);
+            Web::Epic::EpicClientAuthed AuthCodeClient(AuthDataResp.Get(), Web::AuthClientAndroid);
 
-            auto& AuthData = AuthCodeClient.GetAuthData();
-            auto KairosDataResp = AuthCodeClient.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
+            auto KairosDataResp = AuthCodeClient.GetSettingsForAccounts({ AuthDataResp->AccountId.value() }, { "avatar", "avatarBackground" });
             if (!EGL3_ENSURE(!KairosDataResp.HasError(), LogLevel::Error, "Could not get kairos data from android client")) {
                 return;
             }
             
             SignInData = {
-                .AccountId = AuthData.AccountId.value(),
-                .DisplayName = AuthData.DisplayName.value(),
+                .AccountId = AuthDataResp->AccountId.value(),
+                .DisplayName = AuthDataResp->DisplayName.value(),
                 .RefreshToken = "",
                 .RefreshExpireTime = Web::TimePoint::max()
             };
             for (auto& Setting : KairosDataResp->Values) {
-                if (Setting.AccountId != AuthData.AccountId.value()) {
+                if (Setting.AccountId != AuthDataResp->AccountId.value()) {
                     continue;
                 }
                 if (Setting.Key == "avatar") {
@@ -245,17 +244,17 @@ namespace EGL3::Modules::Login {
                 return;
             }
 
-            Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
+            auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
+            if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
 
-            Web::Epic::Auth::ExchangeCode LauncherAuth(Web::AuthClientLauncher, LauncherCodeResp->Code);
-            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for launcher (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
+            auto LauncherAuthResp = AuthClient.ExchangeCode(Web::AuthClientLauncher, LauncherCodeResp->Code);
+            if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for launcher")) {
                 return;
             }
 
-            Clients.emplace(FortniteAuth.GetOAuthResponse(), LauncherAuth.GetOAuthResponse());
+            Clients.emplace(FortniteAuthResp.Get(), LauncherAuthResp.Get());
             LoggedIn.emit();
         });
 
@@ -269,26 +268,28 @@ namespace EGL3::Modules::Login {
         }
 
         SignInTask = std::async(std::launch::async, [this, Data]() {
+            Web::Epic::EpicClient AuthClient;
+
             SignInData = Data;
             SignInDispatcher.emit();
 
-            Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, Data.RefreshToken);
-            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::RefreshToken::SUCCESS, LogLevel::Error, "Could not use refresh token (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
+            auto LauncherAuthResp = AuthClient.RefreshToken(Web::AuthClientLauncher, Data.RefreshToken);
+            if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use refresh token")) {
                 return;
             }
-            Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
+            Web::Epic::EpicClientAuthed LauncherClient(LauncherAuthResp.Get(), Web::AuthClientLauncher);
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
             if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
                 return;
             }
 
-            Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
+            auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
+            if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
 
-            Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
+            Clients.emplace(FortniteAuthResp.Get(), std::move(LauncherClient));
             LoggedIn.emit();
         });
     }
@@ -300,11 +301,13 @@ namespace EGL3::Modules::Login {
         }
 
         SignInTask = std::async(std::launch::async, [this]() {
-            Web::Epic::Auth::RefreshToken LauncherAuth(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
-            if (!EGL3_ENSUREF(LauncherAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::AuthorizationCode::SUCCESS, LogLevel::Error, "Could not use EGL refresh token (Error code {})", (int)LauncherAuth.GetOAuthResponseFuture().get())) {
+            Web::Epic::EpicClient AuthClient;
+            
+            auto LauncherAuthResp = AuthClient.RefreshToken(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
+            if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use EGL refresh token")) {
                 return;
             }
-            Web::Epic::EpicClientAuthed LauncherClient(LauncherAuth.GetOAuthResponse(), Web::AuthClientLauncher);
+            Web::Epic::EpicClientAuthed LauncherClient(LauncherAuthResp.Get(), Web::AuthClientLauncher);
 
             auto& AuthData = LauncherClient.GetAuthData();
             auto KairosDataResp = LauncherClient.GetSettingsForAccounts({ AuthData.AccountId.value() }, { "avatar", "avatarBackground" });
@@ -332,16 +335,16 @@ namespace EGL3::Modules::Login {
             SignInDispatcher.emit();
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
-            if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client #1")) {
+            if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
                 return;
             }
 
-            Web::Epic::Auth::ExchangeCode FortniteAuth(Web::AuthClientPC, FortniteCodeResp->Code);
-            if (!EGL3_ENSUREF(FortniteAuth.GetOAuthResponseFuture().get() == Web::Epic::Auth::ExchangeCode::SUCCESS, LogLevel::Error, "Could not use exchange code for fortnite (Error code {})", (int)FortniteAuth.GetOAuthResponseFuture().get())) {
+            auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
+            if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
                 return;
             }
 
-            Clients.emplace(FortniteAuth.GetOAuthResponse(), std::move(LauncherClient));
+            Clients.emplace(FortniteAuthResp.Get(), std::move(LauncherClient));
             LoggedIn.emit();
         });
     }
@@ -384,17 +387,17 @@ namespace EGL3::Modules::Login {
         return RememberMe;
     }
 
-    AuthModule::ClientData::ClientData(const rapidjson::Document& FortniteOAuthResp, const rapidjson::Document& LauncherOAuthResp) :
-        Fortnite(FortniteOAuthResp, Web::AuthClientPC),
-        Launcher(LauncherOAuthResp, Web::AuthClientLauncher),
+    AuthModule::ClientData::ClientData(const Web::Epic::Responses::OAuthToken& FortniteAuthData, const Web::Epic::Responses::OAuthToken& LauncherAuthData) :
+        Fortnite(FortniteAuthData, Web::AuthClientPC),
+        Launcher(LauncherAuthData, Web::AuthClientLauncher),
         Content(Launcher, Utils::Config::GetFolder() / "contentcache")
     {
         Launcher.SetKillTokenOnDestruct(false);
         SetRefreshCallback();
     }
 
-    AuthModule::ClientData::ClientData(const rapidjson::Document& FortniteOAuthResp, Web::Epic::EpicClientAuthed&& Launcher) :
-        Fortnite(FortniteOAuthResp, Web::AuthClientPC),
+    AuthModule::ClientData::ClientData(const Web::Epic::Responses::OAuthToken& FortniteAuthData, Web::Epic::EpicClientAuthed&& Launcher) :
+        Fortnite(FortniteAuthData, Web::AuthClientPC),
         Launcher(std::move(Launcher)),
         Content(this->Launcher, Utils::Config::GetFolder() / "contentcache")
     {

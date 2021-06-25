@@ -66,8 +66,8 @@ namespace EGL3::Modules::Login {
             Web::Epic::Content::LauncherContentClient Content;
             Utils::Callback<void(const Storage::Models::AuthUserData& NewData)> OnUserDataUpdate;
 
-            ClientData(const rapidjson::Document& FortniteOAuthResp, const rapidjson::Document& LauncherOAuthResp);
-            ClientData(const rapidjson::Document& FortniteOAuthResp, Web::Epic::EpicClientAuthed&& Launcher);
+            ClientData(const Web::Epic::Responses::OAuthToken& FortniteAuthData, const Web::Epic::Responses::OAuthToken& LauncherAuthData);
+            ClientData(const Web::Epic::Responses::OAuthToken& FortniteAuthData, Web::Epic::EpicClientAuthed&& Launcher);
 
             Storage::Models::AuthUserData GetUserData();
 
