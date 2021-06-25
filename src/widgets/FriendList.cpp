@@ -104,10 +104,13 @@ namespace EGL3::Widgets {
         Row[Columns.UpdateSlot] = Friend.Get().OnUpdate.connect(
             [this, Ref = std::move(Ref)]() {
                 Glib::signal_idle().connect_once(
-                    [this, &Ref]() {
-                        UpdateFriendRow(*ListStore->get_iter(Ref.get_path()));
+                    [this, ListStoreRef = Glib::WeakRef<Gtk::ListStore>(ListStore), Ref]() {
+                        auto ListStore = ListStoreRef.get();
+                        if (Ref.is_valid() && ListStore) {
+                            UpdateFriendRow(*ListStore->get_iter(Ref.get_path()));
+                        }
                     },
-                    Glib::PRIORITY_DEFAULT
+                    Glib::PRIORITY_HIGH_IDLE
                 );
             }
         );
