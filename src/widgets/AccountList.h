@@ -49,7 +49,8 @@ namespace EGL3::Widgets {
             Account,
             EGL,
             Add,
-            Remove
+            Remove,
+            LogOut
         };
 
         struct ModelColumns : public Gtk::TreeModel::ColumnRecord

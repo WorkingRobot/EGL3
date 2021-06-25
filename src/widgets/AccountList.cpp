@@ -105,6 +105,9 @@ namespace EGL3::Widgets {
                     EnableRemoveState();
                 }
                 break;
+            case RowType::LogOut:
+                this->Auth.LogOut();
+                break;
             }
             return false;
         });
@@ -128,7 +131,7 @@ namespace EGL3::Widgets {
 
     void AccountList::AddAccount(Storage::Models::AuthUserData* User)
     {
-        if (User == nullptr) {
+        if (User == nullptr || Auth.GetSelectedUserData() == User) {
             return;
         }
 
@@ -150,11 +153,21 @@ namespace EGL3::Widgets {
             if (ProfilePtr != nullptr) {
                 auto& Profile = *ProfilePtr;
                 bool ProfileFound = false;
-                ListStore->foreach_iter([this, &ProfileFound, &Profile](const Gtk::TreeModel::iterator& Itr) {
-                    auto& Row = *Itr;
-                    auto Data = (Storage::Models::AuthUserData*)Row[Columns.Data];
-                    return ProfileFound = Data->DisplayName == Profile.DisplayName;
-                });
+
+                if (!ProfileFound) {
+                    auto SelectedUser = Auth.GetSelectedUserData();
+                    if (SelectedUser != nullptr) {
+                        ProfileFound = SelectedUser->DisplayName == Profile.DisplayName;
+                    }
+                }
+
+                if (!ProfileFound) {
+                    ListStore->foreach_iter([this, &ProfileFound, &Profile](const Gtk::TreeModel::iterator& Itr) {
+                        auto& Row = *Itr;
+                        auto Data = (Storage::Models::AuthUserData*)Row[Columns.Data];
+                        return ProfileFound = Data->DisplayName == Profile.DisplayName;
+                    });
+                }
 
                 if (!ProfileFound) {
                     auto Itr = ListStore->append();
@@ -192,6 +205,21 @@ namespace EGL3::Widgets {
             Row[Columns.IsVisible] = !IsEmpty;
             Row[Columns.Type] = RowType::Remove;
         }
+
+        {
+            auto User = Auth.GetSelectedUserData();
+            if (User != nullptr) {
+                auto Itr = ListStore->append();
+                auto& Row = *Itr;
+                Row[Columns.Data] = User;
+                Row[Columns.KairosAvatar] = User->KairosAvatar;
+                Row[Columns.KairosBackground] = User->KairosBackground;
+                Row[Columns.DisplayName] = "Log Out";
+                Row[Columns.ButtonIconName] = "system-log-out-symbolic";
+                Row[Columns.IsVisible] = true;
+                Row[Columns.Type] = RowType::LogOut;
+            }
+        }
     }
 
     void AccountList::ClearList()
@@ -215,6 +243,7 @@ namespace EGL3::Widgets {
                 break;
             case RowType::EGL:
             case RowType::Add:
+            case RowType::LogOut:
                 Row[Columns.IsVisible] = false;
                 break;
             case RowType::Remove:
@@ -241,6 +270,7 @@ namespace EGL3::Widgets {
                 break;
             case RowType::EGL:
             case RowType::Add:
+            case RowType::LogOut:
                 Row[Columns.IsVisible] = true;
                 break;
             case RowType::Remove:
