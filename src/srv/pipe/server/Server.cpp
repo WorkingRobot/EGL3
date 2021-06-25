@@ -143,7 +143,8 @@ namespace EGL3::Service::Pipe {
             for (auto& Mount : Mounts) {
                 auto Ptr = Mount.lock();
                 if (Ptr) {
-                    if (Ptr->GetArchivePath() == Input.Path) {
+                    std::error_code Code;
+                    if (std::filesystem::equivalent(Ptr->GetArchivePath(), Input.Path, Code)) {
                         Output.Response = PacketResponse::ArchiveAlreadyExists;
                         Output.MountHandle = MountHandle(Idx);
                         ConnectionMounts.emplace_back(std::move(Ptr));

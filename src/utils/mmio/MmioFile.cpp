@@ -113,7 +113,7 @@ namespace EGL3::Utils::Mmio {
         if (GetLogicalDriveStrings(512 - 1, DriveLetters)) {
             char DriveName[MAX_PATH];
             char Drive[3] = " :";
-            for (auto DriveLetter = DriveLetters; *DriveLetter; ++DriveLetter) {
+            for (auto DriveLetter = DriveLetters; *DriveLetter; DriveLetter += strlen(DriveLetter) + 1) {
                 Drive[0] = *DriveLetter;
                 if (QueryDosDevice(Drive, DriveName, MAX_PATH)) {
                     size_t DriveNameLen = strlen(DriveName);

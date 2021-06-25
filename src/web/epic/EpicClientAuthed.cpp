@@ -612,7 +612,7 @@ namespace EGL3::Web::Epic {
             return false;
         }
 
-        AuthHeader = AuthData.TokenType + " " + AuthData.AccessToken;
+        AuthHeader = std::format("{} {}", AuthData.TokenType, AuthData.AccessToken);
         Lock.unlock();
         OnRefresh(AuthData);
         return true;

@@ -171,7 +171,7 @@ namespace EGL3::Web::Xmpp {
         }
         BackgroundPingCV.notify_all();
         if (BackgroundPingFuture.valid()) {
-            BackgroundPingFuture.get();
+            BackgroundPingFuture.wait_for(std::chrono::milliseconds(1500));
         }
         Socket.close();
         // TODO: move this to when gtk is closing the app,
