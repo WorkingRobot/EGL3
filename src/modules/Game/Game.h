@@ -87,6 +87,10 @@ namespace EGL3::Modules::Game {
         Gtk::MenuItem& PlayMenuSignOutOpt;
 
         Utils::SlotHolder SlotPlayClicked;
+        Utils::SlotHolder SlotShiftPress;
+        Utils::SlotHolder SlotShiftRelease;
+
+        bool ShiftPressed;
 
         Glib::Dispatcher CurrentStateDispatcher;
         StateHolder* CurrentStateHolder;

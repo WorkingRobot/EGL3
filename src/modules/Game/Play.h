@@ -11,7 +11,7 @@ namespace EGL3::Modules::Game {
     public:
         PlayModule(ModuleList& Ctx);
 
-        Storage::Models::PlayInfo& OnPlayClicked(Storage::Models::InstalledGame& Game);
+        Storage::Models::PlayInfo& OnPlayClicked(Storage::Models::InstalledGame& Game, bool WaitForExit);
 
         Utils::Callback<void(bool Playing)> OnStateUpdate;
 
@@ -22,6 +22,7 @@ namespace EGL3::Modules::Game {
 
         Utils::SlotHolder SlotLogOutPreflight;
 
+        bool WaitForExit;
         std::atomic<bool> PlayQueued;
         Glib::Dispatcher PlayQueuedDispatcher;
         std::unique_ptr<Storage::Models::PlayInfo> CurrentPlay;

@@ -53,15 +53,15 @@ namespace EGL3::Storage::Models {
         });
     }
 
-    void PlayInfo::Play(Web::Epic::EpicClientAuthed& Client) {
+    void PlayInfo::Play(Web::Epic::EpicClientAuthed& Client, bool WaitForExit) {
         if (CurrentState != PlayInfoState::Playable) {
             return;
         }
 
-        PrimaryTask = std::async(std::launch::async, [&, this]() {
+        PrimaryTask = std::async(std::launch::async, [this, &Client, WaitForExit]() {
             SetState(PlayInfoState::Playing);
             OnPlay(Client);
-            if (ProcessHandle) {
+            if (ProcessHandle && WaitForExit) {
                 WaitForSingleObject(ProcessHandle, INFINITE);
             }
             SetState(PlayInfoState::Playable);

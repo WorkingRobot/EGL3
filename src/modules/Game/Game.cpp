@@ -22,7 +22,8 @@ namespace EGL3::Modules::Game {
         PlayMenuVerifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayVerifyOpt")),
         PlayMenuModifyOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlayModifyOpt")),
         PlayMenuSignOutOpt(Ctx.GetWidget<Gtk::MenuItem>("ExtraPlaySignOutOpt")),
-        CurrentStateHolder(),
+        ShiftPressed(false),
+        CurrentStateHolder(nullptr),
         ConfirmInstallStateHolder(*this),
         InstallStateHolder(*this),
         PlayStateHolder(*this)
@@ -76,7 +77,7 @@ namespace EGL3::Modules::Game {
         PlayStateHolder.Clicked.Set([this]() {
             auto Install = GetInstall(PrimaryGame);
             EGL3_VERIFY(Install, "No game, but playable?");
-            Play.OnPlayClicked(*Install);
+            Play.OnPlayClicked(*Install, !ShiftPressed);
 
             PlayStateHolder.SetHeldState(State::Playing);
         });
@@ -93,6 +94,16 @@ namespace EGL3::Modules::Game {
         });
 
         SlotPlayClicked = PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
+
+        SlotShiftPress = Ctx.GetWidget<Gtk::Window>("EGL3App").signal_key_press_event().connect([this](GdkEventKey* Event) {
+            ShiftPressed = Event->state & Gdk::SHIFT_MASK;
+            return false;
+        });
+
+        SlotShiftRelease = Ctx.GetWidget<Gtk::Window>("EGL3App").signal_key_release_event().connect([this](GdkEventKey* Event) {
+            ShiftPressed = Event->state & Gdk::SHIFT_MASK;
+            return false;
+        });
 
         CurrentStateDispatcher.connect([this]() { OnUpdateToCurrentState(); });
 

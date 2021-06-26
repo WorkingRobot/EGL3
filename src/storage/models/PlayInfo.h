@@ -29,7 +29,7 @@ namespace EGL3::Storage::Models {
 
         void Mount(Service::Pipe::Client& PipeClient);
 
-        void Play(Web::Epic::EpicClientAuthed& Client);
+        void Play(Web::Epic::EpicClientAuthed& Client, bool WaitForExit);
 
         // TODO: Add PlayInfoStats callback and include playing data and stuff with it
 

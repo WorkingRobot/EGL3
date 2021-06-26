@@ -12,7 +12,7 @@ namespace EGL3::Modules::Game {
         PlayQueuedDispatcher.connect([this]() {
             if (PlayQueued.exchange(false)) {
                 OnStateUpdate(true);
-                CurrentPlay->Play(Auth.GetClientLauncher());
+                CurrentPlay->Play(Auth.GetClientLauncher(), this->WaitForExit);
             }
             else {
                 OnStateUpdate(false);
@@ -32,14 +32,15 @@ namespace EGL3::Modules::Game {
         });
     }
 
-    PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game)
+    PlayInfo& PlayModule::OnPlayClicked(InstalledGame& Game, bool WaitForExit)
     {
         if (!CurrentPlay) {
             PlayQueued = true;
 
             CurrentPlay = std::make_unique<PlayInfo>(Game);
-            CurrentPlay->OnStateUpdate.connect([this](PlayInfoState NewState) {
+            CurrentPlay->OnStateUpdate.connect([this, WaitForExit](PlayInfoState NewState) {
                 if (NewState == PlayInfoState::Playable) {
+                    this->WaitForExit = WaitForExit;
                     PlayQueuedDispatcher.emit();
                 }
             });
@@ -47,7 +48,7 @@ namespace EGL3::Modules::Game {
         }
         else {
             OnStateUpdate(true);
-            CurrentPlay->Play(Auth.GetClientLauncher());
+            CurrentPlay->Play(Auth.GetClientLauncher(), WaitForExit);
         }
 
         return *CurrentPlay;
