@@ -27,14 +27,14 @@ namespace EGL3::Storage::Models {
         return *NamespacePresences.begin();
     }
 
-    std::string FriendReal::GetProductName() const
+    std::string FriendReal::GetProductId() const
     {
-        return HasPresence() ? GetPresence().GetProductName() : "";
+        return HasPresence() ? GetPresence().GetProductId() : "";
     }
 
-    std::string FriendReal::GetPlatform() const
+    std::string FriendReal::GetPlatformId() const
     {
-        return HasPresence() ? GetPresence().GetPlatform() : "";
+        return HasPresence() ? GetPresence().GetPlatformId() : "";
     }
 
     Web::Xmpp::Status FriendReal::GetStatus() const {

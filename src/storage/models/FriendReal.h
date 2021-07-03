@@ -26,9 +26,9 @@ namespace EGL3::Storage::Models {
 
         const Web::Epic::Friends::Presence::NamespacePresence& GetPresence() const;
 
-        std::string GetProductName() const;
+        std::string GetProductId() const;
 
-        std::string GetPlatform() const;
+        std::string GetPlatformId() const;
 
         virtual Web::Xmpp::Status GetStatus() const;
 

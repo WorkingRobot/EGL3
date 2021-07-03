@@ -49,7 +49,7 @@ namespace EGL3::Modules::Friends {
                 if (Friend.GetType() == FriendType::NORMAL) {
                     auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
                     if (FriendData.HasPresence()) {
-                        Tooltip->set_text(std::format("{} on {}", FriendData.GetProductName(), Web::Epic::Friends::Presence::NamespacePresence::GetPlatformName(FriendData.GetPlatform())));
+                        Tooltip->set_text(std::format("{} on {}", Web::Epic::Friends::Presence::NamespacePresence::GetProductName(FriendData.GetProductId()), Web::Epic::Friends::Presence::NamespacePresence::GetPlatformName(FriendData.GetPlatformId())));
                         return true;
                     }
                 }

@@ -31,14 +31,16 @@ namespace EGL3::Web::Stomp::Messages {
             std::unordered_map<std::string, std::string> Properties;
             std::vector<Connection> Connections;
 
-            std::string GetProductName() const;
-            std::string GetPlatform() const;
+            std::string GetProductId() const;
+            std::string GetPlatformId() const;
 
             std::weak_ordering operator<=>(const NamespacePresence&) const;
 
-            static std::string GetProductImageUrl(const std::string& ProductName);
-            static std::string GetPlatformImageUrl(const std::string& Platform);
-            static const char* GetPlatformName(const std::string& Platform);
+            static std::string GetProductImageUrl(const std::string& ProductId);
+            static const std::string& GetProductName(const std::string& ProductId);
+
+            static std::string GetPlatformImageUrl(const std::string& PlatformId);
+            static const char* GetPlatformName(const std::string& PlatformId);
 
             PARSE_DEFINE(NamespacePresence)
                 PARSE_ITEM_OPT("productId", ProductId)

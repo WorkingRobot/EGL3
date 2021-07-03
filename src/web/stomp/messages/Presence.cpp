@@ -37,7 +37,7 @@ namespace EGL3::Web::Stomp::Messages {
         return Utils::CompareStringsSensitive(A, B);
     }
 
-    std::string Presence::NamespacePresence::GetProductName() const
+    std::string Presence::NamespacePresence::GetProductId() const
     {
         if (ProductId.has_value()) {
             auto Itr = Properties.find("EOS_ProductName");
@@ -51,10 +51,10 @@ namespace EGL3::Web::Stomp::Messages {
                 return Itr->second;
             }
         }
-        return Namespace == "_" ? "EGL" : Namespace;
+        return Namespace;
     }
 
-    std::string Presence::NamespacePresence::GetPlatform() const
+    std::string Presence::NamespacePresence::GetPlatformId() const
     {
         if (ProductId.has_value()) {
             auto Itr = Properties.find("EOS_Platform");
@@ -75,7 +75,7 @@ namespace EGL3::Web::Stomp::Messages {
 
     std::weak_ordering Presence::NamespacePresence::operator<=>(const NamespacePresence& that) const
     {
-        if (auto cmp = CompareProducts(this->GetProductName(), that.GetProductName()); cmp != 0)
+        if (auto cmp = CompareProducts(this->GetProductId(), that.GetProductId()); cmp != 0)
             return cmp;
         return std::weak_ordering::equivalent;
     }
@@ -85,25 +85,31 @@ namespace EGL3::Web::Stomp::Messages {
         return std::format("{}launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/{}/icon.png", Web::GetHostUrl<Web::Host::UnrealEngineCdn1>(), ProductId);
     }
 
-    std::string Presence::NamespacePresence::GetProductImageUrl(const std::string& ProductName)
+    std::string Presence::NamespacePresence::GetProductImageUrl(const std::string& ProductId)
     {
-        switch (Utils::Crc32(ProductName)) {
+        switch (Utils::Crc32(ProductId)) {
         case Utils::Crc32("EGL3"):
             return std::format("{}launcher-icon.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("Fortnite"):
             return GetLegacyProductImageUrl("fortnite");
-        case Utils::Crc32("EGL"):
+        case Utils::Crc32("_"):
         case Utils::Crc32("launcher"):
             return GetLegacyProductImageUrl("launcher");
         default:
-            return std::format("{}launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/{}/icon.png", Web::GetHostUrl<Web::Host::UnrealEngineCdn1>(), ProductName);
+            return std::format("{}launcher-resources/0.1_b76b28ed708e4efcbb6d0e843fcc6456/{}/icon.png", Web::GetHostUrl<Web::Host::UnrealEngineCdn1>(), ProductId);
         }
     }
 
-    // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
-    std::string Presence::NamespacePresence::GetPlatformImageUrl(const std::string& Platform)
+    const std::string& Presence::NamespacePresence::GetProductName(const std::string& ProductId)
     {
-        switch (Utils::Crc32(Platform)) {
+        static const std::string EGLProductName = "EGL";
+        return ProductId == "_" ? EGLProductName : ProductId;
+    }
+
+    // https://github.com/EpicGames/UnrealEngine/blob/4da880f790851cff09ea33dadfd7aae3287878bd/Engine/Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystemNames.h
+    std::string Presence::NamespacePresence::GetPlatformImageUrl(const std::string& PlatformId)
+    {
+        switch (Utils::Crc32(PlatformId)) {
         case Utils::Crc32("PSN"):
         case Utils::Crc32("PS5"):
             return std::format("{}platforms/ps4.png", Web::GetHostUrl<Web::Host::EGL3>());
@@ -126,9 +132,9 @@ namespace EGL3::Web::Stomp::Messages {
         }
     }
 
-    const char* Presence::NamespacePresence::GetPlatformName(const std::string& Platform)
+    const char* Presence::NamespacePresence::GetPlatformName(const std::string& PlatformId)
     {
-        switch (Utils::Crc32(Platform)) {
+        switch (Utils::Crc32(PlatformId)) {
         case Utils::Crc32("PSN"):
             return "PS4";
         case Utils::Crc32("PS5"):

@@ -196,8 +196,8 @@ namespace EGL3::Widgets {
             Row[Columns.Status] = FriendData.GetStatus();
 
             if (FriendData.GetStatus() != Web::Xmpp::Status::Offline) {
-                Row[Columns.Product] = FriendData.GetProductName();
-                Row[Columns.Platform] = FriendData.GetPlatform();
+                Row[Columns.Product] = FriendData.GetProductId();
+                Row[Columns.Platform] = FriendData.GetPlatformId();
 
                 if (FriendData.GetStatusText().empty()) {
                     Row[Columns.Description] = Web::Xmpp::StatusToHumanString(FriendData.GetStatus());
