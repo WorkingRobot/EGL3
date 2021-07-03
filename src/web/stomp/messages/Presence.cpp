@@ -51,7 +51,7 @@ namespace EGL3::Web::Stomp::Messages {
                 return Itr->second;
             }
         }
-        return Namespace;
+        return Namespace == "_" ? "EGL" : Namespace;
     }
 
     std::string Presence::NamespacePresence::GetPlatform() const
@@ -92,6 +92,7 @@ namespace EGL3::Web::Stomp::Messages {
             return std::format("{}launcher-icon.png", Web::GetHostUrl<Web::Host::EGL3>());
         case Utils::Crc32("Fortnite"):
             return GetLegacyProductImageUrl("fortnite");
+        case Utils::Crc32("EGL"):
         case Utils::Crc32("launcher"):
             return GetLegacyProductImageUrl("launcher");
         default:
