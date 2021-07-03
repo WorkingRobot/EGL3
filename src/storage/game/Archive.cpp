@@ -105,6 +105,13 @@ namespace EGL3::Storage::Game {
         }
     }
 
+    Archive::~Archive()
+    {
+        if (IsValid()) {
+            EGL3_LOGF(LogLevel::Info, "Closing {}", Backend->GetPath());
+        }
+    }
+
     void Archive::Construct()
     {
         Header = ArchiveRef<Game::Header>(*Backend, 0);

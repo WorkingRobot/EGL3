@@ -28,6 +28,8 @@ namespace EGL3::Storage::Game {
 
         Archive(Archive&&) noexcept;
 
+        ~Archive();
+
         bool IsValid() const {
             return Valid;
         }
