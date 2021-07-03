@@ -36,6 +36,7 @@ namespace EGL3::Modules {
         LoggedInDispatcher.connect([this]() {
             AddModulesLoggedIn();
         });
+
         auto& Auth = GetModule<Login::AuthModule>();
         Auth.LoggedIn.connect([this]() {
             LoggedInDispatcher.emit();
@@ -43,6 +44,8 @@ namespace EGL3::Modules {
         Auth.LoggedOut.connect([this]() {
             RemoveModulesLoggedIn();
         });
+
+        Auth.StartStartupLogin();
     }
 
     ModuleList::~ModuleList()

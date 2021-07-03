@@ -65,7 +65,10 @@ namespace EGL3::Modules::Login {
         Ctx.GetWidget<Gtk::Window>("EGL3App").signal_delete_event().connect([this](GdkEventAny* Event) {
             return IsLoggedIn() && !LogOutPreflight.emit();
         });
+    }
 
+    void AuthModule::StartStartupLogin()
+    {
         if (AuthData.IsUserSelected()) {
             AccountSelected(AuthData.GetSelectedUser());
         }

@@ -27,6 +27,8 @@ namespace EGL3::Modules::Login {
     public:
         AuthModule(ModuleList& Ctx);
 
+        void StartStartupLogin();
+
         bool IsLoggedIn() const;
 
         // Will crash if not logged in! Take care.
