@@ -4,6 +4,7 @@
 #include "../Http.h"
 #include "../RunningFunctionGuard.h"
 #include "responses/ErrorInfo.h"
+#include "EpicClient.h"
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -555,6 +556,75 @@ namespace EGL3::Web::Epic {
         );
     }
 
+    Response<void> EpicClientAuthed::AuthorizeEOSClient(const std::string& ClientId, const std::initializer_list<std::string>& Scopes, const Responses::GetCsrfToken& CsrfToken)
+    {
+        return Call<void, 200, true>(
+            [&, this]() {
+                rapidjson::StringBuffer JsonBuffer;
+                {
+                    rapidjson::Writer<rapidjson::StringBuffer> Writer(JsonBuffer);
+
+                    Writer.StartObject();
+
+                    Writer.Key("scope");
+                    Writer.StartArray();
+                    for (auto& Scope : Scopes) {
+                        Writer.String(Scope.c_str(), Scope.size());
+                    }
+                    Writer.EndArray();
+
+                    Writer.EndObject();
+                }
+
+                return Http::Post(
+                    Http::FormatUrl<Host::BaseEpicGames>("client/{}/authorize", ClientId),
+                    cpr::Header{ { "X-XSRF-Token", CsrfToken.XsrfToken }, { "Content-Type", "application/json" } },
+                    cpr::Cookies{ { "EPIC_BEARER_TOKEN", AuthData.AccessToken }, { "EPIC_SESSION_AP", CsrfToken.EpicSessionAp } },
+                    cpr::Body{ JsonBuffer.GetString(), JsonBuffer.GetSize() }
+                );
+            }
+        );
+    }
+
+    Response<void> EpicClientAuthed::UpdatePresenceStatus(const std::string& Namespace, const std::string& ConnectionId, const std::string& Status)
+    {
+        return Call<void, 200, false>(
+            [&, this]() {
+                rapidjson::StringBuffer JsonBuffer;
+                {
+                    rapidjson::Writer<rapidjson::StringBuffer> Writer(JsonBuffer);
+
+                    Writer.StartObject();
+
+                    Writer.Key("operationName");
+                    Writer.String("updateStatus");
+
+                    Writer.Key("variables");
+                    Writer.StartObject();
+                        Writer.Key("namespace");
+                        Writer.String(Namespace.c_str(), Namespace.size());
+                        Writer.Key("connectionId");
+                        Writer.String(ConnectionId.c_str(), ConnectionId.size());
+                        Writer.Key("status");
+                        Writer.String(Status.c_str(), Status.size());
+                    Writer.EndObject();
+
+                    Writer.Key("query");
+                    Writer.String("mutation updateStatus($namespace: String!, $connectionId: String!, $status: String!) {\n  PresenceV2 {\n    updateStatus(namespace: $namespace, connectionId: $connectionId, status: $status) {\n      success\n      __typename\n    }\n    __typename\n  }\n}\n");
+
+                    Writer.EndObject();
+                }
+
+                return Http::Post(
+                    Http::FormatUrl<Host::LauncherGql>(),
+                    cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json" } },
+                    cpr::Body{ JsonBuffer.GetString(), JsonBuffer.GetSize() },
+                    cpr::UserAgent{ "EpicGamesLauncher" }
+                );
+            }
+        );
+    }
+
     const Responses::OAuthToken& EpicClientAuthed::GetAuthData() const {
         return AuthData;
     }
@@ -607,7 +677,6 @@ namespace EGL3::Web::Epic {
             return false;
         }
 
-
         if (!EGL3_ENSURE(Responses::OAuthToken::Parse(RespJson, AuthData), LogLevel::Error, "OAuth data failed to parse")) {
             return false;
         }
@@ -632,7 +701,7 @@ namespace EGL3::Web::Epic {
 
         if (GetCancelled()) { return ErrorData::Status::Cancelled; }
 
-        auto Response = std::invoke(std::move(CallFunctor));
+        cpr::Response Response = std::invoke(std::move(CallFunctor));
 
         if (GetCancelled()) { return ErrorData::Status::Cancelled; }
 

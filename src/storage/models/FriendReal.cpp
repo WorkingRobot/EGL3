@@ -3,8 +3,6 @@
 #include "../../utils/StringCompare.h"
 
 namespace EGL3::Storage::Models {
-    using namespace Web::Xmpp::Json;
-
     FriendReal::FriendReal(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User) :
         FriendRequested(User),
         Nickname(User.Alias)
@@ -20,74 +18,39 @@ namespace EGL3::Storage::Models {
         return Nickname;
     }
 
-    decltype(FriendReal::Presences)::const_iterator FriendReal::GetBestPresence() const {
-        return Presences.begin();
+    bool FriendReal::HasPresence() const
+    {
+        return !NamespacePresences.empty();
     }
 
-    decltype(FriendReal::Presences)::const_iterator FriendReal::GetEGL3Presence() const {
-        return std::find_if(Presences.begin(), Presences.end(), [](const Presence& Val) {
-            // Currently untrue, clients with a resource that's not "launcher" doesn't get all the info necessary
-            return Val.Resource.GetAppId() == "EGL3";
-        });
+    const Web::Epic::Friends::Presence::NamespacePresence& FriendReal::GetPresence() const {
+        return *NamespacePresences.begin();
     }
 
-    // Return EGL3's presence, or the best-fit one
-    decltype(FriendReal::Presences)::const_iterator FriendReal::GetBestEGL3Presence() const {
-        auto PresItr = GetEGL3Presence();
-        if (PresItr == Presences.end()) {
-            return GetBestPresence();
-        }
-        return PresItr;
+    std::string FriendReal::GetProductName() const
+    {
+        return HasPresence() ? GetPresence().GetProductName() : "";
     }
 
-    const std::string_view FriendReal::GetProductId() const {
-        auto PresItr = GetBestPresence();
-        if (PresItr == Presences.end()) {
-            // Allows returning a ref instead of creating a copy
-            static const std::string empty = "";
-            return empty;
-        }
-        if (PresItr->Status.GetProductName().empty()) {
-            return PresItr->Resource.GetAppId();
-        }
-        return PresItr->Status.GetProductName();
+    std::string FriendReal::GetPlatform() const
+    {
+        return HasPresence() ? GetPresence().GetPlatform() : "";
     }
 
-    const std::string_view FriendReal::GetPlatform() const {
-        auto PresItr = GetBestPresence();
-        if (PresItr == Presences.end()) {
-            // Allows returning a ref instead of creating a copy
-            static const std::string empty = "";
-            return empty;
-        }
-        return PresItr->Resource.GetPlatform();
+    Web::Xmpp::Status FriendReal::GetStatus() const {
+        // Yes, EGL really ignores the base status and instead prioritizes the top namespace presence
+        return HasPresence() ? Web::Xmpp::StringToStatus(GetPresence().Status) : Web::Xmpp::Status::Offline;
     }
 
-    ShowStatus FriendReal::GetShowStatus() const {
-        auto PresItr = GetBestEGL3Presence();
-
-        if (PresItr == Presences.end()) {
-            return ShowStatus::Offline;
-        }
-        return PresItr->ShowStatus;
+    const std::string& FriendReal::GetStatusText() const {
+        static const std::string Empty = "";
+        return HasPresence() ? GetPresence().Activity.Value : Empty;
     }
 
-    const std::string& FriendReal::GetStatus() const {
-        auto PresItr = GetBestPresence();
-
-        if (PresItr == Presences.end()) {
-            // Allows returning a ref instead of creating a copy
-            static const std::string empty = "";
-            return empty;
-        }
-        return PresItr->Status.GetStatus();
-    }
-
-    void FriendReal::UpdatePresence(Presence&& Presence) {
-        // This erase compares the resource ids, removing the presences coming from the same client
-        Presences.erase(Presence);
-        if (Presence.ShowStatus != ShowStatus::Offline) {
-            Presences.emplace(std::move(Presence));
+    void FriendReal::UpdatePresence(const Web::Epic::Friends::Presence& NewPresence) {
+        NamespacePresences.clear();
+        for (auto& Presence : NewPresence.NamespacePresences) {
+            NamespacePresences.emplace(Presence);
         }
 
         OnUpdate.emit();
@@ -99,11 +62,11 @@ namespace EGL3::Storage::Models {
     }
 
     std::weak_ordering FriendReal::operator<=>(const FriendReal& that) const {
-        if (GetShowStatus() != ShowStatus::Offline && that.GetShowStatus() != ShowStatus::Offline) {
-            if (auto cmp = *GetBestPresence() <=> *that.GetBestPresence(); cmp != 0)
+        if (GetStatus() != Web::Xmpp::Status::Offline && that.GetStatus() != Web::Xmpp::Status::Offline) {
+            if (auto cmp = GetPresence() <=> that.GetPresence(); cmp != 0)
                 return cmp;
         }
-        if (auto cmp = GetShowStatus() <=> that.GetShowStatus(); cmp != 0)
+        if (auto cmp = GetStatus() <=> that.GetStatus(); cmp != 0)
             return cmp;
         if (auto cmp = Utils::CompareStringsInsensitive(GetDisplayName(), that.GetDisplayName()); cmp != 0)
             return cmp;

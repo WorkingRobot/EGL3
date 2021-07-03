@@ -3,8 +3,6 @@
 #include "../modules/Friends/KairosMenu.h"
 
 namespace EGL3::Widgets {
-    using namespace Web::Xmpp::Json;
-
     AccountList::AccountList(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache, Modules::Login::AuthModule& Auth, int AvatarSize, double TextScale) :
         ImageCache(ImageCache),
         Auth(Auth),

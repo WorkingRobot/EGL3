@@ -7,21 +7,6 @@
 #include <unordered_map>
 
 namespace EGL3::Utils::Streams {
-    namespace Detail {
-        // MSVC doesn't have this yet, so I just used cppreference's example here
-        template<class>
-        struct is_scoped_enum : std::false_type {};
-
-        template<class T>
-        requires std::is_enum_v<T>
-            struct is_scoped_enum<T> : std::bool_constant<
-            !std::is_convertible_v<T, std::underlying_type_t<T>>
-            > {};
-
-        template <class T>
-        inline constexpr bool is_scoped_enum_v = is_scoped_enum<T>::value;
-    }
-
     class Stream {
     public:
         enum SeekPosition : int8_t {
@@ -108,7 +93,7 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        template<class T, std::enable_if_t<Detail::is_scoped_enum_v<T>, bool> = true>
+        template<class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
         Stream& operator<<(const T& Val) {
             write((char*)&Val, sizeof(Val));
             return *this;
@@ -249,7 +234,7 @@ namespace EGL3::Utils::Streams {
             return *this;
         }
 
-        template<class T, std::enable_if_t<Detail::is_scoped_enum_v<T>, bool> = true>
+        template<class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
         Stream& operator>>(T& Val) {
             read((char*)&Val, sizeof(Val));
             return *this;

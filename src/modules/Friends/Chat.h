@@ -21,7 +21,7 @@ namespace EGL3::Modules::Friends {
 
         void ClearUser();
 
-        void RecieveChatMessage(const std::string& AccountId, std::string&& NewMessage);
+        void RecieveChatMessage(const std::string& AccountId, const std::string& NewMessage);
 
         Utils::Callback<void(const std::string& AccountId, const std::string& Content)> SendChatMessage;
 
@@ -30,7 +30,7 @@ namespace EGL3::Modules::Friends {
 
         void OnSendMessageClicked();
 
-        void OnRecieveChatMessage(const std::string& AccountId, std::string&& NewMessage, bool Recieved);
+        void OnRecieveChatMessage(const std::string& AccountId, const std::string& NewMessage, bool Recieved);
 
         Storage::Models::ChatConversation& GetOrCreateConversation(const std::string& AccountId);
 

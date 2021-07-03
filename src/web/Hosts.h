@@ -5,6 +5,7 @@
 namespace EGL3::Web {
     enum class Host : uint8_t {
         BaseFortnite,
+        BaseEpicGames,
         Account,
         Launcher,
         Catalog,
@@ -13,7 +14,11 @@ namespace EGL3::Web {
         Channels,
         Lightswitch,
         XMPP,
+        EOSStomp,
+        LauncherStomp,
+        EOS,
         FortniteContent,
+        LauncherGql,
         Statuspage,
         UnrealEngineCdn1,
         UnrealEngineCdn2,
@@ -27,6 +32,8 @@ namespace EGL3::Web {
     constexpr const char* GetHostUrl() {
         switch (SelectedHost)
         {
+        case Host::BaseEpicGames:
+            return "https://www.epicgames.com/id/api/";
         case Host::BaseFortnite:
             return "https://www.epicgames.com/fortnite/api/";
         case Host::Account:
@@ -45,8 +52,16 @@ namespace EGL3::Web {
             return "https://lightswitch-public-service-prod.ol.epicgames.com/lightswitch/api/";
         case Host::XMPP:
             return "wss://xmpp-service-prod.ol.epicgames.com//";
+        case Host::EOSStomp:
+            return "wss://connect.epicgames.dev/";
+        case Host::LauncherStomp:
+            return "wss://connect.ol.epicgames.com/";
+        case Host::EOS:
+            return "https://api.epicgames.dev/epic/";
         case Host::FortniteContent:
             return "https://fortnitecontent-website-prod07.ol.epicgames.com/content/api/";
+        case Host::LauncherGql:
+            return "https://store-launcher.epicgames.com/graphql";
         case Host::Statuspage:
             return "https://status.epicgames.com/api/";
         case Host::UnrealEngineCdn1:

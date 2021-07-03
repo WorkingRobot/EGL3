@@ -34,17 +34,15 @@ add_executable(EGL3 WIN32 ${EGL3_SOURCES})
 find_package(cpr CONFIG REQUIRED)
 target_link_libraries(EGL3 cpr)
 
-# WebSockets (XMPP) #
+# WebSockets #
 find_library(WS_TLS_LIBRARY mbedtls REQUIRED)
 get_filename_component(WS_TLS_LIBRARY ${WS_TLS_LIBRARY} DIRECTORY)
 target_link_libraries(EGL3 ${WS_TLS_LIBRARY}/mbedtls.lib ${WS_TLS_LIBRARY}/mbedcrypto.lib ${WS_TLS_LIBRARY}/mbedx509.lib)
 find_library(WS_LIBRARY ixwebsocket REQUIRED)
 target_link_libraries(EGL3 ${WS_LIBRARY})
 
-# XML (XMPP) #
-# This fix is required for permissive compilers (pre MSVC 16.8, and all others) - https://stackoverflow.com/a/14114300
-find_path(RAPIDXML_INCLUDE_DIRS "rapidxml/rapidxml.hpp" REQUIRED)
-target_include_directories(EGL3 PRIVATE ${RAPIDXML_INCLUDE_DIRS})
+# XMPP #
+target_link_libraries(EGL3 libstrophe)
 
 # JSON #
 find_package(RapidJSON CONFIG REQUIRED)

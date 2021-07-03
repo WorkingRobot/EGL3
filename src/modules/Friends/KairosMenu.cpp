@@ -3,10 +3,9 @@
 #include "List.h"
 
 namespace EGL3::Modules::Friends {
-    using namespace Web::Xmpp;
-
     KairosMenuModule::KairosMenuModule(ModuleList& Ctx) :
         Auth(Ctx.GetModule<Login::AuthModule>()),
+        Header(Ctx.GetModule<Login::HeaderModule>()),
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
         List(Ctx.GetModule<ListModule>()),
         Options(Ctx.GetModule<OptionsModule>()),
@@ -21,12 +20,12 @@ namespace EGL3::Modules::Friends {
         {
             StatusBox.foreach([this](Gtk::Widget& Widget) { StatusBox.remove(Widget); });
 
-            static const std::initializer_list<Json::ShowStatus> Statuses{ Json::ShowStatus::Online, Json::ShowStatus::Away, Json::ShowStatus::ExtendedAway, Json::ShowStatus::DoNotDisturb, Json::ShowStatus::Chat };
+            static const std::initializer_list<Web::Xmpp::Status> Statuses{ Web::Xmpp::Status::Online, Web::Xmpp::Status::Away, Web::Xmpp::Status::ExtendedAway, Web::Xmpp::Status::DoNotDisturb };
 
             StatusWidgets.clear();
             StatusWidgets.reserve(Statuses.size());
             for (auto Status : Statuses) {
-                auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Json::ShowStatus>>(Status, Json::ShowStatus::Offline, 48, 48, &Json::ShowStatusToUrl, ImageCache));
+                auto& Widget = StatusWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<Web::Xmpp::Status>>(Status, Web::Xmpp::Status::Offline, 48, 48, &Web::Xmpp::StatusToUrl, ImageCache));
                 StatusBox.add(*Widget);
             }
 
@@ -55,14 +54,14 @@ namespace EGL3::Modules::Friends {
 
                 StatusBox.foreach([this](Gtk::Widget& WidgetBase) {
                     auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-                    auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)Widget.get_child()->get_data("EGL3_ImageBase");
-                    if (Data->GetKey() == GetCurrentUser().GetShowStatus()) {
+                    auto Data = (Widgets::AsyncImageKeyed<Web::Xmpp::Status>*)Widget.get_child()->get_data("EGL3_ImageBase");
+                    if (Data->GetKey() == GetCurrentUser().GetStatus()) {
                         StatusBox.select_child(Widget);
                     }
                 });
 
-                StatusEntry.set_placeholder_text(ShowStatusToString(Options.GetStorageData().GetShowStatus()));
-                StatusEntry.set_text(Options.GetStorageData().GetStatus());
+                StatusEntry.set_placeholder_text(Web::Xmpp::StatusToHumanString(Options.GetStorageData().GetStatus()));
+                StatusEntry.set_text(Options.GetStorageData().GetStatusText());
                 StatusEditBtn.set_sensitive(false);
             });
             SlotWindowUnfocused = Window.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
@@ -86,7 +85,9 @@ namespace EGL3::Modules::Friends {
                 }
 
                 GetCurrentUser().SetKairosAvatar(Data->GetKey());
-                UpdateXmppPresence();
+
+                Auth.GetSelectedUserData()->KairosAvatar = Data->GetKey();
+                Header.Show(*Auth.GetSelectedUserData());
 
                 UpdateAvatarTask = std::async(std::launch::async, [this]() {
                     auto UpdateResp = Auth.GetClientLauncher().UpdateAccountSetting("avatar", GetCurrentUser().GetKairosAvatar());
@@ -102,7 +103,9 @@ namespace EGL3::Modules::Friends {
                 }
 
                 GetCurrentUser().SetKairosBackground(Data->GetKey());
-                UpdateXmppPresence();
+
+                Auth.GetSelectedUserData()->KairosBackground = Data->GetKey();
+                Header.Show(*Auth.GetSelectedUserData());
 
                 UpdateBackgroundTask = std::async(std::launch::async, [this]() {
                     auto UpdateResp = Auth.GetClientLauncher().UpdateAccountSetting("avatarBackground", GetCurrentUser().GetKairosBackground());
@@ -112,15 +115,15 @@ namespace EGL3::Modules::Friends {
                 });
             });
             SlotStatusClicked = StatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-                auto Data = (Widgets::AsyncImageKeyed<Json::ShowStatus>*)child->get_child()->get_data("EGL3_ImageBase");
-                if (Data->GetKey() == GetCurrentUser().GetShowStatus()) {
+                auto Data = (Widgets::AsyncImageKeyed<Web::Xmpp::Status>*)child->get_child()->get_data("EGL3_ImageBase");
+                if (Data->GetKey() == GetCurrentUser().GetStatus()) {
                     return;
                 }
 
-                Options.GetStorageData().SetShowStatus(Data->GetKey());
-                StatusEntry.set_placeholder_text(ShowStatusToString(Data->GetKey()));
-                GetCurrentUser().SetShowStatus(Data->GetKey());
-                UpdateXmppPresence();
+                Options.GetStorageData().SetStatus(Data->GetKey());
+                StatusEntry.set_placeholder_text(Web::Xmpp::StatusToHumanString(Data->GetKey()));
+                GetCurrentUser().SetStatus(Data->GetKey());
+                OnUpdatePresence();
             });
 
             SlotStatusTextChanged = StatusEntry.signal_changed().connect([this]() {
@@ -130,9 +133,9 @@ namespace EGL3::Modules::Friends {
             SlotStatusTextClicked = StatusEditBtn.signal_clicked().connect([this]() {
                 StatusEditBtn.set_sensitive(false);
 
-                Options.GetStorageData().SetStatus(StatusEntry.get_text());
-                GetCurrentUser().SetDisplayStatus(StatusEntry.get_text());
-                UpdateXmppPresence();
+                Options.GetStorageData().SetStatusText(StatusEntry.get_text());
+                GetCurrentUser().SetStatusText(StatusEntry.get_text());
+                OnUpdatePresence();
             });
         }
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../web/xmpp/Presence.h"
-#include "../../web/xmpp/ShowStatus.h"
+#include "../../web/epic/friends/FriendsClient.h"
 #include "FriendRequested.h"
 
 #include <set>
@@ -14,7 +13,7 @@ namespace EGL3::Storage::Models {
 
         std::string Nickname;
 
-        std::set<Web::Xmpp::Json::Presence, std::greater<Web::Xmpp::Json::Presence>> Presences;
+        std::set<Web::Epic::Friends::Presence::NamespacePresence, std::greater<Web::Epic::Friends::Presence::NamespacePresence>> NamespacePresences;
 
     public:
         FriendReal(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User);
@@ -23,22 +22,19 @@ namespace EGL3::Storage::Models {
 
         const std::string& GetNickname() const override;
 
-        decltype(Presences)::const_iterator GetBestPresence() const;
+        bool HasPresence() const;
 
-        decltype(Presences)::const_iterator GetEGL3Presence() const;
+        const Web::Epic::Friends::Presence::NamespacePresence& GetPresence() const;
 
-        // Return EGL3's presence, or the best-fit one
-        decltype(Presences)::const_iterator GetBestEGL3Presence() const;
+        std::string GetProductName() const;
 
-        const std::string_view GetProductId() const;
+        std::string GetPlatform() const;
 
-        const std::string_view GetPlatform() const;
+        virtual Web::Xmpp::Status GetStatus() const;
 
-        virtual Web::Xmpp::Json::ShowStatus GetShowStatus() const;
+        virtual const std::string& GetStatusText() const;
 
-        virtual const std::string& GetStatus() const;
-
-        void UpdatePresence(Web::Xmpp::Json::Presence&& Presence);
+        void UpdatePresence(const Web::Epic::Friends::Presence& NewPresence);
 
         // Unlike UpdatePresence, this won't request for a callback!
         void UpdateInfo(const Web::Epic::Responses::GetFriendsSummary::RealFriend& User);

@@ -1,21 +1,13 @@
 #pragma once
 
-#include "PresenceStatus.h"
-#include "ResourceId.h"
-#include "ShowStatus.h"
+#include "../JsonParsing.h"
+#include "Status.h"
 
-namespace EGL3::Web::Xmpp::Json {
+namespace EGL3::Web::Xmpp {
     struct Presence {
-        ResourceId Resource;
-
-        ShowStatus ShowStatus;
-
-        TimePoint LastUpdated;
-
-        PresenceStatus Status;
-
-        std::weak_ordering operator<=>(const Presence& that) const;
-
-        void Dump() const;
+        bool Available;
+        Status Status;
+        std::string StatusText;
+        TimePoint Timestamp;
     };
 }

@@ -5,6 +5,7 @@
 #include "../Response.h"
 #include "bps/ChunkData.h"
 #include "bps/Manifest.h"
+#include "responses/GetCsrfToken.h"
 #include "responses/GetDownloadInfo.h"
 #include "responses/GetPageInfo.h"
 #include "responses/GetBlogPosts.h"
@@ -39,7 +40,11 @@ namespace EGL3::Web::Epic {
 
         Response<Responses::OAuthToken> ExchangeCode(const cpr::Authentication& AuthClient, const std::string& Code);
 
+        Response<Responses::OAuthToken> ExchangeCodeEOS(const cpr::Authentication& AuthClient, const std::string& DeploymentId, const std::string& Code);
+
         Response<Responses::OAuthToken> RefreshToken(const cpr::Authentication& AuthClient, const std::string& Token);
+
+        Response<Responses::GetCsrfToken> GetCsrfToken();
 
     private:
         template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>

@@ -3,7 +3,6 @@
 #include "../../utils/StringCompare.h"
 
 namespace EGL3::Modules::Friends {
-    using namespace Web::Xmpp;
     using namespace Storage::Models;
 
     ListModule::ListModule(ModuleList& Ctx) :
@@ -26,10 +25,10 @@ namespace EGL3::Modules::Friends {
             {
                 if (Friend.GetType() == FriendType::NORMAL) {
                     auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
-                    Tooltip->set_text(Json::ShowStatusToString(FriendData.GetShowStatus()));
+                    Tooltip->set_text(Web::Xmpp::StatusToHumanString(FriendData.GetStatus()));
                 }
                 else {
-                    Tooltip->set_text(Json::ShowStatusToString(Json::ShowStatus::Offline));
+                    Tooltip->set_text(Web::Xmpp::StatusToHumanString(Web::Xmpp::Status::Offline));
                 }
                 return true;
             }
@@ -37,9 +36,9 @@ namespace EGL3::Modules::Friends {
             {
                 if (Friend.GetType() == FriendType::NORMAL) {
                     auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
-                    auto& Status = FriendData.GetStatus();
-                    if (!Status.empty()) {
-                        Tooltip->set_text(FriendData.GetStatus());
+                    auto& StatusText = FriendData.GetStatusText();
+                    if (!StatusText.empty()) {
+                        Tooltip->set_text(StatusText);
                         return true;
                     }
                 }
@@ -49,12 +48,10 @@ namespace EGL3::Modules::Friends {
             {
                 if (Friend.GetType() == FriendType::NORMAL) {
                     auto& FriendData = Friend.Get<Storage::Models::FriendReal>();
-                    auto Platform = FriendData.GetPlatform();
-                    if (!Platform.empty()) {
-                        Tooltip->set_text(Json::PresenceStatus::GetPlatformName(Platform));
+                    if (FriendData.HasPresence()) {
+                        Tooltip->set_text(std::format("{} on {}", FriendData.GetProductName(), Web::Epic::Friends::Presence::NamespacePresence::GetPlatformName(FriendData.GetPlatform())));
                         return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -143,11 +140,11 @@ namespace EGL3::Modules::Friends {
         case FriendType::INBOUND:
             return Options.GetStorageData().HasFlag<StoredFriendData::ShowIncoming>();
         case FriendType::NORMAL:
-            return Data.Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline || Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>();
+            return Data.Get<FriendCurrent>().GetStatus() != Web::Xmpp::Status::Offline || Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>();
 
             // TODO: check if i can show a million friends without impacting performance :)
             // If not offline, or less than 500 friends and show offline, or show override
-            //return Data.Get<FriendCurrent>().GetShowStatus() != Json::ShowStatus::Offline ||
+            //return Data.Get<FriendCurrent>().GetShowStatus() != Web::Xmpp::Status::Offline ||
             //    (FriendsData.size() < 500 && Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>()) ||
             //    Options.GetStorageData().HasFlag<StoredFriendData::ShowOverride>();
         default:

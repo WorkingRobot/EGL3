@@ -37,99 +37,105 @@ namespace EGL3::Modules::Friends {
             SwitchStackPage1(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage1")),
             SwitchStackPage2(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage2")),
             SwitchStackPage3(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage3"))
+    {
         {
-            {
-                SlotViewFriends = ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
+            SlotViewFriends = ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
 
-                SlotAddFriend = AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
+            SlotAddFriend = AddFriendBtn.signal_clicked().connect([this]() { OnOpenAddFriendPage(); });
 
-                Options.OnUpdate.Set([this]() { FriendsList.RefreshFilter(); });
+            Options.OnUpdate.Set([this]() { FriendsList.RefreshFilter(); });
+        }
+
+        KairosMenu.OnUpdatePresence.Set([this]() {
+            if (FriendsClient.has_value()) {
+                FriendsClient->SetPresence(FriendsList.GetCurrentUser().BuildPresence());
             }
+        });
 
-            KairosMenu.UpdateXmppPresence.Set([this]() {
-                if (XmppClient.has_value()) {
-                    XmppClient->SetPresence(FriendsList.GetCurrentUser().BuildPresence());
-                }
-            });
+        FriendsList.FriendMenuAction.Set([this](auto Action, auto& Friend) { OnFriendAction(Action, Friend); });
 
-            FriendsList.FriendMenuAction.Set([this](auto Action, auto& Friend) { OnFriendAction(Action, Friend); });
+        FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Message) {
+            EGL3_VERIFY(FriendsClient.has_value(), "Didn't send user message. Friends client isn't created yet");
+            FriendsClient->SendChat(AccountId, Message);
+        });
 
-            FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Content) {
-                if (EGL3_VERIFY(XmppClient.has_value(), "Didn't send user message. Xmpp client isn't created yet")) {
-                    XmppClient->SendChat(AccountId, Content);
-                }
-            });
+        {
+            SlotAddFriendSend = AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
 
-            {
-                SlotAddFriendSend = AddFriendSendBtn.signal_clicked().connect([this]() { OnSendFriendRequest(); });
+            FriendRequestDispatcher.connect([this]() { DisplaySendFriendRequestStatus(); });
+        }
 
-                FriendRequestDispatcher.connect([this]() { DisplaySendFriendRequestStatus(); });
-            }
+        {
+            SlotSetNickname = SetNicknameBtn.signal_clicked().connect([this]() { OnSetNickname(); });
 
-            {
-                SlotSetNickname = SetNicknameBtn.signal_clicked().connect([this]() { OnSetNickname(); });
-
-                SetNicknameDispatcher.connect([this]() { DisplaySetNicknameStatus(); });
-            }
+            SetNicknameDispatcher.connect([this]() { DisplaySetNicknameStatus(); });
+        }
 
             
 
-            {
-                UpdateUIDispatcher.connect([this]() { UpdateUI(); });
-                FriendsRealizeDispatcher.connect([this]() { FriendsRealize(); });
-            }
-
-            {
-                auto& AuthData = Auth.GetClientLauncher().GetAuthData();
-                EGL3_VERIFY(AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
-
-                FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
-
-                auto& Client = XmppClient.emplace(AuthData.AccountId.value(), AuthData.AccessToken);
-                Client.PresenceUpdate.Set([this](const auto& A, auto&& B) { OnPresenceUpdate(A, std::move(B)); });
-                Client.ChatRecieved.Set([this](const auto& A, auto&& B) { OnChatMessage(A, std::move(B)); });
-                Client.SystemMessage.Set([this](auto&& A) { OnSystemMessage(std::move(A)); });
-
-                AddFriendBtn.set_sensitive(true);
-
-                UpdateAsync();
-            }
-
-            {
-                FriendsList.GetCurrentUser().SetDisplayStatus(Options.GetStorageData().GetStatus());
-                FriendsList.GetCurrentUser().SetShowStatus(Options.GetStorageData().GetShowStatus());
-            }
+        {
+            UpdateUIDispatcher.connect([this]() { UpdateUI(); });
+            FriendUpdateDispatcher.connect([this]() { FriendsUpdate(); });
         }
 
-    void FriendsModule::OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence) {
-        if (AccountId != Auth.GetClientLauncher().GetAuthData().AccountId) {
+        {
+            FriendsList.GetCurrentUser().SetStatusText(Options.GetStorageData().GetStatusText());
+            FriendsList.GetCurrentUser().SetStatus(Options.GetStorageData().GetStatus());
+        }
+
+        {
+            auto& AuthData = Auth.GetClientLauncher().GetAuthData();
+            EGL3_VERIFY(AuthData.AccountId.has_value(), "Launcher client does not have an attached account id");
+
+            FriendsList.GetCurrentUser().SetCurrentUserData(AuthData.AccountId.value(), AuthData.DisplayName.value());
+
+            AsyncFF.Enqueue([this]() {
+                auto& Client = FriendsClient.emplace(Auth.GetClientLauncher(), Auth.GetClientFortnite(), FriendsList.GetCurrentUser().BuildPresence());
+                Client.OnPresenceUpdate.Set([this](const auto& A) { OnPresenceUpdate(A); });
+                Client.OnChatReceived.Set([this](const auto& A, const auto& B) { OnChatReceived(A, B); });
+                Client.OnFriendEvent.Set([this](const auto& A, auto B) { OnFriendEvent(A, B); });
+            });
+
+            AddFriendBtn.set_sensitive(true);
+
+            UpdateAsync();
+        }
+    }
+
+    FriendsModule::~FriendsModule()
+    {
+        OnOpenViewFriends();
+    }
+
+    void FriendsModule::OnPresenceUpdate(const Web::Epic::Friends::Presence& Presence) {
+        if (Presence.AccountId != Auth.GetClientLauncher().GetAuthData().AccountId) {
             std::lock_guard Guard(ItemDataMutex);
 
-            auto Friend = FriendsList.GetUser(AccountId);
+            auto Friend = FriendsList.GetUser(Presence.AccountId);
             if (Friend && Friend->GetType() == FriendType::NORMAL) {
-                Friend->Get<FriendReal>().UpdatePresence(std::move(Presence));
+                Friend->Get<FriendReal>().UpdatePresence(Presence);
             }
         }
         else {
-            FriendsList.GetCurrentUser().UpdatePresence(std::move(Presence));
+            FriendsList.GetCurrentUser().UpdatePresence(Presence);
         }
     }
 
-    void FriendsModule::OnChatMessage(const std::string& AccountId, std::string&& Message)
+    void FriendsModule::OnChatReceived(const std::string& AccountId, const std::string& Message)
     {
-        FriendsChat.RecieveChatMessage(AccountId, std::forward<std::string>(Message));
+        FriendsChat.RecieveChatMessage(AccountId, Message);
     }
 
-    void FriendsModule::OnSystemMessage(Messages::SystemMessage&& NewMessage) {
-        if (Options.GetStorageData().HasFlag<StoredFriendData::AutoDeclineReqs>() && NewMessage.GetAction() == Messages::SystemMessage::ActionType::RequestInbound) {
-            AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().RemoveFriend(AccountId); }, NewMessage.GetAccountId());
+    void FriendsModule::OnFriendEvent(const std::string& AccountId, Web::Epic::Friends::FriendEventType Event) {
+        if (Options.GetStorageData().HasFlag<StoredFriendData::AutoDeclineReqs>() && Event == Web::Epic::Friends::FriendEventType::RequestInbound) {
+            AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().RemoveFriend(AccountId); }, AccountId);
             return;
         }
 
-        std::lock_guard Lock(FriendsRealizeMutex);
-        FriendsRealizeData.emplace_back(std::move(NewMessage));
+        std::lock_guard Guard(FriendUpdateMutex);
+        FriendUpdateData.emplace_back(AccountId, Event);
 
-        FriendsRealizeDispatcher.emit();
+        FriendUpdateDispatcher.emit();
     }
 
     void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Friend& FriendData) {
@@ -453,9 +459,6 @@ namespace EGL3::Modules::Friends {
                                 FriendsList.GetCurrentUser().UpdateAccountSetting(AccountSetting);
                             }
                         }
-
-                        // At this point, you should be able to set a presence
-                        XmppClient->SetPresence(FriendsList.GetCurrentUser().BuildPresence());
                     }
                 }
 
@@ -481,45 +484,45 @@ namespace EGL3::Modules::Friends {
         UpdateCurrentlyRunning.notify_all();
     }
 
-    void FriendsModule::FriendsRealize() {
-        std::lock_guard Guard(FriendsRealizeMutex);
+    void FriendsModule::FriendsUpdate() {
+        std::lock_guard Guard(FriendUpdateMutex);
 
-        for (auto& Action : FriendsRealizeData) {
-            auto FriendPtr = FriendsList.GetUser(Action.GetAccountId());
+        for (auto& [AccountId, Event] : FriendUpdateData) {
+            auto FriendPtr = FriendsList.GetUser(AccountId);
             if (!FriendPtr) {
-                FriendPtr = &FriendsList.AddFriend(std::make_unique<Friend>(Friend::ConstructInvalid, Action.GetAccountId(), ""));
+                FriendPtr = &FriendsList.AddFriend(std::make_unique<Friend>(Friend::ConstructInvalid, AccountId, ""));
 
                 FriendPtr->InitializeAccountSettings(Auth.GetClientLauncher(), AsyncFF);
 
                 FriendsList.DisplayFriend(*FriendPtr);
             }
 
-            switch (Action.GetAction())
+            switch (Event)
             {
-            case Messages::SystemMessage::ActionType::RequestAccept:
+            case Web::Epic::Friends::FriendEventType::Added:
                 FriendPtr->SetAddFriendship(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::RequestInbound:
+            case Web::Epic::Friends::FriendEventType::RequestInbound:
                 FriendPtr->SetRequestInbound(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::RequestOutbound:
+            case Web::Epic::Friends::FriendEventType::RequestOutbound:
                 FriendPtr->SetRequestOutbound(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::Remove:
+            case Web::Epic::Friends::FriendEventType::Removed:
                 FriendPtr->SetRemoveFriendship(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::Block:
+            case Web::Epic::Friends::FriendEventType::Blocked:
                 FriendPtr->SetBlocked(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::Unblock:
+            case Web::Epic::Friends::FriendEventType::Unblocked:
                 FriendPtr->SetUnblocked(Auth.GetClientLauncher(), AsyncFF);
                 break;
-            case Messages::SystemMessage::ActionType::Update:
+            case Web::Epic::Friends::FriendEventType::Updated:
                 FriendPtr->QueueUpdate(Auth.GetClientLauncher(), AsyncFF);
                 break;
             }
         }
 
-        FriendsRealizeData.clear();
+        FriendUpdateData.clear();
     }
 }

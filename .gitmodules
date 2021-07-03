@@ -1,0 +1,3 @@
+[submodule "libstrophe"]
+	path = libstrophe
+	url = https://github.com/WorkingRobot/libstrophe

@@ -4,6 +4,7 @@
 #include "../BaseClient.h"
 #include "../Http.h"
 #include "../Response.h"
+#include "responses/GetCsrfToken.h"
 #include "responses/GetAccount.h"
 #include "responses/GetAccountExternalAuths.h"
 #include "responses/GetAccounts.h"
@@ -159,6 +160,17 @@ namespace EGL3::Web::Epic {
         // theater0 = stw world inventory
         // outpost0 = stw storm shield storage
         Response<Responses::QueryProfile> QueryProfile(const std::string& ProfileId, int Revision = -1);
+
+
+        // Web API
+
+        Response<void> AuthorizeEOSClient(const std::string& ClientId, const std::initializer_list<std::string>& Scopes, const Responses::GetCsrfToken& CsrfToken);
+
+
+        // Launcher GraphQL API
+
+        Response<void> UpdatePresenceStatus(const std::string& Namespace, const std::string& ConnectionId, const std::string& Status);
+
 
         const Responses::OAuthToken& GetAuthData() const;
 

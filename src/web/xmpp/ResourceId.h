@@ -1,13 +1,13 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
+#include <string>
 
-namespace EGL3::Web::Xmpp::Json {
+namespace EGL3::Web::Xmpp {
     enum class ResourceIdVersion : uint8_t {
-        Invalid = 0,
-        Initial = 1,
-        AddedPlatformUserId = 2,
+        Invalid,
+        Initial,
+        AddedPlatformUserId,
 
         LatestPlusOne,
         Latest = LatestPlusOne - 1,
@@ -15,63 +15,56 @@ namespace EGL3::Web::Xmpp::Json {
     };
 
     struct ResourceId {
-        ResourceId();
+        ResourceId() = default;
+        ResourceId(const ResourceId&) = delete;
+        ResourceId(ResourceId&&) = delete;
 
-        // https://github.com/EpicGames/UnrealEngine/blob/c1f54c5103e418b88e8b981a6b20da4c88aa3245/Engine/Source/Runtime/Online/XMPP/Private/XmppConnection.cpp#L45
-        ResourceId(std::string&& Data);
+        ResourceId(const std::string& AppId, const std::string& Platform, const std::string& PlatformUserId = "");
 
-        std::weak_ordering operator<=>(const ResourceId& that) const;
+        ResourceId(const std::string& AppId, const std::string& Platform, const std::string& PlatformUserId, const std::string& InstanceGuid);
 
-        static constexpr std::weak_ordering ComparePlatforms(const std::string_view& A, const std::string_view& B);
+        ResourceId(const std::string& Data);
 
-        // EGL is worst
-        // EGL3 is better
-        // Other games are even better
-        // Fortnite is best
-        static constexpr std::weak_ordering CompareApps(const std::string_view& A, const std::string_view& B);
+        bool IsValid() const {
+            return Version != ResourceIdVersion::Invalid;
+        }
 
-        static constexpr std::weak_ordering FavorString(const std::string_view& A, const std::string_view& B, const char* String);
+        const std::string& GetString() const {
+            return Data;
+        }
 
-        // If one is neither of the two given, that string is the better
-        // If they are both either Better or Worse, pick the Better
-        static constexpr std::weak_ordering FavorStringOver(const std::string_view& A, const std::string_view& B, const char* Better, const char* Worse);
+        ResourceIdVersion GetVersion() const {
+            return Version;
+        }
 
-        const std::string& GetString() const;
+        const std::string_view& GetAppId() const {
+            return AppId;
+        }
 
-        bool IsValid() const;
+        const std::string_view& GetPlatform() const {
+            return Platform;
+        }
 
-        ResourceIdVersion GetResourceIdVersion() const;
+        const std::string_view& GetPlatformUserId() const {
+            return PlatformUserId;
+        }
 
-        const std::string_view& GetAppId() const;
-
-        const std::string_view& GetPlatform() const;
-
-        const std::string_view& GetPlatformUserId() const;
-
-        const std::string_view& GetInstanceGUID() const;
+        const std::string_view& GetInstanceGuid() const {
+            return InstanceGuid;
+        }
 
     private:
-        // Easier subsequent find() functions
-        static constexpr std::string_view::size_type FindNext(const std::string_view& View, std::string_view::size_type Start, char Ch);
+        static std::string CreateResourceId(const std::string& AppId, const std::string& Platform, const std::string& PlatformUserId, const std::string& InstanceGuid);
 
-        // This is a variation of std::basic_string_view::substr where
-        //  - both Start and End are iterators
-        //  - Start can be npos (where it returns default)
-        //  - Start is inclusive, where it advances an extra character compared to the original substr
-        static constexpr std::string_view LazyInclusiveSubstr(const std::string_view& View, std::string_view::size_type Start, std::string_view::size_type End);
+        bool ParseAsResource(int ResourcePartCount);
 
-        bool ParseAsResource(const std::string_view& ResourceView, int ResourcePartCount);
+        bool ParseAsAncient();
 
-        bool ParseAsAncient(const std::string_view& ResourceView);
-
-        // When ResourceId is moved, the string_view types get invalidated
-        // Making this a unique ptr fixes that :)
-        std::unique_ptr<std::string> Resource;
-
+        std::string Data;
         ResourceIdVersion Version;
         std::string_view AppId;
         std::string_view Platform;
         std::string_view PlatformUserId;
-        std::string_view InstanceGUID;
+        std::string_view InstanceGuid;
     };
 }

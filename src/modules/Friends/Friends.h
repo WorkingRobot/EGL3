@@ -2,7 +2,7 @@
 
 #include "../../storage/models/Friend.h"
 #include "../../utils/SlotHolder.h"
-#include "../../web/xmpp/XmppClient.h"
+#include "../../web/epic/friends/FriendsClient.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
@@ -18,12 +18,14 @@ namespace EGL3::Modules::Friends {
     public:
         FriendsModule(ModuleList& Ctx);
 
+        ~FriendsModule();
+
     private:
-        void OnPresenceUpdate(const std::string& AccountId, Web::Xmpp::Json::Presence&& Presence);
+        void OnPresenceUpdate(const Web::Epic::Friends::Presence& Presence);
 
-        void OnChatMessage(const std::string& AccountId, std::string&& Message);
+        void OnChatReceived(const std::string& AccountId, const std::string& Message);
 
-        void OnSystemMessage(Web::Xmpp::Messages::SystemMessage&& NewMessage);
+        void OnFriendEvent(const std::string& AccountId, Web::Epic::Friends::FriendEventType Event);
 
         void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Storage::Models::Friend& FriendData);
 
@@ -55,7 +57,7 @@ namespace EGL3::Modules::Friends {
         
         void UpdateUI();
 
-        void FriendsRealize();
+        void FriendsUpdate();
 
         Login::AuthModule& Auth;
         ImageCacheModule& ImageCache;
@@ -89,7 +91,7 @@ namespace EGL3::Modules::Friends {
         Utils::SlotHolder SlotAddFriendSend;
         Utils::SlotHolder SlotSetNickname;
 
-        std::optional<Web::Xmpp::XmppClient> XmppClient;
+        std::optional<Web::Epic::Friends::FriendsClient> FriendsClient;
 
         std::future<void> UpdateTask;
         Glib::Dispatcher UpdateUIDispatcher;
@@ -98,9 +100,9 @@ namespace EGL3::Modules::Friends {
         std::mutex ItemDataMutex;
         Web::ErrorData::Status ItemDataError;
 
-        std::mutex FriendsRealizeMutex;
-        std::vector<Web::Xmpp::Messages::SystemMessage> FriendsRealizeData;
-        Glib::Dispatcher FriendsRealizeDispatcher;
+        std::mutex FriendUpdateMutex;
+        std::vector<std::pair<std::string, Web::Epic::Friends::FriendEventType>> FriendUpdateData;
+        Glib::Dispatcher FriendUpdateDispatcher;
 
         std::future<void> FriendRequestTask;
         AsyncWebRequestStatusType FriendRequestStatus;

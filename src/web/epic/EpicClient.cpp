@@ -253,6 +253,20 @@ namespace EGL3::Web::Epic {
         );
     }
 
+    // This also accepts a "scope" parameter with a space delimited list of required scopes (which will cause the request to return a 400 if the user didn't accept those scopes)
+    Response<Responses::OAuthToken> EpicClient::ExchangeCodeEOS(const cpr::Authentication& AuthClient, const std::string& DeploymentId, const std::string& Code)
+    {
+        return Call<Responses::OAuthToken, 200>(
+            [&]() {
+                return Http::Post(
+                    Http::FormatUrl<Host::EOS>("oauth/v1/token"),
+                    AuthClient,
+                    cpr::Payload{ { "grant_type", "exchange_code" }, { "exchange_code", Code }, { "deployment_id", DeploymentId } }
+                );
+            }
+        );
+    }
+
     Response<Responses::OAuthToken> EpicClient::RefreshToken(const cpr::Authentication& AuthClient, const std::string& Token)
     {
         return Call<Responses::OAuthToken, 200>(
@@ -264,6 +278,29 @@ namespace EGL3::Web::Epic {
                 );
             }
         );
+    }
+
+    Response<Responses::GetCsrfToken> EpicClient::GetCsrfToken()
+    {
+        RunningFunctionGuard Guard(Lock);
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        auto Response = Http::Get(Http::FormatUrl<Host::BaseEpicGames>("csrf"));
+
+        if (GetCancelled()) { return ErrorData::Status::Cancelled; }
+
+        if (Response.status_code != 204) {
+            return Response.status_code;
+        }
+
+        auto& Token = Response.cookies["XSRF-TOKEN"];
+        auto& Session = Response.cookies["EPIC_SESSION_AP"];
+        if (Token.empty() || Session.empty()) {
+            return ErrorData::Status::Failure;
+        }
+
+        return Responses::GetCsrfToken{ Token, Session };
     }
 
     template<typename ResponseType, int SuccessStatusCode, class CallFunctorType>

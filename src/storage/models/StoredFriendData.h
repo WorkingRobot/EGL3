@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../utils/streams/Stream.h"
-#include "../../web/xmpp/ShowStatus.h"
+#include "../../web/xmpp/Status.h"
 
 namespace EGL3::Storage::Models {
     class StoredFriendData {
@@ -20,8 +20,8 @@ namespace EGL3::Storage::Models {
 
     private:
         OptionFlags Options;
-        Web::Xmpp::Json::ShowStatus ShowStatus;
-        std::string Status;
+        Web::Xmpp::Status Status;
+        std::string StatusText;
 
     public:
         StoredFriendData();
@@ -35,9 +35,9 @@ namespace EGL3::Storage::Models {
             return Options & Flag;
         }
 
-        Web::Xmpp::Json::ShowStatus GetShowStatus() const;
+        Web::Xmpp::Status GetStatus() const;
 
-        const std::string& GetStatus() const;
+        const std::string& GetStatusText() const;
 
         void SetFlags(OptionFlags NewOptions);
 
@@ -46,8 +46,8 @@ namespace EGL3::Storage::Models {
             Options = OptionFlags(Options ^ ((-int8_t(Val) ^ Options) & Flag));
         }
 
-        void SetShowStatus(Web::Xmpp::Json::ShowStatus NewShowStatus);
+        void SetStatus(Web::Xmpp::Status NewStatus);
 
-        void SetStatus(const std::string& NewStatus);
+        void SetStatusText(const std::string& NewStatusText);
     };
 }

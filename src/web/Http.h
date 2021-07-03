@@ -7,31 +7,55 @@
 #define NOMINMAX
 #include <cpr/cpr.h>
 
-#define SUFFFIX_SSL
-//#define SUFFFIX_SSL cpr::Proxies{ {"https","localhost:8888"} }, cpr::VerifySsl{ false },
-
 namespace EGL3::Web::Http {
+    namespace Detail {
+        void DecorateSession(cpr::Session& Session);
+
+        template<class... ArgTs>
+        __forceinline cpr::Session GetSession(ArgTs&&... Args) {
+            cpr::Session Session;
+            DecorateSession(Session);
+            cpr::priv::set_option(Session, std::forward<ArgTs>(Args)...);
+            return Session;
+        }
+    }
+
     const cpr::UserAgent& GetUserAgent();
 
     // for handling everything http errors/logging/etc
-    template<typename... Ts>
-    static cpr::Response Get(Ts&&... ts) {
-        return cpr::Get(GetUserAgent(), SUFFFIX_SSL std::move(ts)...);
+    template<class... ArgTs>
+    static cpr::Response Get(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Get();
     }
 
-    template<typename... Ts>
-    static cpr::Response Post(Ts&&... ts) {
-        return cpr::Post(GetUserAgent(), SUFFFIX_SSL std::move(ts)...);
+    template<class... ArgTs>
+    static cpr::Response Post(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Post();
     }
 
-    template<typename... Ts>
-    static cpr::Response Delete(Ts&&... ts) {
-        return cpr::Delete(GetUserAgent(), SUFFFIX_SSL std::move(ts)...);
+    template<class... ArgTs>
+    static cpr::Response Put(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Put();
     }
 
-    template<typename... Ts>
-    static cpr::Response Put(Ts&&... ts) {
-        return cpr::Put(GetUserAgent(), SUFFFIX_SSL std::move(ts)...);
+    template<class... ArgTs>
+    static cpr::Response Patch(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Patch();
+    }
+
+    template<class... ArgTs>
+    static cpr::Response Delete(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Delete();
+    }
+
+    template<class... ArgTs>
+    static cpr::Response Head(ArgTs&&... Args) {
+        return Detail::GetSession(std::forward<ArgTs>(Args)...).Head();
+    }
+
+    template<Host SelectedHost>
+    static cpr::Url FormatUrl() {
+        return GetHostUrl<SelectedHost>();
     }
 
     template<Host SelectedHost>

@@ -4,28 +4,23 @@
 
 namespace EGL3::Storage::Models {
     class FriendCurrent : public FriendReal {
-        std::string DisplayStatus;
-
-        Web::Xmpp::Json::ShowStatus OnlineStatus;
+        Web::Xmpp::Status Status;
+        std::string StatusText;
 
     public:
         FriendCurrent();
 
-        Web::Xmpp::Json::ShowStatus GetShowStatus() const override;
+        Web::Xmpp::Status GetStatus() const override;
 
-        const std::string& GetStatus() const override;
-
-        const std::string& GetKairosAvatar() const override;
-
-        const std::string& GetKairosBackground() const override;
+        const std::string& GetStatusText() const override;
 
         void SetCurrentUserData(const std::string& AccountId, const std::string& Username);
 
-        void SetDisplayStatus(const std::string& NewStatus);
+        void SetStatus(Web::Xmpp::Status NewStatus);
 
-        void SetShowStatus(Web::Xmpp::Json::ShowStatus NewStatus);
+        void SetStatusText(const std::string& NewStatusText);
 
-        Web::Xmpp::Json::Presence BuildPresence() const;
+        Web::Epic::Friends::UserPresence BuildPresence() const;
 
     private:
         static Web::Epic::Responses::GetFriendsSummary::RealFriend GetValidDefaultSummaryData();

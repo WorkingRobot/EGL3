@@ -155,7 +155,9 @@ namespace EGL3::Modules {
 
     template<typename T>
     void ModuleList::AddModule() {
+        auto Start = std::chrono::steady_clock::now();
         Modules.emplace_back(std::make_unique<T>(*this));
-        EGL3_LOGF(LogLevel::Info, "{} loaded", Detail::module_name_v<T>);
+        auto End = std::chrono::steady_clock::now();
+        EGL3_LOGF(LogLevel::Info, "{} loaded in {:.2f} ms", Detail::module_name_v<T>, (End - Start).count() / 1000000.f);
     }
 }

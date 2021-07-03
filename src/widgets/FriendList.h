@@ -88,7 +88,7 @@ namespace EGL3::Widgets {
         Glib::RefPtr<Gtk::ListStore> ListStore;
         Glib::RefPtr<Gtk::TreeModelFilter> ListFilter;
 
-        CellRendererAvatarStatus<std::string, std::string, EGL3::Web::Xmpp::Json::ShowStatus> AvatarRenderer;
+        CellRendererAvatarStatus<std::string, std::string, EGL3::Web::Xmpp::Status> AvatarRenderer;
         CellRendererCenterText CenterTextRenderer;
         CellRendererAvatarStatus<std::string, void, std::string> ProductRenderer;
 
@@ -114,7 +114,7 @@ namespace EGL3::Widgets {
             Gtk::TreeModelColumn<Utils::SharedSlotHolder> UpdateSlot;
             Gtk::TreeModelColumn<Glib::ustring> KairosAvatar;
             Gtk::TreeModelColumn<Glib::ustring> KairosBackground;
-            Gtk::TreeModelColumn<EGL3::Web::Xmpp::Json::ShowStatus> Status;
+            Gtk::TreeModelColumn<EGL3::Web::Xmpp::Status> Status;
             Gtk::TreeModelColumn<Glib::ustring> DisplayNameMarkup;
             Gtk::TreeModelColumn<Glib::ustring> Description;
             Gtk::TreeModelColumn<Glib::ustring> Product;

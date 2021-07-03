@@ -91,12 +91,18 @@ function(ADD_DIR_RECURSIVE PROJECT TARGET_DIR)
     set(${PROJECT}_SOURCES ${${PROJECT}_SOURCES} PARENT_SCOPE)
 endfunction()
 
+function(REMOVE_FILE PROJECT TARGET_FILE)
+    list(REMOVE_ITEM ${PROJECT}_SOURCES ${TARGET_FILE})
+    set(${PROJECT}_SOURCES ${${PROJECT}_SOURCES} PARENT_SCOPE)
+endfunction()
+
 
 ## Add projects ##
 
 if (ENABLE_INSTALLER)
     add_subdirectory(src/installer)
 else()
+    add_subdirectory(libstrophe)
     add_subdirectory(src)
     add_subdirectory(src/srv)
 endif()

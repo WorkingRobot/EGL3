@@ -11,6 +11,7 @@ namespace EGL3 {
     struct CloseWaiter {
         ~CloseWaiter() {
             if (Detail::ConsoleEnabled) {
+                printf("Press any key to exit...");
                 _getch();
             }
         }

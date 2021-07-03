@@ -1,28 +1,21 @@
 #include "FriendCurrent.h"
 
-namespace EGL3::Storage::Models {
-    using namespace Web::Xmpp::Json;
+#include "../../utils/Version.h"
 
+namespace EGL3::Storage::Models {
     FriendCurrent::FriendCurrent() :
-        FriendReal(GetValidDefaultSummaryData())
+        FriendReal(GetValidDefaultSummaryData()),
+        Status(Web::Xmpp::Status::Offline)
     {
 
     }
 
-    ShowStatus FriendCurrent::GetShowStatus() const {
-        return OnlineStatus;
+    Web::Xmpp::Status FriendCurrent::GetStatus() const {
+        return Status;
     }
 
-    const std::string& FriendCurrent::GetStatus() const {
-        return DisplayStatus;
-    }
-
-    const std::string& FriendCurrent::GetKairosAvatar() const {
-        return FriendRequested::GetKairosAvatar();
-    }
-
-    const std::string& FriendCurrent::GetKairosBackground() const {
-        return FriendRequested::GetKairosBackground();
+    const std::string& FriendCurrent::GetStatusText() const {
+        return StatusText;
     }
 
     void FriendCurrent::SetCurrentUserData(const std::string& AccountId, const std::string& Username) {
@@ -32,20 +25,27 @@ namespace EGL3::Storage::Models {
         OnUpdate.emit();
     }
 
-    void FriendCurrent::SetDisplayStatus(const std::string& NewStatus) {
-        DisplayStatus = NewStatus;
+    void FriendCurrent::SetStatus(Web::Xmpp::Status NewStatus) {
+        Status = NewStatus;
     }
 
-    void FriendCurrent::SetShowStatus(ShowStatus NewStatus) {
-        OnlineStatus = NewStatus;
+    void FriendCurrent::SetStatusText(const std::string& NewStatusText) {
+        StatusText = NewStatusText;
     }
 
-    Presence FriendCurrent::BuildPresence() const {
-        Presence Ret;
-        Ret.ShowStatus = GetShowStatus();
-        Ret.Status.SetProductName("EGL3");
-        Ret.Status.SetStatus(GetStatus());
-        return Ret;
+    Web::Epic::Friends::UserPresence FriendCurrent::BuildPresence() const {
+        return Web::Epic::Friends::UserPresence{
+            .Status = Web::Xmpp::StatusToString(GetStatus()),
+            .Activity = GetStatusText(),
+            .Properties = {
+                { "EOS_Platform", "WIN" },
+                { "EOS_ProductVersion", Utils::Version::GetShortAppVersion() },
+                { "EOS_ProductName", Utils::Version::GetAppName() },
+                { "EOS_Session", "{\"version\":1}" },
+                { "EOS_Lobby", "{\"version\":1}" }
+            },
+            .ConnectionProperties = { }
+        };
     }
 
     Web::Epic::Responses::GetFriendsSummary::RealFriend FriendCurrent::GetValidDefaultSummaryData() {

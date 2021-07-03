@@ -14,10 +14,14 @@ namespace EGL3::Storage::Models {
 
     void FriendBase::SetKairosAvatar(const std::string& Avatar) {
         KairosAvatar = Avatar;
+
+        OnUpdate.emit();
     }
 
     void FriendBase::SetKairosBackground(const std::string& Background) {
         KairosBackground = Background;
+
+        OnUpdate.emit();
     }
 
     const std::string FriendBase::GetKairosAvatarUrl() const {
@@ -46,10 +50,10 @@ namespace EGL3::Storage::Models {
         switch (Utils::Crc32(FriendSetting.Key))
         {
         case Utils::Crc32("avatar"):
-            SetKairosAvatar(FriendSetting.Value);
+            KairosAvatar = FriendSetting.Value;
             break;
         case Utils::Crc32("avatarBackground"):
-            SetKairosBackground(FriendSetting.Value);
+            KairosBackground = FriendSetting.Value;
             break;
         default:
             return;

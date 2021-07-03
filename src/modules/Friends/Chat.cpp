@@ -66,9 +66,9 @@ namespace EGL3::Modules::Friends {
         SelectedUserModel = nullptr;
     }
 
-    void ChatModule::RecieveChatMessage(const std::string& AccountId, std::string&& NewMessage)
+    void ChatModule::RecieveChatMessage(const std::string& AccountId, const std::string& NewMessage)
     {
-        OnRecieveChatMessage(AccountId, std::forward<std::string>(NewMessage), true);
+        OnRecieveChatMessage(AccountId, NewMessage, true);
     }
 
     void ChatModule::OnNewChatUpdate()
@@ -96,7 +96,7 @@ namespace EGL3::Modules::Friends {
         SendChatMessage(AccountId, Content);
     }
 
-    void ChatModule::OnRecieveChatMessage(const std::string& AccountId, std::string&& NewMessage, bool Recieved)
+    void ChatModule::OnRecieveChatMessage(const std::string& AccountId, const std::string& NewMessage, bool Recieved)
     {
         auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = Web::TimePoint::clock::now(), .Recieved = Recieved });
 

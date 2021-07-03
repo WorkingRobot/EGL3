@@ -3,10 +3,11 @@
 #include "../../storage/models/FriendCurrent.h"
 #include "../../utils/Callback.h"
 #include "../../utils/SlotHolder.h"
-#include "../../web/xmpp/ShowStatus.h"
+#include "../../web/xmpp/Status.h"
 #include "../../widgets/AsyncImageKeyed.h"
 #include "../ModuleList.h"
 #include "../Login/Auth.h"
+#include "../Login/Header.h"
 #include "../ImageCache.h"
 #include "Options.h"
 #include "List.h"
@@ -35,12 +36,13 @@ namespace EGL3::Modules::Friends {
 
         static std::string GetKairosBackgroundUrl(const std::string& Background);
 
-        Utils::Callback<void()> UpdateXmppPresence;
+        Utils::Callback<void()> OnUpdatePresence;
 
     private:
         Storage::Models::FriendCurrent& GetCurrentUser() const;
 
         Login::AuthModule& Auth;
+        Login::HeaderModule& Header;
         ImageCacheModule& ImageCache;
 
         ListModule& List;
@@ -71,6 +73,6 @@ namespace EGL3::Modules::Friends {
         std::vector<std::string> BackgroundsData;
         std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> BackgroundsWidgets;
 
-        std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<Web::Xmpp::Json::ShowStatus>>> StatusWidgets;
+        std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<Web::Xmpp::Status>>> StatusWidgets;
     };
 }

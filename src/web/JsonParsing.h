@@ -126,7 +126,7 @@ namespace EGL3::Web {
     template<>
     struct Parser<JsonObject> {
         __forceinline bool operator()(const rapidjson::Value& Json, JsonObject& Obj) const {
-            Obj.CopyFrom(Json, Obj.GetAllocator(), true);
+            Obj.CopyFrom(Json, Obj.GetAllocator(), false);
             return true;
         }
     };
@@ -134,7 +134,14 @@ namespace EGL3::Web {
     template<>
     struct Parser<TimePoint> {
         __forceinline bool operator()(const rapidjson::Value& Json, TimePoint& Obj) const {
-            return GetTimePoint(Json.GetString(), Json.GetStringLength(), Obj);
+            if (Json.IsString()) {
+                return GetTimePoint(Json.GetString(), Json.GetStringLength(), Obj);
+            }
+            else if (Json.IsInt64()) {
+                Obj = TimePoint(std::chrono::seconds(Json.GetInt64()));
+                return true;
+            }
+            return false;
         }
     };
 

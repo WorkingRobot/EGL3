@@ -3,8 +3,6 @@
 #include "../modules/Friends/KairosMenu.h"
 
 namespace EGL3::Widgets {
-    using namespace Web::Xmpp::Json;
-
     FriendList::FriendList(Gtk::TreeView& TreeView, Modules::ImageCacheModule& ImageCache) :
         ImageCache(ImageCache),
         TreeView(TreeView),
@@ -86,6 +84,8 @@ namespace EGL3::Widgets {
 
     FriendList::~FriendList()
     {
+        ListStore->clear();
+
         TreeView.remove_all_columns();
         TreeView.unset_model();
     }
@@ -102,11 +102,11 @@ namespace EGL3::Widgets {
         auto& Row = *Itr;
         Row[Columns.Data] = &Friend;
         Row[Columns.UpdateSlot] = Friend.Get().OnUpdate.connect(
-            [this, Ref = std::move(Ref)]() {
+            [this, ListStoreRef = Glib::WeakRef<Gtk::ListStore>(ListStore), Ref = std::move(Ref)]() {
                 Glib::signal_idle().connect_once(
-                    [this, ListStoreRef = Glib::WeakRef<Gtk::ListStore>(ListStore), Ref]() {
+                    [this, ListStoreRef, Ref]() {
                         auto ListStore = ListStoreRef.get();
-                        if (Ref.is_valid() && ListStore) {
+                        if (Ref.is_valid() && ListStoreRef && ListStore) {
                             UpdateFriendRow(*ListStore->get_iter(Ref.get_path()));
                         }
                     },
@@ -145,11 +145,11 @@ namespace EGL3::Widgets {
             }
             AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetDefaultKairosAvatar());
             AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetDefaultKairosBackground());
-            AvatarRenderer.SetDefaultIcon(ShowStatus::Offline);
+            AvatarRenderer.SetDefaultIcon(Web::Xmpp::Status::Offline);
 
             AvatarRenderer.GetForegroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosAvatarUrl);
             AvatarRenderer.GetBackgroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosBackgroundUrl);
-            AvatarRenderer.GetIconUrl.Set(ShowStatusToUrl);
+            AvatarRenderer.GetIconUrl.Set(Web::Xmpp::StatusToUrl);
         }
 
         {
@@ -175,8 +175,8 @@ namespace EGL3::Widgets {
             ProductRenderer.SetDefaultForeground("default");
             ProductRenderer.SetDefaultIcon("OTHER");
 
-            ProductRenderer.GetForegroundUrl.Set(PresenceStatus::GetProductImageUrl);
-            ProductRenderer.GetIconUrl.Set(PresenceStatus::GetPlatformImageUrl);
+            ProductRenderer.GetForegroundUrl.Set(Web::Epic::Friends::Presence::NamespacePresence::GetProductImageUrl);
+            ProductRenderer.GetIconUrl.Set(Web::Epic::Friends::Presence::NamespacePresence::GetPlatformImageUrl);
         }
     }
 
@@ -193,17 +193,17 @@ namespace EGL3::Widgets {
         if (FriendContainer.GetType() == Storage::Models::FriendType::NORMAL || FriendContainer.GetType() == Storage::Models::FriendType::CURRENT) {
             auto& FriendData = FriendContainer.Get<Storage::Models::FriendReal>();
 
-            Row[Columns.Status] = FriendData.GetShowStatus();
+            Row[Columns.Status] = FriendData.GetStatus();
 
-            if (FriendData.GetShowStatus() != ShowStatus::Offline) {
-                Row[Columns.Product] = (std::string)FriendData.GetProductId();
-                Row[Columns.Platform] = (std::string)FriendData.GetPlatform();
+            if (FriendData.GetStatus() != Web::Xmpp::Status::Offline) {
+                Row[Columns.Product] = FriendData.GetProductName();
+                Row[Columns.Platform] = FriendData.GetPlatform();
 
-                if (FriendData.GetStatus().empty()) {
-                    Row[Columns.Description] = ShowStatusToString(FriendData.GetShowStatus());
+                if (FriendData.GetStatusText().empty()) {
+                    Row[Columns.Description] = Web::Xmpp::StatusToHumanString(FriendData.GetStatus());
                 }
                 else {
-                    Row[Columns.Description] = FriendData.GetStatus();
+                    Row[Columns.Description] = FriendData.GetStatusText();
                     // TODO: add this as a tooltip too (somehow...)
                 }
             }
@@ -211,11 +211,11 @@ namespace EGL3::Widgets {
                 Row[Columns.Product] = "";
                 Row[Columns.Platform] = "";
 
-                Row[Columns.Description] = ShowStatusToString(ShowStatus::Offline);
+                Row[Columns.Description] = Web::Xmpp::StatusToHumanString(Web::Xmpp::Status::Offline);
             }
         }
         else {
-            Row[Columns.Status] = ShowStatus::Offline;
+            Row[Columns.Status] = Web::Xmpp::Status::Offline;
 
             switch (FriendContainer.GetType())
             {
