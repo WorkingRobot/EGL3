@@ -10,6 +10,7 @@ namespace EGL3::Utils::Config {
 
         std::filesystem::create_directories(GetFolder());
         std::filesystem::create_directories(GetFolder() / "contentcache");
+        std::filesystem::create_directories(GetFolder() / "logs");
     }
 
     std::filesystem::path GetFolderInternal() {

@@ -28,8 +28,6 @@ namespace EGL3 {
         void OnStartup() {
             std::filesystem::current_path(Utils::Config::GetExeFolder());
 
-            Utils::Config::SetupFolders();
-
             Utils::SetupFonts();
 
             {
@@ -71,6 +69,8 @@ namespace EGL3 {
     };
 
     __forceinline int Start() {
+        Utils::Config::SetupFolders();
+
         EnableConsole();
 
         //_putenv_s("GTK_DEBUG", "interactive");

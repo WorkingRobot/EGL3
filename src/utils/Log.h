@@ -68,7 +68,7 @@ namespace EGL3 {
 
         static constexpr std::string_view ResetColorPrefix = "\33[0m";
 
-        extern bool ConsoleEnabled;
+        extern bool ColorsEnabled;
 
         static consteval std::string_view FixFilename(const std::string_view Filename) {
             constexpr std::string_view Pattern = "src\\";
@@ -138,7 +138,7 @@ namespace EGL3 {
 
         template<class Ctx>
         void UseContextPrintf(const Ctx& Context, const std::string_view Message) {
-            if (ConsoleEnabled) {
+            if (ColorsEnabled) {
                 if constexpr (std::is_base_of_v<LogContextBase<LogLevel::Critical>, Ctx>) {
                     printf("%s%s%s\n", Ctx::ColorPrefix.data(), std::format("{}\n\n{}", Context(Message), Ctx::GetStackTrace()).c_str(), ResetColorPrefix.data());
                 }
