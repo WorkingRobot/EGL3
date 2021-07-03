@@ -53,7 +53,7 @@ namespace EGL3::Web::Stomp {
         switch (Message->type)
         {
         case ix::WebSocketMessageType::Message:
-            // EGL3_LOGF(LogLevel::Debug, "[STOMP] RECV - {}", Message->str);
+            //EGL3_LOGF(LogLevel::Debug, "[STOMP] RECV - {}", Message->str);
             RecievedFrame(Frame(Message->str));
             break;
         case ix::WebSocketMessageType::Open:

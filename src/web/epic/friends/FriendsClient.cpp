@@ -349,11 +349,11 @@ namespace EGL3::Web::Epic::Friends {
             case Utils::Crc32("party.v0.PING"):
                 // First time request (with a INITIAL_INVITE following afterwards): {"correlationId":"FN-uCNRCvGAW06uje2ztiopAA","timestamp":1625272245446,"id":"CONNECT-74ebd24d-3180-4d69-9513-b1b4cb63d466","connectionId":"0242acfffe110002-00000001-00ccffb8-e79d1617f4c0452c-4dfa5c86","payload":{"sent":"2021-07-03T00:30:45.445Z","ns":"Fortnite","pinger_id":"9baf4e2cbd4947d4bd0f2dcde49058b8","pinger_dn":"Asriel_Dev","expires":"2021-07-03T01:15:45.445Z","meta":{"urn:epic:conn:type_s":"game","urn:epic:member:dn_s":"Asriel_Dev","urn:epic:conn:platform_s":"WIN","urn:epic:cfg:build-id_s":"1:3:16635603","urn:epic:invite:platformdata_s":""}},"type":"party.v0.PING"}
                 // Subsequent requests (xmpp sees a interaction of PingSent): {"correlationId":"FN-B8-Iz7uQM06qFZsAXIY4yA","timestamp":1625272419816,"id":"CONNECT-60409364-fcd3-46fd-99e0-0ab4117338aa","connectionId":"0242acfffe110002-00000001-00ccffb8-e79d1617f4c0452c-4dfa5c86","payload":{"sent":"2021-07-03T00:33:39.815Z","ns":"Fortnite","pinger_id":"9baf4e2cbd4947d4bd0f2dcde49058b8","pinger_dn":"Asriel_Dev","expires":"2021-07-03T01:18:39.815Z","meta":{"urn:epic:conn:platform_s":"WIN","urn:epic:invite:platformdata_s":""}},"type":"party.v0.PING"}
-                EGL3_LOGF(LogLevel::Warning, "Party ping");
+                EGL3_LOGF(LogLevel::Info, "Party ping");
                 break;
             case Utils::Crc32("party.v0.INITIAL_INVITE"):
                 // Party invite (only appears once, xmpp sees PartyInviteSent interaction): {"correlationId":"FN-h5ml53Y92QiR46KN1S8w4A","timestamp":1625247770211,"id":"CONNECT-38072861-67b6-4fb6-94ac-ddded1f9b9b3","connectionId":"0242acfffe110002-00000001-00c50b0c-ee8e1adc6f013eac-82d650f5","payload":{"sent":"2021-07-02T17:42:50.210Z","ns":"Fortnite","pinger_id":"674f910f41b14a32a205687b4d9d6088","pinger_dn":"DriftyD_","pinger_pl":"psn","pinger_pl_dn":"Drifterrz543benn","expires":"2021-07-02T18:27:50.210Z","meta":{"urn:epic:conn:platform_s":"PSN","urn:epic:invite:platformdata_s":""}},"type":"party.v0.PING"}
-                EGL3_LOGF(LogLevel::Warning, "Party invite");
+                EGL3_LOGF(LogLevel::Info, "Party invite");
                 break;
             default:
                 EGL3_LOGF(LogLevel::Warning, "Unhandled launcher {} message - {}", Message.Type, Frame.GetBody());
