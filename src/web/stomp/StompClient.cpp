@@ -70,20 +70,6 @@ namespace EGL3::Web::Stomp {
                 HeartbeatTask.wait();
             }
             break;
-        case ix::WebSocketMessageType::Error:
-            printf("error\n");
-            break;
-        case ix::WebSocketMessageType::Ping:
-            printf("ping\n");
-            break;
-        case ix::WebSocketMessageType::Pong:
-            printf("pong\n");
-            break;
-        case ix::WebSocketMessageType::Fragment:
-            printf("fragment?\n");
-            break;
-        default:
-            break;
         }
     }
 
