@@ -26,6 +26,10 @@ add_file(installer gui/app.manifest)
 add_dir_recursive(packer backend)
 add_file(packer packer_main.cpp)
 
+ADD_VERSION_DEFS(backend/streams/WebStream.cpp)
+ADD_VERSION_DEFS(packer_main.cpp)
+ADD_VERSION_DEFS(gui/installerApp.rc)
+
 
 ## Define executables ##
 
