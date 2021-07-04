@@ -12,12 +12,20 @@ namespace EGL3 {
 
     bool Detail::ColorsEnabled = false;
 
+    void AtQuickExit()
+    {
+        if constexpr (UseConsole && HasUI) {
+            printf("Press any key to exit...");
+            _getch();
+        }
+        if constexpr (!UseConsole && !HasUI) {
+            fflush(stdout);
+        }
+    }
+
     struct CloseWaiter {
         ~CloseWaiter() {
-            if constexpr (UseConsole && HasUI) {
-                printf("Press any key to exit...");
-                _getch();
-            }
+            AtQuickExit();
         }
     };
     static CloseWaiter Waiter;
@@ -52,6 +60,8 @@ namespace EGL3 {
             auto Path = Utils::Config::GetFolder() / "logs" / std::format("{:%Y-%m-%d_%H-%M-%S}.log", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
 
             freopen_s((FILE**)stdout, Path.string().c_str(), "w", stdout);
+
+            std::at_quick_exit(AtQuickExit);
         }
     }
 

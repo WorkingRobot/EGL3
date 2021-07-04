@@ -213,7 +213,7 @@ namespace EGL3 {
                     else {
                         UseContextService(Context, Message);
                     }
-                    std::abort();
+                    std::quick_exit(0);
                 }
             };
         }
@@ -235,7 +235,7 @@ namespace EGL3 {
                     else {
                         UseContextService(Context, Message);
                     }
-                    std::abort();
+                    std::quick_exit(0);
                 }
                 return false;
             };
