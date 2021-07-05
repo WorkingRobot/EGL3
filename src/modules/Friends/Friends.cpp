@@ -79,8 +79,8 @@ namespace EGL3::Modules::Friends {
         }
 
         {
-            FriendsList.GetCurrentUser().SetStatusText(Options.GetStorageData().GetStatusText());
-            FriendsList.GetCurrentUser().SetStatus(Options.GetStorageData().GetStatus());
+            FriendsList.GetCurrentUser().SetStatusText(Options.GetStatusText());
+            FriendsList.GetCurrentUser().SetStatus(Options.GetStatus());
         }
 
         {
@@ -127,7 +127,7 @@ namespace EGL3::Modules::Friends {
     }
 
     void FriendsModule::OnFriendEvent(const std::string& AccountId, Web::Epic::Friends::FriendEventType Event) {
-        if (Options.GetStorageData().HasFlag<StoredFriendData::AutoDeclineReqs>() && Event == Web::Epic::Friends::FriendEventType::RequestInbound) {
+        if (Options.HasFlag<StoredFriendData::AutoDeclineReqs>() && Event == Web::Epic::Friends::FriendEventType::RequestInbound) {
             AsyncFF.Enqueue([this](auto& AccountId) { Auth.GetClientLauncher().RemoveFriend(AccountId); }, AccountId);
             return;
         }

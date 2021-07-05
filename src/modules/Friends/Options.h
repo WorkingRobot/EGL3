@@ -12,16 +12,26 @@ namespace EGL3::Modules::Friends {
     public:
         OptionsModule(ModuleList& Ctx);
 
-        const Storage::Models::StoredFriendData& GetStorageData() const;
+        template<Storage::Models::StoredFriendData::OptionFlags Flag>
+        bool HasFlag() const {
+            return StorageData->HasFlag<Flag>();
+        }
 
-        Storage::Models::StoredFriendData& GetStorageData();
+        Web::Xmpp::Status GetStatus() const;
+
+        const std::string& GetStatusText() const;
+
+        void SetStatus(Web::Xmpp::Status NewStatus);
+
+        void SetStatusText(const std::string& NewStatusText);
 
         Utils::Callback<void()> OnUpdate;
 
     private:
         void UpdateSelection();
 
-        Storage::Models::StoredFriendData& StorageData;
+        using StoredFriendSetting = Storage::Persistent::Setting<Utils::Crc32("StoredFriendData"), Storage::Models::StoredFriendData>;
+        Storage::Persistent::SettingHolder<StoredFriendSetting> StorageData;
 
         Gtk::CheckMenuItem& CheckFriendsOffline;
         Gtk::CheckMenuItem& CheckFriendsOutgoing;

@@ -3,11 +3,8 @@
 #include "../web/epic/EpicClient.h"
 
 namespace EGL3::Modules {
-    using WhatsNewSelection = Storage::Persistent::Setting<Utils::Crc32("WhatsNewSelection"), uint8_t>;
-
     WhatsNewModule::WhatsNewModule(ModuleList& Ctx) :
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
-        Storage(Ctx.GetStorage()),
         Box(Ctx.GetWidget<Gtk::Box>("PlayWhatsNewBox")),
         RefreshBtn(Ctx.GetWidget<Gtk::Button>("PlayWhatsNewRefreshBtn")),
         CheckBR(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewBR")),
@@ -15,7 +12,8 @@ namespace EGL3::Modules {
         CheckCreative(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewCreative")),
         CheckNotice(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewNotice")),
         CheckSTW(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewSTW")),
-        Selection(Storage.Get<WhatsNewSelection>())
+        Timestamps(Ctx.Get<TimestampsSetting>()),
+        Selection(Ctx.Get<SelectionSetting>())
     {
         Dispatcher.connect([this]() { UpdateBox(); });
         SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
@@ -64,13 +62,11 @@ namespace EGL3::Modules {
             else {
                 ItemDataError = Web::ErrorData::Status::Success;
 
-                auto& Store = Storage.Get<WhatsNewTimestamps>();
-
                 // Blogs
 
                 if (SourceEnabled<Storage::Models::WhatsNew::ItemSource::BLOG>()) {
                     for (auto& Post : Blogs->BlogList) {
-                        ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::BLOG);
+                        ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BLOG);
                     }
                 }
 
@@ -115,7 +111,7 @@ namespace EGL3::Modules {
                                 continue;
                             }
                             // If the id does not show up, use the current system time and store it as the first time we saw it
-                            ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::BR);
+                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BR);
                         }
                     }
 
@@ -124,7 +120,7 @@ namespace EGL3::Modules {
                             if (Post.Hidden || Post.Message.Hidden || Post.Platform != "windows") {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Store, Post.Message), Storage::Models::WhatsNew::ItemSource::BR);
+                            ItemData.emplace_back(Post, GetTime(Post.Message), Storage::Models::WhatsNew::ItemSource::BR);
                         }
                     }
                 }
@@ -138,7 +134,7 @@ namespace EGL3::Modules {
                             if (Post.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::CREATIVE);
+                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::CREATIVE);
                         }
                     }
                 }
@@ -152,7 +148,7 @@ namespace EGL3::Modules {
                             if (Post.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Store, Post), Storage::Models::WhatsNew::ItemSource::STW);
+                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::STW);
                         }
                     }
                 }
@@ -180,6 +176,7 @@ namespace EGL3::Modules {
             }), ItemData.end());
 
             ItemDataGuard.unlock();
+            Timestamps.Flush();
             Dispatcher.emit();
         });
     }
@@ -206,33 +203,34 @@ namespace EGL3::Modules {
             (CheckSTW.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::STW) |
             (CheckCreative.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::CREATIVE) |
             (CheckNotice.get_active() ? 0 : (uint8_t)Storage::Models::WhatsNew::ItemSource::NOTICE);
+        Selection.Flush();
         Refresh();
     }
 
     template<Storage::Models::WhatsNew::ItemSource Source>
     bool WhatsNewModule::SourceEnabled() {
-        return !(Selection & (uint8_t)Source);
+        return !(*Selection & (uint8_t)Source);
     }
 
     template<class T>
-    Web::TimePoint WhatsNewModule::GetTime(WhatsNewTimestamps::Type& Storage, const T& Value) {
+    Web::TimePoint WhatsNewModule::GetTime(const T& Value) {
         return Web::TimePoint::min();
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
         return Value.Date;
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
         // Just hash the id, it isn't used anywhere and I assume it's unique anyway
-        return Storage.try_emplace(std::hash<std::string>{}(Value.Id), Web::TimePoint::clock::now()).first->second;
+        return Timestamps->try_emplace(std::hash<std::string>{}(Value.Id), Web::TimePoint::clock::now()).first->second;
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
         // Only used for stw at this point, if any of these change, it's going to look different visually
-        return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), Web::TimePoint::clock::now()).first->second;
+        return Timestamps->try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), Web::TimePoint::clock::now()).first->second;
     }
 }

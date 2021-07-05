@@ -10,11 +10,9 @@
 namespace EGL3::Modules::Game {
     constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
 
-    using InstalledGamesSetting = Storage::Persistent::Setting<Utils::Crc32("InstalledGames"), std::vector<Storage::Models::InstalledGame>>;
 
     GameModule::GameModule(ModuleList& Ctx) :
-        Storage(Ctx.GetStorage()),
-        InstalledGames(Storage.Get<InstalledGamesSetting>()),
+        InstalledGames(Ctx.Get<InstalledGamesSetting>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         Download(Ctx.GetModule<DownloadModule>()),
@@ -49,17 +47,20 @@ namespace EGL3::Modules::Game {
         }
 
         ConfirmInstallStateHolder.Clicked.Set([this]() {
-            Download.OnDownloadOkClicked();
+            Download.OnDownloadOkClicked([this]() -> Storage::Models::InstalledGame& {
+                return InstalledGames->emplace_back();
+            });
             ConfirmInstallStateHolder.ClearHeldState();
         });
 
         InstallStateHolder.Clicked.Set([this]() {
-            auto& Info = Download.OnDownloadClicked(PrimaryGame, InstalledGames);
+            auto& Info = Download.OnDownloadClicked(PrimaryGame, GetInstall(PrimaryGame));
             Info.OnStateUpdate.connect([this](Storage::Models::DownloadInfoState NewState) {
                 switch (NewState)
                 {
                 case Storage::Models::DownloadInfoState::Initializing:
                     InstallStateHolder.SetHeldState(InstallStateHolder.GetHeldState() == State::Update ? State::Updating : State::Installing);
+                    InstalledGames.Flush();
                     break;
                 case Storage::Models::DownloadInfoState::Finished:
                     if (!PlayStateHolder.HasHeldState()) {
@@ -175,12 +176,12 @@ namespace EGL3::Modules::Game {
     }
 
     Storage::Models::InstalledGame* GameModule::GetInstall(Storage::Game::GameId Id) {
-        auto Itr = std::find_if(InstalledGames.begin(), InstalledGames.end(), [Id](Storage::Models::InstalledGame& Game) {
+        auto Itr = std::find_if(InstalledGames->begin(), InstalledGames->end(), [Id](Storage::Models::InstalledGame& Game) {
             auto HeaderPtr = Game.GetHeader();
             return HeaderPtr ? HeaderPtr->GetGameId() == Id : false;
         });
 
-        if (Itr != InstalledGames.end()) {
+        if (Itr != InstalledGames->end()) {
             return &*Itr;
         }
         return nullptr;

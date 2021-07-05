@@ -71,8 +71,8 @@ namespace EGL3::Modules::Game {
             }
         };
 
-        Storage::Persistent::Store& Storage;
-        std::vector<Storage::Models::InstalledGame>& InstalledGames;
+        using InstalledGamesSetting = Storage::Persistent::Setting<Utils::Crc32("InstalledGames"), std::vector<Storage::Models::InstalledGame>>;
+        Storage::Persistent::SettingHolder<InstalledGamesSetting> InstalledGames;
 
         AsyncFFModule& AsyncFF;
         Login::AuthModule& Auth;

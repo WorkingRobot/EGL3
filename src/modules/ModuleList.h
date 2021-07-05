@@ -18,19 +18,13 @@ namespace EGL3::Modules {
 
         ~ModuleList();
 
-        const Utils::GladeBuilder& GetBuilder() const;
-
         template<class T>
         T& GetWidget(const char* Name) const {
             return Builder.GetWidget<T>(Name);
         }
 
-        const Storage::Persistent::Store& GetStorage() const;
-
-        Storage::Persistent::Store& GetStorage();
-
         template<class Setting>
-        auto& Get() {
+        auto Get() {
             return Storage.Get<Setting>();
         }
 

@@ -49,7 +49,7 @@ namespace EGL3 {
         }
 
         void OnActivate() {
-            auto& AppWnd = PrimaryData->GetBuilder().GetWidget<Gtk::ApplicationWindow>("EGL3App");
+            auto& AppWnd = PrimaryData->GetWidget<Gtk::ApplicationWindow>("EGL3App");
 
             App->add_window(AppWnd);
 

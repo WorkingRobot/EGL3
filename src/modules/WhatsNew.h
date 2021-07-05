@@ -9,8 +9,6 @@
 #include <gtkmm.h>
 
 namespace EGL3::Modules {
-    using WhatsNewTimestamps = Storage::Persistent::Setting<Utils::Crc32("WhatsNewTimestamps"), std::unordered_map<size_t, Web::TimePoint>>;
-
     class WhatsNewModule : public BaseModule {
     public:
         WhatsNewModule(ModuleList& Ctx);
@@ -28,18 +26,17 @@ namespace EGL3::Modules {
         bool SourceEnabled();
 
         template<class T>
-        Web::TimePoint GetTime(WhatsNewTimestamps::Type& Storage, const T& Value);
+        Web::TimePoint GetTime(const T& Value);
 
         template<>
-        Web::TimePoint GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value);
+        Web::TimePoint GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(const Web::Epic::Responses::GetBlogPosts::BlogItem& Value);
 
         template<>
-        Web::TimePoint GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value);
+        Web::TimePoint GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(const Web::Epic::Responses::GetPageInfo::GenericMotd& Value);
 
         template<>
-        Web::TimePoint GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value);
+        Web::TimePoint GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value);
 
-        Storage::Persistent::Store& Storage;
         ImageCacheModule& ImageCache;
         Gtk::Box& Box;
         Gtk::Button& RefreshBtn;
@@ -48,7 +45,11 @@ namespace EGL3::Modules {
         Gtk::CheckMenuItem& CheckCreative;
         Gtk::CheckMenuItem& CheckNotice;
         Gtk::CheckMenuItem& CheckSTW;
-        uint8_t& Selection;
+
+        using TimestampsSetting = Storage::Persistent::Setting<Utils::Crc32("WhatsNewTimestamps"), std::unordered_map<size_t, Web::TimePoint>>;
+        Storage::Persistent::SettingHolder<TimestampsSetting> Timestamps;
+        using SelectionSetting = Storage::Persistent::Setting<Utils::Crc32("WhatsNewSelection"), uint8_t>;
+        Storage::Persistent::SettingHolder<SelectionSetting> Selection;
 
         Utils::SlotHolder SlotRefresh;
         Utils::SlotHolder SlotBR;

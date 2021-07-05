@@ -1,20 +1,19 @@
 #include "UpdateCheck.h"
 
 namespace EGL3::Modules::Game {
-    using UpdateFrequencySetting = Storage::Persistent::Setting<Utils::Crc32("UpdateFrequency"), std::chrono::seconds>;
 
     constexpr auto MinimumUpdateFrequency = std::chrono::seconds(30);
     constexpr auto MaximumUpdateFrequency = std::chrono::minutes(30);
 
     UpdateCheckModule::UpdateCheckModule(ModuleList& Ctx) :
-        UpdateFrequency(Ctx.Get<UpdateFrequencySetting>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         GameInfo(Ctx.GetModule<GameInfoModule>()),
+        UpdateFrequency(Ctx.Get<UpdateFrequencySetting>()),
         Cancelled(false),
         Future(std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this))
     {
-        SetFrequency(UpdateFrequency);
+        SetFrequency(*UpdateFrequency);
     }
 
     UpdateCheckModule::~UpdateCheckModule()
@@ -39,11 +38,12 @@ namespace EGL3::Modules::Game {
         }
 
         UpdateFrequency = std::chrono::duration_cast<std::chrono::seconds>(std::clamp<std::chrono::steady_clock::duration>(NewFrequency, MinimumUpdateFrequency, MaximumUpdateFrequency));
+        UpdateFrequency.Flush();
     }
 
     std::chrono::seconds UpdateCheckModule::GetFrequency() const
     {
-        return UpdateFrequency;
+        return *UpdateFrequency;
     }
 
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)

@@ -69,8 +69,9 @@ namespace EGL3::Modules::Login {
 
     private:
         StackModule& Stack;
-        Storage::Persistent::Store& Storage;
-        Storage::Models::Authorization& AuthData;
+
+        using AuthDataSetting = Storage::Persistent::Setting<Utils::Crc32("Auth"), Storage::Models::Authorization>;
+        Storage::Persistent::SettingHolder<AuthDataSetting> AuthData;
         Storage::Models::AuthUserData* SelectedUserData;
 
         std::future<void> SignInTask;

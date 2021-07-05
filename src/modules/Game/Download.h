@@ -21,9 +21,9 @@ namespace EGL3::Modules::Game {
 
         ~DownloadModule();
 
-        Storage::Models::DownloadInfo& OnDownloadClicked(Storage::Game::GameId Id, std::vector<Storage::Models::InstalledGame>& InstalledGames);
+        Storage::Models::DownloadInfo& OnDownloadClicked(Storage::Game::GameId Id, Storage::Models::InstalledGame* GameConfig);
 
-        void OnDownloadOkClicked();
+        void OnDownloadOkClicked(const Storage::Models::DownloadInfo::CreateGameConfig& CreateGameConfig);
 
         void OnDownloadCancelClicked();
 
@@ -41,7 +41,6 @@ namespace EGL3::Modules::Game {
         template<int Type>
         std::chrono::nanoseconds CalculateEndTimestamp(uint32_t AmountLeft);
 
-        Storage::Persistent::Store& Storage;
         Login::AuthModule& Auth;
         GameInfoModule& GameInfo;
         TaskbarModule& Taskbar;

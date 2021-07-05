@@ -14,12 +14,9 @@
 #include <Windows.h>
 
 namespace EGL3::Modules::Login {
-    using AuthSetting = Storage::Persistent::Setting<Utils::Crc32("Auth"), Storage::Models::Authorization>;
-
     AuthModule::AuthModule(ModuleList& Ctx) :
         Stack(Ctx.GetModule<StackModule>()),
-        Storage(Ctx.GetStorage()),
-        AuthData(Storage.Get<AuthSetting>()),
+        AuthData(Ctx.Get<AuthDataSetting>()),
         SelectedUserData(nullptr)
     {
         LoggedIn.connect([this]() {
@@ -27,12 +24,12 @@ namespace EGL3::Modules::Login {
                 if (SelectedUserData) {
                     *SelectedUserData = NewData;
                     LoggedInDispatcher.emit();
-                    Storage.Flush();
+                    AuthData.Flush();
                 }
             });
 
             Storage::Models::AuthUserData NewData = Clients->GetUserData();
-            auto& UserData = AuthData.GetUsers();
+            auto& UserData = AuthData->GetUsers();
             auto Itr = std::find_if(UserData.begin(), UserData.end(), [&NewData](const Storage::Models::AuthUserData& Data) {
                 return Data.AccountId == NewData.AccountId;
             });
@@ -47,13 +44,13 @@ namespace EGL3::Modules::Login {
 
             LoggedInDispatcher.emit();
             
-            AuthData.SetSelectedUser(std::distance(UserData.begin(), Itr));
-            Storage.Flush();
+            AuthData->SetSelectedUser(std::distance(UserData.begin(), Itr));
+            AuthData.Flush();
         });
 
         LoggedOut.connect([this]() {
-            AuthData.ClearSelectedUser();
-            Storage.Flush();
+            AuthData->ClearSelectedUser();
+            AuthData.Flush();
         });
 
         SignInDispatcher.connect([this]() {
@@ -71,8 +68,8 @@ namespace EGL3::Modules::Login {
 
     void AuthModule::StartStartupLogin()
     {
-        if (AuthData.IsUserSelected()) {
-            AccountSelected(AuthData.GetSelectedUser());
+        if (AuthData->IsUserSelected()) {
+            AccountSelected(AuthData->GetSelectedUser());
         }
         else {
             Stack.DisplaySignIn();
@@ -360,7 +357,7 @@ namespace EGL3::Modules::Login {
 
     bool AuthModule::AccountRemoved(const std::string& AccountId)
     {
-        auto& UserData = AuthData.GetUsers();
+        auto& UserData = AuthData->GetUsers();
         auto Itr = std::find_if(UserData.begin(), UserData.end(), [&](const Storage::Models::AuthUserData& Data) {
             return Data.AccountId == AccountId;
         });
@@ -389,7 +386,7 @@ namespace EGL3::Modules::Login {
 
     std::deque<Storage::Models::AuthUserData>& AuthModule::GetUserData()
     {
-        return AuthData.GetUsers();
+        return AuthData->GetUsers();
     }
 
     Storage::Models::AuthUserData* AuthModule::GetSelectedUserData()

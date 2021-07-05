@@ -3,8 +3,6 @@
 namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
-    using StoredFriendSetting = Storage::Persistent::Setting<Utils::Crc32("StoredFriendData"), StoredFriendData>;
-
     OptionsModule::OptionsModule(ModuleList& Ctx) :
         StorageData(Ctx.Get<StoredFriendSetting>()),
         CheckFriendsOffline(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
@@ -15,13 +13,13 @@ namespace EGL3::Modules::Friends {
         CheckDeclineReqs(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsDeclineReqsCheck")),
         CheckProfanity(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsProfanityCheck"))
     {
-        CheckFriendsOffline.set_active(StorageData.HasFlag<StoredFriendData::ShowOffline>());
-        CheckFriendsOutgoing.set_active(StorageData.HasFlag<StoredFriendData::ShowOutgoing>());
-        CheckFriendsIncoming.set_active(StorageData.HasFlag<StoredFriendData::ShowIncoming>());
-        CheckFriendsBlocked.set_active(StorageData.HasFlag<StoredFriendData::ShowBlocked>());
-        CheckFriendsOverride.set_active(StorageData.HasFlag<StoredFriendData::ShowOverride>());
-        CheckDeclineReqs.set_active(StorageData.HasFlag<StoredFriendData::AutoDeclineReqs>());
-        CheckProfanity.set_active(StorageData.HasFlag<StoredFriendData::CensorProfanity>());
+        CheckFriendsOffline.set_active(StorageData->HasFlag<StoredFriendData::ShowOffline>());
+        CheckFriendsOutgoing.set_active(StorageData->HasFlag<StoredFriendData::ShowOutgoing>());
+        CheckFriendsIncoming.set_active(StorageData->HasFlag<StoredFriendData::ShowIncoming>());
+        CheckFriendsBlocked.set_active(StorageData->HasFlag<StoredFriendData::ShowBlocked>());
+        CheckFriendsOverride.set_active(StorageData->HasFlag<StoredFriendData::ShowOverride>());
+        CheckDeclineReqs.set_active(StorageData->HasFlag<StoredFriendData::AutoDeclineReqs>());
+        CheckProfanity.set_active(StorageData->HasFlag<StoredFriendData::CensorProfanity>());
 
         SlotFriendsOffline = CheckFriendsOffline.signal_toggled().connect([this]() { UpdateSelection(); });
         SlotFriendsOutgoing = CheckFriendsOutgoing.signal_toggled().connect([this]() { UpdateSelection(); });
@@ -32,18 +30,30 @@ namespace EGL3::Modules::Friends {
         SlotProfanity = CheckProfanity.signal_toggled().connect([this]() { UpdateSelection(); });
     }
 
-    const StoredFriendData& OptionsModule::GetStorageData() const
+    Web::Xmpp::Status OptionsModule::GetStatus() const
     {
-        return StorageData;
+        return StorageData->GetStatus();
     }
 
-    StoredFriendData& OptionsModule::GetStorageData()
+    const std::string& OptionsModule::GetStatusText() const
     {
-        return StorageData;
+        return StorageData->GetStatusText();
+    }
+
+    void OptionsModule::SetStatus(Web::Xmpp::Status NewStatus)
+    {
+        StorageData->SetStatus(NewStatus);
+        StorageData.Flush();
+    }
+
+    void OptionsModule::SetStatusText(const std::string& NewStatusText)
+    {
+        StorageData->SetStatusText(NewStatusText);
+        StorageData.Flush();
     }
 
     void OptionsModule::UpdateSelection() {
-        StorageData.SetFlags(StoredFriendData::OptionFlags(
+        StorageData->SetFlags(StoredFriendData::OptionFlags(
             (CheckFriendsOffline.get_active() ? (uint8_t)StoredFriendData::ShowOffline : 0) |
             (CheckFriendsOutgoing.get_active() ? (uint8_t)StoredFriendData::ShowOutgoing : 0) |
             (CheckFriendsIncoming.get_active() ? (uint8_t)StoredFriendData::ShowIncoming : 0) |
@@ -52,6 +62,8 @@ namespace EGL3::Modules::Friends {
             (CheckDeclineReqs.get_active() ? (uint8_t)StoredFriendData::AutoDeclineReqs : 0) |
             (CheckProfanity.get_active() ? (uint8_t)StoredFriendData::CensorProfanity : 0)
         ));
+
+        StorageData.Flush();
 
         OnUpdate();
     }

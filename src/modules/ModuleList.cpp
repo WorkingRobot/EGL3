@@ -58,21 +58,6 @@ namespace EGL3::Modules {
         }
     }
 
-    const Utils::GladeBuilder& ModuleList::GetBuilder() const
-    {
-        return Builder;
-    }
-
-    const Storage::Persistent::Store& ModuleList::GetStorage() const
-    {
-        return Storage;
-    }
-
-    Storage::Persistent::Store& ModuleList::GetStorage()
-    {
-        return Storage;
-    }
-
     bool ModuleList::DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup) const
     {
         Gtk::MessageDialog Dialog(GetWidget<Gtk::Window>("EGL3App"), Message, UseMarkup, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);

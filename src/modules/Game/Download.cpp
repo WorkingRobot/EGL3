@@ -50,7 +50,6 @@ namespace EGL3::Modules::Game {
     }
 
     DownloadModule::DownloadModule(ModuleList& Ctx) :
-        Storage(Ctx.GetStorage()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         GameInfo(Ctx.GetModule<GameInfoModule>()),
         Taskbar(Ctx.GetModule<TaskbarModule>()),
@@ -158,11 +157,11 @@ namespace EGL3::Modules::Game {
         }
     }
 
-    DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id, std::vector<Storage::Models::InstalledGame>& InstalledGames)
+    DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id, InstalledGame* GameConfig)
     {
         ResetStats();
 
-        CurrentDownload = std::make_unique<DownloadInfo>(Id, InstalledGames);
+        CurrentDownload = std::make_unique<DownloadInfo>(Id, GameConfig);
 
         CurrentDownload->OnStateUpdate.connect([this](DownloadInfoState NewState) {
             if (NewState == DownloadInfoState::Initializing && OptionsIsUsingEGL.has_value()) {
@@ -242,21 +241,24 @@ namespace EGL3::Modules::Game {
         return *CurrentDownload;
     }
 
-    void DownloadModule::OnDownloadOkClicked()
+    void DownloadModule::OnDownloadOkClicked(const DownloadInfo::CreateGameConfig& CreateGameConfig)
     {
         auto& Data = CurrentDownload->GetStateData<DownloadInfo::StateOptions>();
         Data.Flags = SetInstallFlag<InstallFlags::AutoUpdate>(InstallFlags::SelectedIds, OptionsAutoUpdate.get_active());
         Data.Flags = SetInstallFlag<InstallFlags::CreateShortcut>(Data.Flags, OptionsCreateShortcut.get_active());
         OptionsSdMeta.GetOptions(Data.SelectedIds, Data.InstallTags);
 
-        CurrentDownload->BeginDownload([this](Storage::Game::GameId Id, std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
-            auto Resp = GameInfo.GetVersionData(Id);
-            if (!Resp) {
-                return Web::ErrorData::Status::Failure;
-            }
+        CurrentDownload->BeginDownload(
+            [this](Storage::Game::GameId Id, std::string& CloudDir) -> Web::Response<Web::Epic::BPS::Manifest> {
+                auto Resp = GameInfo.GetVersionData(Id);
+                if (!Resp) {
+                    return Web::ErrorData::Status::Failure;
+                }
 
-            return Web::Epic::EpicClient().GetManifest(Resp->Element, CloudDir);
-        });
+                return Web::Epic::EpicClient().GetManifest(Resp->Element, CloudDir);
+            },
+            CreateGameConfig
+        );
         SwitchStack.set_visible_child(SwitchStackPageInfo);
     }
 
@@ -390,7 +392,6 @@ namespace EGL3::Modules::Game {
                 Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Error);
                 break;
             case DownloadInfoState::Initializing:
-                Storage.Flush();
                 Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Indeterminate);
                 break;
             default:

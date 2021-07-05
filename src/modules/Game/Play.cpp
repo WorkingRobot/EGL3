@@ -4,7 +4,6 @@ namespace EGL3::Modules::Game {
     using namespace Storage::Models;
 
     PlayModule::PlayModule(ModuleList& Ctx) :
-        Storage(Ctx.GetStorage()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         Service(Ctx.GetModule<ServiceModule>()),
         PlayQueued(false)

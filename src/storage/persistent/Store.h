@@ -121,6 +121,54 @@ namespace EGL3::Storage::Persistent {
         }
     };
 
+    class Store;
+
+    template<class _Setting>
+    struct SettingHolder {
+        using Setting = _Setting;
+
+        SettingHolder(Store& Store, typename _Setting::Type& Data) :
+            Store(Store),
+            Data(Data)
+        {
+
+        }
+        
+        SettingHolder& operator=(typename const _Setting::Type& Data)
+        {
+            this->Data = Data;
+            return *this;
+        }
+
+        SettingHolder& operator=(typename _Setting::Type&& Data)
+        {
+            this->Data = std::move(Data);
+            return *this;
+        }
+
+        typename _Setting::Type& operator*() noexcept {
+            return Data;
+        }
+
+        typename const _Setting::Type& operator*() const noexcept {
+            return Data;
+        }
+
+        typename _Setting::Type* operator->() noexcept {
+            return &Data;
+        }
+
+        typename const _Setting::Type* operator->() const noexcept {
+            return &Data;
+        }
+
+        void Flush();
+
+    private:
+        Store& Store;
+        _Setting::Type& Data;
+    };
+
     class Store {
         using Serializer = void (*)(Utils::Streams::Stream&, const Detail::MoveableAny&);
 
@@ -132,7 +180,7 @@ namespace EGL3::Storage::Persistent {
         ~Store();
 
         template<class _Setting, std::enable_if_t<Detail::is_setting_v<_Setting>, bool> = true>
-        _Setting::Type& Get()
+        typename SettingHolder<_Setting> Get()
         {
             auto Itr = Elements.find(_Setting::KeyHash);
             if (Itr == Elements.end()) {
@@ -143,7 +191,7 @@ namespace EGL3::Storage::Persistent {
             auto Ret = Itr->second.first.TryGet<_Setting::Type>();
             if (Ret) {
                 // Element exists
-                return *Ret;
+                return { *this, *Ret };
             }
 
             // Element exists serialized
@@ -151,7 +199,7 @@ namespace EGL3::Storage::Persistent {
             Itr->second.first.Get<Detail::TemporaryElement>() >> ParsedElement.Get<_Setting::Type>();
             Itr->second.first.Swap(ParsedElement);
             Itr->second.second = &_Setting::Serializer;
-            return Itr->second.first.Get<_Setting::Type>();
+            return { *this, Itr->second.first.Get<_Setting::Type>() };
         }
 
         void Flush();
@@ -162,4 +210,10 @@ namespace EGL3::Storage::Persistent {
         std::filesystem::path Path;
         std::unordered_map<uint32_t, std::pair<Detail::MoveableAny, Serializer>> Elements;
     };
+
+    template<class _Setting>
+    void SettingHolder<_Setting>::Flush()
+    {
+        Store.Flush();
+    }
 }

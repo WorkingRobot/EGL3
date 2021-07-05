@@ -60,8 +60,8 @@ namespace EGL3::Modules::Friends {
                     }
                 });
 
-                StatusEntry.set_placeholder_text(Web::Xmpp::StatusToHumanString(Options.GetStorageData().GetStatus()));
-                StatusEntry.set_text(Options.GetStorageData().GetStatusText());
+                StatusEntry.set_placeholder_text(Web::Xmpp::StatusToHumanString(Options.GetStatus()));
+                StatusEntry.set_text(Options.GetStatusText());
                 StatusEditBtn.set_sensitive(false);
             });
             SlotWindowUnfocused = Window.signal_focus_out_event().connect([this](GdkEventFocus* evt) {
@@ -120,7 +120,7 @@ namespace EGL3::Modules::Friends {
                     return;
                 }
 
-                Options.GetStorageData().SetStatus(Data->GetKey());
+                Options.SetStatus(Data->GetKey());
                 StatusEntry.set_placeholder_text(Web::Xmpp::StatusToHumanString(Data->GetKey()));
                 GetCurrentUser().SetStatus(Data->GetKey());
                 OnUpdatePresence();
@@ -133,7 +133,7 @@ namespace EGL3::Modules::Friends {
             SlotStatusTextClicked = StatusEditBtn.signal_clicked().connect([this]() {
                 StatusEditBtn.set_sensitive(false);
 
-                Options.GetStorageData().SetStatusText(StatusEntry.get_text());
+                Options.SetStatusText(StatusEntry.get_text());
                 GetCurrentUser().SetStatusText(StatusEntry.get_text());
                 OnUpdatePresence();
             });

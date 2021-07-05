@@ -134,13 +134,13 @@ namespace EGL3::Modules::Friends {
         case FriendType::INVALID:
             return false;
         case FriendType::BLOCKED:
-            return Options.GetStorageData().HasFlag<StoredFriendData::ShowBlocked>();
+            return Options.HasFlag<StoredFriendData::ShowBlocked>();
         case FriendType::OUTBOUND:
-            return Options.GetStorageData().HasFlag<StoredFriendData::ShowOutgoing>();
+            return Options.HasFlag<StoredFriendData::ShowOutgoing>();
         case FriendType::INBOUND:
-            return Options.GetStorageData().HasFlag<StoredFriendData::ShowIncoming>();
+            return Options.HasFlag<StoredFriendData::ShowIncoming>();
         case FriendType::NORMAL:
-            return Data.Get<FriendCurrent>().GetStatus() != Web::Xmpp::Status::Offline || Options.GetStorageData().HasFlag<StoredFriendData::ShowOffline>();
+            return Data.Get<FriendCurrent>().GetStatus() != Web::Xmpp::Status::Offline || Options.HasFlag<StoredFriendData::ShowOffline>();
 
             // TODO: check if i can show a million friends without impacting performance :)
             // If not offline, or less than 500 friends and show offline, or show override

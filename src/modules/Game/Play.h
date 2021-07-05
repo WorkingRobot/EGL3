@@ -16,7 +16,6 @@ namespace EGL3::Modules::Game {
         Utils::Callback<void(bool Playing)> OnStateUpdate;
 
     private:
-        Storage::Persistent::Store& Storage;
         Login::AuthModule& Auth;
         ServiceModule& Service;
 

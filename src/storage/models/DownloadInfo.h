@@ -120,8 +120,9 @@ namespace EGL3::Storage::Models {
         };
 
         using LatestManifestRequest = std::function<Web::Response<Web::Epic::BPS::Manifest>(Game::GameId Id, std::string& CloudDir)>;
+        using CreateGameConfig = std::function<InstalledGame&()>;
 
-        DownloadInfo(Game::GameId Id, std::vector<InstalledGame>& InstalledGames);
+        DownloadInfo(Game::GameId Id, InstalledGame* GameConfig);
 
         ~DownloadInfo();
 
@@ -151,7 +152,7 @@ namespace EGL3::Storage::Models {
 
         void CancelDownloadSetup();
 
-        void BeginDownload(const LatestManifestRequest& GetLatestManifest);
+        void BeginDownload(const LatestManifestRequest& GetLatestManifest, const CreateGameConfig& CreateGameConfig);
 
         void SetDownloadRunning(bool Running = true);
 
@@ -182,7 +183,5 @@ namespace EGL3::Storage::Models {
         DownloadInfoState CurrentState;
         std::variant<StateOptions, StateInitializing, StateInstalling, StateCancelled> StateData;
         std::future<void> PrimaryTask;
-
-        std::vector<InstalledGame>& InstalledGames;
     };
 }

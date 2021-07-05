@@ -35,7 +35,9 @@ namespace EGL3::Modules::Game {
         AsyncFFModule& AsyncFF;
         GameInfoModule& GameInfo;
 
-        std::chrono::seconds& UpdateFrequency;
+        using UpdateFrequencySetting = Storage::Persistent::Setting<Utils::Crc32("UpdateFrequency"), std::chrono::seconds>;
+        Storage::Persistent::SettingHolder<UpdateFrequencySetting> UpdateFrequency;
+
         std::atomic<std::vector<Storage::Models::InstalledGame>*> InstalledGamesPtr;
 
         std::mutex Mutex;
