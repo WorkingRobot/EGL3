@@ -39,6 +39,8 @@ namespace EGL3::Storage::Persistent {
 
     void Store::Flush()
     {
+        std::lock_guard Guard(Mtx);
+
         std::error_code Code;
         if (std::filesystem::is_regular_file(Path, Code)) {
             std::filesystem::path TempPath = Path;

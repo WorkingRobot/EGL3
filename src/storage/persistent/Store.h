@@ -6,6 +6,7 @@
 
 #include <any>
 #include <filesystem>
+#include <mutex>
 #include <unordered_map>
 
 namespace EGL3::Storage::Persistent {
@@ -182,11 +183,15 @@ namespace EGL3::Storage::Persistent {
         template<class _Setting, std::enable_if_t<Detail::is_setting_v<_Setting>, bool> = true>
         typename SettingHolder<_Setting> Get()
         {
+            std::unique_lock Lock(Mtx);
+
             auto Itr = Elements.find(_Setting::KeyHash);
             if (Itr == Elements.end()) {
                 // Element doesn't exist
                 Itr = Elements.emplace(_Setting::KeyHash, std::make_pair<Detail::MoveableAny, Serializer>(Detail::MakeAny<_Setting::Type>(), &_Setting::Serializer)).first;
             }
+
+            Lock.unlock();
             
             auto Ret = Itr->second.first.TryGet<_Setting::Type>();
             if (Ret) {
@@ -208,6 +213,7 @@ namespace EGL3::Storage::Persistent {
         void WriteTo(Utils::Streams::Stream& Stream);
 
         std::filesystem::path Path;
+        std::mutex Mtx;
         std::unordered_map<uint32_t, std::pair<Detail::MoveableAny, Serializer>> Elements;
     };
 
