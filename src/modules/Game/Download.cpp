@@ -158,11 +158,11 @@ namespace EGL3::Modules::Game {
         }
     }
 
-    DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id)
+    DownloadInfo& DownloadModule::OnDownloadClicked(Storage::Game::GameId Id, std::vector<Storage::Models::InstalledGame>& InstalledGames)
     {
         ResetStats();
 
-        CurrentDownload = std::make_unique<DownloadInfo>(Id, [this]() -> std::vector<InstalledGame>& { return Storage.Get(Storage::Persistent::Key::InstalledGames); });
+        CurrentDownload = std::make_unique<DownloadInfo>(Id, InstalledGames);
 
         CurrentDownload->OnStateUpdate.connect([this](DownloadInfoState NewState) {
             if (NewState == DownloadInfoState::Initializing && OptionsIsUsingEGL.has_value()) {

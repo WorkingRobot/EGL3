@@ -1,15 +1,20 @@
 #include "UpdateCheck.h"
 
 namespace EGL3::Modules::Game {
+    using UpdateFrequencySetting = Storage::Persistent::Setting<Utils::Crc32("UpdateFrequency"), std::chrono::seconds>;
+
+    constexpr auto MinimumUpdateFrequency = std::chrono::seconds(30);
+    constexpr auto MaximumUpdateFrequency = std::chrono::minutes(30);
+
     UpdateCheckModule::UpdateCheckModule(ModuleList& Ctx) :
-        Storage(Ctx.GetStorage()),
+        UpdateFrequency(Ctx.Get<UpdateFrequencySetting>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         GameInfo(Ctx.GetModule<GameInfoModule>()),
         Cancelled(false),
         Future(std::async(std::launch::async, &UpdateCheckModule::BackgroundTask, this))
     {
-        
+        SetFrequency(UpdateFrequency);
     }
 
     UpdateCheckModule::~UpdateCheckModule()
@@ -22,14 +27,23 @@ namespace EGL3::Modules::Game {
         Future.get();
     }
 
+    void UpdateCheckModule::SetInstalledGames(std::vector<Storage::Models::InstalledGame>& InstalledGames)
+    {
+        InstalledGamesPtr.store(&InstalledGames);
+    }
+
+    void UpdateCheckModule::SetFrequency(std::chrono::seconds NewFrequency)
+    {
+        if (NewFrequency < MinimumUpdateFrequency) {
+            NewFrequency = MinimumUpdateFrequency;
+        }
+
+        UpdateFrequency = std::chrono::duration_cast<std::chrono::seconds>(std::clamp<std::chrono::steady_clock::duration>(NewFrequency, MinimumUpdateFrequency, MaximumUpdateFrequency));
+    }
+
     std::chrono::seconds UpdateCheckModule::GetFrequency() const
     {
-        auto& Freq = Storage.Get(Storage::Persistent::Key::UpdateFrequency);
-        if (Freq < std::chrono::seconds(30)) {
-            Freq = std::chrono::seconds(30);
-            Storage.Flush();
-        }
-        return Freq;
+        return UpdateFrequency;
     }
 
     void UpdateCheckModule::CheckForUpdate(Storage::Game::GameId Id, uint64_t StoredVersion)
@@ -48,8 +62,11 @@ namespace EGL3::Modules::Game {
     {
         std::unique_lock Lock(Mutex);
         do {
-            auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
-            for (auto& Game : InstalledGames) {
+            auto InstalledGames = InstalledGamesPtr.load();
+            if (InstalledGames == nullptr) {
+                continue;
+            }
+            for (auto& Game : *InstalledGames) {
                 if (Game.IsValid() && !Game.IsArchiveOpen()) {
                     if (auto HeaderPtr = Game.GetHeader()) {
                         if (!HeaderPtr->GetUpdateInfo().IsUpdating) {

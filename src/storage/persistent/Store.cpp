@@ -1,46 +1,87 @@
 #include "Store.h"
 
-#include "../../utils/Config.h"
+#include "../../utils/streams/FileStream.h"
+#include "../../utils/Log.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 namespace EGL3::Storage::Persistent {
-    Store::Store(const std::filesystem::path& Path) : Path(Path) {
-        if (std::filesystem::is_regular_file(Path)) {
-            Utils::Streams::FileStream Stream;
-            Stream.open(Path, "rb+");
-            EGL3_ENSURE(Stream.valid(), LogLevel::Error, "Could not open store file. Try removing or renaming it.");
-            uint32_t ElementCount;
-            Stream >> ElementCount;
-            for (int i = 0; i < ElementCount; ++i) {
-                uint32_t KeyConstant;
-                Stream >> KeyConstant;
+    Store::Store(const std::filesystem::path& Path) :
+        Path(Path)
+    {
+        std::error_code Code;
+        if (!std::filesystem::is_regular_file(Path, Code)) {
+            return;
+        }
 
-                auto Elem = Data.emplace(KeyConstant, KeyConstant);
-                if (Elem.first->second.HasValue()) {
-                    EGL3_ENSURE(Elem.second, LogLevel::Error, "Could not emplace new constant to store");
-                    Elem.first->second.Deserialize(Stream);
-                }
-                else { // Constant is not defined
-                    Data.erase(KeyConstant);
-                }
-            }
+        Utils::Streams::FileStream Stream;
+        if (!Stream.open(Path, "rb")) {
+            return;
+        }
+
+        size_t Count;
+        Stream >> Count;
+        for (uint32_t Idx = 0; Idx < Count; ++Idx) {
+            uint32_t KeyHash;
+            Stream >> KeyHash;
+            size_t ValueSize;
+            Stream >> ValueSize;
+            Elements.emplace(KeyHash, std::make_pair<Detail::MoveableAny, Serializer>(Detail::MakeAny<Detail::TemporaryElement>(Stream, ValueSize), nullptr));
         }
     }
 
-    Store::~Store() {
+    Store::~Store()
+    {
         Flush();
     }
 
-    void Store::Flush() {
-        std::lock_guard Guard(Mutex);
+    void Store::Flush()
+    {
+        std::error_code Code;
+        if (std::filesystem::is_regular_file(Path, Code)) {
+            std::filesystem::path TempPath = Path;
+            TempPath.replace_extension("tmp");
 
-        std::filesystem::create_directories(Path.parent_path());
-        Utils::Streams::FileStream Stream;
-        Stream.open(Path, "wb+");
-        
-        Stream << (uint32_t)Data.size();
-        for (auto& Key : Data) {
-            Stream << Key.first;
-            Key.second.Serialize(Stream);
+            {
+                Utils::Streams::FileStream Stream;
+                Stream.open(TempPath, "wb");
+                WriteTo(Stream);
+            }
+
+            std::filesystem::path BackupPath = Path;
+            BackupPath.replace_extension("bak");
+
+            EGL3_ENSUREF(ReplaceFileW(Path.c_str(), TempPath.c_str(), BackupPath.c_str(), REPLACEFILE_IGNORE_MERGE_ERRORS, NULL, NULL), LogLevel::Error, "Could not replace store file with flushed data (GLE: {})", GetLastError());
+        }
+        else {
+            Utils::Streams::FileStream Stream;
+            Stream.open(Path, "wb");
+            WriteTo(Stream);
+        }
+    }
+
+    void Store::WriteTo(Utils::Streams::Stream& Stream)
+    {
+        Stream << Elements.size();
+        for (auto& Element : Elements) {
+            Stream << Element.first;
+
+            auto TempElement = Element.second.first.TryGet<Detail::TemporaryElement>();
+            if (TempElement) {
+                Stream << TempElement->size();
+                Stream.write(TempElement->get(), TempElement->size());
+            }
+            else {
+                Stream << size_t(0);
+                auto StartPos = Stream.tell();
+                Element.second.second(Stream, Element.second.first);
+                auto EndPos = Stream.tell();
+                Stream.seek(StartPos - sizeof(size_t), Utils::Streams::Stream::Beg);
+                Stream << size_t(EndPos - StartPos);
+                Stream.seek(EndPos, Utils::Streams::Stream::Beg);
+            }
         }
     }
 }

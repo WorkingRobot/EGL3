@@ -10,8 +10,11 @@
 namespace EGL3::Modules::Game {
     constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
 
+    using InstalledGamesSetting = Storage::Persistent::Setting<Utils::Crc32("InstalledGames"), std::vector<Storage::Models::InstalledGame>>;
+
     GameModule::GameModule(ModuleList& Ctx) :
         Storage(Ctx.GetStorage()),
+        InstalledGames(Storage.Get<InstalledGamesSetting>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         Download(Ctx.GetModule<DownloadModule>()),
@@ -28,8 +31,6 @@ namespace EGL3::Modules::Game {
         InstallStateHolder(*this),
         PlayStateHolder(*this)
     {
-        CleanInstalls();
-
         {
             auto Install = GetInstall(PrimaryGame);
             if (Install) {
@@ -53,7 +54,7 @@ namespace EGL3::Modules::Game {
         });
 
         InstallStateHolder.Clicked.Set([this]() {
-            auto& Info = Download.OnDownloadClicked(PrimaryGame);
+            auto& Info = Download.OnDownloadClicked(PrimaryGame, InstalledGames);
             Info.OnStateUpdate.connect([this](Storage::Models::DownloadInfoState NewState) {
                 switch (NewState)
                 {
@@ -173,33 +174,10 @@ namespace EGL3::Modules::Game {
         }
     }
 
-    void GameModule::CleanInstalls()
-    {
-        auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
-        std::unordered_map<std::filesystem::path::string_type, Storage::Models::InstalledGame> Games;
-        InstalledGames.reserve(InstalledGames.size());
-        for (auto& Game : InstalledGames) {
-            if (Game.IsValid()) {
-                Games.try_emplace(std::filesystem::absolute(Game.GetPath()), std::move(Game));
-            }
-        }
-
-        InstalledGames.clear();
-        for (auto& Game : Games) {
-            auto& NewGame = InstalledGames.emplace_back(std::move(Game.second));
-            NewGame.SetPath(Game.first);
-        }
-
-        Storage.Flush();
-    }
-
     Storage::Models::InstalledGame* GameModule::GetInstall(Storage::Game::GameId Id) {
-        auto& InstalledGames = Storage.Get(Storage::Persistent::Key::InstalledGames);
         auto Itr = std::find_if(InstalledGames.begin(), InstalledGames.end(), [Id](Storage::Models::InstalledGame& Game) {
-            if (auto HeaderPtr = Game.GetHeader()) {
-                return HeaderPtr->GetGameId() == Id;
-            }
-            return false;
+            auto HeaderPtr = Game.GetHeader();
+            return HeaderPtr ? HeaderPtr->GetGameId() == Id : false;
         });
 
         if (Itr != InstalledGames.end()) {

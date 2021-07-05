@@ -19,8 +19,15 @@ namespace EGL3::Utils::Streams {
             Position = 0;
         }
 
+        MemoryStream(Stream& CopyFrom, size_t Amount) {
+            Buffer.resize(Amount);
+            CopyFrom.read(Buffer.data(), Amount);
+            Size = Amount;
+            Position = 0;
+        }
+
         Stream& write(const char* Buf, size_t BufCount) override {
-            while (Buffer.size() < BufCount + Position) {
+            while (Position + BufCount > Buffer.size()) {
                 Buffer.resize(Buffer.size() * 2);
             }
             memcpy(Buffer.data() + Position, Buf, BufCount);
@@ -32,7 +39,7 @@ namespace EGL3::Utils::Streams {
         }
 
         Stream& read(char* Buf, size_t BufCount) override {
-            if (Position + BufCount < Size) {
+            if (Position + BufCount > Size) {
                 BufCount = Size - Position;
             }
             memcpy(Buf, Buffer.data() + Position, BufCount);

@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include "../../utils/formatters/Path.h"
+#include "../../utils/Config.h"
 #include "../../utils/Log.h"
 #include "../../utils/Version.h"
 

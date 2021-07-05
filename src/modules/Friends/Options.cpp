@@ -3,8 +3,10 @@
 namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
+    using StoredFriendSetting = Storage::Persistent::Setting<Utils::Crc32("StoredFriendData"), StoredFriendData>;
+
     OptionsModule::OptionsModule(ModuleList& Ctx) :
-        StorageData(Ctx.Get(Storage::Persistent::Key::StoredFriendData)),
+        StorageData(Ctx.Get<StoredFriendSetting>()),
         CheckFriendsOffline(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOfflineCheck")),
         CheckFriendsOutgoing(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsOutgoingCheck")),
         CheckFriendsIncoming(Ctx.GetWidget<Gtk::CheckMenuItem>("FriendsIncomingCheck")),

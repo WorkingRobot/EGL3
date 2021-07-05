@@ -38,8 +38,6 @@ namespace EGL3::Modules::Game {
 
         void PrimaryButtonClicked();
 
-        void CleanInstalls();
-
         Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
 
         struct StateHolder {
@@ -74,6 +72,8 @@ namespace EGL3::Modules::Game {
         };
 
         Storage::Persistent::Store& Storage;
+        std::vector<Storage::Models::InstalledGame>& InstalledGames;
+
         AsyncFFModule& AsyncFF;
         Login::AuthModule& Auth;
         DownloadModule& Download;

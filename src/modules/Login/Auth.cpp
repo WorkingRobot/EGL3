@@ -14,10 +14,12 @@
 #include <Windows.h>
 
 namespace EGL3::Modules::Login {
+    using AuthSetting = Storage::Persistent::Setting<Utils::Crc32("Auth"), Storage::Models::Authorization>;
+
     AuthModule::AuthModule(ModuleList& Ctx) :
         Stack(Ctx.GetModule<StackModule>()),
         Storage(Ctx.GetStorage()),
-        AuthData(Storage.Get(Storage::Persistent::Key::Auth)),
+        AuthData(Storage.Get<AuthSetting>()),
         SelectedUserData(nullptr)
     {
         LoggedIn.connect([this]() {

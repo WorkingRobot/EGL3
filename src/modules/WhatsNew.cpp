@@ -3,6 +3,8 @@
 #include "../web/epic/EpicClient.h"
 
 namespace EGL3::Modules {
+    using WhatsNewSelection = Storage::Persistent::Setting<Utils::Crc32("WhatsNewSelection"), uint8_t>;
+
     WhatsNewModule::WhatsNewModule(ModuleList& Ctx) :
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
         Storage(Ctx.GetStorage()),
@@ -13,7 +15,7 @@ namespace EGL3::Modules {
         CheckCreative(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewCreative")),
         CheckNotice(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewNotice")),
         CheckSTW(Ctx.GetWidget<Gtk::CheckMenuItem>("WhatsNewSTW")),
-        Selection(Storage.Get(Storage::Persistent::Key::WhatsNewSelection))
+        Selection(Storage.Get<WhatsNewSelection>())
     {
         Dispatcher.connect([this]() { UpdateBox(); });
         SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
@@ -50,8 +52,8 @@ namespace EGL3::Modules {
             ItemData.clear();
             Web::Epic::EpicClient Client;
 
-            auto Blogs = Client.GetBlogPosts("en-US");
-            auto News = Client.GetPageInfo("en-US");
+            auto Blogs = Client.GetBlogPosts(Utils::Config::GetLanguage());
+            auto News = Client.GetPageInfo(Utils::Config::GetLanguage());
 
             if (Blogs.HasError()) {
                 ItemDataError = Blogs.GetErrorCode();
@@ -62,7 +64,7 @@ namespace EGL3::Modules {
             else {
                 ItemDataError = Web::ErrorData::Status::Success;
 
-                auto& Store = Storage.Get(Storage::Persistent::Key::WhatsNewTimestamps);
+                auto& Store = Storage.Get<WhatsNewTimestamps>();
 
                 // Blogs
 
@@ -213,23 +215,23 @@ namespace EGL3::Modules {
     }
 
     template<class T>
-    Web::TimePoint WhatsNewModule::GetTime(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const T& Value) {
+    Web::TimePoint WhatsNewModule::GetTime(WhatsNewTimestamps::Type& Storage, const T& Value) {
         return Web::TimePoint::min();
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetBlogPosts::BlogItem>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetBlogPosts::BlogItem& Value) {
         return Value.Date;
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericMotd>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericMotd& Value) {
         // Just hash the id, it isn't used anywhere and I assume it's unique anyway
         return Storage.try_emplace(std::hash<std::string>{}(Value.Id), Web::TimePoint::clock::now()).first->second;
     }
 
     template<>
-    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(decltype(Storage::Persistent::Key::WhatsNewTimestamps)::ValueType& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
+    Web::TimePoint WhatsNewModule::GetTime<Web::Epic::Responses::GetPageInfo::GenericNewsPost>(WhatsNewTimestamps::Type& Storage, const Web::Epic::Responses::GetPageInfo::GenericNewsPost& Value) {
         // Only used for stw at this point, if any of these change, it's going to look different visually
         return Storage.try_emplace(Utils::HashCombine(Value.AdSpace, Value.Body, Value.Image, Value.Title), Web::TimePoint::clock::now()).first->second;
     }

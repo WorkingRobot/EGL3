@@ -45,7 +45,7 @@ namespace EGL3 {
                 Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), StyleData, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
             }
 
-            PrimaryData = std::make_unique<Modules::ModuleList>("resources\\EGL3.glade", Utils::Config::GetFolder() / "storage.stor");
+            PrimaryData = std::make_unique<Modules::ModuleList>("resources\\EGL3.glade", Utils::Config::GetFolder() / "store.str");
         }
 
         void OnActivate() {

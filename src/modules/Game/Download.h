@@ -21,7 +21,7 @@ namespace EGL3::Modules::Game {
 
         ~DownloadModule();
 
-        Storage::Models::DownloadInfo& OnDownloadClicked(Storage::Game::GameId Id);
+        Storage::Models::DownloadInfo& OnDownloadClicked(Storage::Game::GameId Id, std::vector<Storage::Models::InstalledGame>& InstalledGames);
 
         void OnDownloadOkClicked();
 

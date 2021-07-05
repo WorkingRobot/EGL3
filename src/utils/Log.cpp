@@ -8,7 +8,7 @@
 #include <Windows.h>
 
 namespace EGL3 {
-    constexpr bool UseConsole = false;
+    constexpr bool UseConsole = true;
 
     bool Detail::ColorsEnabled = false;
 
@@ -65,4 +65,8 @@ namespace EGL3 {
         }
     }
 
+    void Abort() {
+        AtQuickExit();
+        std::abort();
+    }
 }

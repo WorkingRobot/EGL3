@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../storage/models/Authorization.h"
 #include "../../web/epic/EpicClientAuthed.h"
 #include "../../web/epic/content/LauncherContentClient.h"
 #include "../../utils/egl/RememberMe.h"
@@ -24,6 +25,7 @@ namespace EGL3::Modules::Login {
                 return true;
             }
         };
+
     public:
         AuthModule(ModuleList& Ctx);
 

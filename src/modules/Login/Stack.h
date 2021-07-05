@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../ModuleList.h"
+#include "../../storage/models/Authorization.h"
 #include "../../widgets/KairosAvatar.h"
+#include "../ModuleList.h"
 
 #include <gtkmm.h>
 

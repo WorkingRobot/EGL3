@@ -29,6 +29,10 @@ namespace EGL3 {
         Debug
     };
 
+    void EnableConsole();
+
+    void Abort();
+
     namespace Detail {
         static consteval std::string_view ToString(LogLevel Level) {
             switch (Level)
@@ -213,7 +217,7 @@ namespace EGL3 {
                     else {
                         UseContextService(Context, Message);
                     }
-                    std::quick_exit(0);
+                    Abort();
                 }
             };
         }
@@ -235,7 +239,7 @@ namespace EGL3 {
                     else {
                         UseContextService(Context, Message);
                     }
-                    std::quick_exit(0);
+                    Abort();
                 }
                 return false;
             };
@@ -251,8 +255,6 @@ namespace EGL3 {
             return UseContextConditional(CreateContext<LogLevelLiteral>(std::forward<Args>(args)...));
         }
     }
-
-    void EnableConsole();
 }
 
 // Because intellisense can't read valid constexpr C++20

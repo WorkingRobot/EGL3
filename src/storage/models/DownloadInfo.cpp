@@ -13,20 +13,19 @@ namespace EGL3::Storage::Models {
     static constexpr std::chrono::milliseconds RefreshTime(500);
     static constexpr double DivideRate = std::chrono::duration_cast<std::chrono::duration<double>>(RefreshTime) / std::chrono::seconds(1);
 
-    DownloadInfo::DownloadInfo(Game::GameId Id, const InstalledGamesRequest& GetInstalledGames) :
+    DownloadInfo::DownloadInfo(Game::GameId Id, std::vector<InstalledGame>& InstalledGames) :
         Id(Id),
         GameConfig(nullptr),
-        GetInstalledGames(GetInstalledGames),
+        InstalledGames(InstalledGames),
         CurrentState(DownloadInfoState::Options),
         StateData(StateOptions(Id))
     {
         auto& Data = GetStateData<StateOptions>();
 
-        auto& Games = GetInstalledGames();
-        auto ConfigPtr = std::find_if(Games.begin(), Games.end(), [this](const InstalledGame& Game) {
+        auto ConfigPtr = std::find_if(InstalledGames.begin(), InstalledGames.end(), [this](const InstalledGame& Game) {
             return Game.IsValid() && Game.GetHeader()->GetGameId() == this->Id;
         });
-        if (ConfigPtr != Games.end()) {
+        if (ConfigPtr != InstalledGames.end()) {
             GameConfig = &*ConfigPtr;
             Data.DefaultArchivePath = Data.ArchivePath = GameConfig->GetPath();
             Data.Flags = GameConfig->GetFlags();
@@ -97,7 +96,7 @@ namespace EGL3::Storage::Models {
         PrimaryTask = std::async(std::launch::async, [GetLatestManifest, this]() {
             {
                 if (!GameConfig) {
-                    GameConfig = &GetInstalledGames().emplace_back();
+                    GameConfig = &InstalledGames.emplace_back();
                 }
                 auto& Data = GetStateData<StateOptions>();
                 GameConfig->SetPath(Data.ArchivePath);

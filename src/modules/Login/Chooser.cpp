@@ -1,9 +1,6 @@
 #include "Chooser.h"
 
-
 namespace EGL3::Modules::Login {
-    using namespace Web::Xmpp;
-
     ChooserModule::ChooserModule(ModuleList& Ctx) :
         Auth(Ctx.GetModule<AuthModule>()),
         Icon(Ctx.GetWidget<Gtk::Image>("AccountChooserIcon")),

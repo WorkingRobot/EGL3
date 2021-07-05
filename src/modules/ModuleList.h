@@ -29,9 +29,9 @@ namespace EGL3::Modules {
 
         Storage::Persistent::Store& GetStorage();
 
-        template<uint32_t Constant, class T>
-        T& Get(const Storage::Persistent::KeyType<Constant, T>& Key) {
-            return Storage.Get(Key);
+        template<class Setting>
+        auto& Get() {
+            return Storage.Get<Setting>();
         }
 
         template<typename T>
