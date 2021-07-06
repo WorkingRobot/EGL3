@@ -5,6 +5,7 @@
 #include "../../web/epic/content/LauncherContentClient.h"
 #include "../../utils/egl/RememberMe.h"
 #include "../ModuleList.h"
+#include "../SysTray.h"
 #include "Stack.h"
 
 #include <gtkmm.h>
@@ -69,6 +70,7 @@ namespace EGL3::Modules::Login {
 
     private:
         StackModule& Stack;
+        SysTrayModule& SysTray;
 
         using AuthDataSetting = Storage::Persistent::Setting<Utils::Crc32("Auth"), Storage::Models::Authorization>;
         Storage::Persistent::SettingHolder<AuthDataSetting> AuthData;

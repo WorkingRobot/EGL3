@@ -1,14 +1,9 @@
 #include "Taskbar.h"
 
+#include "Interop.h"
 #include "Log.h"
 
-// This #define is for gdk_win32_pixbuf_to_hicon_libgtk_only
-// Sorry for the hacky solutions, but they're too useful to just not use
-#define GDK_COMPILATION
-#include <gdk/gdkwin32.h>
-
 #include <ShObjIdl.h>
-#include "..\modules\Taskbar.h"
 
 namespace EGL3::Utils {
     Taskbar::Taskbar() :
@@ -30,28 +25,17 @@ namespace EGL3::Utils {
         CoUninitialize();
     }
 
-    HWND GetHwnd(Gtk::Window& Window) {
-        GdkWindow* InternalWindow = Window.get_window()->gobj();
-        EGL3_VERIFY(gdk_win32_window_is_win32(InternalWindow), "Window is not a Win32 window");
-
-        return gdk_win32_window_get_impl_hwnd(InternalWindow);
-    }
-
-    HICON GetIcon(Gdk::Pixbuf& Pixbuf) {
-        return gdk_win32_pixbuf_to_hicon_libgtk_only(Pixbuf.gobj());
-    }
-
     void Taskbar::SetProgressValue(Gtk::Window& Window, uint64_t Value, uint64_t Total)
     {
         if (TaskbarImpl) {
-            ((ITaskbarList3*)TaskbarImpl)->SetProgressValue(GetHwnd(Window), Value, Total);
+            ((ITaskbarList3*)TaskbarImpl)->SetProgressValue(Interop::GetHwnd(Window), Value, Total);
         }
     }
 
     void Taskbar::SetProgressState(Gtk::Window& Window, ProgressState NewState)
     {
         if (TaskbarImpl) {
-            ((ITaskbarList3*)TaskbarImpl)->SetProgressState(GetHwnd(Window), (TBPFLAG)NewState);
+            ((ITaskbarList3*)TaskbarImpl)->SetProgressState(Interop::GetHwnd(Window), (TBPFLAG)NewState);
         }
     }
 
@@ -65,7 +49,7 @@ namespace EGL3::Utils {
 
             if (Button.Icon) {
                 ButtonImpl.dwMask |= THB_ICON;
-                ButtonImpl.hIcon = GetIcon(*Button.Icon);
+                ButtonImpl.hIcon = Interop::GetIcon(*Button.Icon);
             }
 
             if (!Button.Tooltip.empty()) {
@@ -88,7 +72,7 @@ namespace EGL3::Utils {
         if (TaskbarImpl) {
             auto ButtonsImpl = ConvertButtons(Buttons);
 
-            ((ITaskbarList3*)TaskbarImpl)->ThumbBarAddButtons(GetHwnd(Window), (uint32_t)Buttons.size(), ButtonsImpl.get());
+            ((ITaskbarList3*)TaskbarImpl)->ThumbBarAddButtons(Interop::GetHwnd(Window), (uint32_t)Buttons.size(), ButtonsImpl.get());
         }
     }
 
@@ -97,21 +81,21 @@ namespace EGL3::Utils {
         if (TaskbarImpl) {
             auto ButtonsImpl = ConvertButtons(Buttons);
 
-            ((ITaskbarList3*)TaskbarImpl)->ThumbBarUpdateButtons(GetHwnd(Window), (uint32_t)Buttons.size(), ButtonsImpl.get());
+            ((ITaskbarList3*)TaskbarImpl)->ThumbBarUpdateButtons(Interop::GetHwnd(Window), (uint32_t)Buttons.size(), ButtonsImpl.get());
         }
     }
 
     void Taskbar::SetOverlayIcon(Gtk::Window& Window, Gdk::Pixbuf& Icon)
     {
         if (TaskbarImpl) {
-            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(GetHwnd(Window), GetIcon(Icon), NULL);
+            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(Interop::GetHwnd(Window), Interop::GetIcon(Icon), NULL);
         }
     }
 
     void Taskbar::SetOverlayIcon(Gtk::Window& Window, Gdk::Pixbuf& Icon, const std::wstring& Description)
     {
         if (TaskbarImpl) {
-            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(GetHwnd(Window), GetIcon(Icon), Description.c_str());
+            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(Interop::GetHwnd(Window), Interop::GetIcon(Icon), Description.c_str());
         }
     }
 
@@ -120,7 +104,7 @@ namespace EGL3::Utils {
         if (TaskbarImpl) {
 #pragma warning( push )
 #pragma warning( disable : 6387 )
-            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(GetHwnd(Window), NULL, NULL);
+            ((ITaskbarList3*)TaskbarImpl)->SetOverlayIcon(Interop::GetHwnd(Window), NULL, NULL);
 #pragma warning( pop )
         }
     }
@@ -128,7 +112,7 @@ namespace EGL3::Utils {
     void Taskbar::SetThumbnailTooltip(Gtk::Window& Window, const std::wstring& Tooltip)
     {
         if (TaskbarImpl) {
-            ((ITaskbarList3*)TaskbarImpl)->SetThumbnailTooltip(GetHwnd(Window), Tooltip.c_str());
+            ((ITaskbarList3*)TaskbarImpl)->SetThumbnailTooltip(Interop::GetHwnd(Window), Tooltip.c_str());
         }
     }
 
@@ -138,7 +122,7 @@ namespace EGL3::Utils {
             if (Rectangle.has_zero_area()) {
 #pragma warning( push )
 #pragma warning( disable : 6387 )
-                ((ITaskbarList3*)TaskbarImpl)->SetThumbnailClip(GetHwnd(Window), NULL);
+                ((ITaskbarList3*)TaskbarImpl)->SetThumbnailClip(Interop::GetHwnd(Window), NULL);
 #pragma warning( pop )
             }
             else {
@@ -148,7 +132,7 @@ namespace EGL3::Utils {
                     .right = Rectangle.get_x() + Rectangle.get_width(),
                     .bottom = Rectangle.get_y() + Rectangle.get_height()
                 };
-                ((ITaskbarList3*)TaskbarImpl)->SetThumbnailClip(GetHwnd(Window), &Rect);
+                ((ITaskbarList3*)TaskbarImpl)->SetThumbnailClip(Interop::GetHwnd(Window), &Rect);
             }
         }
     }

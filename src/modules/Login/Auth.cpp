@@ -16,10 +16,13 @@
 namespace EGL3::Modules::Login {
     AuthModule::AuthModule(ModuleList& Ctx) :
         Stack(Ctx.GetModule<StackModule>()),
+        SysTray(Ctx.GetModule<SysTrayModule>()),
         AuthData(Ctx.Get<AuthDataSetting>()),
         SelectedUserData(nullptr)
     {
         LoggedIn.connect([this]() {
+            SysTray.SetLoggedIn(true);
+
             Clients->OnUserDataUpdate.Set([this](const Storage::Models::AuthUserData& NewData) {
                 if (SelectedUserData) {
                     *SelectedUserData = NewData;
@@ -49,6 +52,8 @@ namespace EGL3::Modules::Login {
         });
 
         LoggedOut.connect([this]() {
+            SysTray.SetLoggedIn(false);
+
             AuthData->ClearSelectedUser();
             AuthData.Flush();
         });
@@ -61,7 +66,13 @@ namespace EGL3::Modules::Login {
             Stack.DisplayPrimary();
         });
 
-        Ctx.GetWidget<Gtk::Window>("EGL3App").signal_delete_event().connect([this](GdkEventAny* Event) {
+        SysTray.OnLogIn.Set([this]() {
+            // Nothing to do, we'll let the user select which account they want.
+        });
+        SysTray.OnLogOut.Set([this]() {
+            LogOut();
+        });
+        SysTray.OnQuit.Set([this]() {
             return IsLoggedIn() && !LogOutPreflight.emit();
         });
     }
