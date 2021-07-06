@@ -10,10 +10,10 @@
 namespace EGL3::Modules::Game {
     constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
 
-
     GameModule::GameModule(ModuleList& Ctx) :
         InstalledGames(Ctx.Get<InstalledGamesSetting>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        SysTray(Ctx.GetModule<SysTrayModule>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
         Download(Ctx.GetModule<DownloadModule>()),
         Play(Ctx.GetModule<PlayModule>()),
@@ -97,6 +97,8 @@ namespace EGL3::Modules::Game {
 
         SlotPlayClicked = PlayBtn.signal_clicked().connect([this]() { PrimaryButtonClicked(); });
 
+        SlotSysTrayActionClicked = SysTray.OnActionClicked.connect([this]() { PrimaryButtonClicked(); });
+
         SlotShiftPress = Ctx.GetWidget<Gtk::Window>("EGL3App").signal_key_press_event().connect([this](GdkEventKey* Event) {
             ShiftPressed = Event->state & Gdk::SHIFT_MASK;
             return false;
@@ -117,6 +119,8 @@ namespace EGL3::Modules::Game {
         PlayBtn.set_label(NewLabel);
         PlayBtn.set_sensitive(Playable);
         PlayMenuBtn.set_sensitive(Menuable);
+
+        SysTray.SetActionLabel(NewLabel, Playable);
     }
 
     void GameModule::OnUpdateToCurrentState() {

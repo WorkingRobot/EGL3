@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../utils/SlotHolder.h"
 #include "../utils/SysTray.h"
 #include "../storage/game/GameId.h"
 #include "ModuleList.h"
@@ -10,11 +9,11 @@ namespace EGL3::Modules {
     public:
         SysTrayModule(ModuleList& Ctx);
 
-        void SetInstalledGames(const std::vector<Storage::Game::GameId>& GameIds);
+        void SetActionLabel(const char* Label, bool Clickable);
 
         void SetLoggedIn(bool IsLoggedIn);
 
-        Utils::Callback<void(Storage::Game::GameId GameId)> OnGameClicked;
+        sigc::signal<void()> OnActionClicked;
         Utils::Callback<void()> OnLogIn;
         Utils::Callback<void()> OnLogOut;
         Utils::Callback<bool()> OnQuit;
@@ -26,15 +25,11 @@ namespace EGL3::Modules {
 
         void MenuStackClicked(Gtk::Widget& StackChild);
 
-        std::vector<Storage::Game::GameId> GameIds;
         bool IsLoggedIn;
 
         Glib::RefPtr<Gtk::Application> Application;
         Gtk::ApplicationWindow& Window;
         Gtk::Stack& MainStack;
-
-        Utils::SlotHolder SlotShiftPress;
-        Utils::SlotHolder SlotShiftRelease;
 
         bool ShiftPressed;
 
@@ -44,7 +39,7 @@ namespace EGL3::Modules {
 
         Gtk::Menu Container;
 
-        std::vector<Gtk::MenuItem> InstalledGameItems;
+        Gtk::MenuItem ItemAction;
 
         Gtk::SeparatorMenuItem ItemSeparatorA;
 

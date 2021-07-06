@@ -75,6 +75,7 @@ namespace EGL3::Modules::Game {
         Storage::Persistent::SettingHolder<InstalledGamesSetting> InstalledGames;
 
         AsyncFFModule& AsyncFF;
+        SysTrayModule& SysTray;
         Login::AuthModule& Auth;
         DownloadModule& Download;
         PlayModule& Play;
@@ -87,6 +88,7 @@ namespace EGL3::Modules::Game {
         Gtk::MenuItem& PlayMenuSignOutOpt;
 
         Utils::SlotHolder SlotPlayClicked;
+        Utils::SlotHolder SlotSysTrayActionClicked;
         Utils::SlotHolder SlotShiftPress;
         Utils::SlotHolder SlotShiftRelease;
 

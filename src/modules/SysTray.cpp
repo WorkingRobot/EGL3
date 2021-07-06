@@ -9,7 +9,8 @@ namespace EGL3::Modules {
         IsLoggedIn(false),
         Window(Ctx.GetWidget<Gtk::ApplicationWindow>("EGL3App")),
         MainStack(Ctx.GetWidget<Gtk::Stack>("MainStack")),
-        ShiftPressed(false)
+        ShiftPressed(false),
+        WindowFocusedOutAlready(false)
     {
         Window.signal_delete_event().connect([this](GdkEventAny* Event) {
             if (ShiftPressed) {
@@ -21,6 +22,7 @@ namespace EGL3::Modules {
             return true;
         });
 
+        ItemAction.signal_activate().connect([this]() { OnActionClicked.emit(); });
         ItemLogIn.signal_activate().connect([this]() { Present(); OnLogIn(); });
         ItemLogOut.signal_activate().connect([this]() { Present(); OnLogOut(); });
         ItemQuit.signal_activate().connect([this]() {
@@ -36,12 +38,12 @@ namespace EGL3::Modules {
         ItemLogOut.set_label("Log Out");
         ItemQuit.set_label("Quit");
 
-        SlotShiftPress = Window.signal_key_press_event().connect([this](GdkEventKey* Event) {
+        Window.signal_key_press_event().connect([this](GdkEventKey* Event) {
             ShiftPressed = Event->state & Gdk::SHIFT_MASK;
             return false;
         });
 
-        SlotShiftRelease = Window.signal_key_release_event().connect([this](GdkEventKey* Event) {
+        Window.signal_key_release_event().connect([this](GdkEventKey* Event) {
             ShiftPressed = Event->state & Gdk::SHIFT_MASK;
             return false;
         });
@@ -97,9 +99,10 @@ namespace EGL3::Modules {
         });
     }
 
-    void SysTrayModule::SetInstalledGames(const std::vector<Storage::Game::GameId>& GameIds)
+    void SysTrayModule::SetActionLabel(const char* Label, bool Clickable)
     {
-        this->GameIds = GameIds;
+        ItemAction.set_label(Label);
+        ItemAction.set_sensitive(Clickable);
     }
 
     void SysTrayModule::SetLoggedIn(bool IsLoggedIn)
@@ -112,22 +115,10 @@ namespace EGL3::Modules {
         Container.foreach([this](Gtk::Widget& Child) {
             Container.remove(Child);
         });
-        InstalledGameItems.clear();
         StackSwitcherItems.clear();
 
-        for (auto GameId : GameIds) {
-            std::string Name;
-            if (!Game::GameInfoModule::GetGameName(GameId, Name)) {
-                continue;
-            }
-
-            auto& Item = InstalledGameItems.emplace_back();
-            Item.set_label(Name);
-            Item.signal_activate().connect([this, GameId]() { OnGameClicked(GameId); });
-            Container.add(Item);
-        }
-
-        if (!InstalledGameItems.empty()) {
+        if (IsLoggedIn && !OnActionClicked.empty()) {
+            Container.add(ItemAction);
             Container.add(ItemSeparatorA);
         }
 
@@ -141,7 +132,7 @@ namespace EGL3::Modules {
                 Item.set_label(MainStack.child_property_title(Child));
                 Item.signal_activate().connect([this, &Child]() { Present(); MenuStackClicked(Child); });
                 Container.add(Item);
-                });
+            });
 
             Container.add(ItemSeparatorB);
         }
