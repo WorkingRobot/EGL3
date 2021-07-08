@@ -12,6 +12,8 @@ namespace EGL3::Utils {
 
         ~SysTray();
 
+        void ShowNotification();
+
         Callback<void(int X, int Y)> OnClicked;
         Callback<void(int X, int Y)> OnContextMenu;
 

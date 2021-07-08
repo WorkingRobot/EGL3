@@ -51,6 +51,9 @@ target_include_directories(EGL3 PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
 # NtDll (Used for mmio) #
 target_link_libraries(EGL3 "${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")
 
+# Toast Notifications #
+target_link_libraries(EGL3 WinToast)
+
 # GUI #
 
 # These aren't really needed for compilation and the libraries automatically

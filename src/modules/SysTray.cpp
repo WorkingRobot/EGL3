@@ -99,7 +99,7 @@ namespace EGL3::Modules {
         });
     }
 
-    void SysTrayModule::SetActionLabel(const char* Label, bool Clickable)
+    void SysTrayModule::SetActionLabel(const std::string& Label, bool Clickable)
     {
         ItemAction.set_label(Label);
         ItemAction.set_sensitive(Clickable);
@@ -108,6 +108,16 @@ namespace EGL3::Modules {
     void SysTrayModule::SetLoggedIn(bool IsLoggedIn)
     {
         this->IsLoggedIn = IsLoggedIn;
+    }
+
+    void SysTrayModule::ShowToast(const Utils::ToastTemplate& Toast, const Utils::ToastHandler& Handler)
+    {
+        Toasts.ShowToast(Toast, Handler);
+    }
+
+    void SysTrayModule::Present()
+    {
+        Window.present();
     }
 
     void SysTrayModule::Construct()
@@ -141,11 +151,6 @@ namespace EGL3::Modules {
         Container.add(ItemQuit);
 
         Container.show_all();
-    }
-
-    void SysTrayModule::Present()
-    {
-        Window.present();
     }
 
     void SysTrayModule::MenuStackClicked(Gtk::Widget& StackChild)

@@ -9,6 +9,7 @@
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "../ImageCache.h"
+#include "../SysTray.h"
 
 #include <gtkmm.h>
 
@@ -24,6 +25,8 @@ namespace EGL3::Modules::Friends {
         void RecieveChatMessage(const std::string& AccountId, const std::string& NewMessage);
 
         Utils::Callback<void(const std::string& AccountId, const std::string& Content)> SendChatMessage;
+        Utils::Callback<std::string(const std::string& AccountId)> RequestDisplayName;
+        Utils::Callback<void(const std::string& AccountId)> OpenChatPage;
 
     private:
         void OnNewChatUpdate();
@@ -34,8 +37,9 @@ namespace EGL3::Modules::Friends {
 
         Storage::Models::ChatConversation& GetOrCreateConversation(const std::string& AccountId);
 
-        Modules::ImageCacheModule& ImageCache;
-        Modules::AsyncFFModule& AsyncFF;
+        ImageCacheModule& ImageCache;
+        AsyncFFModule& AsyncFF;
+        SysTrayModule& SysTray;
 
         Gtk::ScrolledWindow& ChatScrollWindow;
         Gtk::Box& ChatBox;

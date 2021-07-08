@@ -88,6 +88,19 @@ namespace EGL3::Modules::Game {
             if (Id == PrimaryGame) {
                 InstallStateHolder.SetHeldState(State::Update);
                 EGL3_LOGF(LogLevel::Info, "Update available to {} ({})", Data.VersionHR, Data.VersionNum);
+
+                SysTray.ShowToast(Utils::ToastTemplate{
+                    .Type = WinToastLib::WinToastTemplateType::Text02,
+                    .TextFields = { L"New Fortnite Update", L"A new version of Fortnite is available!" },
+                    .Actions = { std::format( L"Update to {}", std::filesystem::path(Data.VersionHR).wstring()) }
+                }, {
+                    .OnClicked = [this](int ActionIdx) {
+                        if (GetCurrentState() == State::Update) {
+                            SysTray.Present();
+                            PrimaryButtonClicked();
+                        }
+                    }
+                });
             }
         });
 
@@ -114,7 +127,63 @@ namespace EGL3::Modules::Game {
         UpdateToCurrentState();
     }
 
-    void GameModule::UpdateToState(const char* NewLabel, bool Playable, bool Menuable)
+    void GameModule::GetStateData(State State, std::string& Label, bool& Playable, bool& Menuable)
+    {
+        Playable = false;
+        Menuable = false;
+
+        switch (State)
+        {
+        case State::Play:
+            Label = "Play";
+            Playable = true;
+            Menuable = true;
+            break;
+        case State::Update:
+            Label = "Update";
+            Playable = true;
+            Menuable = true;
+            break;
+        case State::Install:
+            Label = "Install";
+            Playable = true;
+            break;
+        case State::Continue:
+            Label = "Continue";
+            Playable = true;
+            break;
+        case State::Playing:
+            Label = "Playing";
+            break;
+        case State::Updating:
+            Label = "Updating";
+            break;
+        case State::Installing:
+            Label = "Installing";
+            break;
+        case State::Uninstalling:
+            Label = "Uninstalling";
+            break;
+        case State::Unknown:
+        default:
+            Label = "Unknown";
+            break;
+        }
+    }
+
+    GameModule::State GameModule::GetCurrentState() const
+    {
+        return CurrentStateHolder ? CurrentStateHolder->GetHeldState() : State::Unknown;
+    }
+
+    void GameModule::PrimaryButtonClicked()
+    {
+        if (CurrentStateHolder) {
+            CurrentStateHolder->Clicked();
+        }
+    }
+
+    void GameModule::UpdateToState(const std::string& NewLabel, bool Playable, bool Menuable)
     {
         PlayBtn.set_label(NewLabel);
         PlayBtn.set_sensitive(Playable);
@@ -134,49 +203,16 @@ namespace EGL3::Modules::Game {
             }
         }
 
-        switch (CurrentStateHolder ? CurrentStateHolder->GetHeldState() : State::Unknown)
-        {
-        case State::Play:
-            UpdateToState("Play", true, true);
-            break;
-        case State::Update:
-            UpdateToState("Update", true, true);
-            break;
-        case State::Install:
-            UpdateToState("Install", true);
-            break;
-        case State::Continue:
-            UpdateToState("Continue", true);
-            break;
-        case State::Playing:
-            UpdateToState("Playing");
-            break;
-        case State::Updating:
-            UpdateToState("Updating");
-            break;
-        case State::Installing:
-            UpdateToState("Installing");
-            break;
-        case State::Uninstalling:
-            UpdateToState("Uninstalling");
-            break;
-        case State::Unknown:
-        default:
-            UpdateToState("Unknown");
-            break;
-        }
+        std::string Label;
+        bool Playable;
+        bool Menuable;
+        GetStateData(GetCurrentState(), Label, Playable, Menuable);
+        UpdateToState(Label, Playable, Menuable);
     }
 
     void GameModule::UpdateToCurrentState()
     {
         CurrentStateDispatcher.emit();
-    }
-
-    void GameModule::PrimaryButtonClicked()
-    {
-        if (CurrentStateHolder) {
-            CurrentStateHolder->Clicked();
-        }
     }
 
     Storage::Models::InstalledGame* GameModule::GetInstall(Storage::Game::GameId Id) {

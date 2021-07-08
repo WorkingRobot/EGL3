@@ -29,14 +29,18 @@ namespace EGL3::Modules::Game {
             Uninstalling
         };
 
+        static void GetStateData(State State, std::string& Label, bool& Playable, bool& Menuable);
+
+        State GetCurrentState() const;
+
+        void PrimaryButtonClicked();
+
     private:
-        void UpdateToState(const char* NewLabel, bool Playable = false, bool Menuable = false);
+        void UpdateToState(const std::string& NewLabel, bool Playable, bool Menuable);
 
         void OnUpdateToCurrentState();
 
         void UpdateToCurrentState();
-
-        void PrimaryButtonClicked();
 
         Storage::Models::InstalledGame* GetInstall(Storage::Game::GameId Id);
 

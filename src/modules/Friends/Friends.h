@@ -4,6 +4,7 @@
 #include "../../utils/SlotHolder.h"
 #include "../../web/epic/friends/FriendsClient.h"
 #include "../../widgets/FriendItemMenu.h"
+#include "../Game/Game.h"
 #include "../ModuleList.h"
 #include "../AsyncFF.h"
 #include "Chat.h"
@@ -26,6 +27,8 @@ namespace EGL3::Modules::Friends {
         void OnChatReceived(const std::string& AccountId, const std::string& Message);
 
         void OnFriendEvent(const std::string& AccountId, Web::Epic::Friends::FriendEventType Event);
+
+        void OnPartyInvite(const std::string& InviterId);
 
         void OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Storage::Models::Friend& FriendData);
 
@@ -60,8 +63,10 @@ namespace EGL3::Modules::Friends {
         void FriendsUpdate();
 
         Login::AuthModule& Auth;
+        Game::GameModule& Game;
         ImageCacheModule& ImageCache;
         AsyncFFModule& AsyncFF;
+        SysTrayModule& SysTray;
 
         OptionsModule& Options;
         KairosMenuModule& KairosMenu;
@@ -85,6 +90,9 @@ namespace EGL3::Modules::Friends {
         Gtk::Widget& SwitchStackPage1;
         Gtk::Widget& SwitchStackPage2;
         Gtk::Widget& SwitchStackPage3;
+
+        Gtk::Stack& MainStack;
+        Gtk::Widget& MainStackFriends;
 
         Utils::SlotHolder SlotViewFriends;
         Utils::SlotHolder SlotAddFriend;

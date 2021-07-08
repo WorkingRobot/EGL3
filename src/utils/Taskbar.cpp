@@ -12,7 +12,7 @@ namespace EGL3::Utils {
         HRESULT Result = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
         EGL3_VERIFY(Result != CO_E_NOTINITIALIZED, "COM couldn't be initialized");
         CoInitialized = true;
-        EGL3_ENSURE(Result != RPC_E_CHANGED_MODE, LogLevel::Error, "COM has changed mode, this may be problematic");
+        EGL3_ENSURE(Result != RPC_E_CHANGED_MODE, LogLevel::Warning, "COM has changed mode, this may be problematic");
 
         Result = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID*)&TaskbarImpl);
         EGL3_VERIFY(Result == S_OK, "Could not get taskbar COM interface");

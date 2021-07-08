@@ -118,17 +118,17 @@ namespace EGL3::Modules {
         AddModule<StatusPageModule>();
         AddModule<WhatsNewModule>();
 
-        AddModule<Friends::OptionsModule>();
-        AddModule<Friends::ListModule>();
-        AddModule<Friends::KairosMenuModule>();
-        AddModule<Friends::ChatModule>();
-        AddModule<Friends::FriendsModule>();
-
         AddModule<Game::GameInfoModule>();
         AddModule<Game::DownloadModule>();
         AddModule<Game::PlayModule>();
         AddModule<Game::UpdateCheckModule>();
         AddModule<Game::GameModule>();
+
+        AddModule<Friends::OptionsModule>();
+        AddModule<Friends::ListModule>();
+        AddModule<Friends::KairosMenuModule>();
+        AddModule<Friends::ChatModule>();
+        AddModule<Friends::FriendsModule>();
     }
 
     void ModuleList::RemoveModulesLoggedIn()

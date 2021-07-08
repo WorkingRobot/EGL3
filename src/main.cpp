@@ -50,6 +50,7 @@ namespace EGL3 {
 
         void OnActivate() {
             auto& AppWnd = PrimaryData->GetWidget<Gtk::ApplicationWindow>("EGL3App");
+            AppWnd.set_title(Utils::Version::GetAppName());
 
             App->add_window(AppWnd);
 

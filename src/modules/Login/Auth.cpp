@@ -21,8 +21,6 @@ namespace EGL3::Modules::Login {
         SelectedUserData(nullptr)
     {
         LoggedIn.connect([this]() {
-            SysTray.SetLoggedIn(true);
-
             Clients->OnUserDataUpdate.Set([this](const Storage::Models::AuthUserData& NewData) {
                 if (SelectedUserData) {
                     *SelectedUserData = NewData;
@@ -63,6 +61,7 @@ namespace EGL3::Modules::Login {
         });
 
         LoggedInDispatcher.connect([this]() {
+            SysTray.SetLoggedIn(true);
             Stack.DisplayPrimary();
         });
 

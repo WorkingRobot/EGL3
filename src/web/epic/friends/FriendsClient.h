@@ -39,6 +39,7 @@ namespace EGL3::Web::Epic::Friends {
         Utils::Callback<void(const Presence& Presence)> OnPresenceUpdate;
         Utils::Callback<void(const std::string& AccountId, const std::string& Message)> OnChatReceived;
         Utils::Callback<void(const std::string& AccountId, FriendEventType Event)> OnFriendEvent;
+        Utils::Callback<void(const std::string& AccountId)> OnPartyInvite;
 
     private:
         void SendPresenceEOS();

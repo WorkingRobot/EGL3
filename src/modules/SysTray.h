@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utils/SysTray.h"
+#include "../utils/Toasts.h"
 #include "../storage/game/GameId.h"
 #include "ModuleList.h"
 
@@ -9,9 +10,13 @@ namespace EGL3::Modules {
     public:
         SysTrayModule(ModuleList& Ctx);
 
-        void SetActionLabel(const char* Label, bool Clickable);
+        void SetActionLabel(const std::string& Label, bool Clickable);
 
         void SetLoggedIn(bool IsLoggedIn);
+
+        void ShowToast(const Utils::ToastTemplate& Toast, const Utils::ToastHandler& Handler = {});
+
+        void Present();
 
         sigc::signal<void()> OnActionClicked;
         Utils::Callback<void()> OnLogIn;
@@ -20,8 +25,6 @@ namespace EGL3::Modules {
 
     private:
         void Construct();
-
-        void Present();
 
         void MenuStackClicked(Gtk::Widget& StackChild);
 
@@ -33,7 +36,9 @@ namespace EGL3::Modules {
 
         bool ShiftPressed;
 
+        Utils::Toasts Toasts;
         std::optional<Utils::SysTray> Tray;
+
         bool WindowFocusedOutAlready;
         std::optional<Gtk::Window> HiddenWindow;
 

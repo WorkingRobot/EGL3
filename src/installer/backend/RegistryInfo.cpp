@@ -3,6 +3,9 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
+#include <ShObjIdl.h>
+#include <propkey.h>
+#include <propvarutil.h>
 #include <ShlObj_core.h>
 
 namespace EGL3::Installer::Backend {
@@ -141,11 +144,27 @@ namespace EGL3::Installer::Backend {
         }
 
         ShellLink->SetPath((InstallDirectory / LaunchExe).string().c_str());
+        ShellLink->SetArguments("");
         ShellLink->SetWorkingDirectory(InstallDirectory.string().c_str());
+
+        IPropertyStore* PropertyStore;
+        Result = ShellLink->QueryInterface(IID_IPropertyStore, (LPVOID*)&PropertyStore);
+        if (FAILED(Result)) {
+            ShellLink->Release();
+            CoUninitialize();
+            return false;
+        }
+
+        PROPVARIANT AumiPropVar;
+        InitPropVariantFromString(std::filesystem::path(ProductGuid).c_str(), &AumiPropVar);
+        PropertyStore->SetValue(PKEY_AppUserModel_ID, AumiPropVar);
+        PropertyStore->Commit();
+        PropertyStore->Release();
 
         IPersistFile* PersistFile;
         Result = ShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&PersistFile);
         if (FAILED(Result)) {
+            PropVariantClear(&AumiPropVar);
             ShellLink->Release();
             CoUninitialize();
             return false;
@@ -154,6 +173,7 @@ namespace EGL3::Installer::Backend {
         Result = PersistFile->Save(GetShortcutPath().c_str(), TRUE);
 
         PersistFile->Release();
+        PropVariantClear(&AumiPropVar);
         ShellLink->Release();
         CoUninitialize();
 

@@ -11,32 +11,37 @@ namespace EGL3::Modules::Friends {
     using namespace Storage::Models;
 
     FriendsModule::FriendsModule(ModuleList& Ctx) :
-            Auth(Ctx.GetModule<Login::AuthModule>()),
-            ImageCache(Ctx.GetModule<ImageCacheModule>()),
-            AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        Auth(Ctx.GetModule<Login::AuthModule>()),
+        Game(Ctx.GetModule<Game::GameModule>()),
+        ImageCache(Ctx.GetModule<ImageCacheModule>()),
+        AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        SysTray(Ctx.GetModule<SysTrayModule>()),
 
-            Options(Ctx.GetModule<OptionsModule>()),
-            KairosMenu(Ctx.GetModule<KairosMenuModule>()),
-            FriendsList(Ctx.GetModule<ListModule>()),
-            FriendsChat(Ctx.GetModule<ChatModule>()),
+        Options(Ctx.GetModule<OptionsModule>()),
+        KairosMenu(Ctx.GetModule<KairosMenuModule>()),
+        FriendsList(Ctx.GetModule<ListModule>()),
+        FriendsChat(Ctx.GetModule<ChatModule>()),
 
-            ViewFriendsBtn(Ctx.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
-            AddFriendBtn(Ctx.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
+        ViewFriendsBtn(Ctx.GetWidget<Gtk::Button>("FriendViewFriendsBtn")),
+        AddFriendBtn(Ctx.GetWidget<Gtk::Button>("FriendsOpenSendRequestBtn")),
 
-            AddFriendSendBtn(Ctx.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
-            AddFriendEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
-            AddFriendStatus(Ctx.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
+        AddFriendSendBtn(Ctx.GetWidget<Gtk::Button>("FriendsSendRequestBtn")),
+        AddFriendEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSendRequestEntry")),
+        AddFriendStatus(Ctx.GetWidget<Gtk::Label>("FriendsSendRequestStatus")),
 
-            SetNicknameLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameLabel")),
-            SetNicknameBtn(Ctx.GetWidget<Gtk::Button>("FriendsSetNicknameBtn")),
-            SetNicknameEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSetNicknameEntry")),
-            SetNicknameStatusLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameStatus")),
+        SetNicknameLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameLabel")),
+        SetNicknameBtn(Ctx.GetWidget<Gtk::Button>("FriendsSetNicknameBtn")),
+        SetNicknameEntry(Ctx.GetWidget<Gtk::Entry>("FriendsSetNicknameEntry")),
+        SetNicknameStatusLabel(Ctx.GetWidget<Gtk::Label>("FriendsSetNicknameStatus")),
 
-            SwitchStack(Ctx.GetWidget<Gtk::Stack>("FriendsStack")),
-            SwitchStackPage0(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage0")),
-            SwitchStackPage1(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage1")),
-            SwitchStackPage2(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage2")),
-            SwitchStackPage3(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage3"))
+        SwitchStack(Ctx.GetWidget<Gtk::Stack>("FriendsStack")),
+        SwitchStackPage0(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage0")),
+        SwitchStackPage1(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage1")),
+        SwitchStackPage2(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage2")),
+        SwitchStackPage3(Ctx.GetWidget<Gtk::Widget>("FriendsStackPage3")),
+
+        MainStack(Ctx.GetWidget<Gtk::Stack>("MainStack")),
+        MainStackFriends(Ctx.GetWidget<Gtk::Widget>("AccountsContainer"))
     {
         {
             SlotViewFriends = ViewFriendsBtn.signal_clicked().connect([this]() { OnOpenViewFriends(); });
@@ -57,6 +62,18 @@ namespace EGL3::Modules::Friends {
         FriendsChat.SendChatMessage.Set([this](const auto& AccountId, const auto& Message) {
             EGL3_VERIFY(FriendsClient.has_value(), "Didn't send user message. Friends client isn't created yet");
             FriendsClient->SendChat(AccountId, Message);
+        });
+
+        FriendsChat.RequestDisplayName.Set([this](const auto& AccountId) -> std::string {
+            auto FriendPtr = FriendsList.GetUser(AccountId);
+            return FriendPtr ? FriendPtr->Get().GetDisplayName() : AccountId;
+        });
+
+        FriendsChat.OpenChatPage.Set([this](const auto& AccountId) {
+            auto FriendPtr = FriendsList.GetUser(AccountId);
+            if (FriendPtr && FriendPtr->GetType() == Storage::Models::FriendType::NORMAL) {
+                OnOpenChatPage(*FriendPtr);
+            }
         });
 
         {
@@ -94,6 +111,7 @@ namespace EGL3::Modules::Friends {
                 Client.OnPresenceUpdate.Set([this](const auto& A) { OnPresenceUpdate(A); });
                 Client.OnChatReceived.Set([this](const auto& A, const auto& B) { OnChatReceived(A, B); });
                 Client.OnFriendEvent.Set([this](const auto& A, auto B) { OnFriendEvent(A, B); });
+                Client.OnPartyInvite.Set([this](const auto& A) { OnPartyInvite(A); });
             });
 
             AddFriendBtn.set_sensitive(true);
@@ -136,6 +154,49 @@ namespace EGL3::Modules::Friends {
         FriendUpdateData.emplace_back(AccountId, Event);
 
         FriendUpdateDispatcher.emit();
+    }
+
+    void FriendsModule::OnPartyInvite(const std::string& InviterId)
+    {
+        auto FriendPtr = FriendsList.GetUser(InviterId);
+        if (!FriendPtr) {
+            return;
+        }
+
+        Utils::ToastTemplate Toast{
+            .Type = WinToastLib::WinToastTemplateType::Text02,
+            .TextFields = { L"Party Invite", std::format(L"{} invited you to a party!", std::filesystem::path(FriendPtr->Get().GetDisplayName()).wstring()) }
+        };
+
+        auto State = Game.GetCurrentState();
+        std::string Label;
+        bool Playable;
+        bool Menuable;
+        Game.GetStateData(State, Label, Playable, Menuable);
+
+        if (Playable) {
+            Toast.Actions.emplace_back(std::filesystem::path(Label).wstring());
+        }
+        else {
+            Toast.Type = WinToastLib::WinToastTemplateType::Text04;
+            if (State == Game::GameModule::State::Playing) {
+                Toast.TextFields.emplace_back(L"You're already playing, you can accept the invite in-game.");
+            }
+            else {
+                Toast.TextFields.emplace_back(L"Launch Fortnite to accept the invite.");
+            }
+        }
+        Toast.Actions.emplace_back(L"Ignore");
+            
+        SysTray.ShowToast(Toast, {
+            .OnClicked = [this, Playable, State](int ActionIdx) {
+                // Only allow the button to work if the state is the same as before (ABA problems aren't really an issue here)
+                if (ActionIdx == 0 && Playable && Game.GetCurrentState() == State) {
+                    SysTray.Present();
+                    Game.PrimaryButtonClicked();
+                }
+            }
+        });
     }
 
     void FriendsModule::OnFriendAction(Widgets::FriendItemMenu::ClickAction Action, Friend& FriendData) {
@@ -199,6 +260,7 @@ namespace EGL3::Modules::Friends {
 
         ViewFriendsBtn.set_visible(true);
         SwitchStack.set_visible_child(SwitchStackPage2);
+        MainStack.set_visible_child(MainStackFriends);
     }
 
     void FriendsModule::OnSendFriendRequest() {

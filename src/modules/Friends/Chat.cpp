@@ -6,12 +6,14 @@ namespace EGL3::Modules::Friends {
     ChatModule::ChatModule(ModuleList& Ctx) :
         ImageCache(Ctx.GetModule<ImageCacheModule>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
+        SysTray(Ctx.GetModule<SysTrayModule>()),
         ChatScrollWindow(Ctx.GetWidget<Gtk::ScrolledWindow>("FriendsChatScrollWindow")),
         ChatBox(Ctx.GetWidget<Gtk::Box>("FriendsChatBox")),
         ChatEntryContainer(Ctx.GetWidget<Gtk::EventBox>("FriendsChatEntryContainer")),
         ChatEntry(Ctx.GetWidget<Gtk::Entry>("FriendsChatEntry")),
         SelectedUserList(Ctx.GetWidget<Gtk::TreeView>("FriendsChatTree"), ImageCache),
-        SelectedUserModel(nullptr)
+        SelectedUserModel(nullptr),
+        RequestDisplayName([](const auto&) { return ""; })
     {
         ChatEntryContainer.set_events(Gdk::KEY_PRESS_MASK);
         SlotSendKeybind = ChatEntry.signal_key_press_event().connect([this](GdkEventKey* evt) {
@@ -105,6 +107,20 @@ namespace EGL3::Modules::Friends {
             NewChatData.emplace_back(std::ref(Message));
 
             NewChatDispatcher.emit();
+        }
+        else if (Recieved) {
+            SysTray.ShowToast(Utils::ToastTemplate{
+                .Type = WinToastLib::WinToastTemplateType::Text02,
+                .TextFields = { std::format(L"New Chat Message From {}", std::filesystem::path(RequestDisplayName(AccountId)).wstring()), std::filesystem::path(NewMessage).wstring() },
+                .Actions = { L"Reply", L"Dismiss" }
+            }, {
+                .OnClicked = [this, AccountId](int ActionIdx) {
+                    if (ActionIdx == 0) {
+                        SysTray.Present();
+                        OpenChatPage(AccountId);
+                    }
+                }
+            });
         }
     }
 

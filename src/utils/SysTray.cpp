@@ -53,6 +53,20 @@ namespace EGL3::Utils {
         SysTrays.erase((HWND)Hwnd);
     }
 
+    void SysTray::ShowNotification()
+    {
+        NOTIFYICONDATA Data{
+            .cbSize = sizeof(Data),
+            .uFlags = NIF_GUID | NIF_INFO,
+            .szInfo = "info data here",
+            .szInfoTitle = "EGL3 info title",
+            .dwInfoFlags = NIIF_WARNING,
+            .guidItem = *(GUID*)&Guid,
+        };
+
+        EGL3_ENSURE(Shell_NotifyIcon(NIM_MODIFY, &Data), LogLevel::Error, "Could not display notification");
+    }
+
     SysTray* EGL3::Utils::SysTray::GetSysTray(void* Hwnd)
     {
         auto Itr = SysTrays.find((HWND)Hwnd);
