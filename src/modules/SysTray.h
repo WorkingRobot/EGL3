@@ -16,7 +16,25 @@ namespace EGL3::Modules {
 
         void ShowToast(const Utils::ToastTemplate& Toast, const Utils::ToastHandler& Handler = {});
 
-        void Present();
+        enum class AppState : uint8_t {
+            Focused,
+            Unfocused,
+            Minimized,
+            SysTray
+        };
+
+        enum class StackTab : uint8_t {
+            Download,
+            News,
+            Account,
+            Settings,
+            About,
+            Unknown
+        };
+
+        AppState GetAppState() const;
+
+        void SetAppState(AppState NewState, StackTab Tab = StackTab::Unknown);
 
         sigc::signal<void()> OnActionClicked;
         Utils::Callback<void()> OnLogIn;
@@ -33,6 +51,11 @@ namespace EGL3::Modules {
         Glib::RefPtr<Gtk::Application> Application;
         Gtk::ApplicationWindow& Window;
         Gtk::Stack& MainStack;
+        Gtk::Widget& TabDownload;
+        Gtk::Widget& TabNews;
+        Gtk::Widget& TabFriends;
+        Gtk::Widget& TabSettings;
+        Gtk::Widget& TabAbout;
 
         bool ShiftPressed;
 

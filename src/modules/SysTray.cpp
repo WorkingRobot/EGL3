@@ -9,6 +9,11 @@ namespace EGL3::Modules {
         IsLoggedIn(false),
         Window(Ctx.GetWidget<Gtk::ApplicationWindow>("EGL3App")),
         MainStack(Ctx.GetWidget<Gtk::Stack>("MainStack")),
+        TabDownload(Ctx.GetWidget<Gtk::Widget>("DownloadStack")),
+        TabNews(Ctx.GetWidget<Gtk::Widget>("NewsContainer")),
+        TabFriends(Ctx.GetWidget<Gtk::Widget>("AccountsContainer")),
+        TabSettings(Ctx.GetWidget<Gtk::Widget>("SettingsContainer")),
+        TabAbout(Ctx.GetWidget<Gtk::Widget>("AboutContainer")),
         ShiftPressed(false),
         WindowFocusedOutAlready(false)
     {
@@ -23,8 +28,8 @@ namespace EGL3::Modules {
         });
 
         ItemAction.signal_activate().connect([this]() { OnActionClicked.emit(); });
-        ItemLogIn.signal_activate().connect([this]() { Present(); OnLogIn(); });
-        ItemLogOut.signal_activate().connect([this]() { Present(); OnLogOut(); });
+        ItemLogIn.signal_activate().connect([this]() { SetAppState(AppState::Focused); OnLogIn(); });
+        ItemLogOut.signal_activate().connect([this]() { SetAppState(AppState::Focused); OnLogOut(); });
         ItemQuit.signal_activate().connect([this]() {
             if (!OnQuit()) {
                 Window.hide();
@@ -55,7 +60,7 @@ namespace EGL3::Modules {
             Tray.emplace(Window);
 
             Tray->OnClicked.Set([this](int X, int Y) {
-                Present();
+                SetAppState(AppState::Focused);
             });
 
             Tray->OnContextMenu.Set([this](int X, int Y) {
@@ -97,6 +102,37 @@ namespace EGL3::Modules {
                 Container.popup(2, GDK_CURRENT_TIME);
             });
         });
+
+        Window.signal_window_state_event().connect([this](GdkEventWindowState* Event) {
+            if (Event->changed_mask & Gdk::WINDOW_STATE_WITHDRAWN) {
+                printf("%swithdrawn\n", Event->new_window_state & Gdk::WINDOW_STATE_WITHDRAWN ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_ICONIFIED) {
+                printf("%siconified\n", Event->new_window_state & Gdk::WINDOW_STATE_ICONIFIED ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_MAXIMIZED) {
+                printf("%smaximized\n", Event->new_window_state & Gdk::WINDOW_STATE_MAXIMIZED ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_STICKY) {
+                printf("%ssticky\n", Event->new_window_state & Gdk::WINDOW_STATE_STICKY ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_FULLSCREEN) {
+                printf("%sfullscreen\n", Event->new_window_state & Gdk::WINDOW_STATE_FULLSCREEN ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_ABOVE) {
+                printf("%sabove\n", Event->new_window_state & Gdk::WINDOW_STATE_ABOVE ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_BELOW) {
+                printf("%sbelow\n", Event->new_window_state & Gdk::WINDOW_STATE_BELOW ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_FOCUSED) {
+                printf("%sfocused\n", Event->new_window_state & Gdk::WINDOW_STATE_FOCUSED ? "" : "not ");
+            }
+            if (Event->changed_mask & Gdk::WINDOW_STATE_TILED) {
+                printf("%stiled\n", Event->new_window_state & Gdk::WINDOW_STATE_TILED ? "" : "not ");
+            }
+            return false;
+        });
     }
 
     void SysTrayModule::SetActionLabel(const std::string& Label, bool Clickable)
@@ -115,9 +151,54 @@ namespace EGL3::Modules {
         Toasts.ShowToast(Toast, Handler);
     }
 
-    void SysTrayModule::Present()
+    SysTrayModule::AppState SysTrayModule::GetAppState() const
     {
-        Window.present();
+        if (Window.get_focus_visible()) {
+            return AppState::Focused;
+        }
+        return AppState::Minimized;
+    }
+
+    void SysTrayModule::SetAppState(AppState NewState, StackTab Tab)
+    {
+        switch (NewState)
+        {
+        case AppState::Focused:
+            Window.present();
+            break;
+        case AppState::Unfocused:
+            Window.show();
+            Window.deiconify();
+            Window.unset_focus();
+            break;
+        case AppState::Minimized:
+            Window.show();
+            Window.unset_focus();
+            Window.iconify();
+            break;
+        case AppState::SysTray:
+            Window.hide();
+            break;
+        }
+
+        switch (Tab)
+        {
+        case StackTab::Download:
+            MainStack.set_visible_child(TabDownload);
+            break;
+        case StackTab::News:
+            MainStack.set_visible_child(TabNews);
+            break;
+        case StackTab::Account:
+            MainStack.set_visible_child(TabFriends);
+            break;
+        case StackTab::Settings:
+            MainStack.set_visible_child(TabSettings);
+            break;
+        case StackTab::About:
+            MainStack.set_visible_child(TabAbout);
+            break;
+        }
     }
 
     void SysTrayModule::Construct()
@@ -140,7 +221,7 @@ namespace EGL3::Modules {
 
                 auto& Item = StackSwitcherItems.emplace_back();
                 Item.set_label(MainStack.child_property_title(Child));
-                Item.signal_activate().connect([this, &Child]() { Present(); MenuStackClicked(Child); });
+                Item.signal_activate().connect([this, &Child]() { SetAppState(AppState::Focused); MenuStackClicked(Child); });
                 Container.add(Item);
             });
 

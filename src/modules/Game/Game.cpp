@@ -90,13 +90,13 @@ namespace EGL3::Modules::Game {
                 EGL3_LOGF(LogLevel::Info, "Update available to {} ({})", Data.VersionHR, Data.VersionNum);
 
                 SysTray.ShowToast(Utils::ToastTemplate{
-                    .Type = WinToastLib::WinToastTemplateType::Text02,
-                    .TextFields = { L"New Fortnite Update", L"A new version of Fortnite is available!" },
-                    .Actions = { std::format( L"Update to {}", std::filesystem::path(Data.VersionHR).wstring()) }
+                    .Type = Utils::ToastType::Text02,
+                    .TextFields = { "New Fortnite Update", "A new version of Fortnite is available!" },
+                    .Actions = { std::format("Update to {}", Data.VersionHR) }
                 }, {
                     .OnClicked = [this](int ActionIdx) {
                         if (GetCurrentState() == State::Update) {
-                            SysTray.Present();
+                            SysTray.SetAppState(SysTrayModule::AppState::Focused);
                             PrimaryButtonClicked();
                         }
                     }

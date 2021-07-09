@@ -36,7 +36,7 @@ namespace EGL3::Modules::Friends {
 
     void ChatModule::SetUser(Friend& Friend)
     {
-        if (!EGL3_ENSURE(!SelectedUserModel, LogLevel::Warning, "Trying to set selected user before clearing. Clearing now.")) {
+        if (!SelectedUserModel) {
             ClearUser();
         }
 
@@ -110,13 +110,13 @@ namespace EGL3::Modules::Friends {
         }
         else if (Recieved) {
             SysTray.ShowToast(Utils::ToastTemplate{
-                .Type = WinToastLib::WinToastTemplateType::Text02,
-                .TextFields = { std::format(L"New Chat Message From {}", std::filesystem::path(RequestDisplayName(AccountId)).wstring()), std::filesystem::path(NewMessage).wstring() },
-                .Actions = { L"Reply", L"Dismiss" }
+                .Type = Utils::ToastType::Text02,
+                .TextFields = { std::format("New Chat Message From {}", RequestDisplayName(AccountId)), NewMessage },
+                .Actions = { "Reply", "Dismiss" }
             }, {
                 .OnClicked = [this, AccountId](int ActionIdx) {
                     if (ActionIdx == 0) {
-                        SysTray.Present();
+                        SysTray.SetAppState(SysTrayModule::AppState::Focused, SysTrayModule::StackTab::Account);
                         OpenChatPage(AccountId);
                     }
                 }

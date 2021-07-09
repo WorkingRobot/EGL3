@@ -1,6 +1,7 @@
 #include "Toasts.h"
 
 #include "Log.h"
+#include "Version.h"
 
 #include <glibmm.h>
 
@@ -8,12 +9,14 @@ namespace EGL3::Utils {
     using namespace WinToastLib;
 
     Toasts::Toasts() :
-        Enabled(false)
+        Enabled(false),
+        Impl(Utils::Version::GetAppName())
     {
-        if (WinToast::isCompatible()) {
+        if (WinToast::IsCompatible()) {
             // This AUMI is set to the ProductGuid in packer_main.cpp
             // The ProductGUID is set to the AUMI in the shortcut in RegistryInfo.cpp
-            if (Impl.initialize(L"EGL3")) {
+            auto Error = Impl.Initialize();
+            if (EGL3_ENSUREF(Error == WinToastLib::Error::Success, LogLevel::Warning, "Toasts (notifications) have failed to initialize (Error: {})", (int)Error)) {
                 Enabled = true;
             }
         }
@@ -31,7 +34,7 @@ namespace EGL3::Utils {
         }
 
         Glib::signal_idle().connect_once([this, Toast, Handler]() {
-            Impl.showToast(Toast, Handler);
+            Impl.ShowToast(Toast, Handler);
         }, Glib::PRIORITY_DEFAULT);
     }
 
@@ -42,7 +45,7 @@ namespace EGL3::Utils {
         }
         
         Glib::signal_idle().connect_once([this]() {
-            Impl.clear();
+            Impl.ClearToasts();
         }, Glib::PRIORITY_DEFAULT);
     }
 

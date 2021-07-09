@@ -164,8 +164,8 @@ namespace EGL3::Modules::Friends {
         }
 
         Utils::ToastTemplate Toast{
-            .Type = WinToastLib::WinToastTemplateType::Text02,
-            .TextFields = { L"Party Invite", std::format(L"{} invited you to a party!", std::filesystem::path(FriendPtr->Get().GetDisplayName()).wstring()) }
+            .Type = Utils::ToastType::Text02,
+            .TextFields = { "Party Invite", std::format("{} invited you to a party!", FriendPtr->Get().GetDisplayName()) }
         };
 
         auto State = Game.GetCurrentState();
@@ -175,24 +175,24 @@ namespace EGL3::Modules::Friends {
         Game.GetStateData(State, Label, Playable, Menuable);
 
         if (Playable) {
-            Toast.Actions.emplace_back(std::filesystem::path(Label).wstring());
+            Toast.Actions.emplace_back(Label);
         }
         else {
-            Toast.Type = WinToastLib::WinToastTemplateType::Text04;
+            Toast.Type = Utils::ToastType::Text04;
             if (State == Game::GameModule::State::Playing) {
-                Toast.TextFields.emplace_back(L"You're already playing, you can accept the invite in-game.");
+                Toast.TextFields.emplace_back("You're already playing, you can accept the invite in-game.");
             }
             else {
-                Toast.TextFields.emplace_back(L"Launch Fortnite to accept the invite.");
+                Toast.TextFields.emplace_back("Launch Fortnite to accept the invite.");
             }
         }
-        Toast.Actions.emplace_back(L"Ignore");
+        Toast.Actions.emplace_back("Ignore");
             
         SysTray.ShowToast(Toast, {
             .OnClicked = [this, Playable, State](int ActionIdx) {
                 // Only allow the button to work if the state is the same as before (ABA problems aren't really an issue here)
                 if (ActionIdx == 0 && Playable && Game.GetCurrentState() == State) {
-                    SysTray.Present();
+                    SysTray.SetAppState(SysTrayModule::AppState::Focused);
                     Game.PrimaryButtonClicked();
                 }
             }
@@ -566,6 +566,26 @@ namespace EGL3::Modules::Friends {
                 break;
             case Web::Epic::Friends::FriendEventType::RequestInbound:
                 FriendPtr->SetRequestInbound(Auth.GetClientLauncher(), AsyncFF);
+                SysTray.ShowToast(Utils::ToastTemplate{
+                    .Type = Utils::ToastType::Text02,
+                    .TextFields = { "New Friend Request", std::format("{} would like to be your friend", FriendPtr->Get().GetDisplayName()) },
+                    .Actions = { "Accept", "Decline" }
+                }, {
+                    .OnClicked = [this, FriendPtr](int ActionIdx) {
+                        switch (ActionIdx)
+                        {
+                        case 0:
+                            OnFriendAction(Widgets::FriendItemMenu::ClickAction::ACCEPT_REQUEST, *FriendPtr);
+                            break;
+                        case 1:
+                            OnFriendAction(Widgets::FriendItemMenu::ClickAction::DECLINE_REQUEST, *FriendPtr);
+                            break;
+                        case -1:
+                        default:
+                            break;
+                        }
+                    }
+                });
                 break;
             case Web::Epic::Friends::FriendEventType::RequestOutbound:
                 FriendPtr->SetRequestOutbound(Auth.GetClientLauncher(), AsyncFF);

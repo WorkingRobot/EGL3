@@ -5,10 +5,10 @@
 #include <wintoastlib.h>
 
 namespace EGL3::Utils {
-    using ToastTemplate = WinToastLib::WinToastTemplate;
-    using ToastType = WinToastLib::WinToastTemplateType;
-    using ToastDismissalReason = WinToastLib::WinToastDismissalReason;
-    using ToastHandler = WinToastLib::WinToastHandler;
+    using ToastTemplate = WinToastLib::Template;
+    using ToastType = WinToastLib::TemplateType;
+    using ToastDismissalReason = WinToastLib::DismissalReason;
+    using ToastHandler = WinToastLib::Handler;
 
     class Toasts {
     public:

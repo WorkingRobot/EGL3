@@ -3,4 +3,4 @@
 	url = https://github.com/WorkingRobot/libstrophe
 [submodule "WinToast"]
 	path = WinToast
-	url = https://github.com/mohabouje/WinToast.git
+	url = https://github.com/WorkingRobot/WinToast.git
