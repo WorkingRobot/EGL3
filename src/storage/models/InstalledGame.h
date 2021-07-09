@@ -107,6 +107,6 @@ namespace EGL3::Storage::Models {
         };
 
         mutable std::variant<std::monostate, Storage::Game::Archive, MetadataInfo> Data;
-        Service::Pipe::ServicedMount MountData;
+        std::optional<Service::Pipe::ServicedMount> MountData;
     };
 }

@@ -116,26 +116,31 @@ namespace EGL3::Storage::Models {
 
     bool InstalledGame::IsMounted() const
     {
-        return MountData.IsMounted();
+        return MountData->IsMounted();
     }
 
     bool InstalledGame::Mount(Service::Pipe::Client& Client)
     {
-        if (!MountData) {
-            MountData = Service::Pipe::ServicedMount(Client, Path);
-            return MountData.IsMounted();
+        if (!MountData.has_value()) {
+            if (!MountData.emplace(Client, Path).IsMounted()){
+                MountData.reset();
+                return false;
+            }
         }
         return true;
     }
 
     void InstalledGame::Unmount()
     {
-        MountData.Unmount();
+        if (MountData.has_value()) {
+            MountData->Unmount();
+            MountData.reset();
+        }
     }
 
     const std::filesystem::path& InstalledGame::GetMountPath()
     {
-        return MountData.GetMountPath();
+        return MountData->GetMountPath();
     }
 
     const std::filesystem::path& InstalledGame::GetPath() const
