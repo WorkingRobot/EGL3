@@ -26,12 +26,16 @@
 #include "Login/Stack.h"
 #include "Login/Auth.h"
 
+#include "../web/Websocket.h"
+
 namespace EGL3::Modules {
     ModuleList::ModuleList(const std::filesystem::path& BuilderPath, const std::filesystem::path& StoragePath) :
         Builder(BuilderPath),
         Storage(StoragePath),
         AuthedModulesIdx(0)
     {
+        Web::Websocket::Initialize();
+
         AddModulesCore();
 
         LoggedInDispatcher.connect([this]() {
@@ -57,6 +61,8 @@ namespace EGL3::Modules {
         while ((Itr = Modules.rbegin()) != Modules.rend()) {
             Modules.erase(--(Itr.base()));
         }
+
+        Web::Websocket::Uninitialize();
     }
 
     bool ModuleList::DisplayConfirmation(const Glib::ustring& Message, const Glib::ustring& Title, bool UseMarkup) const
