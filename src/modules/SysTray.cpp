@@ -102,37 +102,6 @@ namespace EGL3::Modules {
                 Container.popup(2, GDK_CURRENT_TIME);
             });
         });
-
-        Window.signal_window_state_event().connect([this](GdkEventWindowState* Event) {
-            if (Event->changed_mask & Gdk::WINDOW_STATE_WITHDRAWN) {
-                printf("%swithdrawn\n", Event->new_window_state & Gdk::WINDOW_STATE_WITHDRAWN ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_ICONIFIED) {
-                printf("%siconified\n", Event->new_window_state & Gdk::WINDOW_STATE_ICONIFIED ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_MAXIMIZED) {
-                printf("%smaximized\n", Event->new_window_state & Gdk::WINDOW_STATE_MAXIMIZED ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_STICKY) {
-                printf("%ssticky\n", Event->new_window_state & Gdk::WINDOW_STATE_STICKY ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_FULLSCREEN) {
-                printf("%sfullscreen\n", Event->new_window_state & Gdk::WINDOW_STATE_FULLSCREEN ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_ABOVE) {
-                printf("%sabove\n", Event->new_window_state & Gdk::WINDOW_STATE_ABOVE ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_BELOW) {
-                printf("%sbelow\n", Event->new_window_state & Gdk::WINDOW_STATE_BELOW ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_FOCUSED) {
-                printf("%sfocused\n", Event->new_window_state & Gdk::WINDOW_STATE_FOCUSED ? "" : "not ");
-            }
-            if (Event->changed_mask & Gdk::WINDOW_STATE_TILED) {
-                printf("%stiled\n", Event->new_window_state & Gdk::WINDOW_STATE_TILED ? "" : "not ");
-            }
-            return false;
-        });
     }
 
     void SysTrayModule::SetActionLabel(const std::string& Label, bool Clickable)
