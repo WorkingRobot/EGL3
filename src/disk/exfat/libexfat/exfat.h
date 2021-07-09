@@ -24,11 +24,6 @@
 #ifndef EXFAT_H_INCLUDED
 #define EXFAT_H_INCLUDED
 
-#ifndef ANDROID
-/* Android.bp is used instead of autotools when targeting Android */
-#include "config.h"
-#endif
-#include "compiler.h"
 #include "exfatfs.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -146,10 +141,10 @@ struct exfat_human_bytes
 extern int exfat_errors;
 extern int exfat_errors_fixed;
 
-void exfat_bug(const char* format, ...) PRINTF NORETURN;
-void exfat_error(const char* format, ...) PRINTF;
-void exfat_warn(const char* format, ...) PRINTF;
-void exfat_debug(const char* format, ...) PRINTF;
+_declspec(noreturn) void exfat_bug(const char* format, ...);
+void exfat_error(const char* format, ...);
+void exfat_warn(const char* format, ...);
+void exfat_debug(const char* format, ...);
 
 struct exfat_dev* exfat_open(void* input, enum exfat_mode mode);
 int exfat_close(struct exfat_dev* dev);

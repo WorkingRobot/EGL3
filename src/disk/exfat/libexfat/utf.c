@@ -50,7 +50,7 @@ static char* wchar_to_utf8(char* output, wchar_t wc, size_t outsize)
 	{
 		if (outsize < 4)
 			return NULL;
-		*output++ = 0xf0 | (wc >> 18);
+		*output++ = 0xf0;
 		*output++ = 0x80 | ((wc >> 12) & 0x3f);
 		*output++ = 0x80 | ((wc >> 6) & 0x3f);
 		*output++ = 0x80 | (wc & 0x3f);
@@ -59,8 +59,8 @@ static char* wchar_to_utf8(char* output, wchar_t wc, size_t outsize)
 	{
 		if (outsize < 5)
 			return NULL;
-		*output++ = 0xf8 | (wc >> 24);
-		*output++ = 0x80 | ((wc >> 18) & 0x3f);
+		*output++ = 0xf8;
+		*output++ = 0x80;
 		*output++ = 0x80 | ((wc >> 12) & 0x3f);
 		*output++ = 0x80 | ((wc >> 6) & 0x3f);
 		*output++ = 0x80 | (wc & 0x3f);
@@ -69,9 +69,9 @@ static char* wchar_to_utf8(char* output, wchar_t wc, size_t outsize)
 	{
 		if (outsize < 6)
 			return NULL;
-		*output++ = 0xfc | (wc >> 30);
-		*output++ = 0x80 | ((wc >> 24) & 0x3f);
-		*output++ = 0x80 | ((wc >> 18) & 0x3f);
+		*output++ = 0xfc;
+		*output++ = 0x80;
+		*output++ = 0x80;
 		*output++ = 0x80 | ((wc >> 12) & 0x3f);
 		*output++ = 0x80 | ((wc >> 6) & 0x3f);
 		*output++ = 0x80 | (wc & 0x3f);

@@ -15,7 +15,7 @@ namespace EGL3::Utils::StringEx {
     };
 
     struct CompiledToken : ExpressionToken {
-        CompiledToken(TokenType Type, const ExpressionToken& Token, int ShortCircuitIdx = -1) :
+        CompiledToken(TokenType Type, const ExpressionToken& Token, size_t ShortCircuitIdx = -1) :
             ExpressionToken(Token),
             Type(Type),
             ShortCircuitIdx(ShortCircuitIdx)
@@ -24,6 +24,6 @@ namespace EGL3::Utils::StringEx {
         }
 
         TokenType Type;
-        int ShortCircuitIdx;
+        size_t ShortCircuitIdx;
     };
 }

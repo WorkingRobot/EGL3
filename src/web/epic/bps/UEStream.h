@@ -51,9 +51,9 @@ namespace EGL3::Web::Epic::BPS {
 
                 SaveNum = -SaveNum;
 
-                std::unique_ptr<char16_t[]> StringData = std::make_unique<char16_t[]>(SaveNum);
-                read((char*)StringData.get(), SaveNum * sizeof(char16_t));
-                Val = { StringData.get(), StringData.get() + SaveNum };
+                std::wstring StringData(SaveNum, '\0');
+                read((char*)StringData.data(), SaveNum * sizeof(char16_t));
+                Val = std::filesystem::path(StringData).string();
             }
             else {
                 Val.resize(SaveNum - 1);

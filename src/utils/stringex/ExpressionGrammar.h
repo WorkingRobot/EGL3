@@ -34,7 +34,7 @@ namespace EGL3::Utils::StringEx {
         }
 
         template<typename TExpressionNode>
-        void DefineBinaryOperator(int Precedence, Associativity Associativity = Associativity::RightToLeft, bool CanShortCircuit = false) {
+        void DefineBinaryOperator(size_t Precedence, Associativity Associativity = Associativity::RightToLeft, bool CanShortCircuit = false) {
             if constexpr (false) { // runtime check
                 for (auto& Val : BinaryOperators) {
                     if (Val.second.Precedence == Precedence) {

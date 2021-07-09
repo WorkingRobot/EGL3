@@ -209,7 +209,7 @@ namespace EGL3::Service::Pipe {
                 Output.Response = PacketResponse::InvalidMountHandle;
                 return;
             }
-            std::remove(ConnectionMounts.begin(), ConnectionMounts.end(), Ptr);
+            ConnectionMounts.erase(std::remove(ConnectionMounts.begin(), ConnectionMounts.end(), Ptr), ConnectionMounts.end());
         }
         Output.Response = PtrWeak.expired() ? PacketResponse::Success : PacketResponse::ArchiveStillExists;
     }

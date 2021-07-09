@@ -186,7 +186,7 @@ static int setup(struct exfat_dev* dev, int sector_bits, int spc_bits,
 	return mkfs(dev, param.volume_size);
 }
 
-bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_count, void** o_data) {
+bool EGL3CreateDisk(const char* label, EGL3File files[], uint32_t file_count, void** o_data) {
     struct exfat_dev* dev; 
     dev = exfat_open(NULL, EXFAT_MODE_RW);
 
@@ -216,7 +216,7 @@ bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_cou
 	}
 
 	for (uint32_t i = 0; i < file_count; ++i) {
-		const EGL3File* file = files + i;
+		EGL3File* file = files + i;
 		exfat_mknod_reserve(&ef, file->path, file->size, &file->run_idx, &file->run_size);
 	}
 

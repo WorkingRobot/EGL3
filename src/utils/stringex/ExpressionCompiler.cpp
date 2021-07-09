@@ -15,7 +15,7 @@ namespace EGL3::Utils::StringEx {
     }
 
     struct WrappedOperator {
-        WrappedOperator(CompiledToken&& Token, int Precedence = 0, int ShortCircuitIdx = -1) :
+        WrappedOperator(CompiledToken&& Token, size_t Precedence = 0, size_t ShortCircuitIdx = -1) :
             Token(std::move(Token)),
             Precedence(Precedence),
             ShortCircuitIdx(ShortCircuitIdx)
@@ -24,8 +24,8 @@ namespace EGL3::Utils::StringEx {
         }
 
         CompiledToken Token;
-        int Precedence;
-        int ShortCircuitIdx;
+        size_t Precedence;
+        size_t ShortCircuitIdx;
     };
 
     ExpressionError ExpressionCompiler::CompileGroup(const ExpressionToken* Start, const std::type_index* StopAt)
@@ -101,7 +101,7 @@ namespace EGL3::Utils::StringEx {
                 }
                 else {
                     if (auto Params = Grammar.GetBinaryOperatorDefParameters(TypeId)) {
-                        auto CheckPrecedence = [Params](int LastPrec, int Prec) {
+                        auto CheckPrecedence = [Params](size_t LastPrec, size_t Prec) {
                             return (Params->Associativity == Associativity::LeftToRight ? (LastPrec <= Prec) : (LastPrec < Prec));
                         };
 
@@ -109,7 +109,7 @@ namespace EGL3::Utils::StringEx {
                             PopOperator();
                         }
 
-                        int ShortCircuitIdx = -1;
+                        size_t ShortCircuitIdx = -1;
                         if (Params->CanShortCircuit) {
                             OperatorStack.emplace(CompiledToken(TokenType::ShortCircuit, *Itr), Output.size());
                             ShortCircuitIdx = Output.size() - 1;
@@ -128,7 +128,7 @@ namespace EGL3::Utils::StringEx {
         }
 
         if (!AtEnd) {
-            return ExpressionError("Reached end of expresison before matching end of group");
+            return ExpressionError("Reached end of expression before matching end of group");
         }
 
         while (!OperatorStack.empty()) {

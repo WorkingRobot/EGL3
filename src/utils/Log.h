@@ -300,10 +300,10 @@ namespace EGL3::Detail {
 #define EGL3_ENSURE(condition, level, message) (::EGL3::Detail::UseContextConditional<level>(#condition, __FILE__, __LINE__)((condition), (message)))
 
 // Log and abort with a critical error with a formatted message
-#define EGL3_ABORTF(message, ...) EGL3_LOGF(::EGL3::LogLevel::Critical, (message), __VA_ARGS__)
+#define EGL3_ABORTF(message, ...) EGL3_LOGF(::EGL3::LogLevel::Critical, (message), __VA_ARGS__); ::EGL3::Abort()
 
 // Log and abort with a critical error with a message
-#define EGL3_ABORT(message) EGL3_LOG(::EGL3::LogLevel::Critical, (message))
+#define EGL3_ABORT(message) EGL3_LOG(::EGL3::LogLevel::Critical, (message)); ::EGL3::Abort()
 
 // A failure will cause a critical error with a formatted message
 #define EGL3_VERIFYF(condition, message, ...) EGL3_ENSUREF(condition, ::EGL3::LogLevel::Critical, (message), __VA_ARGS__)

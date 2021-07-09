@@ -140,8 +140,7 @@ namespace EGL3::Utils::StringEx {
         std::stack<size_t> OperandStack;
 
         auto GetToken = [&](size_t Index) -> const ExpressionToken& {
-            if (Index < CompiledTokens.size())
-            {
+            if (Index < CompiledTokens.size()) {
                 return CompiledTokens[Index];
             }
 
@@ -154,25 +153,23 @@ namespace EGL3::Utils::StringEx {
             return Index;
         };
 
-        for (int i = 0; i < CompiledTokens.size(); ++i) {
-            auto& Token = CompiledTokens[i];
+        for (size_t Idx = 0; Idx < CompiledTokens.size(); ++Idx) {
+            auto& Token = CompiledTokens[Idx];
 
             switch (Token.Type)
             {
             case TokenType::Benign:
                 continue;
             case TokenType::Operand:
-                OperandStack.emplace(i);
+                OperandStack.emplace(Idx);
                 continue;
             case TokenType::ShortCircuit:
-                if (!OperandStack.empty() && Token.ShortCircuitIdx == -1 && JumpTable.ShouldShortCircuit(Token, GetToken(OperandStack.top()), &Ctx))
-                {
-                    i = Token.ShortCircuitIdx;
+                if (!OperandStack.empty() && Token.ShortCircuitIdx == -1 && JumpTable.ShouldShortCircuit(Token, GetToken(OperandStack.top()), &Ctx)) {
+                    Idx = Token.ShortCircuitIdx;
                 }
                 continue;
             case TokenType::BinaryOperator:
-                if (OperandStack.size() >= 2)
-                {
+                if (OperandStack.size() >= 2) {
                     auto R = GetToken(OperandStack.top());
                     OperandStack.pop();
                     auto L = GetToken(OperandStack.top());
@@ -180,24 +177,20 @@ namespace EGL3::Utils::StringEx {
 
                     std::any OpResult;
                     ExpressionError OpError = JumpTable.ExecBinary(Token, L, R, &Ctx, OpResult);
-                    if (OpError.HasError())
-                    {
+                    if (OpError.HasError()) {
                         return OpError;
                     }
-                    else
-                    {
+                    else {
                         OperandStack.emplace(AddToken(ExpressionToken(L.Token, std::move(OpResult))));
                     }
                 }
-                else
-                {
+                else {
                     return ExpressionError("Not enough operands for binary operator");
                 }
                 break;
             case TokenType::PostUnaryOperator:
             case TokenType::PreUnaryOperator:
-                if (OperandStack.size() >= 1)
-                {
+                if (OperandStack.size() >= 1) {
                     auto Operand = GetToken(OperandStack.top());
                     OperandStack.pop();
 
@@ -206,17 +199,14 @@ namespace EGL3::Utils::StringEx {
                         JumpTable.ExecPreUnary(Token, Operand, &Ctx, OpResult) :
                         JumpTable.ExecPostUnary(Token, Operand, &Ctx, OpResult);
 
-                    if (OpError.HasError())
-                    {
+                    if (OpError.HasError()) {
                         return OpError;
                     }
-                    else
-                    {
+                    else {
                         OperandStack.emplace(AddToken(ExpressionToken(Operand.Token, std::move(OpResult))));
                     }
                 }
-                else
-                {
+                else {
                     return ExpressionError("No operand for unary operator");
                 }
                 break;

@@ -254,7 +254,7 @@ namespace EGL3::Service {
     void MountedDisk::Create() {
         auto Data = (MountedData*)PrivateData;
 
-        SpdDebugLogSetHandle((HANDLE)STD_ERROR_HANDLE);
+        SpdDebugLogSetHandle(GetStdHandle(STD_ERROR_HANDLE));
         {
             SPD_STORAGE_UNIT_PARAMS Params{
                 .BlockCount = DiskSizeMegabytes * SectorsPerMegabyte,

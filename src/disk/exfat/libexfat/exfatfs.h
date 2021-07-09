@@ -24,7 +24,6 @@
 #define EXFATFS_H_INCLUDED
 
 #include "byteorder.h"
-#include "compiler.h"
 
 typedef uint32_t cluster_t;		/* cluster number */
 
@@ -36,6 +35,9 @@ typedef uint32_t cluster_t;		/* cluster number */
 #define EXFAT_CLUSTER_END 0xffffffff /* final cluster of file or directory */
 
 #define EXFAT_STATE_MOUNTED 2
+
+#define STATIC_ASSERT(cond) static_assert(cond, #cond)
+#pragma pack(push, 1)
 
 struct exfat_super_block
 {
@@ -64,8 +66,7 @@ struct exfat_super_block
 	uint8_t allocated_percent;		/* 0x70 percentage of allocated space */
 	uint8_t __unused2[397];			/* 0x71 always 0 */
 	le16_t boot_signature;			/* the value of 0xAA55 */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_super_block) == 512);
 
 #define EXFAT_ENTRY_VALID     0x80
@@ -86,8 +87,7 @@ struct exfat_entry					/* common container for all entries */
 {
 	uint8_t type;					/* any of EXFAT_ENTRY_xxx */
 	uint8_t data[31];
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry) == 32);
 
 #define EXFAT_ENAME_MAX 15
@@ -98,8 +98,7 @@ struct exfat_entry_bitmap			/* allocated clusters bitmap */
 	uint8_t __unknown1[19];
 	le32_t start_cluster;
 	le64_t size;					/* in bytes */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_bitmap) == 32);
 
 #define EXFAT_UPCASE_CHARS 0x10000
@@ -112,8 +111,7 @@ struct exfat_entry_upcase			/* upper case translation table */
 	uint8_t __unknown2[12];
 	le32_t start_cluster;
 	le64_t size;					/* in bytes */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_upcase) == 32);
 
 struct exfat_entry_label			/* volume label */
@@ -121,8 +119,7 @@ struct exfat_entry_label			/* volume label */
 	uint8_t type;					/* EXFAT_ENTRY_LABEL */
 	uint8_t length;					/* number of characters */
 	le16_t name[EXFAT_ENAME_MAX];	/* in UTF-16LE */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_label) == 32);
 
 #define EXFAT_ATTRIB_RO     0x01
@@ -146,8 +143,7 @@ struct exfat_entry_meta1			/* file or directory info (part 1) */
 	uint8_t mtime_cs;				/* latest modification time in cs */
 	uint8_t crtime_tzo, mtime_tzo, atime_tzo;	/* timezone offset encoded */
 	uint8_t __unknown2[7];
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_meta1) == 32);
 
 #define EXFAT_FLAG_ALWAYS1		(1u << 0)
@@ -165,8 +161,7 @@ struct exfat_entry_meta2			/* file or directory info (part 2) */
 	uint8_t __unknown3[4];
 	le32_t start_cluster;
 	le64_t size;					/* in bytes */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_meta2) == 32);
 
 struct exfat_entry_name				/* file or directory name */
@@ -174,8 +169,9 @@ struct exfat_entry_name				/* file or directory name */
 	uint8_t type;					/* EXFAT_ENTRY_FILE_NAME */
 	uint8_t __unknown;
 	le16_t name[EXFAT_ENAME_MAX];	/* in UTF-16LE */
-}
-PACKED;
+};
 STATIC_ASSERT(sizeof(struct exfat_entry_name) == 32);
+
+#pragma pack(pop)
 
 #endif /* ifndef EXFATFS_H_INCLUDED */

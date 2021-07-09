@@ -173,6 +173,8 @@ namespace EGL3::Modules::Login {
         if (Error != ERROR_SUCCESS) {
             return Error;
         }
+
+        return ERROR_SUCCESS;
     }
 
     std::string ParseIntentUrl(const char* Input)

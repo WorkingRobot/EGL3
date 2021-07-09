@@ -22,11 +22,7 @@
 
 #include "exfat.h"
 #include <stdarg.h>
-#ifdef __ANDROID__
-#include <android/log.h>
-#else
 #include "syslog.h"
-#endif
 #include "unistd.h"
 
 int exfat_errors;

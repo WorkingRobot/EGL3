@@ -9,7 +9,7 @@ namespace EGL3::Utils::StringEx {
     };
 
     struct OpParameters {
-        OpParameters(int Precedence, Associativity Associativity, bool CanShortCircuit) :
+        OpParameters(size_t Precedence, Associativity Associativity, bool CanShortCircuit) :
             Precedence(Precedence),
             Associativity(Associativity),
             CanShortCircuit(CanShortCircuit)
@@ -17,7 +17,7 @@ namespace EGL3::Utils::StringEx {
 
         }
 
-        int Precedence;
+        size_t Precedence;
         Associativity Associativity;
         bool CanShortCircuit;
     };

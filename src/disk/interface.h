@@ -22,7 +22,7 @@ struct _EGL3File {
 
 // true = success
 // false = failed
-bool EGL3CreateDisk(const char* label, const EGL3File files[], uint32_t file_count, void** o_data);
+bool EGL3CreateDisk(const char* label, EGL3File files[], uint32_t file_count, void** o_data);
 
 #ifdef __cplusplus
 }

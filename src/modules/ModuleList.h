@@ -29,16 +29,6 @@ namespace EGL3::Modules {
         }
 
         template<typename T>
-        const T& GetModule() const {
-            for (auto& Module : Modules) {
-                if (T* Ret = dynamic_cast<T*>(Module.get())) {
-                    return *Ret;
-                }
-            }
-            EGL3_ABORTF("Could not find module {}", Detail::module_name_v<T>);
-        }
-
-        template<typename T>
         T& GetModule() {
             for (auto& Module : Modules) {
                 if (T* Ret = dynamic_cast<T*>(Module.get())) {
