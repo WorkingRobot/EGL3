@@ -151,14 +151,6 @@ namespace EGL3::Modules {
         Toasts.ShowToast(Toast, Handler);
     }
 
-    SysTrayModule::AppState SysTrayModule::GetAppState() const
-    {
-        if (Window.get_focus_visible()) {
-            return AppState::Focused;
-        }
-        return AppState::Minimized;
-    }
-
     void SysTrayModule::SetAppState(AppState NewState, StackTab Tab)
     {
         switch (NewState)

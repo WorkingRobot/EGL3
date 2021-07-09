@@ -2,7 +2,6 @@
 
 #include "../utils/SysTray.h"
 #include "../utils/Toasts.h"
-#include "../storage/game/GameId.h"
 #include "ModuleList.h"
 
 namespace EGL3::Modules {
@@ -31,8 +30,6 @@ namespace EGL3::Modules {
             About,
             Unknown
         };
-
-        AppState GetAppState() const;
 
         void SetAppState(AppState NewState, StackTab Tab = StackTab::Unknown);
 

@@ -2,8 +2,7 @@
 
 #include "Callback.h"
 
-#include <gtkmm.h>
-#include <vector>
+#include <gtkmm/window.h>
 
 namespace EGL3::Utils {
     class SysTray {

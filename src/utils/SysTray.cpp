@@ -4,6 +4,8 @@
 #include "Log.h"
 #include "Random.h"
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <shellapi.h>
 #include <windowsx.h>
 
