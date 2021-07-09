@@ -31,7 +31,7 @@ namespace EGL3 {
 
     void EnableConsole();
 
-    void Abort();
+    [[noreturn]] void Abort();
 
     namespace Detail {
         static consteval std::string_view ToString(LogLevel Level) {
@@ -260,6 +260,15 @@ namespace EGL3 {
 // Because intellisense can't read valid constexpr C++20
 #if __INTELLISENSE__
 
+namespace EGL3::Detail {
+    bool IntellisenseVerifyCondition(bool Val) {
+        if (!Val) {
+            Abort();
+        }
+        return Val;
+    }
+}
+
 #define EGL3_LOGF(level, message, ...) do {} while(0)
 
 #define EGL3_LOG(level, message) do {} while(0)
@@ -268,13 +277,13 @@ namespace EGL3 {
 
 #define EGL3_ENSURE(condition, level, message) (condition)
 
-#define EGL3_ABORTF(message, ...) do {} while(0)
+#define EGL3_ABORTF(message, ...) ::EGL3::Abort()
 
-#define EGL3_ABORT(message) do {} while(0)
+#define EGL3_ABORT(message) ::EGL3::Abort()
 
-#define EGL3_VERIFYF(condition, message, ...) (condition)
+#define EGL3_VERIFYF(condition, message, ...) ::EGL3::Detail::IntellisenseVerifyCondition(condition)
 
-#define EGL3_VERIFY(condition, message) (condition)
+#define EGL3_VERIFY(condition, message) ::EGL3::Detail::IntellisenseVerifyCondition(condition)
 
 #else
 
