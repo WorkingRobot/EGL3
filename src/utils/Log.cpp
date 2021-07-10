@@ -8,7 +8,7 @@
 #include <Windows.h>
 
 namespace EGL3 {
-    constexpr bool UseConsole = true;
+    constexpr bool UseConsole = false;
 
     bool Detail::ColorsEnabled = false;
 
