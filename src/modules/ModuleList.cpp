@@ -6,6 +6,7 @@
 #include "StatusPage.h"
 #include "Taskbar.h"
 #include "SysTray.h"
+#include "UpdateCheck.h"
 #include "WhatsNew.h"
 
 #include "Friends/Friends.h"
@@ -112,6 +113,8 @@ namespace EGL3::Modules {
         AddModule<Login::ChooserModule>();
 
         AddModule<Game::ServiceModule>();
+
+        AddModule<UpdateCheckModule>();
     }
 
     void ModuleList::AddModulesLoggedIn()

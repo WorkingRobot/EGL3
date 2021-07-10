@@ -207,7 +207,7 @@ namespace EGL3::Modules::Friends {
             return GetKairosBackgroundUrl(GetDefaultKairosBackground());
         }
         auto Hash = Utils::Crc32(Background.c_str(), Background.size());
-        return std::format("{}backgrounds/{:04X}.png", Web::GetHostUrl<Web::Host::EGL3>(), Hash);
+        return std::format("{}backgrounds/{:04X}.png", Web::GetHostUrl<Web::Host::EGL3Assets>(), Hash);
     }
 
     Storage::Models::FriendCurrent& KairosMenuModule::GetCurrentUser() const

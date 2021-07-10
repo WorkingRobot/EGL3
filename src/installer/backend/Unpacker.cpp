@@ -4,7 +4,7 @@
 #include "../../utils/streams/FileStream.h"
 #include "streams/LZ4DecompStream.h"
 #include "Constants.h"
-#include "RegistryInfo.h"
+#include "VersionInfo.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -69,7 +69,7 @@ namespace EGL3::Installer::Backend {
 
             UpdateProgress(.85f, State::Registry);
 
-            RegistryInfo Registry;
+            VersionInfo Registry;
             Stream >> Registry;
 
             if (Registry.IsInstalled()) {

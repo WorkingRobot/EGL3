@@ -33,6 +33,8 @@ namespace EGL3::Modules {
 
         void SetAppState(AppState NewState, StackTab Tab = StackTab::Unknown);
 
+        void Quit();
+
         sigc::signal<void()> OnActionClicked;
         Utils::Callback<void()> OnLogIn;
         Utils::Callback<void()> OnLogOut;

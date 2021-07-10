@@ -14,7 +14,7 @@ namespace EGL3::Utils {
     {
         if (WinToast::IsCompatible()) {
             // This AUMI is set to the ProductGuid in packer_main.cpp
-            // The ProductGUID is set to the AUMI in the shortcut in RegistryInfo.cpp
+            // The ProductGUID is set to the AUMI in the shortcut in VersionInfo.cpp
             auto Error = Impl.Initialize();
             if (EGL3_ENSUREF(Error == WinToastLib::Error::Success, LogLevel::Warning, "Toasts (notifications) have failed to initialize (Error: {})", (int)Error)) {
                 Enabled = true;

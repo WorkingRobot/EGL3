@@ -66,26 +66,26 @@ namespace EGL3::Web::Epic::BPS {
     static constexpr const char* GetChunkSubdir(FeatureLevel SelectedLevel) {
         switch (SelectedLevel)
         {
-        case EGL3::Web::Epic::BPS::FeatureLevel::Original:
-        case EGL3::Web::Epic::BPS::FeatureLevel::CustomFields:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StartStoringVersion:
+        case FeatureLevel::Original:
+        case FeatureLevel::CustomFields:
+        case FeatureLevel::StartStoringVersion:
             return "Chunks";
-        case EGL3::Web::Epic::BPS::FeatureLevel::DataFileRenames:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresIfChunkOrFileData:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresDataGroupNumbers:
+        case FeatureLevel::DataFileRenames:
+        case FeatureLevel::StoresIfChunkOrFileData:
+        case FeatureLevel::StoresDataGroupNumbers:
             return "ChunksV2";
-        case EGL3::Web::Epic::BPS::FeatureLevel::ChunkCompressionSupport:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresPrerequisitesInfo:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresChunkFileSizes:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoredAsCompressedUClass:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresChunkDataShaHashes:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoresPrerequisiteIds:
-        case EGL3::Web::Epic::BPS::FeatureLevel::StoredAsBinaryData:
+        case FeatureLevel::ChunkCompressionSupport:
+        case FeatureLevel::StoresPrerequisitesInfo:
+        case FeatureLevel::StoresChunkFileSizes:
+        case FeatureLevel::StoredAsCompressedUClass:
+        case FeatureLevel::StoresChunkDataShaHashes:
+        case FeatureLevel::StoresPrerequisiteIds:
+        case FeatureLevel::StoredAsBinaryData:
             return "ChunksV3";
-        case EGL3::Web::Epic::BPS::FeatureLevel::VariableSizeChunksWithoutWindowSizeChunkInfo:
-        case EGL3::Web::Epic::BPS::FeatureLevel::VariableSizeChunks:
-        case EGL3::Web::Epic::BPS::FeatureLevel::UsesRuntimeGeneratedBuildId:
-        case EGL3::Web::Epic::BPS::FeatureLevel::UsesBuildTimeGeneratedBuildId:
+        case FeatureLevel::VariableSizeChunksWithoutWindowSizeChunkInfo:
+        case FeatureLevel::VariableSizeChunks:
+        case FeatureLevel::UsesRuntimeGeneratedBuildId:
+        case FeatureLevel::UsesBuildTimeGeneratedBuildId:
             return "ChunksV4";
         default:
             return "";

@@ -116,6 +116,14 @@ namespace EGL3::Web {
     };
 
     template<>
+    struct Parser<uint64_t> {
+        __forceinline bool operator()(const rapidjson::Value& Json, uint64_t& Obj) const {
+            Obj = Json.GetUint64();
+            return true;
+        }
+    };
+
+    template<>
     struct Parser<float> {
         __forceinline bool operator()(const rapidjson::Value& Json, float& Obj) const {
             Obj = Json.GetFloat();

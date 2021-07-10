@@ -164,7 +164,7 @@ namespace EGL3 {
         template<class Ctx>
         void UseContextMessageBox(const Ctx& Context, const std::string_view Message) {
             char Text[2048]{};
-            std::format_to_n(Text, 2048, "{}\n\nYou can report this issue at {}/discord", Context(Message), Web::GetHostUrl<Web::Host::EGL3NonApi>());
+            std::format_to_n(Text, 2048, "{}\n\nYou can report this issue at {}discord", Context(Message), Web::GetHostUrl<Web::Host::EGL3>());
             Utils::AsyncMessageBox(Text, "EGL3 Critical Error", 0x00000010L | 0x00001000L); // MB_ICONERROR | MB_SYSTEMMODAL
         }
 #else

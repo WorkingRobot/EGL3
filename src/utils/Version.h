@@ -11,6 +11,8 @@ namespace EGL3::Utils::Version {
 
     uint32_t GetPatchVersion();
 
+    uint64_t GetVersionNum();
+
     const char* GetGitRevision();
 
     const char* GetGitBranch();

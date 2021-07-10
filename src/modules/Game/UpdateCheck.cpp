@@ -1,7 +1,6 @@
 #include "UpdateCheck.h"
 
 namespace EGL3::Modules::Game {
-
     constexpr auto MinimumUpdateFrequency = std::chrono::seconds(30);
     constexpr auto MaximumUpdateFrequency = std::chrono::minutes(30);
 

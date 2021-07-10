@@ -77,18 +77,18 @@ namespace EGL3::Web::Xmpp {
         switch (Status)
         {
         case Status::Chat:
-            return std::format("{}status/chat.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/chat.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Status::DoNotDisturb:
-            return std::format("{}status/dnd.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/dnd.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Status::Online:
-            return std::format("{}status/online.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/online.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Status::Away:
-            return std::format("{}status/away.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/away.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Status::ExtendedAway:
-            return std::format("{}status/xa.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/xa.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Status::Offline:
         default:
-            return std::format("{}status/offline.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}status/offline.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         }
     }
 }

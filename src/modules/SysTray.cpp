@@ -32,8 +32,7 @@ namespace EGL3::Modules {
         ItemLogOut.signal_activate().connect([this]() { SetAppState(AppState::Focused); OnLogOut(); });
         ItemQuit.signal_activate().connect([this]() {
             if (!OnQuit()) {
-                Window.hide();
-                Application->release();
+                Quit();
             }
         });
 
@@ -160,6 +159,12 @@ namespace EGL3::Modules {
             MainStack.set_visible_child(TabAbout);
             break;
         }
+    }
+
+    void SysTrayModule::Quit()
+    {
+        Window.hide();
+        Application->release();
     }
 
     void SysTrayModule::Construct()

@@ -40,6 +40,8 @@ namespace EGL3::Modules::Game {
     {
         STARTUPINFO StartupInfo{
             .cb = sizeof(STARTUPINFO),
+            .dwFlags = STARTF_USESHOWWINDOW,
+            .wShowWindow = SW_HIDE
         };
 
         auto ExePath = Utils::Config::GetExeFolder() / "EGL3_SRV.exe";

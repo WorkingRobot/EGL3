@@ -18,7 +18,7 @@ add_dir_recursive(installer gui)
 add_file(installer backend/streams/LZ4DecompStream.cpp)
 add_file(installer backend/streams/WebStream.cpp)
 add_file(installer backend/Installer.cpp)
-add_file(installer backend/RegistryInfo.cpp)
+add_file(installer backend/VersionInfo.cpp)
 add_file(installer backend/Unpacker.cpp)
 add_file(installer gui/installerApp.rc)
 add_file(installer gui/app.manifest)
@@ -60,7 +60,7 @@ set_property(TARGET installer PROPERTY CXX_STANDARD 20)
 set_property(TARGET packer PROPERTY CXX_STANDARD 20)
 
 # Add .pdb for release builds #
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND (CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel"))
    target_compile_options(installer PRIVATE /Zi)
    target_compile_options(packer PRIVATE /Zi)
    set_target_properties(installer PROPERTIES

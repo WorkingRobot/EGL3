@@ -5,7 +5,7 @@
 #include <filesystem>
 
 namespace EGL3::Installer::Backend {
-    struct RegistryInfo {
+    struct VersionInfo {
         std::string ProductGuid;
 
         // std::string AuthorizedCDFPrefix;
@@ -37,9 +37,14 @@ namespace EGL3::Installer::Backend {
 
         std::string LaunchExe;
 
-        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, RegistryInfo& Val);
+        // Serialized in json (not eglu)
+        std::string PatchNotes;
+        std::string VersionFull;
+        uint64_t VersionNum;
 
-        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const RegistryInfo& Val);
+        friend Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, VersionInfo& Val);
+
+        friend Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const VersionInfo& Val);
 
         bool IsInstalled() const;
 

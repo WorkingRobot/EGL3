@@ -21,6 +21,11 @@ namespace EGL3::Utils::Version {
         return CONFIG_VERSION_PATCH;
     }
 
+    uint64_t GetVersionNum()
+    {
+        return (uint64_t(GetMajorVersion()) << 16) | (uint64_t(GetMinorVersion()) << 8) | (uint64_t(GetPatchVersion()) << 0);
+    }
+
     const char* GetGitRevision()
     {
         return CONFIG_VERSION_HASH;

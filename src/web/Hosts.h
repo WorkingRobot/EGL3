@@ -22,10 +22,10 @@ namespace EGL3::Web {
         Statuspage,
         UnrealEngineCdn1,
         UnrealEngineCdn2,
+        EGL3Assets,
         EGL3,
 
-        StatuspageNonApi,
-        EGL3NonApi
+        StatuspageNonApi
     };
 
     template<Host SelectedHost>
@@ -68,14 +68,13 @@ namespace EGL3::Web {
             return "https://cdn1.unrealengine.com/";
         case Host::UnrealEngineCdn2:
             return "https://cdn2.unrealengine.com/";
-        case Host::EGL3:
+        case Host::EGL3Assets:
             return "https://epic.gl/assets/";
+        case Host::EGL3:
+            return "https://epic.gl/";
 
         case Host::StatuspageNonApi:
             return "https://status.epicgames.com";
-        case Host::EGL3NonApi:
-            return "https://epic.gl";
-
         default:
             return "";
         }

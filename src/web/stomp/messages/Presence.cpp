@@ -89,7 +89,7 @@ namespace EGL3::Web::Stomp::Messages {
     {
         switch (Utils::Crc32(ProductId)) {
         case Utils::Crc32("EGL3"):
-            return std::format("{}launcher-icon.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}launcher-icon.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("Fortnite"):
             return GetLegacyProductImageUrl("fortnite");
         case Utils::Crc32("_"):
@@ -112,23 +112,23 @@ namespace EGL3::Web::Stomp::Messages {
         switch (Utils::Crc32(PlatformId)) {
         case Utils::Crc32("PSN"):
         case Utils::Crc32("PS5"):
-            return std::format("{}platforms/ps4.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/ps4.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("XBL"):
         case Utils::Crc32("XSX"):
-            return std::format("{}platforms/xbox.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/xbox.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("WIN"):
         case Utils::Crc32("MAC"):
         case Utils::Crc32("LIN"):
         case Utils::Crc32("LNX"): // In the future? :)
-            return std::format("{}platforms/pc.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/pc.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("IOS"):
         case Utils::Crc32("AND"):
-            return std::format("{}platforms/mobile.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/mobile.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("SWT"):
-            return std::format("{}platforms/switch.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/switch.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         case Utils::Crc32("OTHER"):
         default:
-            return std::format("{}platforms/earth.png", Web::GetHostUrl<Web::Host::EGL3>());
+            return std::format("{}platforms/earth.png", Web::GetHostUrl<Web::Host::EGL3Assets>());
         }
     }
 
