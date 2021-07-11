@@ -1,0 +1,53 @@
+name: Build EGL3
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2019]
+        include:
+          - os: windows-2019
+            name: Windows
+            triplet: x64-windows
+            configuration: x64-Release
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Get CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Restore artifacts, or run vcpkg, build and cache artifacts
+      uses: lukka/run-vcpkg@main
+      id: runvcpkg
+      with:
+        vcpkgArguments: 'expat cpr mbedtls ixwebsocket rapidjson gtkmm'
+        vcpkgTriplet: '${{ matrix.triplet }}'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgGitCommitId: a9b27ed5dffbf70b135eddb0c4729f3ca87f106c
+
+    - name: Vcpkg Output
+      run: echo "'${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}' '${{  steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}' "
+
+    - name: Run CMake
+      uses: lukka/run-cmake@main
+      with:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        cmakeSettingsJsonPath: '${{ github.workspace }}/CMakeSettings.json'
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: '${{ matrix.configuration }}'
+
+    - name: Install with CMake
+      run: cmake --install
+
+    - name: List Files
+      run: find $RUNNER_WORKSPACE
+      shell: bash

@@ -4,14 +4,6 @@
 
 project(installer)
 
-if(MSVC)
-    if (CMAKE_BUILD_TYPE MATCHES "Debug")
-        add_compile_options(/MTd)
-    else()
-        add_compile_options(/MT)
-    endif()
-endif()
-
 ## Source Files ##
 
 add_dir_recursive(installer gui)
@@ -73,4 +65,28 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND (CMAKE_BUILD_TYPE MATCHES "Release" 
         COMPILE_PDB_NAME packer
         COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
    )
+endif()
+
+
+
+# Use static CRT (the code is memcpy-heavy, avoid calling those dlls if we have to)
+set(CompilerFlags
+        CMAKE_CXX_FLAGS
+        CMAKE_CXX_FLAGS_DEBUG
+        CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_C_FLAGS
+        CMAKE_C_FLAGS_DEBUG
+        CMAKE_C_FLAGS_RELEASE
+        )
+foreach(CompilerFlag ${CompilerFlags})
+  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+  string(REPLACE "-MD" "-MT" ${CompilerFlag} "${${CompilerFlag}}")
+endforeach()
+
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    set_property(TARGET installer PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
+    set_property(TARGET packer PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
+else()
+    set_property(TARGET installer PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
+    set_property(TARGET packer PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
 endif()
