@@ -42,7 +42,10 @@ jobs:
         configurationRegexFilter: '${{ matrix.configuration }}'
     
     - name: Zip Archive
-      run: '7z a ''${{ github.workspace }}\archive.zip'' ''C:\Program Files (x86)\EGL3\*'' -r'
+      run: |
+        cd "${{ github.workspace }}"
+        7z a archive.zip "C:\Program Files (x86)\EGL3\*" -r
+        7z a archive.zip "extras\share" -r
 
     - name: Upload Archive
       uses: actions/upload-artifact@v2
