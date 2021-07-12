@@ -32,10 +32,6 @@ jobs:
         vcpkgArguments: 'expat cpr mbedtls ixwebsocket rapidjson gtkmm'
         vcpkgTriplet: '${{ matrix.triplet }}'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgGitCommitId: a9b27ed5dffbf70b135eddb0c4729f3ca87f106c
-
-    - name: Vcpkg Output
-      run: echo "'${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}' '${{  steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}' "
 
     - name: Run CMake
       uses: lukka/run-cmake@main

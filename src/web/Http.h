@@ -5,7 +5,6 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#define _SILENCE_CXX17_C_HEADER_DEPRECATION_WARNING // https://github.com/whoshuu/cpr/pull/473
 #include <cpr/cpr.h>
 
 namespace EGL3::Web::Http {
