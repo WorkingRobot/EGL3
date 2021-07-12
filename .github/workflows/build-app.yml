@@ -45,9 +45,6 @@ jobs:
         useVcpkgToolchainFile: true
         configurationRegexFilter: '${{ matrix.configuration }}'
 
-    - name: Install with CMake
-      run: cmake --install
-
     - name: List Files
       run: find $RUNNER_WORKSPACE
       shell: bash
