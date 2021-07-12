@@ -40,7 +40,12 @@ jobs:
         cmakeSettingsJsonPath: '${{ github.workspace }}/CMakeSettings.json'
         useVcpkgToolchainFile: true
         configurationRegexFilter: '${{ matrix.configuration }}'
+    
+    - name: Zip Archive
+      run: '7z a ''${{ github.workspace }}\archive.zip'' ''C:\Program Files (x86)\EGL3\*'' -r'
 
-    - name: List Files
-      run: find $RUNNER_WORKSPACE
-      shell: bash
+    - name: Upload Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: 'archive.zip'
+        path: '${{ github.workspace }}\archive.zip'
