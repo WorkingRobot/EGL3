@@ -8,7 +8,7 @@ namespace EGL3::Modules {
     }
 
     std::future<Glib::RefPtr<Gdk::Pixbuf>> ImageCacheModule::GetImageAsync(const cpr::Url& Url, const cpr::Url& FallbackUrl, int Width, int Height, Glib::Dispatcher& Callback) {
-        return std::async(std::launch::async, [&, this, Width, Height](const std::string& Url, const std::string& FallbackUrl) {
+        return std::async(std::launch::async, [&, this, Width, Height](const cpr::Url& Url, const cpr::Url& FallbackUrl) {
             Utils::EmitRAII Emitter(Callback);
             return GetImageAsync(Url, FallbackUrl, Width, Height).get();
         }, Url, FallbackUrl);
