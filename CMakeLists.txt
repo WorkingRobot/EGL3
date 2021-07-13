@@ -6,6 +6,7 @@ cmake_policy(SET CMP0091 NEW)
 project(EGL3)
 
 option(ENABLE_INSTALLER "Build the installer (this must be separate due to different vcpkg triplets)" OFF)
+option(INSTALLER_VERSION "Installer version to use" "")
 
 
 ## Config ##

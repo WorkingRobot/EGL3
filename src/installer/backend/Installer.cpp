@@ -15,6 +15,10 @@
 #include <tlhelp32.h>
 
 namespace EGL3::Installer::Backend {
+#define TEXT_LONG_IMPL(t) L ## t
+#define TEXT_LONG(t) TEXT_LONG_IMPL(t)
+    static constexpr std::wstring_view InstallVersion = TEXT_LONG(INSTALLER_VERSION);
+
     Installer::Installer() :
         InstallPath(Utils::Platform::GetKnownFolderPath(FOLDERID_ProgramFiles) / "EGL3")
     {

@@ -13,6 +13,13 @@ add_file(packer ../../utils/Version.cpp)
 
 ADD_VERSION_DEFS(../../utils/Version.cpp)
 
+set_property(
+        SOURCE ../backend/Installer.cpp
+        APPEND
+        PROPERTY COMPILE_DEFINITIONS
+        INSTALLER_VERSION="${INSTALLER_VERSION}"
+    )
+
 ## Define executables ##
 
 add_executable(packer ${packer_SOURCES})

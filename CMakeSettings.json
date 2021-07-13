@@ -7,7 +7,7 @@
             "buildRoot": "${projectDir}\\out\\build\\${name}",
             "installRoot": "${projectDir}\\out\\install\\${name}",
             "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
-            "buildCommandArgs": "-v install",
+            "buildCommandArgs": "-v",
             "ctestCommandArgs": "",
             "inheritEnvironments": [ "msvc_x64_x64" ]
         },
@@ -18,7 +18,7 @@
             "buildRoot": "${projectDir}\\out\\build\\${name}",
             "installRoot": "${projectDir}\\out\\install\\${name}",
             "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
-            "buildCommandArgs": "-v install",
+            "buildCommandArgs": "-v",
             "ctestCommandArgs": "",
             "inheritEnvironments": [ "msvc_x64_x64" ]
         },
@@ -37,6 +37,11 @@
                     "name": "ENABLE_INSTALLER",
                     "value": "True",
                     "type": "BOOL"
+                },
+                {
+                    "name": "INSTALLER_VERSION",
+                    "value": "release",
+                    "type": "STRING"
                 }
             ]
         }

@@ -16,6 +16,13 @@ add_file(installer app.manifest)
 ADD_VERSION_DEFS(../../utils/Version.cpp)
 ADD_VERSION_DEFS(installerApp.rc)
 
+set_property(
+        SOURCE ../backend/Installer.cpp
+        APPEND
+        PROPERTY COMPILE_DEFINITIONS
+        INSTALLER_VERSION="${INSTALLER_VERSION}"
+    )
+
 
 ## Define executables ##
 

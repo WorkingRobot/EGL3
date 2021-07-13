@@ -38,6 +38,7 @@ jobs:
       with:
         cmakeListsOrSettingsJson: CMakeSettingsJson
         cmakeSettingsJsonPath: '${{ github.workspace }}/CMakeSettings.json'
+        cmakeAppendedArgs: install
         useVcpkgToolchainFile: true
         configurationRegexFilter: '${{ matrix.configuration }}'
     
