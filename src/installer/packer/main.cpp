@@ -1,10 +1,16 @@
 #include "../../utils/Version.h"
 #include "../backend/Packer.h"
+#include "../backend/Constants.h"
 
 using namespace EGL3;
 using namespace EGL3::Installer;
 
 int main(int argc, char* argv[]) {
+    if (argc == 2 && strcmp(argv[1], "version") == 0) {
+        printf("%.*s\n", (int)Backend::GetInstallVersion().size(), Backend::GetInstallVersion().data());
+        return 0;
+    }
+
     if (argc <= 2) {
         printf("Not enough arguments\n");
         printf("%s <input path> <eglu output> [json output] [patch notes (pango)]\n", argv[0]);

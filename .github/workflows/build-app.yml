@@ -14,6 +14,7 @@ jobs:
           - os: windows-2019
             name: Windows
             triplet: x64-windows
+            triplet-installer: x64-windows-static
             configuration: x64-Release
             configuration-installer: x64-MinRel-Installer
 
@@ -30,7 +31,7 @@ jobs:
       uses: lukka/run-vcpkg@main
       with:
         vcpkgArguments: 'lz4 rapidjson'
-        vcpkgTriplet: 'x64-windows-static'
+        vcpkgTriplet: '${{ matrix.triplet-installer }}'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
     - name: Run CMake - Installer
@@ -41,6 +42,12 @@ jobs:
         # cmakeAppendedArgs: '-DINSTALLER_VERSION:STRING=release'
         useVcpkgToolchainFile: true
         configurationRegexFilter: '${{ matrix.configuration-installer }}'
+
+    - name: Get Version
+      id: version
+      run: |
+        echo "::set-output name=version::$('${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer' version)"
+      shell: bash
 
     - name: Run Vcpkg - Build
       uses: lukka/run-vcpkg@main
@@ -59,15 +66,14 @@ jobs:
 
     - name: Execute Packer
       run: |
-        cd "${{ github.workspace }}"
-        xcopy /Y /E /Q extras/share/ "C:/Program Files (x86)/EGL3/share/"
-        "${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer" "C:/Program Files (x86)/EGL3" archive.eglu
-      shell: cmd
+        cp -R '${{ github.workspace }}/extras/share' 'C:/Program Files (x86)/EGL3/share'
+        '${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer' 'C:/Program Files (x86)/EGL3' '${{ github.workspace }}/archive.eglu'
+      shell: bash
 
     - name: Upload EGLU
       uses: actions/upload-artifact@v2
       with:
-        name: 'archive.eglu'
+        name: '${{ steps.version.outputs.version }}.eglu'
         path: '${{ github.workspace }}/archive.eglu'
 
     - name: Upload Installer

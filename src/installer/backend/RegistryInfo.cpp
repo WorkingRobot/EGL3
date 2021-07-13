@@ -113,7 +113,8 @@ namespace EGL3::Installer::Backend {
 
     bool RegistryInfo::IsShortcutted() const
     {
-        return std::filesystem::exists(GetShortcutPath());
+        std::error_code Code;
+        return std::filesystem::exists(GetShortcutPath(), Code);
     }
 
     bool RegistryInfo::Unshortcut() const
@@ -122,7 +123,8 @@ namespace EGL3::Installer::Backend {
             return false;
         }
 
-        std::filesystem::remove(GetShortcutPath());
+        std::error_code Code;
+        return std::filesystem::remove(GetShortcutPath(), Code);
     }
 
     bool RegistryInfo::Shortcut(const std::filesystem::path& InstallDirectory, std::filesystem::path& LaunchPath) const

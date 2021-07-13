@@ -14,7 +14,7 @@ add_file(packer ../../utils/Version.cpp)
 ADD_VERSION_DEFS(../../utils/Version.cpp)
 
 set_property(
-        SOURCE ../backend/Installer.cpp
+        SOURCE ../backend/Constants.cpp
         APPEND
         PROPERTY COMPILE_DEFINITIONS
         INSTALLER_VERSION="${INSTALLER_VERSION}"
