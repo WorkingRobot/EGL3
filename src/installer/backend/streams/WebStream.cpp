@@ -1,6 +1,6 @@
 #include "WebStream.h"
 
-#include <iterator>
+#include "../../../utils/Version.h"
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -13,6 +13,11 @@ namespace EGL3::Installer::Backend::Streams {
         }
     }
 
+    const std::wstring& GetUserAgent() {
+        static const std::wstring UserAgent = std::filesystem::path(std::format("EGL3 Installer/{}", Utils::Version::GetAppVersion())).wstring();
+        return UserAgent;
+    }
+
     WebStream::WebStream(const std::wstring& Host, const std::wstring& Url) :
         SessionHandle(NULL),
         ConnectionHandle(NULL),
@@ -21,7 +26,7 @@ namespace EGL3::Installer::Backend::Streams {
         IsCompleted(false),
         Position(0)
     {
-        SessionHandle = WinHttpOpen(L"EGL3 Installer/" CONFIG_VERSION_LONG, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, WINHTTP_FLAG_ASYNC);
+        SessionHandle = WinHttpOpen(GetUserAgent().c_str(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, WINHTTP_FLAG_ASYNC);
         if (SessionHandle == NULL) {
             return;
         }

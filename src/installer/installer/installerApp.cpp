@@ -4,7 +4,6 @@
 
 namespace EGL3::Installer {
 	BEGIN_MESSAGE_MAP(CinstallerApp, CWinApp)
-		ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 	END_MESSAGE_MAP()
 
 	CinstallerApp::CinstallerApp()

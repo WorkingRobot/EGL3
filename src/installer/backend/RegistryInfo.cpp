@@ -1,4 +1,6 @@
-#include "VersionInfo.h"
+#include "RegistryInfo.h"
+
+#include "../../utils/KnownFolders.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -9,7 +11,7 @@
 #include <ShlObj_core.h>
 
 namespace EGL3::Installer::Backend {
-    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, VersionInfo& Val)
+    Utils::Streams::Stream& operator>>(Utils::Streams::Stream& Stream, RegistryInfo& Val)
     {
         Stream >> Val.ProductGuid;
         Stream >> Val.DisplayIcon;
@@ -23,12 +25,11 @@ namespace EGL3::Installer::Backend {
         Stream >> Val.URLUpdateInfo;
         Stream >> Val.VersionMajor;
         Stream >> Val.VersionMinor;
-        Stream >> Val.LaunchExe;
 
         return Stream;
     }
 
-    Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const VersionInfo& Val)
+    Utils::Streams::Stream& operator<<(Utils::Streams::Stream& Stream, const RegistryInfo& Val)
     {
         Stream << Val.ProductGuid;
         Stream << Val.DisplayIcon;
@@ -42,12 +43,11 @@ namespace EGL3::Installer::Backend {
         Stream << Val.URLUpdateInfo;
         Stream << Val.VersionMajor;
         Stream << Val.VersionMinor;
-        Stream << Val.LaunchExe;
 
         return Stream;
     }
 
-    bool VersionInfo::IsInstalled() const
+    bool RegistryInfo::IsInstalled() const
     {
         HKEY key;
         if (!RegOpenKeyEx(HKEY_LOCAL_MACHINE, GetSubKey().c_str(), 0, KEY_ALL_ACCESS, &key)) {
@@ -57,7 +57,7 @@ namespace EGL3::Installer::Backend {
         return false;
     }
 
-    bool VersionInfo::Uninstall() const
+    bool RegistryInfo::Uninstall() const
     {
         if (!IsInstalled()) {
             return false;
@@ -74,7 +74,7 @@ namespace EGL3::Installer::Backend {
         return !RegSetValueEx(Key, Name, 0, REG_DWORD, (BYTE*)&Data, sizeof(DWORD));
     }
 
-    bool VersionInfo::Install(const std::filesystem::path& InstallDirectory) const
+    bool RegistryInfo::Install(const std::filesystem::path& InstallDirectory) const
     {
         if (IsInstalled()) {
             return false;
@@ -111,12 +111,12 @@ namespace EGL3::Installer::Backend {
         return Successful;
     }
 
-    bool VersionInfo::IsShortcutted() const
+    bool RegistryInfo::IsShortcutted() const
     {
         return std::filesystem::exists(GetShortcutPath());
     }
 
-    bool VersionInfo::Unshortcut() const
+    bool RegistryInfo::Unshortcut() const
     {
         if (!IsShortcutted()) {
             return false;
@@ -125,7 +125,7 @@ namespace EGL3::Installer::Backend {
         std::filesystem::remove(GetShortcutPath());
     }
 
-    bool VersionInfo::Shortcut(const std::filesystem::path& InstallDirectory, std::filesystem::path& LaunchPath) const
+    bool RegistryInfo::Shortcut(const std::filesystem::path& InstallDirectory, std::filesystem::path& LaunchPath) const
     {
         if (IsShortcutted()) {
             return false;
@@ -185,18 +185,13 @@ namespace EGL3::Installer::Backend {
         return true;
     }
 
-    std::string VersionInfo::GetSubKey() const
+    std::string RegistryInfo::GetSubKey() const
     {
         return std::format("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}", ProductGuid);
     }
 
-    std::filesystem::path VersionInfo::GetShortcutPath() const
+    std::filesystem::path RegistryInfo::GetShortcutPath() const
     {
-        CHAR Path[MAX_PATH];
-        if (SHGetFolderPath(NULL, CSIDL_COMMON_PROGRAMS, NULL, SHGFP_TYPE_CURRENT, Path) != S_OK) {
-            return "";
-        }
-
-        return std::filesystem::path(Path) / (DisplayName + ".lnk");
+        return (Utils::Platform::GetKnownFolderPath(FOLDERID_CommonPrograms) / DisplayName).replace_extension("lnk");
     }
 }

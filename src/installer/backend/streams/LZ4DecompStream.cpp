@@ -8,7 +8,7 @@ namespace EGL3::Installer::Backend::Streams {
     LZ4DecompStream::LZ4DecompStream(Utils::Streams::Stream& BaseStream) :
         BaseStream(BaseStream),
         LZ4Ctx(LZ4_createStreamDecode()),
-        CompBuffer(std::make_unique<char[]>(OutBufferSize)),
+        CompBuffer(std::make_unique<char[]>(LZ4_COMPRESSBOUND(BufferSize))),
         DecompBuffer(std::make_unique<char[]>(BufferSize)),
         DecompLeft(0),
         DecompPos(0)

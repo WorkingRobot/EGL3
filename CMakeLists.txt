@@ -102,7 +102,8 @@ endfunction()
 ## Add projects ##
 
 if (ENABLE_INSTALLER)
-    add_subdirectory(src/installer)
+    add_subdirectory(src/installer/installer)
+    add_subdirectory(src/installer/packer)
 else()
     add_subdirectory(libstrophe)
     add_subdirectory(WinToast)
