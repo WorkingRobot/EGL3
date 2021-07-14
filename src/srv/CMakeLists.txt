@@ -33,8 +33,8 @@ target_compile_definitions(EGL3_SRV PRIVATE IS_SERVICE)
 ## Dependencies ##
 
 # WinSpd #
-target_include_directories(EGL3_SRV PRIVATE "$ENV{ProgramFiles\(x86\)}\\WinSpd\\inc")
-target_link_libraries(EGL3_SRV "$ENV{ProgramFiles\(x86\)}\\WinSpd\\lib\\winspd-x64.lib")
+target_include_directories(EGL3_SRV PRIVATE "${CMAKE_SOURCE_DIR}\\src\\srv\\winspd")
+target_link_libraries(EGL3_SRV "${CMAKE_SOURCE_DIR}\\src\\srv\\winspd\\winspd-x64.lib")
 
 # NtDll (Used for mmio) #
 target_link_libraries(EGL3_SRV "${CMAKE_SOURCE_DIR}\\src\\utils\\mmio\\ntdll64.lib")

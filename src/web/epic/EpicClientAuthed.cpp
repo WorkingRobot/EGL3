@@ -75,7 +75,7 @@ namespace EGL3::Web::Epic {
             [&, this]() {
                 cpr::Parameters Parameters;
                 for (auto& Item : Accounts) {
-                    Parameters.AddParameter({ "accountId", Item }, cpr::CurlHolder());
+                    Parameters.Add({ "accountId", Item });
                 }
 
                 return Http::Get(
@@ -247,7 +247,7 @@ namespace EGL3::Web::Epic {
                     { "locale", Locale }
                 };
                 for (auto& Item : Items) {
-                    Parameters.AddParameter({ "id", Item }, cpr::CurlHolder());
+                    Parameters.Add({ "id", Item });
                 }
 
                 return Http::Get(
@@ -486,11 +486,11 @@ namespace EGL3::Web::Epic {
                 cpr::Parameters Parameters;
 
                 for (auto& Account : Accounts) {
-                    Parameters.AddParameter({ "accountId", Account }, cpr::CurlHolder());
+                    Parameters.Add({ "accountId", Account });
                 }
 
                 for (auto& Setting : Settings) {
-                    Parameters.AddParameter({ "settingKey", Setting }, cpr::CurlHolder());
+                    Parameters.Add({ "settingKey", Setting });
                 }
 
                 return Http::Get(
@@ -545,7 +545,7 @@ namespace EGL3::Web::Epic {
             [&, this]() {
                 cpr::Parameters Parameters;
                 for (auto& AppName : AppNames) {
-                    Parameters.AddParameter({ "serviceId", AppName }, cpr::CurlHolder());
+                    Parameters.Add({ "serviceId", AppName });
                 }
                 return Http::Get(
                     Http::FormatUrl<Host::Lightswitch>("service/bulk/status"),

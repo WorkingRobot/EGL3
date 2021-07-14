@@ -1,0 +1,102 @@
+name: Build EGL3
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2019]
+        include:
+          - os: windows-2019
+            name: Windows
+            triplet: x64-windows
+            triplet-installer: x64-windows-static
+            configuration: x64-Release
+            configuration-installer: x64-MinRel-Installer
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Get CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Run Vcpkg - Installer
+      uses: lukka/run-vcpkg@main
+      with:
+        vcpkgArguments: 'lz4 rapidjson'
+        vcpkgTriplet: '${{ matrix.triplet-installer }}'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+
+    - name: Run CMake - Installer
+      uses: lukka/run-cmake@main
+      with:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        cmakeSettingsJsonPath: '${{ github.workspace }}/CMakeSettings.json'
+        # cmakeAppendedArgs: '-DINSTALLER_VERSION:STRING=release'
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: '${{ matrix.configuration-installer }}'
+
+    - name: Get Version
+      id: version
+      run: |
+        echo "::set-output name=version::$('${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer' version)"
+      shell: bash
+
+    - name: Run Vcpkg - Build
+      uses: lukka/run-vcpkg@main
+      with:
+        vcpkgArguments: 'expat cpr mbedtls ixwebsocket rapidjson gtkmm'
+        vcpkgTriplet: '${{ matrix.triplet }}'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+
+    - name: Run CMake - Build
+      uses: lukka/run-cmake@main
+      with:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        cmakeSettingsJsonPath: '${{ github.workspace }}/CMakeSettings.json'
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: '${{ matrix.configuration }}'
+
+    - name: Execute Packer
+      run: |
+        cp -R '${{ github.workspace }}/extras/share' 'C:/Program Files (x86)/EGL3/share'
+        '${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer' 'C:/Program Files (x86)/EGL3' '${{ github.workspace }}/archive.eglu'
+      shell: bash
+
+    - name: Copy Artifacts
+      run: |
+        mkdir '${{ github.workspace }}/deploy'
+        cd '${{ github.workspace }}/deploy'
+        cp '${{ github.workspace }}/archive.eglu' '${{ steps.version.outputs.version }}.eglu'
+        cp '${{ runner.temp }}/x64-MinRel-Installer/src/installer/installer/installer.exe' '${{ steps.version.outputs.version }}.exe'
+      shell: bash
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: '${{ github.workspace }}/deploy'
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: artifacts
+        path: deploy
+
+    - name: Upload to FTP
+      run: |
+        sudo apt-get install lftp
+        lftp ftp://${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT }} -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} -e "set ftp:ssl-force true; set ssl:verify-certificate false;mirror -R -c -L deploy ${{ secrets.FTP_DIRECTORY }};quit;"

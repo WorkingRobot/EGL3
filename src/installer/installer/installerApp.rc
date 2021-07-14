@@ -1,0 +1,107 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#include <SDKDDKVer.h>
+#include "afxres.h"
+#include "verrsrc.h"
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "..\\..\\graphics\\icon.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_INSTALLERAPP_DIALOG DIALOGEX 0, 0, 323, 204
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_APPWINDOW
+CAPTION "EGL3 Installer"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_RADIO_AGREEMENT_Y,"Button",BS_AUTORADIOBUTTON | BS_VCENTER | NOT WS_VISIBLE,36,164,12,12,WS_EX_TRANSPARENT
+    CONTROL         "",IDC_RADIO_AGREEMENT_N,"Button",BS_AUTORADIOBUTTON | BS_VCENTER | NOT WS_VISIBLE,168,164,12,12,WS_EX_TRANSPARENT
+    PUSHBUTTON      "< Back",IDBACK,154,181,50,14,NOT WS_VISIBLE,WS_EX_TRANSPARENT
+    DEFPUSHBUTTON   "Next >",IDNEXT,209,181,50,14,WS_GROUP,WS_EX_TRANSPARENT
+    PUSHBUTTON      "Cancel",IDCANCEL,264,181,50,14,WS_GROUP,WS_EX_TRANSPARENT
+    LTEXT           "Ready to install EGL3?\n\nClick Next to continue, or Cancel to exit setup.",IDC_STATIC_WELCOME_DESC,108,30,210,132
+    CTEXT           "EGL3 Installer",IDC_STATIC_TITLE,108,6,210,12,NOT WS_GROUP,WS_EX_TRANSPARENT
+    CONTROL         "",IDC_STATIC_PICTURE,"Static",SS_BITMAP | SS_REALSIZECONTROL,0,0,96,204
+    LTEXT           "EGL3 Installer",IDC_STATIC_DESCRIPTION,6,30,260,24,NOT WS_VISIBLE | NOT WS_GROUP,WS_EX_TRANSPARENT
+    LTEXT           "Static",IDC_STATIC_SUBSECTION,30,6,90,12,NOT WS_VISIBLE | NOT WS_GROUP,WS_EX_TRANSPARENT
+    CONTROL         IDB_BITMAP2,IDC_STATIC_ICON,"Static",SS_BITMAP | SS_REALSIZECONTROL | NOT WS_VISIBLE,287,5,34,30
+    EDITTEXT        IDC_EDIT_LICENSE,6,54,311,108,ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_WANTRETURN | NOT WS_VISIBLE | WS_VSCROLL,WS_EX_CLIENTEDGE
+    LTEXT           "I accept the agreement",IDC_STATIC_AGREEMENT_Y,48,164,84,12,SS_NOTIFY | SS_CENTERIMAGE | NOT WS_VISIBLE,WS_EX_TRANSPARENT
+    LTEXT           "I do not accept the agreement",IDC_STATIC_AGREEMENT_N,180,164,102,12,SS_NOTIFY | SS_CENTERIMAGE | NOT WS_VISIBLE
+    PUSHBUTTON      "Browse...",IDC_INSTALL_BROWSE,264,55,50,14,NOT WS_VISIBLE
+    EDITTEXT        IDC_EDIT_BROWSE,6,56,252,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_VISIBLE,WS_EX_TRANSPARENT
+    CONTROL         "",IDC_PROGRESS,"msctls_progress32",NOT WS_VISIBLE | WS_BORDER,6,102,306,14,WS_EX_TRANSPARENT
+    CONTROL         "Static",IDC_STATIC_PROGRESS,"Static",SS_LEFTNOWORDWRAP | NOT WS_VISIBLE | WS_GROUP,6,90,306,8,WS_EX_TRANSPARENT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_VERSION_PATCH, 0
+PRODUCTVERSION CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_VERSION_PATCH, 0
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904b0"
+        {
+            VALUE "CompanyName", "WorkingRobot"
+
+                VALUE "FileDescription", "EGL3 Installer"
+                VALUE "FileVersion", CONFIG_VERSION_SHORT ".0"
+                VALUE "InternalName", "egl3_installer"
+                VALUE "LegalCopyright", "EGL3 (c) by Aleks Margarian (WorkingRobot)"
+
+                VALUE "OriginalFilename", "installer.exe"
+                VALUE "ProductName", "EGL3"
+                VALUE "ProductVersion", CONFIG_VERSION_LONG
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x409, 1200
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_PNG1                PNG                     "..\\..\\graphics\\installer\\banner.png"
+
+IDB_PNG2                PNG                     "..\\..\\graphics\\installer\\corner-icon.png"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXT
+//
+
+IDR_LICENSE             TEXT                    "NOTICE.txt"
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////

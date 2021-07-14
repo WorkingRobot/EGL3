@@ -9,10 +9,10 @@ namespace EGL3::Installer::Backend::Streams {
         BaseStream(BaseStream),
         LZ4Ctx(LZ4_createStreamHC()),
         InputBuffer(std::make_unique<char[]>(BufferSize)),
-        OutputBuffer(std::make_unique<char[]>(OutBufferSize)),
+        OutputBuffer(std::make_unique<char[]>(LZ4_COMPRESSBOUND(BufferSize))),
         BufPos(0)
     {
-
+        LZ4_resetStreamHC_fast((LZ4_streamHC_t*)LZ4Ctx, LZ4HC_CLEVEL_MAX);
     }
 
     LZ4Stream::~LZ4Stream()
@@ -43,7 +43,7 @@ namespace EGL3::Installer::Backend::Streams {
 
     bool LZ4Stream::Compress(int BufCount)
     {
-        auto CompressedSize = LZ4_compress_HC_continue((LZ4_streamHC_t*)LZ4Ctx, InputBuffer.get(), OutputBuffer.get(), BufCount, OutBufferSize);
+        auto CompressedSize = LZ4_compress_HC_continue((LZ4_streamHC_t*)LZ4Ctx, InputBuffer.get(), OutputBuffer.get(), BufCount, LZ4_COMPRESSBOUND(BufferSize));
         if (CompressedSize <= 0) {
             return false;
         }

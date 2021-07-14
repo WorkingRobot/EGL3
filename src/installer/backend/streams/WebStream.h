@@ -47,7 +47,7 @@ namespace EGL3::Installer::Backend::Streams {
         bool IsCompleted;
 
         std::unique_ptr<char[]> DlBuffer;
-        static constexpr size_t DlBufferSize = 1 << 14; // 16 kb
+        static constexpr size_t DlBufferSize = 1 << 16; // 64 kb
 
         size_t Position;
     };

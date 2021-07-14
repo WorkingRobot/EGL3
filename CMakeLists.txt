@@ -6,7 +6,7 @@ cmake_policy(SET CMP0091 NEW)
 project(EGL3)
 
 option(ENABLE_INSTALLER "Build the installer (this must be separate due to different vcpkg triplets)" OFF)
-
+set(INSTALLER_VERSION "" CACHE STRING "Installer version to compile to")
 
 ## Config ##
 
@@ -15,7 +15,7 @@ set(CONFIG_VERSION_MINOR 0)
 set(CONFIG_VERSION_PATCH 11)
 
 # Get Git Info #
-execute_process(COMMAND git log --pretty=format:'%h' -n 1
+execute_process(COMMAND git -C ${CMAKE_SOURCE_DIR} log --pretty=format:'%h' -n 1
                 OUTPUT_VARIABLE GIT_REV
                 ERROR_QUIET)
 
@@ -26,7 +26,7 @@ if ("${GIT_REV}" STREQUAL "")
     set(GIT_BRANCH "orphaned")
 else()
     execute_process(
-        COMMAND git diff --quiet --exit-code
+        COMMAND git -C ${CMAKE_SOURCE_DIR} diff --quiet --exit-code
         RESULT_VARIABLE GIT_DIFF)
     if (GIT_DIFF EQUAL "0")
         set(GIT_DIFF "")
@@ -34,7 +34,7 @@ else()
         set(GIT_DIFF "+")
     endif()
     execute_process(
-        COMMAND git rev-parse --abbrev-ref HEAD
+        COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --abbrev-ref HEAD
         OUTPUT_VARIABLE GIT_BRANCH)
 
     string(STRIP "${GIT_REV}" GIT_REV)
@@ -45,6 +45,10 @@ endif()
 
 set(CONFIG_VERSION_HASH ${GIT_REV}${GIT_DIFF})
 set(CONFIG_VERSION_BRANCH ${GIT_BRANCH})
+set(CONFIG_VERSION_SHORT ${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH})
+set(CONFIG_VERSION_LONG ${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}-${CONFIG_VERSION_HASH}++EGL3+${CONFIG_VERSION_BRANCH})
+
+message("Compiling EGL3 for ${CONFIG_VERSION_LONG}")
 
 function(ADD_VERSION_DEFS TARGET_FILE)
     set_property(
@@ -56,8 +60,8 @@ function(ADD_VERSION_DEFS TARGET_FILE)
         CONFIG_VERSION_PATCH=${CONFIG_VERSION_PATCH}
         CONFIG_VERSION_HASH="${CONFIG_VERSION_HASH}"
         CONFIG_VERSION_BRANCH="${CONFIG_VERSION_BRANCH}"
-        CONFIG_VERSION_SHORT="${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}"
-        CONFIG_VERSION_LONG="${CONFIG_VERSION_MAJOR}.${CONFIG_VERSION_MINOR}.${CONFIG_VERSION_PATCH}-${CONFIG_VERSION_HASH}++EGL3+${CONFIG_VERSION_BRANCH}"
+        CONFIG_VERSION_SHORT="${CONFIG_VERSION_SHORT}"
+        CONFIG_VERSION_LONG="${CONFIG_VERSION_LONG}"
     )
 endfunction()
 
@@ -100,7 +104,11 @@ endfunction()
 ## Add projects ##
 
 if (ENABLE_INSTALLER)
-    add_subdirectory(src/installer)
+    if (INSTALLER_VERSION STREQUAL "")
+        set(INSTALLER_VERSION ${CONFIG_VERSION_LONG})
+    endif()
+    add_subdirectory(src/installer/installer)
+    add_subdirectory(src/installer/packer)
 else()
     add_subdirectory(libstrophe)
     add_subdirectory(WinToast)
