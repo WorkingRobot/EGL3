@@ -70,14 +70,33 @@ jobs:
         '${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/packer/packer' 'C:/Program Files (x86)/EGL3' '${{ github.workspace }}/archive.eglu'
       shell: bash
 
-    - name: Upload EGLU
-      uses: actions/upload-artifact@v2
-      with:
-        name: '${{ steps.version.outputs.version }}.eglu'
-        path: '${{ github.workspace }}/archive.eglu'
+    - name: Copy Artifacts
+      run: |
+        mkdir '${{ github.workspace }}/deploy'
+        cd '${{ github.workspace }}/deploy'
+        cp '${{ github.workspace }}/archive.eglu' '${{ steps.version.outputs.version }}.eglu'
+        cp '${{ runner.temp }}/x64-MinRel-Installer/src/installer/installer/installer.exe' '${{ steps.version.outputs.version }}.exe'
+      shell: bash
 
-    - name: Upload Installer
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: 'installer.exe'
-        path: '${{ runner.temp }}/x64-MinRel-Installer/src/installer/installer/installer.exe'
+        name: artifacts
+        path: '${{ github.workspace }}/deploy'
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: artifacts
+        path: deploy
+
+    - name: Upload to FTP
+      run: |
+        sudo apt-get install lftp
+        lftp ftp://${{ secrets.FTP_SERVER }}:${{ secrets.FTP_PORT }} -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} -e "set ftp:ssl-force true; set ssl:verify-certificate false;mirror -R -c -L deploy ${{ secrets.FTP_DIRECTORY }};quit;"
