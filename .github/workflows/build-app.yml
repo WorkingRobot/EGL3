@@ -14,8 +14,8 @@ jobs:
           - os: windows-2019
             name: Windows
             triplet: x64-windows
-            triplet-installer: x64-windows-static
             configuration: x64-Release
+            triplet-installer: x64-windows-static
             configuration-installer: x64-MinRel-Installer
 
     steps:
@@ -75,7 +75,7 @@ jobs:
         mkdir '${{ github.workspace }}/deploy'
         cd '${{ github.workspace }}/deploy'
         cp '${{ github.workspace }}/archive.eglu' '${{ steps.version.outputs.version }}.eglu'
-        cp '${{ runner.temp }}/x64-MinRel-Installer/src/installer/installer/installer.exe' '${{ steps.version.outputs.version }}.exe'
+        cp '${{ runner.temp }}/${{ matrix.configuration-installer }}/src/installer/installer/installer.exe' '${{ steps.version.outputs.version }}.exe'
       shell: bash
 
     - name: Upload Artifacts
