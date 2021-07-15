@@ -228,7 +228,7 @@ namespace EGL3::Service {
         PVOID Buffer, UINT64 BlockAddress, UINT32 BlockCount, BOOLEAN FlushFlag,
         SPD_STORAGE_UNIT_STATUS* Status) noexcept
     {
-        ZeroMemory(Buffer, BlockCount * 4096);
+        memset(Buffer, 0, BlockCount * 4096);
 
         auto& Data = *(MountedData*)StorageUnit->UserContext;
 
