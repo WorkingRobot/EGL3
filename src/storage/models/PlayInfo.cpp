@@ -24,7 +24,6 @@ namespace EGL3::Storage::Models {
         if (PrimaryTask.valid()) {
             PrimaryTask.get();
         }
-        Game.Unmount();
         if (ProcessHandle) {
             CloseHandle(ProcessHandle);
         }
