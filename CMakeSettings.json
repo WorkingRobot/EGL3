@@ -9,6 +9,7 @@
             "cmakeCommandArgs": "-DVCPKG_TARGET_TRIPLET=x64-windows",
             "buildCommandArgs": "-v install",
             "ctestCommandArgs": "",
+            "addressSanitizerEnabled": true,
             "inheritEnvironments": [ "msvc_x64_x64" ]
         },
         {
