@@ -286,7 +286,7 @@ namespace EGL3::Service {
         auto Data = (MountedData*)PrivateData;
 
         SpdStorageUnitSetDebugLog(Data->Unit, LogFlags);
-        EGL3_VERIFY(SpdStorageUnitStartDispatcher(Data->Unit, 1) == ERROR_SUCCESS, "Could not mount storage unit");
+        EGL3_VERIFY(SpdStorageUnitStartDispatcher(Data->Unit, 0) == ERROR_SUCCESS, "Could not mount storage unit");
         SpdGuardSet(&Data->CloseGuard, Data->Unit);
     }
 

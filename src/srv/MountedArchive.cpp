@@ -113,7 +113,6 @@ namespace EGL3::Service {
         return MountedFiles;
     }
 
-#if 1
     void MountedArchive::HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
         Count *= 4096;
 
@@ -142,32 +141,9 @@ namespace EGL3::Service {
             Count -= ReadAmt;
         }
 
-        // printf("%d\n", DstTablePtr - DstTable);
         PrefetchVirtualMemory(GetCurrentProcess(), DstTablePtr - DstTable, (PWIN32_MEMORY_RANGE_ENTRY)SrcTable, 0);
         for (int i = 0; i < DstTablePtr - DstTable; ++i) {
             memcpy(DstTable[i], SrcTable[i].VirtualAddress, SrcTable[i].NumberOfBytes);
         }
     }
-#else
-    void MountedArchive::HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
-        Count *= 4096;
-
-        auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
-
-        auto PartItr = Ctx.Parts.begin() + Ctx.LUT[LCN].first;
-        uint32_t PartOffset = Ctx.LUT[LCN].second;
-
-        while (ByteCount && PartItr != Ctx.Parts.end()) {
-            auto Ptr = PartItr->first + PartOffset;
-            auto ReadAmt = std::min(PartItr->second - PartOffset, Count);
-
-            Ptr.FastRead((char*)Buffer, ReadAmt);
-
-            Buffer += ReadAmt;
-            PartOffset = 0;
-            ++PartItr;
-            Count -= ReadAmt;
-        }
-    }
-#endif
 }
