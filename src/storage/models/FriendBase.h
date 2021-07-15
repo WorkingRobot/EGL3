@@ -16,6 +16,8 @@ namespace EGL3::Storage::Models {
         FriendBase(FriendBase&&) = default;
         FriendBase& operator=(FriendBase&&) = default;
 
+        virtual ~FriendBase() = default;
+
         virtual const std::string& GetAccountId() const = 0;
 
         virtual const std::string& GetUsername() const = 0;
