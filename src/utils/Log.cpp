@@ -18,9 +18,6 @@ namespace EGL3 {
             printf("Press any key to exit...");
             _getch();
         }
-        if constexpr (!UseConsole && !HasUI) {
-            fflush(stdout);
-        }
     }
 
     struct CloseWaiter {
@@ -60,6 +57,7 @@ namespace EGL3 {
             auto Path = Utils::Config::GetFolder() / "logs" / std::format("{:%Y-%m-%d_%H-%M-%S}.log", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
 
             freopen_s((FILE**)stdout, Path.string().c_str(), "w", stdout);
+            setbuf(stdout, NULL);
 
             std::at_quick_exit(AtQuickExit);
         }
