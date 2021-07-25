@@ -131,7 +131,7 @@ namespace EGL3::Storage::Game {
         }
 
         template<std::enable_if_t<std::is_trivially_copyable_v<T>, bool> = true>
-        size_t QueueFastPrefetch(T* Dest, size_t Count, PrefetchTableSrcEntry* SrcTable, void** DstTable) const noexcept {
+        size_t QueueFastPrefetch(T* Dest, size_t Count, PrefetchTableSrcEntry* SrcTable, T** DstTable) const noexcept {
             Count *= sizeof(typename ArchiveListIteratorReadonly<Id>::T);
 
             auto Base = Runlist.GetBase();

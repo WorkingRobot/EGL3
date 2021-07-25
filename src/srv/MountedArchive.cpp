@@ -122,10 +122,10 @@ namespace EGL3::Service {
         uint32_t PartOffset = Ctx.LUT[LCN].second;
 
         Storage::Game::PrefetchTableSrcEntry SrcTable[16];
-        void* DstTable[16];
+        char* DstTable[16];
 
         Storage::Game::PrefetchTableSrcEntry* SrcTablePtr = SrcTable;
-        void** DstTablePtr = DstTable;
+        char** DstTablePtr = DstTable;
 
         while (Count && PartItr != Ctx.Parts.end()) {
             auto Ptr = PartItr->first + PartOffset;
@@ -140,7 +140,8 @@ namespace EGL3::Service {
             ++PartItr;
             Count -= ReadAmt;
         }
-
+        
+        static_assert(sizeof(Storage::Game::PrefetchTableSrcEntry) == sizeof(WIN32_MEMORY_RANGE_ENTRY));
         PrefetchVirtualMemory(GetCurrentProcess(), DstTablePtr - DstTable, (PWIN32_MEMORY_RANGE_ENTRY)SrcTable, 0);
         for (int i = 0; i < DstTablePtr - DstTable; ++i) {
             memcpy(DstTable[i], SrcTable[i].VirtualAddress, SrcTable[i].NumberOfBytes);
