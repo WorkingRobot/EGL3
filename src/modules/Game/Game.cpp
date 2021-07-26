@@ -11,7 +11,6 @@ namespace EGL3::Modules::Game {
     constexpr Storage::Game::GameId PrimaryGame = Storage::Game::GameId::Fortnite;
 
     GameModule::GameModule(ModuleList& Ctx) :
-        InstalledGames(Ctx.Get<InstalledGamesSetting>()),
         AsyncFF(Ctx.GetModule<AsyncFFModule>()),
         SysTray(Ctx.GetModule<SysTrayModule>()),
         Auth(Ctx.GetModule<Login::AuthModule>()),
@@ -48,7 +47,7 @@ namespace EGL3::Modules::Game {
 
         ConfirmInstallStateHolder.Clicked.Set([this]() {
             Download.OnDownloadOkClicked([this]() -> Storage::Models::InstalledGame& {
-                return InstalledGames->emplace_back();
+                return UpdateCheck.GetInstalledGames().emplace_back();
             });
             ConfirmInstallStateHolder.ClearHeldState();
         });
@@ -60,7 +59,7 @@ namespace EGL3::Modules::Game {
                 {
                 case Storage::Models::DownloadInfoState::Initializing:
                     InstallStateHolder.SetHeldState(InstallStateHolder.GetHeldState() == State::Update ? State::Updating : State::Installing);
-                    InstalledGames.Flush();
+                    UpdateCheck.FlushInstalledGames();
                     break;
                 case Storage::Models::DownloadInfoState::Finished:
                     if (!PlayStateHolder.HasHeldState()) {
@@ -216,12 +215,13 @@ namespace EGL3::Modules::Game {
     }
 
     Storage::Models::InstalledGame* GameModule::GetInstall(Storage::Game::GameId Id) {
-        auto Itr = std::find_if(InstalledGames->begin(), InstalledGames->end(), [Id](Storage::Models::InstalledGame& Game) {
+        auto& InstalledGames = UpdateCheck.GetInstalledGames();
+        auto Itr = std::find_if(InstalledGames.begin(), InstalledGames.end(), [Id](Storage::Models::InstalledGame& Game) {
             auto HeaderPtr = Game.GetHeader();
             return HeaderPtr ? HeaderPtr->GetGameId() == Id : false;
         });
 
-        if (Itr != InstalledGames->end()) {
+        if (Itr != InstalledGames.end()) {
             return &*Itr;
         }
         return nullptr;

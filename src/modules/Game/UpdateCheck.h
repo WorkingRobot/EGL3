@@ -17,11 +17,15 @@ namespace EGL3::Modules::Game {
 
         ~UpdateCheckModule();
 
-        void SetInstalledGames(std::vector<Storage::Models::InstalledGame>& InstalledGames);
-
         void SetFrequency(std::chrono::seconds NewFrequency);
 
         std::chrono::seconds GetFrequency() const;
+
+        const std::vector<Storage::Models::InstalledGame>& GetInstalledGames() const;
+
+        std::vector<Storage::Models::InstalledGame>& GetInstalledGames();
+
+        void FlushInstalledGames();
 
         // Will only be emitted for already installed games
         sigc::signal<void(Storage::Game::GameId Id, const Storage::Models::VersionData&)> OnUpdateAvailable;
@@ -35,10 +39,11 @@ namespace EGL3::Modules::Game {
         AsyncFFModule& AsyncFF;
         GameInfoModule& GameInfo;
 
+        using InstalledGamesSetting = Storage::Persistent::Setting<Utils::Crc32("InstalledGames"), std::vector<Storage::Models::InstalledGame>>;
+        Storage::Persistent::SettingHolder<InstalledGamesSetting> InstalledGames;
+
         using UpdateFrequencySetting = Storage::Persistent::Setting<Utils::Crc32("UpdateFrequency"), std::chrono::seconds>;
         Storage::Persistent::SettingHolder<UpdateFrequencySetting> UpdateFrequency;
-
-        std::atomic<std::vector<Storage::Models::InstalledGame>*> InstalledGamesPtr;
 
         std::mutex Mutex;
         std::condition_variable CV;
