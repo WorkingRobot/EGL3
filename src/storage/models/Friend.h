@@ -78,8 +78,6 @@ namespace EGL3::Storage::Models {
         // User recieved a friend request
         void SetRequestOutbound(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF);
 
-        void InitializeAccountSettings(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF);
-
     private:
         // This will run asynchronously, but a mutex is used during the operation to prevent any CAS-like issues
         void UpdateInternalData(FriendType TargetType, Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF);

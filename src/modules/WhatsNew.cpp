@@ -15,7 +15,7 @@ namespace EGL3::Modules {
         Timestamps(Ctx.Get<TimestampsSetting>()),
         Selection(Ctx.Get<SelectionSetting>())
     {
-        Dispatcher.connect([this]() { UpdateBox(); });
+        Dispatcher.connect([this](Web::ErrorData::Status Error, const std::vector<Storage::Models::WhatsNew>& Data) { UpdateBox(Error, Data); });
         SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
 
         CheckBR.set_active(SourceEnabled<Storage::Models::WhatsNew::ItemSource::BR>());
@@ -34,7 +34,7 @@ namespace EGL3::Modules {
     }
 
     WhatsNewModule::~WhatsNewModule() {
-        std::lock_guard Guard(ItemDataMutex);
+        
     }
 
     void WhatsNewModule::Refresh() {
@@ -45,28 +45,27 @@ namespace EGL3::Modules {
         RefreshBtn.set_sensitive(false);
 
         RefreshTask = std::async(std::launch::async, [this]() {
-            std::unique_lock ItemDataGuard(ItemDataMutex);
+            std::vector<Storage::Models::WhatsNew> Data;
 
-            ItemData.clear();
             Web::Epic::EpicClient Client;
 
             auto Blogs = Client.GetBlogPosts(Utils::Config::GetLanguage());
             auto News = Client.GetPageInfo(Utils::Config::GetLanguage());
 
             if (Blogs.HasError()) {
-                ItemDataError = Blogs.GetErrorCode();
+                Dispatcher.emit(Blogs.GetErrorCode(), Data);
+                return;
             }
             else if (News.HasError()) {
-                ItemDataError = News.GetErrorCode();
+                Dispatcher.emit(News.GetErrorCode(), Data);
+                return;
             }
             else {
-                ItemDataError = Web::ErrorData::Status::Success;
-
                 // Blogs
 
                 if (SourceEnabled<Storage::Models::WhatsNew::ItemSource::BLOG>()) {
                     for (auto& Post : Blogs->BlogList) {
-                        ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BLOG);
+                        Data.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BLOG);
                     }
                 }
 
@@ -80,7 +79,7 @@ namespace EGL3::Modules {
                                 continue;
                             }
                             // Emergency notices should be at the top (plus, they're not unique between downtimes so it's hard to put a uuid on them anyway)
-                            ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                            Data.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                         }
                     }
 
@@ -89,7 +88,7 @@ namespace EGL3::Modules {
                             if (Post.Region != "NA" || Post.Message.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                            Data.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                         }
                     }
 
@@ -97,7 +96,7 @@ namespace EGL3::Modules {
                         if (Post.Hidden) {
                             continue;
                         }
-                        ItemData.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
+                        Data.emplace_back(Post, Web::TimePoint::max(), Storage::Models::WhatsNew::ItemSource::NOTICE);
                     }
                 }
 
@@ -111,7 +110,7 @@ namespace EGL3::Modules {
                                 continue;
                             }
                             // If the id does not show up, use the current system time and store it as the first time we saw it
-                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BR);
+                            Data.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::BR);
                         }
                     }
 
@@ -120,7 +119,7 @@ namespace EGL3::Modules {
                             if (Post.Hidden || Post.Message.Hidden || Post.Platform != "windows") {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Post.Message), Storage::Models::WhatsNew::ItemSource::BR);
+                            Data.emplace_back(Post, GetTime(Post.Message), Storage::Models::WhatsNew::ItemSource::BR);
                         }
                     }
                 }
@@ -134,7 +133,7 @@ namespace EGL3::Modules {
                             if (Post.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::CREATIVE);
+                            Data.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::CREATIVE);
                         }
                     }
                 }
@@ -148,17 +147,17 @@ namespace EGL3::Modules {
                             if (Post.Hidden) {
                                 continue;
                             }
-                            ItemData.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::STW);
+                            Data.emplace_back(Post, GetTime(Post), Storage::Models::WhatsNew::ItemSource::STW);
                         }
                     }
                 }
             }
 
-            std::sort(ItemData.begin(), ItemData.end(), [](const decltype(ItemData)::value_type& A, const decltype(ItemData)::value_type& B) {
+            std::sort(Data.begin(), Data.end(), [](const decltype(Data)::value_type& A, const decltype(Data)::value_type& B) {
                 return A.Date > B.Date;
             });
 
-            ItemData.erase(std::unique(ItemData.begin(), ItemData.end(), [](const decltype(ItemData)::value_type& A, const decltype(ItemData)::value_type& B) {
+            Data.erase(std::unique(Data.begin(), Data.end(), [](const decltype(Data)::value_type& A, const decltype(Data)::value_type& B) {
                 if (A.Item.index() != B.Item.index()) {
                     return false;
                 }
@@ -173,21 +172,23 @@ namespace EGL3::Modules {
                     }
                     return false;
                 }, A.Item);
-            }), ItemData.end());
+            }), Data.end());
 
-            ItemDataGuard.unlock();
             Timestamps.Flush();
-            Dispatcher.emit();
+
+            Dispatcher.emit(Web::ErrorData::Status::Success, Data);
         });
     }
 
-    void WhatsNewModule::UpdateBox() {
-        std::lock_guard ItemDataGuard(ItemDataMutex);
+    void WhatsNewModule::UpdateBox(Web::ErrorData::Status Error, const std::vector<Storage::Models::WhatsNew>& Data) {
+        if (Error != Web::ErrorData::Status::Success) {
+            return;
+        }
 
         Widgets.clear();
         Box.foreach([this](Gtk::Widget& Widget) { Box.remove(Widget); });
 
-        for (auto& Pair : ItemData) {
+        for (auto& Pair : Data) {
             std::visit([&, this](auto&& Item) {
                 Box.pack_start(*Widgets.emplace_back(std::make_unique<Widgets::WhatsNewItem>(Item, Pair.Date, Pair.Source, ImageCache)));
             }, Pair.Item);

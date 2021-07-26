@@ -13,7 +13,7 @@ namespace EGL3::Modules {
         LabelEOS(Ctx.GetWidget<Gtk::Label>("StatusPageEOS")),
         LabelEGS(Ctx.GetWidget<Gtk::Label>("StatusPageEGS"))
     {
-        Dispatcher.connect([this]() { UpdateLabels(); });
+        Dispatcher.connect([this](const Web::Response<Web::Epic::Responses::GetStatuspageSummary>& Data) { UpdateLabels(Data); });
         SlotRefresh = RefreshBtn.signal_clicked().connect([this]() { Refresh(); });
         SlotHoverPointer = LabelTitleEventBox.signal_enter_notify_event().connect([this](GdkEventCrossing* Evt) {
             auto Wnd = LabelTitle.get_window();
@@ -40,15 +40,11 @@ namespace EGL3::Modules {
         UpdateLabel(LabelEGS, "Refreshing");
 
         RefreshTask = std::async(std::launch::async, [this]() {
-            Web::Epic::EpicClient Client;
-
-            Data = Client.GetStatuspageSummary();
-
-            Dispatcher.emit();
+            Dispatcher.emit(Web::Epic::EpicClient().GetStatuspageSummary());
         });
     }
 
-    void StatusPageModule::UpdateLabels() {
+    void StatusPageModule::UpdateLabels(const Web::Response<Web::Epic::Responses::GetStatuspageSummary>& Data) {
         if (!Data.HasError()) {
             for (auto& Component : Data->Components) {
                 if (Component.Id == "wf1ys2kx4pxc") {

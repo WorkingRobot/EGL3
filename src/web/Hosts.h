@@ -11,7 +11,6 @@ namespace EGL3::Web {
         Catalog,
         Entitlement,
         Friends,
-        Channels,
         Lightswitch,
         XMPP,
         EOSStomp,
@@ -46,8 +45,6 @@ namespace EGL3::Web {
             return "https://entitlement-public-service-prod.ol.epicgames.com/entitlement/api/";
         case Host::Friends:
             return "https://friends-public-service-prod.ol.epicgames.com/friends/api/";
-        case Host::Channels:
-            return "https://channels-public-service-prod.ol.epicgames.com/api/";
         case Host::Lightswitch:
             return "https://lightswitch-public-service-prod.ol.epicgames.com/lightswitch/api/";
         case Host::XMPP:

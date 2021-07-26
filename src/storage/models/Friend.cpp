@@ -59,26 +59,6 @@ namespace EGL3::Storage::Models {
         }
     }
 
-    void Friend::InitializeAccountSettings(Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
-        AsyncFF.Enqueue([&Client, this]() {
-            std::unique_lock Lock(Mutex);
-
-            auto AccResp = Client.GetSettingsForAccounts(std::vector<std::string>{ Data->GetAccountId() }, { "avatar", "avatarBackground" });
-            if (!EGL3_ENSURE(!AccResp.HasError(), LogLevel::Error, "Kairos data request returned an error")) {
-                return;
-            }
-
-            for (auto& AccountSetting : AccResp->Values) {
-                if (AccountSetting.AccountId == Data->GetAccountId()) {
-                    Data->UpdateAccountSetting(AccountSetting);
-                }
-            }
-
-            Lock.unlock();
-            Get().OnUpdate.emit();
-        });
-    }
-
     void Friend::UpdateInternalData(FriendType TargetType, Web::Epic::EpicClientAuthed& Client, Modules::AsyncFFModule& AsyncFF) {
         switch (TargetType)
         {

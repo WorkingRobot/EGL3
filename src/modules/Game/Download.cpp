@@ -103,7 +103,8 @@ namespace EGL3::Modules::Game {
         SlotPause = InfoButtonPause.signal_clicked().connect([this]() { OnDownloadPauseClicked(); });
         SlotStop = InfoButtonStop.signal_clicked().connect([this]() { OnDownloadStopClicked(); });
 
-        StatsDispatcher.connect([this]() { OnStatsUpdate(); });
+        StatsDispatcher.connect([this](const Storage::Models::DownloadInfoStats& Stats) { OnStatsUpdate(Stats); });
+        StateDispatcher.connect([this](Storage::Models::DownloadInfoState State) { OnStateUpdate(State); });
 
         MainStackBefore = MainStackCurrent = MainStack.get_focus_child();
 
@@ -175,22 +176,11 @@ namespace EGL3::Modules::Game {
                 InfoStateGrid.Initialize(Data.UpdatedChunks.size());
             }
 
-            {
-                std::lock_guard Lock(StatsMutex);
-
-                StatsData.State = NewState;
-                StatsData.PiecesTotal = -1;
-            }
-            StatsDispatcher.emit();
+            StateDispatcher.emit(NewState);
         });
 
         CurrentDownload->OnStatsUpdate.Set([this](const DownloadInfoStats& NewStats) {
-            {
-                std::lock_guard Lock(StatsMutex);
-
-                StatsData = NewStats;
-            }
-            StatsDispatcher.emit();
+            StatsDispatcher.emit(NewStats);
         });
 
         CurrentDownload->OnChunkUpdate.Set([this](const Utils::Guid& Guid, ChunkState NewState) {
@@ -373,93 +363,91 @@ namespace EGL3::Modules::Game {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(AmountLeft / RateAvg.back()));
     }
 
-    void DownloadModule::OnStatsUpdate()
+    void DownloadModule::OnStatsUpdate(const Storage::Models::DownloadInfoStats& Stats)
     {
-        std::lock_guard Guard(StatsMutex);
-
-        if (StatsData.PiecesTotal == -1) {
-            InfoState.set_text(DownloadInfoStateToString(StatsData.State));
-            switch (StatsData.State)
-            {
-            case DownloadInfoState::Installing:
-                Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Normal);
-                break;
-            case DownloadInfoState::Paused:
-                Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Paused);
-                break;
-            case DownloadInfoState::Cancelling:
-            case DownloadInfoState::Cancelled:
-                Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Error);
-                break;
-            case DownloadInfoState::Initializing:
-                Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Indeterminate);
-                break;
-            default:
-                Taskbar.SetProgressState(Utils::Taskbar::ProgressState::None);
-                break;
-            }
-
-            bool IsOnInstallStep = StatsData.State == DownloadInfoState::Installing || StatsData.State == DownloadInfoState::Paused;
-            InfoButtonPause.set_sensitive(IsOnInstallStep);
-            InfoButtonStop.set_sensitive(IsOnInstallStep);
-
-            if (IsOnInstallStep) {
-                InfoButtonPauseImage.set_from_icon_name(StatsData.State == DownloadInfoState::Installing ? "media-playback-pause-symbolic" : "media-playback-start-symbolic", Gtk::ICON_SIZE_BUTTON);
-            }
+        StatsRateHistory.emplace_back(PiecesCompletedLast ? (Stats.PiecesComplete - PiecesCompletedLast) / DivideRate : 0);
+        PiecesCompletedLast = Stats.PiecesComplete;
+        while (StatsRateHistory.size() > 50) {
+            StatsRateHistory.pop_front();
         }
-        else {
-            StatsRateHistory.emplace_back(PiecesCompletedLast ? (StatsData.PiecesComplete - PiecesCompletedLast) / DivideRate : 0);
-            PiecesCompletedLast = StatsData.PiecesComplete;
-            while (StatsRateHistory.size() > 50) {
-                StatsRateHistory.pop_front();
-            }
 
-            std::chrono::steady_clock::time_point BeginTimestamp(std::chrono::nanoseconds(StatsData.NanosecondStartTimestamp));
-            std::chrono::steady_clock::time_point CurrentTimestamp(std::chrono::nanoseconds(StatsData.NanosecondCurrentTimestamp));
-            auto EndTimestamp = CurrentTimestamp + CalculateEndTimestamp<1>(StatsData.PiecesTotal - StatsData.PiecesComplete);
+        std::chrono::steady_clock::time_point BeginTimestamp(std::chrono::nanoseconds(Stats.NanosecondStartTimestamp));
+        std::chrono::steady_clock::time_point CurrentTimestamp(std::chrono::nanoseconds(Stats.NanosecondCurrentTimestamp));
+        auto EndTimestamp = CurrentTimestamp + CalculateEndTimestamp<1>(Stats.PiecesTotal - Stats.PiecesComplete);
 
-            auto PiecesTotalCorrected = std::max(StatsData.PiecesTotal, 1u);
-            double CompletionPercent = (double)StatsData.PiecesComplete / PiecesTotalCorrected;
+        auto PiecesTotalCorrected = std::max(Stats.PiecesTotal, 1u);
+        double CompletionPercent = (double)Stats.PiecesComplete / PiecesTotalCorrected;
 
-            Taskbar.SetProgressValue(StatsData.PiecesComplete, PiecesTotalCorrected);
+        Taskbar.SetProgressValue(Stats.PiecesComplete, PiecesTotalCorrected);
 
-            InfoState.set_text(DownloadInfoStateToString(StatsData.State));
+        InfoState.set_text(DownloadInfoStateToString(Stats.State));
 
-            InfoPercent.set_text(std::format("{:.0f}%", CompletionPercent * 100));
-            InfoProgressBar.set_fraction(CompletionPercent);
+        InfoPercent.set_text(std::format("{:.0f}%", CompletionPercent * 100));
+        InfoProgressBar.set_fraction(CompletionPercent);
 
-            InfoTimeElapsed.set_text(Utils::Humanize(BeginTimestamp, CurrentTimestamp));
-            InfoTimeElapsed.set_tooltip_text(Glib::ustring::format(Utils::HumanizeExact(CurrentTimestamp - BeginTimestamp)));
+        InfoTimeElapsed.set_text(Utils::Humanize(BeginTimestamp, CurrentTimestamp));
+        InfoTimeElapsed.set_tooltip_text(Glib::ustring::format(Utils::HumanizeExact(CurrentTimestamp - BeginTimestamp)));
             
-            InfoTimeRemaining.set_text(Utils::Humanize(EndTimestamp, CurrentTimestamp));
-            InfoTimeRemaining.set_tooltip_text(Glib::ustring::format(Utils::HumanizeExact(EndTimestamp - CurrentTimestamp)));
+        InfoTimeRemaining.set_text(Utils::Humanize(EndTimestamp, CurrentTimestamp));
+        InfoTimeRemaining.set_tooltip_text(Glib::ustring::format(Utils::HumanizeExact(EndTimestamp - CurrentTimestamp)));
 
-            InfoPieces.set_text(Glib::ustring::compose("%1/%2", Utils::Humanize(StatsData.PiecesComplete), Utils::Humanize(StatsData.PiecesTotal)));
-            InfoDownloaded.set_text(Glib::ustring::compose("%1/%2", Utils::HumanizeByteSize(StatsData.BytesDownloadTotal), Utils::HumanizeByteSize(StatsData.DownloadTotal)));
+        InfoPieces.set_text(Glib::ustring::compose("%1/%2", Utils::Humanize(Stats.PiecesComplete), Utils::Humanize(Stats.PiecesTotal)));
+        InfoDownloaded.set_text(Glib::ustring::compose("%1/%2", Utils::HumanizeByteSize(Stats.BytesDownloadTotal), Utils::HumanizeByteSize(Stats.DownloadTotal)));
             
-            if (StatsBytesDownloadPeak < StatsData.BytesDownloadRate) {
-                StatsBytesDownloadPeak = StatsData.BytesDownloadRate;
-            }
-            InfoNetworkCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsData.BytesDownloadRate)));
-            InfoNetworkCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsData.BytesDownloadRate)));
-            InfoNetworkPeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesDownloadPeak)));
-            InfoNetworkPeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesDownloadPeak)));
+        if (StatsBytesDownloadPeak < Stats.BytesDownloadRate) {
+            StatsBytesDownloadPeak = Stats.BytesDownloadRate;
+        }
+        InfoNetworkCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(Stats.BytesDownloadRate)));
+        InfoNetworkCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(Stats.BytesDownloadRate)));
+        InfoNetworkPeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesDownloadPeak)));
+        InfoNetworkPeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesDownloadPeak)));
 
-            if (StatsBytesReadPeak < StatsData.BytesReadRate) {
-                StatsBytesReadPeak = StatsData.BytesReadRate;
-            }
-            InfoReadCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsData.BytesReadRate)));
-            InfoReadCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsData.BytesReadRate)));
-            InfoReadPeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesReadPeak)));
-            InfoReadPeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesReadPeak)));
+        if (StatsBytesReadPeak < Stats.BytesReadRate) {
+            StatsBytesReadPeak = Stats.BytesReadRate;
+        }
+        InfoReadCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(Stats.BytesReadRate)));
+        InfoReadCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(Stats.BytesReadRate)));
+        InfoReadPeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesReadPeak)));
+        InfoReadPeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesReadPeak)));
 
-            if (StatsBytesWritePeak < StatsData.BytesWriteRate) {
-                StatsBytesWritePeak = StatsData.BytesWriteRate;
-            }
-            InfoWriteCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsData.BytesWriteRate)));
-            InfoWriteCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsData.BytesWriteRate)));
-            InfoWritePeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesWritePeak)));
-            InfoWritePeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesWritePeak)));
+        if (StatsBytesWritePeak < Stats.BytesWriteRate) {
+            StatsBytesWritePeak = Stats.BytesWriteRate;
+        }
+        InfoWriteCurrent.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(Stats.BytesWriteRate)));
+        InfoWriteCurrent.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(Stats.BytesWriteRate)));
+        InfoWritePeak.set_text(Glib::ustring::compose("%1/s", Utils::HumanizeByteSize(StatsBytesWritePeak)));
+        InfoWritePeak.set_tooltip_text(Glib::ustring::compose("%1ps", Utils::HumanizeBitSize(StatsBytesWritePeak)));
+    }
+
+    void DownloadModule::OnStateUpdate(Storage::Models::DownloadInfoState State)
+    {
+        InfoState.set_text(DownloadInfoStateToString(State));
+        switch (State)
+        {
+        case DownloadInfoState::Installing:
+            Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Normal);
+            break;
+        case DownloadInfoState::Paused:
+            Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Paused);
+            break;
+        case DownloadInfoState::Cancelling:
+        case DownloadInfoState::Cancelled:
+            Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Error);
+            break;
+        case DownloadInfoState::Initializing:
+            Taskbar.SetProgressState(Utils::Taskbar::ProgressState::Indeterminate);
+            break;
+        default:
+            Taskbar.SetProgressState(Utils::Taskbar::ProgressState::None);
+            break;
+        }
+
+        bool IsOnInstallStep = State == DownloadInfoState::Installing || State == DownloadInfoState::Paused;
+        InfoButtonPause.set_sensitive(IsOnInstallStep);
+        InfoButtonStop.set_sensitive(IsOnInstallStep);
+
+        if (IsOnInstallStep) {
+            InfoButtonPauseImage.set_from_icon_name(State == DownloadInfoState::Installing ? "media-playback-pause-symbolic" : "media-playback-start-symbolic", Gtk::ICON_SIZE_BUTTON);
         }
     }
 }

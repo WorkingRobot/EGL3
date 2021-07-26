@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../utils/GladeBuilder.h"
+#include "../utils/DataDispatcher.h"
 #include "../utils/SlotHolder.h"
 #include "../web/Response.h"
 #include "../web/epic/responses/GetStatuspageSummary.h"
@@ -17,7 +17,7 @@ namespace EGL3::Modules {
         void Refresh();
 
     private:
-        void UpdateLabels();
+        void UpdateLabels(const Web::Response<Web::Epic::Responses::GetStatuspageSummary>& Data);
 
         void UpdateLabel(Gtk::Label& Label, const std::string& Status);
 
@@ -33,7 +33,6 @@ namespace EGL3::Modules {
         Utils::SlotHolder SlotOpenInBrowser;
 
         std::future<void> RefreshTask;
-        Glib::Dispatcher Dispatcher;
-        Web::Response<Web::Epic::Responses::GetStatuspageSummary> Data;
+        Utils::DataDispatcher<Web::Response<Web::Epic::Responses::GetStatuspageSummary>> Dispatcher;
     };
 }

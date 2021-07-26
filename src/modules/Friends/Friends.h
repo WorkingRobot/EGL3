@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../../storage/models/Friend.h"
+#include "../../utils/DataDispatcher.h"
 #include "../../utils/SlotHolder.h"
+#include "../../utils/UIExTask.h"
 #include "../../web/epic/friends/FriendsClient.h"
 #include "../../widgets/FriendItemMenu.h"
 #include "../Game/Game.h"
@@ -42,25 +44,21 @@ namespace EGL3::Modules::Friends {
 
         void OnSendFriendRequest();
 
-        void SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account);
-
         enum class AsyncWebRequestStatusType : uint8_t {
             Success,
             Ratelimited,
             Failure
         };
 
-        void DisplaySendFriendRequestStatus();
+        AsyncWebRequestStatusType SendFriendRequest(const Web::Epic::Responses::GetAccounts::Account& Account, std::string& StatusText);
 
         void OnSetNickname();
 
-        void DisplaySetNicknameStatus();
+        Web::ErrorData::Status OnUpdate();
 
-        void UpdateAsync();
-        
-        void UpdateUI();
+        void OnUpdateDispatch(Web::ErrorData::Status Error);
 
-        void FriendsUpdate();
+        void OnFriendUpdate(const std::string& AccountId, Web::Epic::Friends::FriendEventType Event);
 
         Login::AuthModule& Auth;
         Game::GameModule& Game;
@@ -101,26 +99,16 @@ namespace EGL3::Modules::Friends {
 
         std::optional<Web::Epic::Friends::FriendsClient> FriendsClient;
 
-        std::future<void> UpdateTask;
-        Glib::Dispatcher UpdateUIDispatcher;
-        std::atomic<bool> UpdateCurrentlyRunning = false;
+        std::mutex ListMtx;
+        Utils::UIExTask<Web::ErrorData::Status> UpdateTask;
 
-        std::mutex ItemDataMutex;
-        Web::ErrorData::Status ItemDataError;
-
-        std::mutex FriendUpdateMutex;
-        std::vector<std::pair<std::string, Web::Epic::Friends::FriendEventType>> FriendUpdateData;
-        Glib::Dispatcher FriendUpdateDispatcher;
+        Utils::DataQueueDispatcher<std::string, Web::Epic::Friends::FriendEventType> FriendUpdateDispatcher;
 
         std::future<void> FriendRequestTask;
-        AsyncWebRequestStatusType FriendRequestStatus;
-        std::string FriendRequestStatusText;
-        Glib::Dispatcher FriendRequestDispatcher;
+        Utils::DataDispatcher<AsyncWebRequestStatusType, std::string> FriendRequestDispatcher;
 
         std::string SetNicknameAccountId;
         std::future<void> SetNicknameTask;
-        AsyncWebRequestStatusType SetNicknameStatus;
-        std::string SetNicknameStatusText;
-        Glib::Dispatcher SetNicknameDispatcher;
+        Utils::DataDispatcher<AsyncWebRequestStatusType, std::string> SetNicknameDispatcher;
     };
 }

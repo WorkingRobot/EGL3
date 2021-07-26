@@ -94,6 +94,13 @@ target_include_directories(EGL3 SYSTEM PRIVATE ${GTKMM_INCLUDE_DIRS})
 
 ## Properties ##
 
+set_property(
+    SOURCE modules/Friends/Friends.cpp
+    APPEND
+    PROPERTY COMPILE_OPTIONS
+    "/bigobj"
+)
+
 # C++20 #
 set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
 

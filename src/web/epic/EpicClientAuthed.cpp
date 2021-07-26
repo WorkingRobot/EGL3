@@ -467,66 +467,6 @@ namespace EGL3::Web::Epic {
         );
     }
 
-    Response<Responses::GetAvailableSettingValues> EpicClientAuthed::GetAvailableSettingValues(const std::string& Setting)
-    {
-        return Call<Responses::GetAvailableSettingValues, 200, true>(
-            [&, this]() {
-                return Http::Get(
-                    Http::FormatUrl<Host::Channels>("v1/user/{}/setting/{}/available", *AuthData.AccountId, Setting),
-                    cpr::Header{ { "Authorization", AuthHeader } }
-                );
-            }
-        );
-    }
-
-    Response<Responses::GetSettingsForAccounts> EpicClientAuthed::GetSettingsForAccounts(const std::vector<std::string>& Accounts, const std::initializer_list<std::string>& Settings)
-    {
-        return Call<Responses::GetSettingsForAccounts, 200, false>(
-            [&, this]() {
-                cpr::Parameters Parameters;
-
-                for (auto& Account : Accounts) {
-                    Parameters.Add({ "accountId", Account });
-                }
-
-                for (auto& Setting : Settings) {
-                    Parameters.Add({ "settingKey", Setting });
-                }
-
-                return Http::Get(
-                    Http::FormatUrl<Host::Channels>("v1/user/setting"),
-                    cpr::Header{ { "Authorization", AuthHeader } },
-                    Parameters
-                );
-            }
-        );
-    }
-
-    Response<void> EpicClientAuthed::UpdateAccountSetting(const std::string& Setting, const std::string& Value)
-    {
-        return Call<void, 204, true>(
-            [&, this]() {
-                rapidjson::StringBuffer Buf;
-                {
-                    rapidjson::Writer Writer(Buf);
-
-                    Writer.StartObject();
-
-                    Writer.Key("value");
-                    Writer.String(Value.c_str(), Value.size());
-
-                    Writer.EndObject();
-                }
-
-                return Http::Put(
-                    Http::FormatUrl<Host::Channels>("v1/user/{}/setting/{}", *AuthData.AccountId, Setting),
-                    cpr::Header{ { "Authorization", AuthHeader }, { "Content-Type", "application/json"} },
-                    cpr::Body{ Buf.GetString(), Buf.GetSize() }
-                );
-            }
-        );
-    }
-
     Response<Responses::GetLightswitchStatus::ServiceStatus> EpicClientAuthed::GetLightswitchStatus(const std::string& AppName)
     {
         return Call<Responses::GetLightswitchStatus::ServiceStatus, 200, false>(

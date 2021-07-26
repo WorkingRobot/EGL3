@@ -11,8 +11,6 @@ namespace EGL3::Modules::Friends {
         Options(Ctx.GetModule<OptionsModule>()),
         Focused(false),
         Window(Ctx.GetWidget<Gtk::Window>("FriendsKairosMenu")),
-        AvatarBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsAvatarFlow")),
-        BackgroundBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsBackgroundFlow")),
         StatusBox(Ctx.GetWidget<Gtk::FlowBox>("FriendsStatusFlow")),
         StatusEntry(Ctx.GetWidget<Gtk::Entry>("FriendsKairosStatusEntry")),
         StatusEditBtn(Ctx.GetWidget<Gtk::Button>("FriendsKairosEditStatusBtn"))
@@ -35,22 +33,6 @@ namespace EGL3::Modules::Friends {
         {
             SlotWindowShown = Window.signal_show().connect([this]() {
                 Focused = false;
-
-                AvatarBox.foreach([this](Gtk::Widget& WidgetBase) {
-                    auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-                    auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
-                    if (Data->GetKey() == GetCurrentUser().GetKairosAvatar()) {
-                        AvatarBox.select_child(Widget);
-                    }
-                });
-
-                BackgroundBox.foreach([this](Gtk::Widget& WidgetBase) {
-                    auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
-                    auto Data = (Widgets::AsyncImageKeyed<std::string>*)Widget.get_child()->get_data("EGL3_ImageBase");
-                    if (Data->GetKey() == GetCurrentUser().GetKairosBackground()) {
-                        BackgroundBox.select_child(Widget);
-                    }
-                });
 
                 StatusBox.foreach([this](Gtk::Widget& WidgetBase) {
                     auto& Widget = (Gtk::FlowBoxChild&)WidgetBase;
@@ -78,42 +60,6 @@ namespace EGL3::Modules::Friends {
         }
 
         {
-            SlotAvatarClicked = AvatarBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-                auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
-                if (Data->GetKey() == GetCurrentUser().GetKairosAvatar()) {
-                    return;
-                }
-
-                GetCurrentUser().SetKairosAvatar(Data->GetKey());
-
-                Auth.GetSelectedUserData()->KairosAvatar = Data->GetKey();
-                Header.Show(*Auth.GetSelectedUserData());
-
-                UpdateAvatarTask = std::async(std::launch::async, [this]() {
-                    auto UpdateResp = Auth.GetClientLauncher().UpdateAccountSetting("avatar", GetCurrentUser().GetKairosAvatar());
-                    if (UpdateResp.HasError()) {
-                        EGL3_LOG(LogLevel::Error, "Updating kairos avatar encountered an error");
-                    }
-                });
-            });
-            SlotBackgroundClicked = BackgroundBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
-                auto Data = (Widgets::AsyncImageKeyed<std::string>*)child->get_child()->get_data("EGL3_ImageBase");
-                if (Data->GetKey() == GetCurrentUser().GetKairosBackground()) {
-                    return;
-                }
-
-                GetCurrentUser().SetKairosBackground(Data->GetKey());
-
-                Auth.GetSelectedUserData()->KairosBackground = Data->GetKey();
-                Header.Show(*Auth.GetSelectedUserData());
-
-                UpdateBackgroundTask = std::async(std::launch::async, [this]() {
-                    auto UpdateResp = Auth.GetClientLauncher().UpdateAccountSetting("avatarBackground", GetCurrentUser().GetKairosBackground());
-                    if (UpdateResp.HasError()) {
-                        EGL3_LOG(LogLevel::Error, "Updating kairos background encountered an error");
-                    }
-                });
-            });
             SlotStatusClicked = StatusBox.signal_child_activated().connect([this](Gtk::FlowBoxChild* child) {
                 auto Data = (Widgets::AsyncImageKeyed<Web::Xmpp::Status>*)child->get_child()->get_data("EGL3_ImageBase");
                 if (Data->GetKey() == GetCurrentUser().GetStatus()) {
@@ -147,64 +93,569 @@ namespace EGL3::Modules::Friends {
         return Window;
     }
 
-    void KairosMenuModule::SetAvailableSettings(std::vector<std::string>&& Avatars, std::vector<std::string>&& Backgrounds)
-    {
-        AvatarsData = std::move(Avatars);
-        BackgroundsData = std::move(Backgrounds);
+    constexpr std::initializer_list<const char*> Avatars = {
+        "cid_001_athena_commando_f_default",
+        "cid_002_athena_commando_f_default",
+        "cid_003_athena_commando_f_default",
+        "cid_004_athena_commando_f_default",
+        "cid_005_athena_commando_m_default",
+        "cid_006_athena_commando_m_default",
+        "cid_007_athena_commando_m_default",
+        "cid_008_athena_commando_m_default",
+        "cid_009_0b075eb8265927ebe48ebd8c6e98c367a05a714d5763676e10d6f50e67583b17",
+        "cid_010_c007192af217a115ebd8060c447a771d4ca94865e21632c36bcb3bd5191e501b",
+        "cid_011_0018779900c9f614f1862899a634f150d4e19650dadacce9ecfabeb00e78843f",
+        "cid_012_600a490cb7708b471a9ce7875736ec5b517df9c17394851ec1e12d67ff175dcf",
+        "cid_013_0cca9ee4187798c6de32e0a6d079d433d4abf2bbcf19d38d91303c6253cb7099",
+        "cid_014_dfff3c48e033ec4380a481820b6e68042e6454b04c3a1b5db2ebad2b95b15e8f",
+        "cid_015_37cded8a5ac17d2eafc0d96d2b28e98dbe86691274a7d073db8bee31ca19f41e",
+        "cid_016_8509e8eccac3a9a984c852b4657eec9b1790f617cf1bb8bc47e22c44ad46961d",
+        "cid_017_57be3d12193366eacf9d41c198a97dc66c214ffdfa47776539ac0431ad57b656",
+        "cid_018_9d95986ea1ea2d65442980b90b04e5285aabcc9a4fc3f4e28df77edc2de29222",
+        "cid_019_6db46919d84b70fd97dd002ba84822f946c53e96a053bdee4cdacee887832090",
+        "cid_020_932ca692ad9917dbf6f9a4f59b5a9bc8a78a2dae0977772fd6983fbe3c557e16",
+        "cid_021_33658f4684a8ae9ca1e5cc40d06469215a498f15ecb657a127267efaed47523b",
+        "cid_022_a5a65ac4efe438e0a11876fd64258d2be4fce7b23702f98ce96f344b5188d8b7",
+        "cid_023_15784294fb61d37bf304da82216cba79b2f4c7b6aa3109bbd358b56fa06400da",
+        "cid_024_3cb9a9e04ef9147109b4d407cbbd675dd7d23d1fe95df65b39e5d13a88c45531",
+        "cid_025_2b4cbbbf26c57bba905559c99029e4f0186688e65faab4567ce9ab2e339b2fc5",
+        "cid_026_c2fc7fd6b17d74ef963c2a40bd079ab6e584ed5fdb7683d046dbd2feccf1b233",
+        "cid_027_1489fb74b59e12ca99ebfc78f57574b9222dd0fffb91d47771e19a3b767f9d5c",
+        "cid_028_ff2b06cf446376144ba408d3482f5c982bf2584cf0f508ee3e4ba4a0fd461a38",
+        "cid_029_f4600cfcb1810c35c897f5307d19c0f2f9bed3360bd81ee4438fa225eb00ede9",
+        "cid_030_fe30de5bc1c966bfeeff48620ece659ddf5d56ad66923ab8bdd826d6709017a7",
+        "cid_031_30ed38125ba86b9f2bba7f7cd9bfec1a510f37c5eb44948414433373890204da",
+        "cid_032_21615e4b4f02d57c97c55bc5fbefe21dde9a4ad2686ab73637453bc159e04e7b",
+        "cid_033_25fc856fee75f85e77e80a6f34965462f98bedab741df0afb43530c5681f218e",
+        "cid_034_9cbd248e59cf421489c250d31504bb0f7c21fa5cc2ac93f13052774eb99151af",
+        "cid_035_d4438d103ef774565cb453e57ba5dc52798e4235ea604b6e2ac6f1ad2c6b6594",
+        "cid_036_54204422991bfe48d1bbf8e4db7eb27b7bbdac738ed79b502caf5b79e47aba78",
+        "cid_037_4003111f593244e68d709aa541ca102bbd0ce109d2fd02aba39f71c14fc1b852",
+        "cid_038_abbe897dff3c530efc6042c286f3e459d7b5705d20035926ff58c4e86dd60a60",
+        "cid_039_69c07ce8b01b3dd498b371d1a215a8e13a9e01009aa62461418c092a0a1142d6",
+        "cid_040_5489d2093af515a32cffae11491e6d2fc6526b465d7b10a6001578f98b75cacc",
+        "cid_041_d8e21806af50705f05a839f296a6912637d06a444539c0c904054e23bfc72296",
+        "cid_042_03011b6b502e1a18e6a7267203d0b3f70235b8fb981fb3e03165147c7d018ec6",
+        "cid_043_301f81ec1133c03179208b7bdbe31c71baa8dbcc680889f6805765d673139f14",
+        "cid_044_1b7a4a8ef88b40da8c7337e8dbfdc6675639a5a8a745d3ece27a872172ddffd2",
+        "cid_045_882eb6e13f572dd9b57b70649d7f2449003c6485f700d3e5809edaf86a76aea7",
+        "cid_046_ac7f5a69738fa19ef1385040d839f47d73cacf4f71a8880ae126c028ea61b23c",
+        "cid_047_db19f2302169dbc8d02374098485652efda3a27c76492f6746c2bb1a805de4fc",
+        "cid_048_4bfee5ec53372c9297b686c2e6efdc5d79000433f06567f292f53c5bc62fdd5e",
+        "cid_049_e63644c6a4bdf3a0c13fac898c7114bf6caf75afd760191cd0222c2974d84d97",
+        "cid_050_79d85172fd710318c25a0b2d15cb871d0f1eb74ab6245cd31924dcb32135359b",
+        "cid_051_ad41704b020cb954f3ab3211a4a45ffc78397cb6805d8caa0f933f3321019fa0",
+        "cid_052_386f443623319d3738df950fd4f685a55b0d7b1e9800f50365d3777b15a6dbae",
+        "cid_053_23736933aa2eced71e625b1d628af6aa82ae7dee71c621f04315122c107b217c",
+        "cid_054_769a7226f8b00bd51a72841522e3f667387ba33dee732f8d6560e1ba09d60a62",
+        "cid_055_4650596eb20a58af6030b0b33072dc091860d69e22622a098289a777d714509b",
+        "cid_056_5a338f0be6a59dd96a32e5de3d3e6b68db647ca8cb6a9d66c4690eb8b89a8276",
+        "cid_057_ba577c9962ba2d9397ab4f24fabc1e2c2073553abcf9953e70b5ef1d39ebda3c",
+        "cid_058_692048500d5c6d294909bc1e0fbe8556b2b7ef48cb422bf8126de06227d408a2",
+        "cid_059_cafa37b72ea60562e30a949ff928d591487fb3705443d9d808cdd20aee3413f3",
+        "cid_060_56b56da47f6c4a4477c11574b5a8eb3356d3e22f8eed7309b1411436924b3353",
+        "cid_061_07f1e9a77b781ffe775f02327a035841a36db0143fd8569b57c59c9dd977a620",
+        "cid_062_d08b7589c0a6da94cd49522520fa55daba1e9ec7590e652941ebc7a02121dfa8",
+        "cid_063_ee48380ebba9fa49aa2c59ac525e07daeebc92f202c994a3fedea7edea4540ef",
+        "cid_064_12d94a321362f575bdcc93203977954f7b8cebd1e24960625c19eb5edb1e5f1d",
+        "cid_065_5f32f1579a68088ae62f36b7f406558eb1953ff1a1eb77fca03c60070e1d3650",
+        "cid_066_5fef4f9f3d999c59984cba4a52c05bf6597f05853aceaf68746f4fbfb04a16ed",
+        "cid_067_22185bfcda5d6f40f60a4368e2db9a2204c8e4c5d3a9c76085a3040e8380d309",
+        "cid_068_f8042cde2cd053d6814409c2624a81dcccf3c62b916de1e4849e1ecd2e9754ed",
+        "cid_069_168fcd0487d81a9e4342f63bb86a7f96f394245e737593468d644f03ab0d4dee",
+        "cid_070_1fa345b6bc0819b7189086d822a7ed05fb2d5cc8252dbcbd65f7715e783a6e6a",
+        "cid_071_dc68b95b8825802e26615c64912175515c1af02a25fe0ea8eb3e1adc103425d7",
+        "cid_072_42c1f3a4471111c88d015f7b4422daa6f8f6bc9c24e4f3fd794caad19e57943b",
+        "cid_073_faa3d22cf02b14b281d11106c4a200f0e5125d071a01cbab4d745604c390b0fd",
+        "cid_074_58c4672b10df643bcacc2c4044d948fdfe37a42cc54e01977c956f467242e4ae",
+        "cid_075_62ff1657094d2af067f466f02fb2e6446bf29068487ca23705691ea0829a1492",
+        "cid_076_847b1ab272541a8f01279d29a44c5479ff7be01b51a75ee7c96e2888367bbd78",
+        "cid_077_7aab060c853a0e7313df0bbdc7a37a4f79423bdf526a055bd46fc0d12b66c6e8",
+        "cid_078_1a132780cfc999a9a3a3bc34deb2d0aee220c1e6177fa71a8ce07318f3764967",
+        "cid_079_5c50979da19fee479a452dc80bfe4634a61fa76467cb8c0d4cad9f805b91396c",
+        "cid_080_933236079d5ed18102b65f46aac79508287f0ec98d739e2d48bb6f051bb939dd",
+        "cid_081_5ab7780d5b5a007a09bea4a1554abac61250d52f0cf19cf939c8b43232443cdb",
+        "cid_082_0d16594844aaf684ad3d1b7ace0b599f4c020b66c12147d01cdf5e2ddc84b4f2",
+        "cid_083_23bf7643a292229616c2d8dc18d16a66ea3e29862b16472acc769bf64843d23b",
+        "cid_084_2e049bc5daeff7a3d0f397f0d61c3396e25f1889d723a445148a2cfd42d7b0de",
+        "cid_085_59c99ab3168d57152cadc0291261909c615479d2404acea58966fb3f44057962",
+        "cid_086_13b689790fe6b1329338d1b592f8ddc333215ece48f6d4ba68bd329ebf692e88",
+        "cid_087_01ec638b51a5ef241071ea1178ba1192ef8e72de7534c48090513feebc7d6aae",
+        "cid_088_e01537ee5568d88a66250dd62160ea2eca3fe8b56d3578249545d276bb8ee3ed",
+        "cid_089_f2f2be8751675711d0539298f7f071bcfe0e10035ccbbc441e93c8337f71a9f3",
+        "cid_090_d9b54d4bad698e389a97cf3053f669ed58431493df5f37a4fcf5ac69fb243d55",
+        "cid_091_15c237805d0c196bc8b22e2439836e7ab320b8e06a05daa24a5f0641d583683e",
+        "cid_092_0e49014bf752f53fed3d01beeb2333d0ddfc354b4e400edd5e80a35adaed9864",
+        "cid_093_ffce41f9914dac3a9d8b1d0d9deb9f68e6fa46d939ba45d9e1c69667d7afa3e8",
+        "cid_094_7a605687e91bdc770a13af7050d2d77328f7b6ce28a21fa77dd379d6c8c48c7f",
+        "cid_095_2b7ff06c4877fecf7e70cbe52b710a1180254635b0a76c19b926bb1dda2bf0b8",
+        "cid_096_4ed154ea8ea3798f34fcc5dd08ae80075140985dd880da14d2ca1c1de8f308b1",
+        "cid_097_8b7dbfc2475df20943a021c1f8f6031712f688803898b00bfc775fffd1ae7129",
+        "cid_098_bd3d527fc86f0f7a803c0a1ea47482463ddcdcec8f660f1d4cbdb75b7de49ed1",
+        "cid_099_302f6ed8e2ff8959b13452f7f87d2296ccaa67bdf7a00d94b60deee3aaed2744",
+        "cid_100_e75515a88b48da15ba95c3cba4b38688e7833a18d9c3cd14d5546b923001fd10",
+        "cid_101_4eeb19786c5bab561b199e9ab1008fcff52b3ef5e25c37099695ca2e0febd985",
+        "cid_102_15f56f84169fa77c81e522208e3c92b93516161570a3e16eb5e726233e814bd7",
+        "cid_103_8d0238d2834331a80267f1dcc44f30f14ba8e4e36bdb66a8b5e9e784e9906f06",
+        "cid_104_ff60deb01148c0caa3b734fa8602d196774ec78ea80a49038587ebd17d6bea25",
+        "cid_105_c512d820c32bec49c689be2db7eb8a6ce436c283143dac17623d0183fe6291c8",
+        "cid_106_15b1af346b37a87e08e302b4754330dc65eded2cf93766552fe1db049e360b76",
+        "cid_107_4c560a7dec521fd6ad91ac415602628c2450b000dbd18cc86bb52d6cd6c70f4e",
+        "cid_108_6172e92f702d80e1d4142a77f1be0861cd68fa3a6d3e96e80c0b49e848d08dd6",
+        "cid_109_cde002a3fe57c38fac095b4f58088f18e53f5452e87d63636473ff291e1da136",
+        "cid_110_451d74b72026fc6f2223ead2ea25ba3f7a2846caf8296fa7416a5b656fce24b6",
+        "cid_111_ee32cfb3e701b808ea9d8f8b00d69b1f4ccb874714fb14109de63d215e16c914",
+        "cid_112_c3d569e6cae39c259861711e82ad4f203d6dc4027f55ddff22c2fc0a487d437b",
+        "cid_113_157e5d5d19390d3014a5f6933533f9223718145e11b00bc7f89fdfd79041c59b",
+        "cid_114_ed4b095a5b79edc63e3c1c3f52a10193abe175d6d74d9301ef4eb09999d480b9",
+        "cid_115_58b89687a4cb807c97b30e3888c7de3f6dd8bb35aedecb42c4ad645334d31df7",
+        "cid_116_c1c835f4bd39f93a72ed5c15f373e03f363779381933bcad81f71f073d138c33",
+        "cid_117_094e26168f4c2a684bd07820516f7251eea0cd51f163f7b370b29fdfdb0f66d4",
+        "cid_118_d5d6cf0e575fd20ac3c4b811ad540f9ddd6736673f9e2159dafc8c2221afcd51",
+        "cid_119_a86ec39125f93bde85b6ed78f14e06ff31da7a6b3fb5d7207b4a05fec1b66544",
+        "cid_120_3b7f81b6aa539c6584963cc07f63b696b1a0d54d0ef4f177004ffbcb856af3e4",
+        "cid_121_071ea5e618e75089dcb4847e2b036a6a966190f32df7bfc2532747edeb2a4136",
+        "cid_122_5bcbc5018af2d3bbe7a13cb7caab536ab05c4d4d7552d9fc098ca5e6d7bc7d4d",
+        "cid_123_7f4e235d7c663a95e11ad840e9c15c5c1202d6976a343234b31a732c33b60c15",
+        "cid_124_ce5a16c5e574777c861e95ea460dc3db70ed792c814bbc42655c3540c34d5c54",
+        "cid_125_47423a365f636b5ca1402a4345aad03cad7d2a4e30c3dbc807f12c0385072117",
+        "cid_126_320796bbcdf9fad5f77e675589d31a88233144d60489f897c343bfd48e661ef0",
+        "cid_127_37e4d5944bf234e102c1191e54b9fbf6bdacc4f98cd0892b9b8f74359851d338",
+        "cid_128_b383048e54f1182592477dc558c1117f706a1fb74868f55a841d511ee39f14c5",
+        "cid_129_736c8a39e9a1e1f211319e4315914320ffa330d0ddc634fe92839d3a9dea8258",
+        "cid_130_f762dd1694784c3af6954b91fd8b201bb258a49fee1be8b3f951d11d6528e953",
+        "cid_131_367876809b42670b132db4a93c6aea0e3a5b7bf98cb7c918c090ebaaab151aa5",
+        "cid_132_e0805beffae962576ae39096d051e9a72df5fbb5d27abbd22d80eb4be3c5dfb0",
+        "cid_133_15457ce39667a862fcc96d441ee73fb351f45a448b1cefc6b7c602c8ac822d5f",
+        "cid_134_81276ca3d9d31c4e33bdc3accb07492d0abb7e7741524bee1990366ba8f39d46",
+        "cid_135_088f99dca77f5edef2b2cd614ebd49d20a5646ec89c9004f6cc611c8a4eed5bf",
+        "cid_136_5701d78e74df6b372697f702597e3f987f2aef73fea78f9831b445a5007571f6",
+        "cid_137_a09ec3dcfa53d5d5bd4079e08a324ae2e490e68ab96868a29b7414fe50bd5884",
+        "cid_138_5813a96fb48f1ad60e42a626a6bc378ab25d1926acd8a51201f7a5c778909b11",
+        "cid_139_a902995a5d889ba66785936b75e28a61cd35e0e7b8a5bca2461d6a93fcaa72b0",
+        "cid_140_cd29def2b72a84a0f009945d749f1f9b747c6cd90e18b32bfee614e584a55596",
+        "cid_141_aadf0c25af1cc4e70c9123b3eb3f2d6635626d97ef367dba43d311414d6ace92",
+        "cid_142_90973bb9c96b7564a5f44f682c5c6b8c6b8145b89f2cebaf533c8cbf1a1e7fb3",
+        "cid_143_113e9091249376a3268c00b6bb08281e1b1d59a120ae4b21ad2f718a118ff8f8",
+        "cid_144_b0fefd41c536158992a472ce8d71fa91188e2704a0a777fcc8671c09cbc99bb4",
+        "cid_145_211cd6ffaecb409ff734815d3fe49503d36296a88cbbb08c5d343d6b9ce0b875",
+        "cid_146_72ca3967ed4c5b4f84c2f848b7a48b78c712737c38bfc7efa03c77ff96f5d0ff",
+        "cid_147_ffddc391147c712912634a11dc1c4675f03ab65a01e26b7fe62a29fd2502f2d6",
+        "cid_148_2f2781116d65638d6652c8f7251465bb16068ff1f24af91ba43f942f4c5cac60",
+        "cid_149_fa2983f4d38776eb9182222b482e116cbf7fb0913024879ee429fe54479717cf",
+        "cid_150_e9aba1746b8c683693f90ce01d40a5b0249acde30ef7d5da3c34e33ff3cec265",
+        "cid_151_9dcd40176b2596aaab5d246bc6b6bf5d44b3e6d0b65474e8b991a8f5429bcea8",
+        "cid_152_2921d5c91e12cfdff22bb7b7914983564df74842acb915159bfd9ca0996cb7c2",
+        "cid_153_beb1508a45bbb6b96df04c092050177e67ac2ebe8faffb2b9d2171d47f5842cf",
+        "cid_154_963a40223cbe4b756d4bae08d1d06dd981eb2e8956cc939f988cead394c0c9ac",
+        "cid_155_fd7dd8e022be3c9c5bfcf89da0af3f61f55c47c50fc288cf213b5367c1954a70",
+        "cid_156_d4ccd89c4720aa9bf8b7936c8cf6c2f548ca62f0f0a00776f0da9716443f7a47",
+        "cid_157_f9ff98f6b9036ec0ba5868635543dcb292705d8e989119ab1e7d0f56c9c2d9d5",
+        "cid_158_94e1f91f4494610b9076ac2421631b51838469a0e306e35473b877fbcd15f3e8",
+        "cid_159_13e5d81c04fabc01081afaffa24f99c5a51ce270a317451e7f31384b66cd404e",
+        "cid_160_3cc1ad3aeb3e3155cc3016bd83a3bf70ff863f2e9c3a7cbe7b0313d22e75001b",
+        "cid_161_2d9d9f69a49379d891195539fbbecc74ea430a7fdc8f361c7ab100e1de5f54dd",
+        "cid_162_516c88256d91685b62838797e90d94312bfd1c0635dfd9b793ead55e091e70c3",
+        "cid_163_a1faeb7f54a8fc664d653924173f22d43ce1535d4b58e8b96d1f5dc45d3ddf4a",
+        "cid_164_8e7b354ec5774cc1d629efcc2fbad089431f061f5887065794e788ec1a346bf7",
+        "cid_165_be0269d9ccb14827d058cd9f713ff7a12d8fabcd49cf3b209100f82afd1a69e1",
+        "cid_166_08091d4de12507a04a33758ab4097c77013c91786f11e846ed1973ad26ec44f3",
+        "cid_167_086012383fc85e4f68d341963badb7e09144348e8cf741abe0a0fe342114a50e",
+        "cid_168_f689df0e294540f96314dfa3290d0c9ade7b30bd595ccba26af7adc2cd1d79d1",
+        "cid_169_3cc2f907599e4bee9fed354de6b92a124a6ff55e5fffc19bfdcdff9124f20275",
+        "cid_170_66fae429082456f52ae2516dc77affa856b935539a8d8865912eba788a990ffe",
+        "cid_171_d16a87d255ca8fd322a5ebd18e8d53cc6031805229c91d65e704232d6de87e36",
+        "cid_172_680126c8bfa2104ed3a86b70a2ddf3e0d8e494723b7051387c7232212eba9514",
+        "cid_173_dfe1ba8a467b083e51d487ebdb3ffb524d706770d8312ee54e529e932cb3dfd2",
+        "cid_174_35a4be191a2dee035d3d7ee2ad729d1836ab313180a920a866899b8272627ad1",
+        "cid_175_304888fe4fcb81afcdfd575111259fdcc4d7b1c3768dd6a3c3cefdcf12fa765a",
+        "cid_176_6d0595b7075d74865fc26a41c382a178cf9705c9f976cb610022c7d5c2c4b044",
+        "cid_177_0a3743ffe9ee788354f9f70fa6af296da8e1ed725ab7ce633a6b222a6849f2ea",
+        "cid_178_fc0f9d39e4812977cfda5e05c752216ac2515f5f7a7759c89f78c5f0fb2b0a20",
+        "cid_179_890578754543a6bda3aed2a195f73da2f0b7f60b4602946aa7112f96d97f880c",
+        "cid_180_de2038bfbf4f6338c5db1abc0928d1373b4f7fe6f0ff25b4ae8438aa9c7ef123",
+        "cid_182_3a58f1a854c8f13bef14db6469ce5a5b077af7cf7214d22e848d3a22b0dbcaa2",
+        "cid_183_c4eac9a5aa89354a94e8c64fd196c31190991f9ab2f427e4f5730b25af315d28",
+        "cid_184_3b4fd1533f34f32d0a39e8313da3237e15e5bbab142070abcdb87889c3cb00db",
+        "cid_185_8309d40b385ce736edb18848517d0d04d1727f4de7857636a009fb7bf387d041",
+        "cid_186_4a0a64cd5f5ffdf0f4a20c8bb57f7adffe74999690462b1f9fcfa277f0aff222",
+        "cid_187_28d607d31acb0ba3dc8aababf9822ac254ae6c38f446c17331b348288108de2f",
+        "cid_188_586e900a45821edf8ae782011ce4d86546ab4bfdc67dcbd26831b8c08136945f",
+        "cid_189_2acfecb213f0387fabc37a3fb651967eeefcec759cac5170d40c61c35a6ce9be",
+        "cid_190_1599305a6cdf34fc684977967bfcb89c2245c11d3b8799a87baf2d2c1eaec861",
+        "cid_191_245afdafbe7cad9c2c50a5b9bfabd351e7ac517119c42ed37ee67f4f34d7eea5",
+        "cid_192_e45f0730640757361f406c339c0b16baba70dcbf5eed5a884f52a29aee0a86a8",
+        "cid_193_98e91f8466a70ba4399791feb0d82a4d845d909f2efc1d657ece0012c19b7348",
+        "cid_194_a6f6b40658b1d99300c4c05e43c382ff68e5a90682d175a1ec954af324ad412c",
+        "cid_195_c8a383d27a3566406aa51c6aa9ca50d1930faf69ee03c072bc68cbf452eb43cd",
+        "cid_196_1b912742c2dcf9f87f0d6ad3e3be33243a8809daaf8b4e27122191bfb20a6111",
+        "cid_197_5e667ef124a8568ff82eaf261cf701a3e85a96536cd18a91fb4947a9d20ddbb3",
+        "cid_198_b354bea8e31f9f4e5ee11caa565a93e65f648ef7742940f8f2a6c8796626934f",
+        "cid_199_c37dd2018df7b8b1303bb1ba2836d268c418f2133b1b75a86cda854e7a2ed156",
+        "cid_200_6dbab069b84fd96dfc08723e3fc6fafcf6052fb7df01bf1a064084cf76cf3101",
+        "cid_201_c3ccc5402647c60ff90c6bbb3cfb0749b1283061ef49f73daf0ef9bbdc315cd5",
+        "cid_202_201fc3e12480c6d02e1506a129421db8518073ae26660342cf2f13cf451a42a2",
+        "cid_203_19ce6c7cef756d8df5fedd517ff1e058fcc42f7f6c4dca10db9f7aa60dd968bd",
+        "cid_204_306f9cf1979e4bdcb1f1c948302af56cf6e6b50dde37c2af84c4f6072122a380",
+        "cid_205_20aec049d4b73eb01e4be594edfbbf8ff391196bb27ed650b5fc38635926670b",
+        "cid_206_2670f341d20a6995e83587d15361fd6b777b917c6e379d3ff1a71c4eaf4973e7",
+        "cid_207_fb3e7f4c4d4aec29aa666ffbfe9c91a825fe560de61c382742bed059f5a0af11",
+        "cid_208_3560b55fbf4b20579de053cc168a73618b92ca05d491ae3d273fd59bf184eb40",
+        "cid_209_24defbfd1ddd9a97b00deb16ee5fb4b27a2e3b5e3f41bd7002b2bb1fedecf295",
+        "cid_210_c36f146161ed92d4aa50e249eeae8686416f7998ae3a965f6be08f82b52adfaa",
+        "cid_211_64d2ad55842a35de98afc647a7fac86b52489b8774ca6a4e8186008e6cc93743",
+        "cid_212_40f7e597709dd566feb19bcea55fdb5da30391c055619d24bf4d60e5628c92c5",
+        "cid_214_3c73a31c441cfe2edeb41b3c95780e5c4f5ad408225929148171b4b95d32bb37",
+        "cid_215_729f1f904807c78e9b602b136e6c662ce84a8156190919595a05f59164325c40",
+        "cid_216_a13708d359477e3249510e7971e0aba1cacabd26c349486750f5d914562dacdb",
+        "cid_217_e217a4285b467cd7eac2e89f879c2594db0c3f4699ca3de76133cef8ae2bcb8a",
+        "cid_218_888e493da053e7cdb8712d175a70868bd6b1ab0ec0014ee9e6c355c94a387604",
+        "cid_219_4cb1c75d310f1279fd0e680a35f490352a5384d9bdbd13482f3496741a782bf5",
+        "cid_220_5a826907ef3727ee26c78f570c58691916069de4a1646a00133267a8e0776623",
+        "cid_221_569dbc4ab44c988b161c688fa7036486d32d0c6561e9f8bfff3ffcad2d7376c8",
+        "cid_222_86b75b83fb4a65d767cda7a85485a7377ade7a343fbb65bee6d720e4205b42c5",
+        "cid_223_d6d97cf49dfcfc777f1b6ff6b43a302ed5c768508903b0997cc4aa1a647e6d76",
+        "cid_224_5bb9d701f59c93ea8c2de113dffc311d006b2efec183226ac04129f473a903d4",
+        "cid_225_9ba5df041aba672438614fa2f3ab6ddf24178962292cf30571ba3773bb4856df",
+        "cid_226_22d0489a2f714b96649eb2c22c754824a4e6b1282963c4c6e39bc5f79c0b4982",
+        "cid_227_8f3675141c7b11e347f4d53de0317630e4199e265925d89f746e8066a78825bd",
+        "cid_228_12f699cf1a9693d5f0a21ca4d92f6fcf9078b3398be8d2eda8a23ce4be91186d",
+        "cid_229_958a137116daaab28a7be438028c50991162c76018dbcb6faa03c0677b01b9a3",
+        "cid_230_b23f6773f72b37a7bba846664929a1ec0f9cdf83608bd9531edb9f0b605073e2",
+        "cid_231_bc4458ea1c142b7c9f7b6065d0ae6b25ebc7b50f4ae42d599f3bb202df6ae35c",
+        "cid_232_a294c4e6a919bff7b9357af269d97576d516c83ad76046d67a65754af28ab22e",
+        "cid_233_1b6ffa55eb6cd95179d9722766e368d76cad0c8e342c5a8f5c7046e638cb2dc1",
+        "cid_234_48c391534b54831e9a33c0129f1557e47f99276494f81ec1c16a15f10fa4fdae",
+        "cid_235_ad3e4b1c94eb565410aa385ee347cd8d72706346a7305d42d492d79d86a82d9d",
+        "cid_236_b8a19d07c9ce874ebeaeb7f723c3a2e43f290f95e08637187177712ee180a3d9",
+        "cid_237_dd49dfb1cad877308291ff7701f5f07040ff865b61b06310f603b5911402403e",
+        "cid_238_cd6092706415fd45c6a55a31b180951f1e29eafe3acf36985404445bf325f7d9",
+        "cid_239_de73eff111adc846bc1fec8f7c3f7de0f9272c10c7e1e4a1890249d309c8eaba",
+        "cid_240_78d925193af42dcce2f58f210d3fea3c4443f28df181cb69fd74c500285f38b9",
+        "cid_241_ce2d99e9d180a23627558ecb4807b0c082ff4b20eebe78c8c745a67756807ba2",
+        "cid_242_f4275c91d14d35d74285fd39156fceb08d0713e0d4250f9abd768b712ba2c26f",
+        "cid_243_f7e0cfb70bcadae1371fc6263ec1d6d002520d8d581d7960508908382dfac77e",
+        "cid_244_6a64e04811aa0de1eac06b30413d6d4914f92a4d2cf367006b95643fb88e8389",
+        "cid_245_f7d57cc7cdf1176952e1602ce46c79194ed1e848588249486fc77c9999ff9d67",
+        "cid_246_e0c4ccf488804443b313f8a5651eaf2b8951b931afae8b49d2a5dd0a765560e7",
+        "cid_247_8aec29de30fe6444d0368da21ca962a9c64955a4ac3e47bf34dd7cdbcb4ae0cd",
+        "cid_248_ca546383032ee058030749160ae912f760b2156ef17d2cb852e9b46d71859112",
+        "cid_249_0e9cc32a5600fb6626dc50b3bb9ee5bb52a15c90ccad8d13734242d1827640b2",
+        "cid_250_bf755859df4255f65fee62ae31ff4336b72ac4bda211348fe7a37fc0bb5799b6",
+        "cid_251_18f2ee821da4e6d3aa61892bbd616e64542a7a14bf5256edb191c7a044e401f7",
+        "cid_252_ca44f11c46c85b3dd26382a1939fcb2f5a1ec272040eb69c5d93368b8bc46b4e",
+        "cid_253_8310b637b3e9023c2d3488ad086f6fd3b4e0ebba807a136ba71c45d084c12c9b",
+        "cid_254_b400ca829029f88a40be7ec771d660f69ab3e48ea8b8c1d4f85443f7de50846a",
+        "cid_255_30a2f2efe86715763a3b046fea4898bbbead849577648b3095957b41c9c4ba66",
+        "cid_256_20c298c68e0a3a25932023e69daa9252160018b14ca0287d05aa8b93ec1cc18a",
+        "cid_257_63041f3eb141133c274b38f17c6a805b9ab8bbd139a0f54676c390b8c7e3d2fa",
+        "cid_258_9d1f5c5a8c52e9e7e55fcca49d084312f3b02abd77399fbb9fc54a46743bc27c",
+        "cid_259_db138b2ce06c277ca9a9e9d7d79e2269c0c40b6b09717feb8f6542412c3eb7e7",
+        "cid_260_79ec7a6c3da082ada663ea5d7edb01b86eafc82c8709499501949326fee37ad2",
+        "cid_261_ddec9e8d825b481b8533833777f773a741595017d9358e1834782683280762f9",
+        "cid_262_cfa5b3ddde4e74f5517dad099cf87daf691a493847be83ee3e1087236d05d200",
+        "cid_263_3e8d0331b65039a6dba5967dc3a66a96d3322ab5cda3db723de2569a8004907e",
+        "cid_264_58cd51c33010b3d27d4694ee5d2bc52b2302b8ffb13f73c0b14105baa93b2697",
+        "cid_265_02bc43ef88283301645b8401afad469450bdc293ffe8b928b88b643db92587aa",
+        "cid_266_fbfcdd182aaf5c547c77f02d1fa907b1e1fb86566a6fc6515a01f4f6f1c4cbf4",
+        "cid_267_1fdb3b1d1563f30a03dd9689e54485f85ee0def21eec88b6cbabf4833c46e116",
+        "cid_268_606eda2fd4f3a65ba147037209b97940f91e2bfc0132e1aed542ddfeff01615b",
+        "cid_269_c2676f8b85f4a01721934fa205f5552d052034782f4299d71bdaf7b686e49785",
+        "cid_270_4e35938669aa100043bb6bb2922c206cae8a1cd4127b118f7308b952129e28b8",
+        "cid_271_36bb527ee2a9afc9c2368b3e350ad8ba115f85bc84fa55d5c79f3750fa605359",
+        "cid_272_bcb16e72bce37298ddc007ccea78da888bb1d8610ec884da58249732bd047b0b",
+        "cid_273_8f8937f798f4f713f8826e17bb1d4f903819b3e1ea6fee47b997ccdc4d1ebbfb",
+        "cid_274_52032f07800853f76d70a76640f7c77d0cb3ff2293843e85ccf9c8d88b1c7bde",
+        "cid_275_7a93c414dcf70f6ff98561d39a52daab7aca713f48fcc51db00ba13d80e7af18",
+        "cid_276_9e15cb17a9bf7681b710de16f67f98c62a17f05e26d5525b7702a9df84aacea3",
+        "cid_277_8daa94f6d71100f01bc8b2843ec15832a7b8068bdd39a03768f1ac7efe4aee56",
+        "cid_278_f90af8c3c6cee662346dd3344562a4e02dc9acdc4d023171a9237981e41a6f44",
+        "cid_279_aaddfa3bece84f94ef7c8d7039457ab03e6a080f6e7d7b3c2f2d8a9c5273775c",
+        "cid_280_5ea87a79d56af41954298912ea67ea4a3b623f12ea64f5914501b42f761c7ab7",
+        "cid_281_c506b77e96d640ff243303dec355dc6e5bddbccf56550a96aea716920d243391",
+        "cid_286_c432bf5cba73cac077d293a8e032c81fd621610804e5fd88bcddc19cb6688e71",
+        "cid_287_ca8bbb81734afed6ded92e8670b4297cbd676ed4a871d989a9b581d6801ff2d6",
+        "cid_288_f5f4ceec4b3d2ea07dae01ecd0cd2c0770a7c8b01a063dd60c4c56b6ad19171f",
+        "cid_290_d4bf2d0244a8d2bb2894e678d22fead1740bd6ce6cad913c9f5d856df2b684a2",
+        "cid_291_8804721e9217522e471a5ba903975edab0027b4e4f95005a8e956496896f6391",
+        "cid_292_ba901fa7d541ce7d8e923de2c11bc64d514b3e525bdd5f0773acf336fcef9eee",
+        "cid_293_47b567138489d28ce14377411b362d518c853256612ed3bfd087afd28efbe3fe",
+        "cid_294_c0d256d5c39e941032b5fe57dcd9400e42f66f895103090509cc515dab2f8cd4",
+        "cid_295_39caba0fb73c1b9e19824d470387208fd7d816b368a1d4ebd9c85c44259cb5bb",
+        "cid_296_5a08425719d86f945e25d4c4f506cb45aab8f1b06d674c690435ae296d6acb10",
+        "cid_297_ecaf5d2c362e60c9774064c1115d617c4d14f8a6a69eb131faa57fce1b16b9ab",
+        "cid_298_3a362b728a57ddb076d2c6d522e2d0e86831913d28688cf257590bf5da0b7243",
+        "cid_299_0a13fe31643f746ed56c2dd5b34b1b6e7d52efea494754385a00497ac9cc782d",
+        "cid_300_1c994924a43659cd1101b694ef7283324163f0462696e7ef7bb25d112e31648b",
+        "cid_301_9e9ba8bbfa6428218f815de8eb7f513ff541f2cc56b9e003728af0b529c70f0b",
+        "cid_302_5373f39248d22431b52104de69b0566313567cc13d234ef1d95c38347772a9e7",
+        "cid_303_0f813792caf7b8ce6bb1feadd802fb655f5c63c7ee53bd12a9fcf56ca030c2af",
+        "cid_304_7538055ff7fe8ffb068e2351ffafa69173aa0dd9719523be11f3bfdecc9f70c0",
+        "cid_308_275c681117f01753f956c27c02218a3f7b39251f145f9c1277bbe6b6fec77f44",
+        "cid_309_889c087c4313f35b9e0d15433b6d0a5fe9d1f6e89b8418ce0467c0f3045a38bf",
+        "cid_310_d50ba03f4bd274aabc757e0af14067d81f116d08048ff1691e641d53d2f5ae33",
+        "cid_311_d598af5bbc7a390eefa69c29e2d68d2997ecf01a357d81724f62959154d6dee4",
+        "cid_312_1dbb85f6a5b7deff716a9dbef623d2c5fe43b5f88cb9a23886b5dc3538361fb6",
+        "cid_313_7ed1edc47c49a48ecde6481b1bec9242c4f9fec1e13a91a2bb823ca124aff2f6",
+        "cid_314_d475b4b4a0f3bc6c95f696770ccb46f7b2534810dc7a13f92a9ef4fe22d183a5",
+        "cid_315_17a4729b6e9bb18993fbe2bce736f04bd8825c5b8c5a4fbebd38600526c6d409",
+        "cid_316_40dbb29ba55782edd31cb9b6c91fee4863f8b630acb3c812d74c2471d0003852",
+        "cid_317_fbfcf74aec2c0b53350de667e2487317942f90bbcaf1a6730f08de2fae860055",
+        "cid_318_aa18880e0ed6eee370685cd853a012b6c1010cdcced4eeb82a5e30482fc46d1e",
+        "cid_319_3be3ba864b727969fb2903dc919d4fad575308b8078a4bf08642c45ce1950c18",
+        "cid_320_bf80930601f934da61087fb9149527e9b9cb515f13795660c664439a4e1c564b",
+        "cid_321_f84867436890ec1189ecc50f5c4df74e3020158e8548871b59d269638f76a7b0",
+        "cid_322_a6c5304a577755c6e512cadab99f97269d30ae41803382d59bcaf54853ac2d87",
+        "cid_323_b1dfcf5244fa842137d15088d736c8fe601ba46854574f93462ea622c1bd5874",
+        "cid_324_e3d2faa83f7eff2c07f48c29522b2e2b1481b6e44d818a4bdc602631646029a2",
+        "cid_325_9e7d32f282b0bba599af04b9f9e47d42bb3c76d4d1034f6cc032a75585e560a2",
+        "cid_326_2614139cd9c1224989dd4f39e0dd72b16053e339347eeeee8376315d8579c3f3",
+        "cid_327_6ebbbdb29b6c17dc572b280085aeb798493833bdaf58d29c830450c1e30e742d",
+        "cid_328_728a0a811262a2e033b5bad7410482fe5faddbec541324d794336ef4860da78b",
+        "cid_329_eba1097df5f03166c4107f9f18deeb15b970808923d915b2857ce26829be4a92",
+        "cid_330_1f237eb69791e7d2f7752acad8294fe3b5d6d5d9cc2a3810d1713475c2ac1366",
+        "cid_331_c3a8a694418c3efb262c13ebc61550454a0dbf40eee538cd5b2e11fc2b98fdd0",
+        "cid_332_4b9a59fe7a34137736be61cc9ab27c933a24edc3acb2882bdfe149c2e9df5c62",
+        "cid_333_a0aef9cd0dc4b90e165a33942d4735eaa867b1615eac565d8d72ddfd8bcf0a61",
+        "cid_334_a85d11ca8b710a8a5529473d3543195f0b87fa3f0785ad6753e01be7a4af7992",
+        "cid_335_109967c97fd7d98dde1f8840d476aabd62f11c35f096f89d6f7dbfbb4e1cc1d3",
+        "cid_336_7b3818cfcc1ae2b337ecbd003863b633c88240de56d9eab073c6900e2f049ef7",
+        "cid_338_ff4a9776b4ad86d3781d571359a8e9210757c0ba3998e4f693b5ab6a4cb679a0",
+        "cid_339_c98504c856947f197a5e6fb844ced167df3c138ff342f29a07bc261461186d00",
+        "cid_340_42e652da4be98adb46772f432dee7e86b08ae361258ca276635352cf5b72f9de",
+        "cid_341_8eab6fb94963ec0328fc0867a3a150657fcf906a80e352b8d00d208023bcffff",
+        "cid_342_53691fbc49d559ce79bc677093bdc0d1f969bc26c9789f575ba2d5820c4b3f65",
+        "cid_343_4e796c6f4390905202df91ab1bca98b4da6a826e4c22d4f389a6fb4faf18cdc4",
+        "cid_344_274b110bfcde2e44c3136e0bce40d2e5a783caa284e63e21dd05a220e2d3b4f4",
+        "cid_345_3d525cfe81c71817e14c44a04ff6354c2ff81194538d0f750dd13aef68426d7f",
+        "cid_346_224b6cf60ecff7db38e8b7ab734c12379ee0178aec6a60bce19797399a53299c",
+        "cid_347_8279de6dbb0b9ed6fe56a000bce9990961ce18fc967dc0ebb3a56fc1855d81a2",
+        "cid_348_429bba8d4eb83fa6374139bdca0656b74937df7591f9185006a1e00411da9169",
+        "cid_349_7685309fb4f259c557f49d5d9c0bee8817db144ac7d7417cefbdc22823cbf267",
+        "cid_350_ffe0a71c86d2617ef39cb6e5535b183650a9b3a13c8fa96f88f4a1370b01993f",
+        "cid_351_a16e705841bb3630951b6d24f85d48b1a140a60b2b63d2ab847fcfa01db273c7",
+        "cid_352_bdc276c8ad9c8ffd8f9c4e0a9d4d42f83e5a592fb158a48c4558519080c300f4",
+        "cid_353_860c62d4087226c453ed600f11907f795858099ee6e67792da75c9822bde9f9e",
+        "cid_354_2af490908d31001c4fbd3eaf2a3754cca63ce0e22bd9110241f8fdf6093c3d4d",
+        "cid_355_63bbc62aad4a74411994555590439b0f515dc13b3b65722dfe33df3189f5ae4b",
+        "cid_356_b2fea390330a78004391d98a560fc43d6a3cbecd4b0e72cb1612017c0c64cc6c",
+        "cid_357_0e614e8c327398e6ddbcac9d33ded0f2285fc6936ce07f517e6cde308a60e58d",
+        "cid_358_fc7eb36788062c235a481c3341320ea4174694ed0de89112565a14df39586528",
+        "cid_359_02499e9d0212583f01fe9ad77bef2abecb9bb6c339acfb41b56f8acab6d903eb",
+        "cid_360_6951e2c701c64ca121039a0661ec5d103363182bbfd8b93c19ba0298ee967bcb",
+        "cid_361_2be019c3929257bdcdfc876a5496b166f983f22f178f9808403611b009292f41",
+        "cid_362_d7f369adf943785d7fc04a46d2bc60ae82d76c517f7ae9191b6923966892aa2a",
+        "cid_363_1a20ffb393cced3413e97ecf511c4942fb2a98dd21269d03e015c2fec611e13e",
+        "cid_364_488d8fb1d16f15bbe101e05cbdbfd4825c48fe236736246c5777185f5aa35c3c",
+        "cid_365_b90af913510d5e0d0c9b0cb66c76b8d21390ff2d6898d0659e70e865da3c2796",
+        "cid_366_a7133f49f1ab5d7736b7ca959482718a2651f3e59c5e7157c7e30342f331f847",
+        "cid_367_6ddd6284615c1eafe3d5492d5427298703931fcc4fb03965d5d58f05cec74527",
+        "cid_369_795d0ce60b942aead0dd9f90e97f8343ba39474cb7e202f2a996c1a0c3a98830",
+        "cid_370_bae88ea8e610534d412ffae96e7c6316188c6084940308e3c8639d0e1db37fc5",
+        "cid_371_97b01b045f9cbcc03465c70491da64ac0d0396d1588f479a5e77c996b0039b1b",
+        "cid_372_de854c06ddb313d350fb9795dd453a3190e537290039489836664e9a1ec479e3",
+        "cid_373_dc14f24a0c38571191668cbf4c83b20b75e1f09b830d8f089b691bf6faf5445c",
+        "cid_376_d0142a82364875cab10642680ecdb4150db6909a1e3c46a0d31149b4cf731cb3",
+        "cid_377_696831affac2dfb4b8f4c73abc5d763c8bc00086087ce3b7c67ab1e5481e3632",
+        "cid_378_14f1b7ff5570d936c21b866e278347f8deda9f14951b700282991578c2c98662",
+        "cid_379_c0aefed996dcb70e2d5985ddd7fed9c4127c7a012781e167502ec8120b5b41fb",
+        "cid_380_023a6126f2a662a733ad18a44302dfbcf4d3fc341f52207dda194b1191344992",
+        "cid_381_ceffe875d78da164466993b8e6fe27876749604318758d00158b5a06e945c2d1",
+        "cid_382_439dea8576e33a6b846d83cff7c8b6fdcd7be591804a15c0ed6014ba4fe6021b",
+        "cid_383_93a73a3d444a47581c3c9fe94b690a706f890d9294e1a2f93bade734b75a0d7a",
+        "cid_384_6c6d813ccdd811c83094d348ff0d2ddd46dfe5c37eead80db61f6e5ff0b4b8e2",
+        "cid_385_a4a3807e602767ace7c04be0d2023389f9af20dbcef9b9a6f714b8416b8ea84d",
+        "cid_386_116638220eb104880bbb466cf148fef49bfb155e229777fe3d89cd17dc7c2755",
+        "cid_387_5ce27bd1313d0c9e8fd2e07fe2b3d3bb4b938637a9e49acd5d963af25192bb4c",
+        "cid_388_683526dd1e3bc99ff19134e3ee4806977e6881575afb2fe5999972103de58b18",
+        "cid_390_41bc593a70516273123ef20b256ca0fcccdc1aa6ec57e2dacaa4fe748c72001c",
+        "cid_391_85afc8e677d7d1a33759fa81cad8f82b2ba5f04024a17ba2984010c286901ab4",
+        "cid_392_86059559e51a952a1de03d4b4c5c2b9245634843743bf0d3e9a200454348968e",
+        "cid_393_45a3f947390008615545a96a3e947943516ff792822e523576f7afd0b922400e",
+        "cid_394_103b87c940265d1968d42ddb18e9d249cf250df02680cc1b7691a4eb9b6c54b4",
+        "cid_395_5869261359523e47026e736a5ce16d951d8bd00d0bb5983475060a6447fcf68c",
+        "cid_396_204659c667a64682714c330525345a2d55af2ad320d2738a620131c1c87e326d",
+        "cid_397_1269e5178130cf3d421a321aeb4f094b073d0b0b4519d0e82409131ced66966e",
+        "cid_398_e9aa43dbaf4c0cf3b61b175759718c26cafcef7b62bdb26616a8c9f8cf9f2096",
+        "cid_399_d654d4962888861f2432f93a453b43c96761b75f7f2ac75e94a36671d111d2b1",
+        "cid_400_11cd8f79bdd3ce1ed9df30ed5ba8402425f667c8f74b0643598ce6f6bee12e0c",
+        "cid_401_3409dc317f97a3f55d2adc0d361a17834d5c11d2a6b030c9c3de61a38fe9bfd4",
+        "cid_403_103c22ca3d7bad9de309707b22ec5c54a40d2f670d246b52b5ae87312753e12c",
+        "cid_404_d1f8abcc182fc70711721deaccd5be84c9f3401f63f596d423cdf8346379a301",
+        "cid_405_5a9867b2d91e7e592837134ad0272b494aed8bffd4f9ff57c60d6254cc6e1b8a",
+        "cid_406_ca6ddcf6bb2d713d9ffecd66d69b3cfff4e9b6c7fb544e313aa70e1ceafadf10",
+        "cid_407_273b549a71af7a438da75765520fcb4a2e18816953c33308933539ce4b415df9",
+        "cid_408_7b4f302b2b3a97f6ccea9a2cde63a29e46bb824e67b92280febedf282f5c502e",
+        "cid_409_c15121d4c8c11baa73a10170c78fb7949144661ec73ddb6b9ea64dfb8b3c1a15",
+        "cid_410_1207bb986f69a1df92b4f37823872788185a17fbb8df54c0042c3d52616eccd5",
+        "cid_411_2dd70ade298b9c273ae04041e11ea43c23c7b30f676d0f846e680e12c3cd5b15",
+        "cid_412_131def57fbabe0779adcb7e7841199d208a4b244f8d498dbb27412a5ff9e1b36",
+        "cid_413_e62b96d4cfd6cff6989932851315568313ccfc6deaada7caad97b86f684419d9",
+        "cid_414_e96ba079815db373911d807e64b6cb72f29ebec331df02e38b62d44ae18c3a41",
+        "cid_415_2d87f3c62f9bf2b8a8b24fa22084b6bb0168cd88ee67fb010885e5bfb2a6ab7a",
+        "cid_416_b5ab30905aefe1c478bd0f2295b484dd7edde9d9b61ba8b0ca564f4087220a82",
+        "cid_418_68d42a6dc882a99e08522e9cba60a2f99dfb61ac1f10168c614799d697a73342",
+        "cid_419_663d855178a1cafe51410afdcd813c6a6f98d4648a12b0688cb97b8b03447a74",
+        "cid_420_d50fdbc869b4b2bf534b51c2cb84408d558d0ed7c235c4fd50658fd4de2496e9",
+        "cid_421_2a1ef8c6326059d3c328d1c82acc37a1589b5b03e560b42d72eb61b1b5459779",
+        "cid_422_daad04e7bf7da5a7b4cc3ceaefb01f7457fe38ee41e977fec2acd1bae5038cdf",
+        "cid_423_05e5107ef3dc13d7a678d5a9e14ebeaddde5a73502242e50286baf025cc26658",
+        "cid_424_dc92a09b13b5571dd1c80053bf534942b37ee4a43ad944bedfe51bf26f427854",
+        "cid_425_7bcf7a78954cb16720cc6e43713ddeec4d242c4f6111c2e427ad0ba082907770",
+        "cid_426_24bf208ce1fdb46c8d086b970019707be0d760ac2af42382e97fa580d2540198",
+        "cid_427_ed83116ef7f13f124b7d9212afac07ef0e147af31add9a0eb3c96760ea7da2d6",
+        "cid_428_eff86928e88699e959faa3d7e79992512cc164a91c91172bfe711d85c25578f8",
+        "cid_429_a032fa8746ccba270cc80bfb7671ee93ebcd53cdd5b5d97fe16e15ae25c506c7",
+        "cid_430_f10e8b03499d45d4cfee3ae1d9eaadcb1aefdca3318d7e3fbdb6642b75ab6d2a",
+        "cid_431_1919be9b92a48b0130349963fd908ce3ebd3dd96dc4e04f445745d62f2642794",
+        "cid_432_86c3f43c04874dd4a745de3c3a38450eed59ed737deae0fd200b1753e94e7e56",
+        "cid_433_213c96f8180568a9569c0ea0c09b3efc621bbf4afc95542109a87d7250dc8fac",
+        "cid_434_cb601525fb5a6cd9d20b2ca0f1e12f9d4041b8511b759135682170d603ec84cd",
+        "cid_435_6dd073180f3ac9962d4ecae3805f0af9fb794c00958cc77ef721776804ba828f",
+        "cid_436_49e344d328f2ab1acc8267759fadc7e027e057ac1d4690cf768aacf04886a63f",
+        "cid_437_070b9bc3255d4de75239ef048681095442f2c1caf97ecb83700dc6f18d38236c",
+        "cid_438_ab61beffadf5f9171e3757b58fa0c20fa1ad356129a3969cb4d5caf8b497b1b8",
+        "cid_439_4038ee3af778d3fe206a76c20b31b107749430c2cb05d090b442719babae43ba",
+        "cid_440_80cf4b8b1a494d55b6d41d78bc7239b3ba8ec21c9d4bc57dd88ecffebd7df89c",
+        "cid_441_c06b8354a1f55d8b49a1234c07e2d0e126e24423c768dc0de5a60655bc18fdf0",
+        "cid_442_53b85e171f6b74dc628462298f7ad6c8e9b3783f468ac0ecf6d5cfe04e2543d3",
+        "cid_443_1eabbd50f23009cb8f61986150931110f10f3f795551f7657962cb9a27a60c7c",
+        "cid_444_ca1605e45bbce3f7e7f785292dd7751f889fa921679e9d6c62669796b3267aa4",
+        "cid_445_3f4ede7ebe8681a5f24b3ca2d8700535f56ba2e7bbc7a7b560c675b937c38ef3",
+        "cid_446_9c12c3344383939f507aafe9707955c4923acd7d5b58adf4c68e8713185c155d",
+        "cid_447_92d49106ff62f80777a70aeea94c44ef648ba683db819daca633f05b2a37dc0e",
+        "cid_448_5a63afcdc52bfa0a10e31c54aa2c3087c7f1c73beb9ccdc982c538ce28cf4337",
+        "cid_449_77e452ed363dfa11c83cb1867bcfc1f1c852269157da54f3e6cf8d3ae8bf1b06",
+        "cid_450_dc7cf91c468648c2f34f7cff59efff67891db2f5a64bc58073018f197132ae0a",
+        "cid_451_6821b6d2c7c099888d5757031e8bbb23dad6ab2d074b4e77315531b0b4b1a727",
+        "cid_452_843b77e24fee616c0e42a6b4be97a1c31b2668631e2fb42daf498f4f2405e997",
+        "cid_453_cc0b339a2da198432cc0fee72764318889759e5a1b63b37ce57ca32ad9c7ca3f",
+        "cid_454_1a0c0b7c49f5760a304d4ccd7f88d7082f853cd7d86f9fd0b711362304403274",
+        "cid_455_45f05783e969d66e2f1108f6ac4d7c0ad826357050cda350a938caf0297c34e8",
+        "cid_456_dd2a131002e0d32201de5cb1a3c9be2f134d95226f88998a51d694b9deb9fb39",
+        "cid_457_f4be5308f7dd5028cda4f88f23d1efa971a4d1b72566ad7d9b0c1be2dd5f6bc7",
+        "cid_458_d89228e5e31924b928f364903fd94dafeb4bc01597e6ccc0ea08f9d8a1fe626d",
+        "cid_459_acccc18ad38513fc6c2d9b82709b9c0ddf79d3f23806311ed24985e3a7376da7",
+        "cid_460_d69e1e258ea01cba3a1c8bdac9b823aab866995897808f9c688e05448b76564a",
+        "cid_461_af88a9a03884459cdeb546ecb135f85ab98c86a86a9f9c0f2035717a06a9c7e1",
+        "cid_462_03fdee66e4045a3a99943a17c0dc450f878e9d867bf2f25a498d39f97d1cbd5e",
+        "cid_463_5620435a9c950f72a2cb519d62d45ada8ebfbeaa071fcf8c9839ca0343fee100",
+        "cid_464_42ea5a0c5eb0de2288208be755b1ef17329d7d789254266108eac847a8e277cb",
+        "cid_465_60c3ec85c2d137c537e7cfd654a5331971154fe11f07d9ba9ae6744d49edd1ee",
+        "cid_466_542dbef86867e53276ab5ab5b6a7406c26c46f81d3c55f338a35968bca0c2676",
+        "cid_467_4856cc386bfbbbe61279bd9143fce839a7bb65008fe4f199443582cfb7c6ce58",
+        "cid_468_b76e94b9d021454d0d28977899be2238b87bb811357ed3f6a04220e97ade2590",
+        "cid_469_ed0ab3a2801e5c11925a0d5b57f18db7edcb25c1ddb79cfaea6fb2a5265fce90",
+        "cid_470_492bebd0ea095ddf8f36d3e066d813cf724a2983610bdbcd115c08f330ee8f56",
+        "cid_471_94f9e00a8056512cc0bcb6d3ba353d67092ca23c7919a3273ed15b81947c9c43",
+        "cid_472_a67286923f52ff4cb28fbd69a5d34a328739e58770d4540c0f60da8882c55924",
+        "cid_473_c1e440400d6ffb5cabe248624aa22f3ef19c1a78a74dc48740ef78d42a731341",
+        "cid_474_3dd1b89bcd5f9f3007ba3737b3e634a2a2e90a9e41e7b75f7d06d53159c29956",
+        "cid_475_d1d90a73d7ef61d344f6adb824895eaff27326b68f3e1a5ca4470d11622c90b6",
+        "cid_476_7e53f54dfb83be75e96836e79518c891389726494d0ecc03eef55c87858281c2",
+        "cid_477_0037b850b2649ef2cac269f1fbac215a55467d91c83eb36045260684a967772f",
+        "cid_478_ec392e08ea3ee5f7ee239fdc7ced5db538d3008709bae7ef08e9f05ecd229b80",
+        "cid_479_7caddf3b9e9c94d87e682db76bde15fbe788d7c19e98b86e262cb9a0cf8e7247",
+        "cid_480_6122e07831ec533b4bd9b7e0ed5ee81680fa06018990d19520ed3d79474b886e",
+        "cid_481_d97d107f508419091553f8e88dfeb77bfb1ecda9468065ea8a5ce0f7c29e4965",
+        "cid_482_99f0a55c9be0127ab5c6df38dfcccb4daf9188b9e43d9dd9ef095204b979084c",
+        "cid_483_25fac3782f38b64a82cd42976e842a4d5e232f986618aef02f52bfde4a92fc17",
+        "cid_484_7bc8f09feaddcf4ab0540e3b517ebffdb73284b5bf72efb8445a6a120ad7ce35",
+        "cid_485_6e5616a6d1e6021434f1ca424e027f32cddae3ea21a9485f5f68cef0d554e136",
+        "cid_486_741d7965509eb9b4f859e758d12a23ea8b30221d5a3a6b731dbbe471bb7b4138",
+        "cid_487_db10d3bed656a09e0e2574da2bfe138e4377fd77922967f42bfcd141cd0b6f07",
+        "cid_488_dbc4cc5d7750318c26e56cafaac832e0db37aabc617c4c87bc749e83bfad4926",
+        "cid_489_7d195cd582d98c816dd816a14575f619c5a77d68ef50844223619c26f7614f4a",
+        "cid_490_284123bb2f67744aaaf18e828be3fa08c156d0bc2178b4590f2e41745be37b15",
+        "cid_491_0c2c5157893433f223bdccac749f124c61745cb1cafa9b838ab63203aba49566",
+        "cid_492_c74c91d97436b4a79e7739cf26c271eee9a5f6c44486433684e1a495a10c0555",
+        "cid_493_1bb70dca2684c93f576ed054cfe45f5a79c0256872feaef6a93ebb003932f0e5",
+        "cid_494_5e53a328f650762e969687705bb0a4f5f19fef2d87a8d241763816f89e5ee8b1",
+        "cid_495_d985a68f6c8ec0cd4981868853dcba903b856396b834d859c6ec2f5ae3bdcc62",
+        "cid_496_8ea6e0d54d2fef6b9666b960626bfe078bf3680b09e0d3b0ca7a07c7808ccab5",
+        "cid_497_2c5f2015e100f1962da1ce56776df3e6d9580eed185355844e08b2f59c26560f",
+        "cid_498_7f11164bd0fc4f74d3692500cbec82b6f2601c49d77c69f7759e2290b3f9f264",
+        "cid_499_04c7e16678a06b3b7fde5c9a5801a58b64cfcf72d45cdb1bfc4f3f655c52f5ae",
+        "cid_502_432ae4c467619e564b669df5602d4c2c7f29ab8e6208130b6b710c1cbc6748b7",
+        "cid_503_c7e27648f96b59f30a7e2b78fdde9d21cc0cc149d800967bbf4a238ed0f2808a",
+        "cid_504_98103f524940c20323955308f3604a3f3b1a2f29cb987b547c85629704734820",
+        "cid_505_763a51b62cb5a9d903c7caf3a0efa855e3598288badcb77a3e4db124df51b137",
+        "cid_506_5f5dcca1849eb8ea48e5ef9bdec083dcc3b34eab4a135d638b3fcc7543a05712",
+        "cid_507_f9302e96131b9521c423ee311ccdc102fc3af8f7c7e798aaf546c9d53c0450bd",
+        "cid_508_7277f1cc0f8e3730e51ad4f5934cd94924cd29414e68125dc657235ab23ed9d9",
+        "cid_511_d49c822a8499c4071e235ddbd88e6c8d3df162e279337caf7b912e71ffc4290f",
+        "cid_512_2335987e580c32e33d948dda37fec5dd6540ac6c64147cd06e38353e5fd410cc",
+        "cid_513_af3f22ca0f7ef26399500e3037fd8121c1c83f3307c112e68faf127bc9f93d5b",
+        "cid_514_2903723b31eb0916280a0dc84a0f5e30428d29fc27c9bb241f45af18d12a14f8",
+        "cid_515_75746bdc7b9c10710749ced5a3e79cad27e933bb06ddf86c1c553b87c636c861",
+        "cid_516_e4471ab4bc4872e423d34827fff3888cb0d9a83c0abb79407f4ceff22af583e4",
+        "cid_518_535978893197189ed2980163b6ce305952bb3215417acb00edc0305e6fe0f93f",
+        "cid_519_10caa65e1e504e644e7dd17165309df9dfe41ab6ea490917c1d7e26d09b1f7da",
+        "cid_520_71c97355a7047587516f95017503f9d1ef9424ebe5004d68c0c309aa1e15bb41",
+        "cid_521_04f5f8deb194f07e8f66f67383fcb3ee73be1b14af69152b15168c3097eda557",
+        "cid_522_ac581634631b00d32693e2c9f1d8d7d10de98764f86ea6d4019b9cac9ba26b30",
+        "cid_523_b67e43f7833d5cb98cdacb7ede9280aa09952b47acc2f4aa1b8e0e51eee460e7",
+        "cid_524_992970ac3f050ff455ba50fe9ae1652873a32c6d078e4b2fe062173e6c4111f0",
+        "cid_525_0e8e39548ee9acb3896b0a0999ce5374a211d8ab6ecd95c14931a4ac038c58fd",
+        "cid_526_6fc82feb445b790077cae3407fb0f2a9f18b0f187924b851623734228e60e9f9",
+        "cid_528_74577b72445d2ab6ef9c1989e836c9ba3ee64a8f9cacd2c4670b4d8eb1626ee2",
+        "cid_529_1ca16bf3314445e50c3e88282796bd188ffddaf3f77f9a9d3f987f4ef1994d0a",
+        "cid_530_3934385a8b3275477d328f9a16dd5535f081ee16aa2e07fc5c8e28bbab30f2ef",
+        "cid_531_2b58a5822364780e86762ff18a569b449f8f9c18228827d01a5b2031ea80def3",
+        "cid_532_441861b40e69d69d951bf60761b3a6320e65e8775c9f382986cecd6f73147ea1",
+        "cid_533_16a540e9b784338120da68d34347958961fd1e833b92b3975bc68751eb19bcee",
+        "cid_534_1fb0ecc29a7d18f23c56f8ec0edf301fa69f75fb0a2d4ad6443a62d4d77f9fdc",
+        "cid_535_bc9bf1912e24700957830138846ab6d279970cd9b3eabccc77c162c8532a74d2",
+        "cid_536_8cef000bbcb80738e8f102b7d5626eab1db4b736519cd8eb5084d8350e9866c5",
+        "cid_537_522fe1d043e9036f1ec8e7e06c5146d1f5155e94c5c7819e0df4e3c31c800ce6",
+        "cid_538_7bba0ccc865fcebac360c127d2a757b2c15839503924875fd357f98ca5d2990b",
+        "cid_539_09e940fb0d187cec51eb75463a217718a78af662a56fd0b960e2857bd937cdce",
+        "cid_540_ebb9e05293c83552926dd873733a3f6d341e859579be90b85fafc2817130ba3b",
+        "cid_541_c3557634d280f02417c5eee3a610d5f65f350ec10b8f40a9b5c91512e78053a3",
+        "stw_constructor_f",
+        "stw_constructor_m",
+        "stw_ninja_f",
+        "stw_ninja_m",
+        "stw_outlander_f",
+        "stw_outlander_m",
+        "stw_soldier_f",
+        "stw_soldier_m"
+    };
+
+    std::string KairosMenuModule::GetRandomKairosAvatar() {
+        return *Utils::RandomChoice(Avatars.begin(), Avatars.end());
     }
 
-    void KairosMenuModule::UpdateAvailableSettings()
-    {
-        // KairosAvatarsResp handling
-        {
-            AvatarBox.foreach([this](Gtk::Widget& Widget) { AvatarBox.remove(Widget); });
+    constexpr std::initializer_list<const char*> Backgrounds = {
+        "[\"#E93FEB\",\"#7B009C\",\"#500066\"]",
+        "[\"#8EFDE5\",\"#1CBA9E\",\"#034D3F\"]",
+        "[\"#FF81AE\",\"#D8033C\",\"#790625\"]",
+        "[\"#FFDF00\",\"#FBA000\",\"#975B04\"]",
+        "[\"#CCF95A\",\"#30C11B\",\"#194D12\"]",
+        "[\"#B4F2FE\",\"#00ACF2\",\"#005679\"]",
+        "[\"#1CA2E6\",\"#0C5498\",\"#081E3E\"]",
+        "[\"#FFB4D6\",\"#FF619C\",\"#7D3449\"]",
+        "[\"#F16712\",\"#D8033C\",\"#6E0404\"]",
+        "[\"#AEC1D3\",\"#687B8E\",\"#36404A\"]",
+        "[\"#FFAF5D\",\"#FF6D32\",\"#852A05\"]",
+        "[\"#DFFF73\",\"#86CF13\",\"#404B07\"]",
+        "[\"#B35EEF\",\"#4D1397\",\"#2E0A5D\"]"
+    };
 
-            AvatarsWidgets.clear();
-            AvatarsWidgets.reserve(AvatarsData.size());
-
-            for (auto& Avatar : AvatarsData) {
-                auto& Widget = AvatarsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Avatar, GetDefaultKairosAvatar(), 64, 64, &GetKairosAvatarUrl, ImageCache));
-                AvatarBox.add(*Widget);
-            }
-
-            AvatarBox.show_all_children();
-        }
-
-        // KairosBackgroundsResp handling
-        {
-            BackgroundBox.foreach([this](Gtk::Widget& Widget) { BackgroundBox.remove(Widget); });
-
-            BackgroundsWidgets.clear();
-            BackgroundsWidgets.reserve(BackgroundsData.size());
-
-            for (auto& Background : BackgroundsData) {
-                auto& Widget = BackgroundsWidgets.emplace_back(std::make_unique<Widgets::AsyncImageKeyed<std::string>>(Background, GetDefaultKairosBackground(), 64, 64, &GetKairosBackgroundUrl, ImageCache));
-                BackgroundBox.add(*Widget);
-            }
-
-            BackgroundBox.show_all_children();
-        }
-    }
-
-    std::string KairosMenuModule::GetDefaultKairosAvatar() {
-        uint32_t Id = Utils::Random(1, 8);
-        return std::format("cid_{:03}_athena_commando_{}_default", Id, Id > 4 ? 'm' : 'f');
+    std::string KairosMenuModule::GetRandomKairosBackground() {
+        return *Utils::RandomChoice(Backgrounds.begin(), Backgrounds.end());
     }
 
     std::string KairosMenuModule::GetKairosAvatarUrl(const std::string& Avatar) {
         if (Avatar.empty()) {
-            return GetKairosAvatarUrl(GetDefaultKairosAvatar());
+            return GetKairosAvatarUrl(GetRandomKairosAvatar());
         }
         return std::format("{}Kairos/portraits/{}.png?preview=1", Web::GetHostUrl<Web::Host::UnrealEngineCdn2>(), Avatar);
     }
 
-    std::string KairosMenuModule::GetDefaultKairosBackground() {
-        return "[\"#AEC1D3\",\"#687B8E\",\"#36404A\"]";
-    }
-
     std::string KairosMenuModule::GetKairosBackgroundUrl(const std::string& Background) {
         if (Background.empty()) {
-            return GetKairosBackgroundUrl(GetDefaultKairosBackground());
+            return GetKairosBackgroundUrl(GetRandomKairosBackground());
         }
         auto Hash = Utils::Crc32(Background.c_str(), Background.size());
         return std::format("{}backgrounds/{:04X}.png", Web::GetHostUrl<Web::Host::EGL3Assets>(), Hash);

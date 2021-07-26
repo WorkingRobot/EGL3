@@ -24,8 +24,8 @@ namespace EGL3::Widgets {
                 Column->add_attribute(AvatarRenderer.property_foreground(), Columns.KairosAvatar);
                 Column->add_attribute(AvatarRenderer.property_background(), Columns.KairosBackground);
             }
-            AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetDefaultKairosAvatar());
-            AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetDefaultKairosBackground());
+            AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetRandomKairosAvatar());
+            AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetRandomKairosBackground());
 
             AvatarRenderer.GetForegroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosAvatarUrl);
             AvatarRenderer.GetBackgroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosBackgroundUrl);

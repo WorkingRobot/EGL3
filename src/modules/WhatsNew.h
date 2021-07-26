@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../storage/models/WhatsNew.h"
+#include "../utils/DataDispatcher.h"
 #include "../utils/SlotHolder.h"
 #include "../web/ErrorData.h"
 #include "../widgets/WhatsNewItem.h"
@@ -18,7 +19,7 @@ namespace EGL3::Modules {
         void Refresh();
 
     private:
-        void UpdateBox();
+        void UpdateBox(Web::ErrorData::Status Error, const std::vector<Storage::Models::WhatsNew>& Data);
 
         void UpdateSelection();
 
@@ -59,10 +60,7 @@ namespace EGL3::Modules {
         Utils::SlotHolder SlotSTW;
 
         std::future<void> RefreshTask;
-        Glib::Dispatcher Dispatcher;
-        Web::ErrorData::Status ItemDataError;
-        std::vector<Storage::Models::WhatsNew> ItemData;
-        std::mutex ItemDataMutex;
+        Utils::DataDispatcher<Web::ErrorData::Status, std::vector<Storage::Models::WhatsNew>> Dispatcher;
         std::vector<std::unique_ptr<Widgets::WhatsNewItem>> Widgets;
     };
 }

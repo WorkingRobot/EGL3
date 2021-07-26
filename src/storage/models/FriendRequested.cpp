@@ -25,8 +25,7 @@ namespace EGL3::Storage::Models {
         if (ConnItr != User.Connections.end()) {
             return ConnItr->second.Name.value();
         }
-        else {
-            return User.AccountId;
-        }
+
+        return User.AccountId;
     }
 }

@@ -143,8 +143,8 @@ namespace EGL3::Widgets {
                 Column->add_attribute(AvatarRenderer.property_background(), Columns.KairosBackground);
                 Column->add_attribute(AvatarRenderer.property_icon(), Columns.Status);
             }
-            AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetDefaultKairosAvatar());
-            AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetDefaultKairosBackground());
+            AvatarRenderer.SetDefaultForeground(Modules::Friends::KairosMenuModule::GetRandomKairosAvatar());
+            AvatarRenderer.SetDefaultBackground(Modules::Friends::KairosMenuModule::GetRandomKairosBackground());
             AvatarRenderer.SetDefaultIcon(Web::Xmpp::Status::Offline);
 
             AvatarRenderer.GetForegroundUrl.Set(Modules::Friends::KairosMenuModule::GetKairosAvatarUrl);
@@ -187,8 +187,8 @@ namespace EGL3::Widgets {
 
         Row[Columns.DisplayNameMarkup] = std::format("<b>{}</b> <small><i>{}</i></small>", (std::string)Glib::Markup::escape_text(Friend.GetDisplayName()), (std::string)Glib::Markup::escape_text(Friend.GetSecondaryName()));
 
-        Row[Columns.KairosAvatar] = Friend.GetKairosAvatar();
-        Row[Columns.KairosBackground] = Friend.GetKairosBackground();
+        Row[Columns.KairosAvatar] = Modules::Friends::KairosMenuModule::GetRandomKairosAvatar();
+        Row[Columns.KairosBackground] = Modules::Friends::KairosMenuModule::GetRandomKairosBackground();
 
         if (FriendContainer.GetType() == Storage::Models::FriendType::NORMAL || FriendContainer.GetType() == Storage::Models::FriendType::CURRENT) {
             auto& FriendData = FriendContainer.Get<Storage::Models::FriendReal>();

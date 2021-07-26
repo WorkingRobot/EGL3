@@ -3,6 +3,7 @@
 #include "../Login/Auth.h" // Weird rapidjson vs windows schemery, this is here (and not lower) for a reason
 #include "../../storage/models/DownloadInfo.h"
 #include "../../utils/Callback.h"
+#include "../../utils/DataDispatcher.h"
 #include "../../utils/SlotHolder.h"
 #include "../../widgets/InstallLocationDialog.h"
 #include "../../widgets/SdTree.h"
@@ -34,8 +35,9 @@ namespace EGL3::Modules::Game {
     private:
         void ResetStats();
 
-        // Called by dispatcher
-        void OnStatsUpdate();
+        void OnStatsUpdate(const Storage::Models::DownloadInfoStats& Stats);
+
+        void OnStateUpdate(Storage::Models::DownloadInfoState State);
 
         // StatsMutex should be locked by the thread when calling
         template<int Type>
@@ -87,16 +89,14 @@ namespace EGL3::Modules::Game {
 
         std::unique_ptr<Storage::Models::DownloadInfo> CurrentDownload;
 
-        std::mutex StatsMutex;
-        Storage::Models::DownloadInfoStats StatsData;
-
         std::deque<double> StatsRateHistory; // Used when calculating ETA
         uint32_t PiecesCompletedLast;
         uint64_t StatsBytesDownloadPeak;
         uint64_t StatsBytesReadPeak;
         uint64_t StatsBytesWritePeak;
 
-        Glib::Dispatcher StatsDispatcher;
+        Utils::DataDispatcher<Storage::Models::DownloadInfoStats> StatsDispatcher;
+        Utils::DataDispatcher<Storage::Models::DownloadInfoState> StateDispatcher;
 
         std::vector<Web::Epic::Content::SdMeta::Data> InstallOpts;
     };

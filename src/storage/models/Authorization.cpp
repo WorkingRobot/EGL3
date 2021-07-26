@@ -1,7 +1,9 @@
 #include "Authorization.h"
 
-#include "../../utils/Log.h"
+#include "../../modules/Friends/KairosMenu.h"
 #include "../../utils/Encrypt.h"
+#include "../../utils/Log.h"
+#include "../../utils/Random.h"
 #include "../../utils/streams/BufferStream.h"
 #include "../../utils/streams/MemoryStream.h"
 
@@ -22,6 +24,10 @@ namespace EGL3::Storage::Models {
         Stream >> Val.KairosBackground;
         Stream >> Val.RefreshToken;
         Stream >> Val.RefreshExpireTime;
+
+        // Kairos avatars aren't used anymore. I'm keeping this here to not hinder backwards compatibility (at least until they add official profiles)
+        Val.KairosAvatar = Modules::Friends::KairosMenuModule::GetRandomKairosAvatar();
+        Val.KairosBackground = Modules::Friends::KairosMenuModule::GetRandomKairosBackground();
 
         return Stream;
     }

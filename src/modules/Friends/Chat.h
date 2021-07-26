@@ -3,6 +3,7 @@
 #include "../../storage/models/ChatConversation.h"
 #include "../../storage/models/Friend.h"
 #include "../../utils/Callback.h"
+#include "../../utils/DataDispatcher.h"
 #include "../../utils/SlotHolder.h"
 #include "../../widgets/ChatBubble.h"
 #include "../../widgets/FriendList.h"
@@ -29,7 +30,7 @@ namespace EGL3::Modules::Friends {
         Utils::Callback<void(const std::string& AccountId)> OpenChatPage;
 
     private:
-        void OnNewChatUpdate();
+        void AddMessage(Storage::Models::ChatMessage& Message);
 
         void OnSendMessageClicked();
 
@@ -53,10 +54,8 @@ namespace EGL3::Modules::Friends {
         Utils::SlotHolder SlotSendKeybind;
         Utils::SlotHolder SlotAutoScroll;
 
+        Utils::DataQueueDispatcher<std::reference_wrapper<Storage::Models::ChatMessage>> NewChatDispatcher;
         std::vector<std::unique_ptr<Widgets::ChatBubble>> ChatBubbles;
-        std::mutex NewChatMutex;
-        std::vector<std::reference_wrapper<Storage::Models::ChatMessage>> NewChatData;
-        Glib::Dispatcher NewChatDispatcher;
 
         std::deque<Storage::Models::ChatConversation> Conversations;
     };

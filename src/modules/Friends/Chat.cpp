@@ -31,7 +31,9 @@ namespace EGL3::Modules::Friends {
             Adj->set_value(Adj->get_upper());
         });
 
-        NewChatDispatcher.connect([this]() { OnNewChatUpdate(); });
+        NewChatDispatcher.connect([this](Storage::Models::ChatMessage& NewChat) {
+            AddMessage(NewChat);
+        });
     }
 
     void ChatModule::SetUser(Friend& Friend)
@@ -52,8 +54,7 @@ namespace EGL3::Modules::Friends {
             ChatBubbles.clear();
             ChatBubbles.reserve(Conv.Messages.size());
             for (auto& Message : Conv.Messages) {
-                auto& Widget = ChatBubbles.emplace_back(std::make_unique<Widgets::ChatBubble>(Message));
-                ChatBox.add(*Widget);
+                AddMessage(Message);
             }
 
             ChatBox.show_all_children();
@@ -73,16 +74,10 @@ namespace EGL3::Modules::Friends {
         OnRecieveChatMessage(AccountId, NewMessage, true);
     }
 
-    void ChatModule::OnNewChatUpdate()
+    void ChatModule::AddMessage(Storage::Models::ChatMessage& Message)
     {
-        std::lock_guard Guard(NewChatMutex);
-
-        for (auto& NewChat : NewChatData) {
-            auto& Widget = ChatBubbles.emplace_back(std::make_unique<Widgets::ChatBubble>(NewChat.get()));
-            ChatBox.pack_start(*Widget);
-        }
-
-        NewChatData.clear();
+        auto& Widget = ChatBubbles.emplace_back(std::make_unique<Widgets::ChatBubble>(Message));
+        ChatBox.add(*Widget);
     }
 
     void ChatModule::OnSendMessageClicked()
@@ -103,10 +98,7 @@ namespace EGL3::Modules::Friends {
         auto& Message = GetOrCreateConversation(AccountId).Messages.emplace_back(ChatMessage{ .Content = NewMessage, .Time = Web::TimePoint::clock::now(), .Recieved = Recieved });
 
         if (SelectedUserModel && AccountId == SelectedUserModel->Get().GetAccountId()) {
-            std::lock_guard Lock(NewChatMutex);
-            NewChatData.emplace_back(std::ref(Message));
-
-            NewChatDispatcher.emit();
+            NewChatDispatcher.emit(std::ref(Message));
         }
         else if (Recieved) {
             SysTray.ShowToast(Utils::ToastTemplate{

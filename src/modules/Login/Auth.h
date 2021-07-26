@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../storage/models/Authorization.h"
+#include "../../utils/DataDispatcher.h"
 #include "../../web/epic/EpicClientAuthed.h"
 #include "../../web/epic/content/LauncherContentClient.h"
 #include "../../utils/egl/RememberMe.h"
@@ -69,6 +70,8 @@ namespace EGL3::Modules::Login {
         sigc::signal<void()> LoggedOut;
 
     private:
+        void OnLogInFailure();
+
         StackModule& Stack;
         SysTrayModule& SysTray;
 
@@ -77,9 +80,10 @@ namespace EGL3::Modules::Login {
         Storage::Models::AuthUserData* SelectedUserData;
 
         std::future<void> SignInTask;
-        Glib::Dispatcher SignInDispatcher;
-        Storage::Models::AuthUserData SignInData;
+        Utils::DataDispatcher<Storage::Models::AuthUserData> SignInDispatcher;
         Glib::Dispatcher LoggedInDispatcher;
+
+        Glib::Dispatcher LoggedInFailureDispatcher;
 
         Utils::EGL::RememberMe RememberMe;
 

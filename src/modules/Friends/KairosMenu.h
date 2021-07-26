@@ -24,15 +24,11 @@ namespace EGL3::Modules::Friends {
 
         Gtk::Window& GetWindow() const;
 
-        void SetAvailableSettings(std::vector<std::string>&& Avatars, std::vector<std::string>&& Backgrounds);
+        static std::string GetRandomKairosAvatar();
 
-        void UpdateAvailableSettings();
-
-        static std::string GetDefaultKairosAvatar();
+        static std::string GetRandomKairosBackground();
 
         static std::string GetKairosAvatarUrl(const std::string& Avatar);
-
-        static std::string GetDefaultKairosBackground();
 
         static std::string GetKairosBackgroundUrl(const std::string& Background);
 
@@ -50,28 +46,15 @@ namespace EGL3::Modules::Friends {
 
         bool Focused;
         Gtk::Window& Window;
-        Gtk::FlowBox& AvatarBox;
-        Gtk::FlowBox& BackgroundBox;
         Gtk::FlowBox& StatusBox;
         Gtk::Entry& StatusEntry;
         Gtk::Button& StatusEditBtn;
 
         Utils::SlotHolder SlotWindowShown;
         Utils::SlotHolder SlotWindowUnfocused;
-        Utils::SlotHolder SlotAvatarClicked;
-        Utils::SlotHolder SlotBackgroundClicked;
         Utils::SlotHolder SlotStatusClicked;
         Utils::SlotHolder SlotStatusTextChanged;
         Utils::SlotHolder SlotStatusTextClicked;
-
-        std::future<void> UpdateAvatarTask;
-        std::future<void> UpdateBackgroundTask;
-
-        std::vector<std::string> AvatarsData;
-        std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> AvatarsWidgets;
-
-        std::vector<std::string> BackgroundsData;
-        std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<std::string>>> BackgroundsWidgets;
 
         std::vector<std::unique_ptr<Widgets::AsyncImageKeyed<Web::Xmpp::Status>>> StatusWidgets;
     };

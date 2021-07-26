@@ -21,8 +21,6 @@
 #include "responses/GetFriendsRequested.h"
 #include "responses/GetFriendsSuggested.h"
 #include "responses/GetBlockedUsers.h"
-#include "responses/GetAvailableSettingValues.h"
-#include "responses/GetSettingsForAccounts.h"
 #include "responses/GetLauncherDownloadInfo.h"
 #include "responses/GetLightswitchStatus.h"
 #include "responses/QueryProfile.h"
@@ -127,16 +125,6 @@ namespace EGL3::Web::Epic {
         Response<void> BlockUser(const std::string& AccountId);
 
         Response<void> UnblockUser(const std::string& AccountId);
-
-
-        // Channels service
-
-        // Valid setting values: "avatar", "avatarBackground", "appInstalled"
-        Response<Responses::GetAvailableSettingValues> GetAvailableSettingValues(const std::string& Setting);
-
-        Response<Responses::GetSettingsForAccounts> GetSettingsForAccounts(const std::vector<std::string>& Accounts, const std::initializer_list<std::string>& Settings);
-
-        Response<void> UpdateAccountSetting(const std::string& Setting, const std::string& Value);
 
 
         // Lightswitch
