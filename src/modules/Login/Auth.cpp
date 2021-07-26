@@ -69,7 +69,7 @@ namespace EGL3::Modules::Login {
             Clients.reset();
             SelectedUserData = nullptr;
 
-            Ctx.DisplayError(Message, "If this is unexpected, you can check the log files and report the issue to the discord.", "Login Failure");
+            Ctx.DisplayError(Message, "If this is unexpected, you can check the log files and report the issue to the discord.", "Login Failure", false);
         });
 
         SysTray.OnLogIn.Set([this]() {
@@ -286,20 +286,20 @@ namespace EGL3::Modules::Login {
 
             auto LauncherAuthResp = AuthClient.RefreshToken(Web::AuthClientLauncher, Data.RefreshToken);
             if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use refresh token")) {
-                OnLogInFailure("Could not login with the selected account. You'll need to login again");
+                OnLogInFailure("Could not login with the selected account");
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuthResp.Get(), Web::AuthClientLauncher);
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
             if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
-                OnLogInFailure("Could not login with the selected account. You'll need to login again");
+                OnLogInFailure("Could not login with the selected account");
                 return;
             }
 
             auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
             if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
-                OnLogInFailure("Could not login with the selected account. You'll need to login again");
+                OnLogInFailure("Could not login with the selected account");
                 return;
             }
 
