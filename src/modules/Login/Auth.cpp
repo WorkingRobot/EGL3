@@ -64,10 +64,12 @@ namespace EGL3::Modules::Login {
             Stack.DisplayPrimary();
         });
 
-        LoggedInFailureDispatcher.connect([this]() {
+        LoggedInFailureDispatcher.connect([this, &Ctx](const std::string& Message) {
             Stack.DisplaySignIn();
             Clients.reset();
             SelectedUserData = nullptr;
+
+            Ctx.DisplayError(Message, "If this is unexpected, you can check the log files and report the issue to the discord.", "Login Failure");
         });
 
         SysTray.OnLogIn.Set([this]() {
@@ -230,7 +232,7 @@ namespace EGL3::Modules::Login {
 
             auto AuthDataResp = AuthClient.AuthorizationCode(Web::AuthClientAndroid, AuthCodeString);
             if (!EGL3_ENSURE(!AuthDataResp.HasError(), LogLevel::Error, "Could not use auth code")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the given credentials");
                 return;
             }
             Web::Epic::EpicClientAuthed AuthCodeClient(AuthDataResp.Get(), Web::AuthClientAndroid);
@@ -238,32 +240,29 @@ namespace EGL3::Modules::Login {
             SignInDispatcher.emit(Storage::Models::AuthUserData{
                 .AccountId = AuthDataResp->AccountId.value(),
                 .DisplayName = AuthDataResp->DisplayName.value(),
-                .KairosAvatar = "",
-                .KairosBackground = "",
-                .RefreshToken = "",
                 .RefreshExpireTime = Web::TimePoint::max()
             });
 
             auto FortniteCodeResp = AuthCodeClient.GetExchangeCode();
             if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #1")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the given credentials");
                 return;
             }
             auto LauncherCodeResp = AuthCodeClient.GetExchangeCode();
             if (!EGL3_ENSURE(!LauncherCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from android client #2")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the given credentials");
                 return;
             }
 
             auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
             if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the given credentials");
                 return;
             }
 
             auto LauncherAuthResp = AuthClient.ExchangeCode(Web::AuthClientLauncher, LauncherCodeResp->Code);
             if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for launcher")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the given credentials");
                 return;
             }
 
@@ -287,20 +286,20 @@ namespace EGL3::Modules::Login {
 
             auto LauncherAuthResp = AuthClient.RefreshToken(Web::AuthClientLauncher, Data.RefreshToken);
             if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use refresh token")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the selected account. You'll need to login again");
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuthResp.Get(), Web::AuthClientLauncher);
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
             if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the selected account. You'll need to login again");
                 return;
             }
 
             auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
             if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not login with the selected account. You'll need to login again");
                 return;
             }
 
@@ -320,7 +319,7 @@ namespace EGL3::Modules::Login {
             
             auto LauncherAuthResp = AuthClient.RefreshToken(Web::AuthClientLauncher, RememberMe.GetProfile()->Token);
             if (!EGL3_ENSURE(!LauncherAuthResp.HasError(), LogLevel::Error, "Could not use EGL refresh token")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not use EGL's credentials. You'll need to login manually with the \"Add New Account\" button");
                 return;
             }
             Web::Epic::EpicClientAuthed LauncherClient(LauncherAuthResp.Get(), Web::AuthClientLauncher);
@@ -337,13 +336,13 @@ namespace EGL3::Modules::Login {
 
             auto FortniteCodeResp = LauncherClient.GetExchangeCode();
             if (!EGL3_ENSURE(!FortniteCodeResp.HasError(), LogLevel::Error, "Could not get exchange code from launcher client")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not use EGL's credentials. You'll need to login manually with the \"Add New Account\" button");
                 return;
             }
 
             auto FortniteAuthResp = AuthClient.ExchangeCode(Web::AuthClientPC, FortniteCodeResp->Code);
             if (!EGL3_ENSURE(!FortniteAuthResp.HasError(), LogLevel::Error, "Could not use exchange code for fortnite")) {
-                OnLogInFailure();
+                OnLogInFailure("Could not use EGL's credentials. You'll need to login manually with the \"Add New Account\" button");
                 return;
             }
 
@@ -396,9 +395,9 @@ namespace EGL3::Modules::Login {
         return RememberMe;
     }
 
-    void AuthModule::OnLogInFailure()
+    void AuthModule::OnLogInFailure(const std::string& Message)
     {
-        LoggedInFailureDispatcher.emit();
+        LoggedInFailureDispatcher.emit(Message);
     }
 
     AuthModule::ClientData::ClientData(const Web::Epic::Responses::OAuthToken& FortniteAuthData, const Web::Epic::Responses::OAuthToken& LauncherAuthData) :

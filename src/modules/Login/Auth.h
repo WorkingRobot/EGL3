@@ -70,7 +70,7 @@ namespace EGL3::Modules::Login {
         sigc::signal<void()> LoggedOut;
 
     private:
-        void OnLogInFailure();
+        void OnLogInFailure(const std::string& Message);
 
         StackModule& Stack;
         SysTrayModule& SysTray;
@@ -83,7 +83,7 @@ namespace EGL3::Modules::Login {
         Utils::DataDispatcher<Storage::Models::AuthUserData> SignInDispatcher;
         Glib::Dispatcher LoggedInDispatcher;
 
-        Glib::Dispatcher LoggedInFailureDispatcher;
+        Utils::DataDispatcher<std::string> LoggedInFailureDispatcher;
 
         Utils::EGL::RememberMe RememberMe;
 
