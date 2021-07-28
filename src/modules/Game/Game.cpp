@@ -47,7 +47,8 @@ namespace EGL3::Modules::Game {
 
         ConfirmInstallStateHolder.Clicked.Set([this]() {
             Download.OnDownloadOkClicked([this]() -> Storage::Models::InstalledGame& {
-                return UpdateCheck.GetInstalledGames().emplace_back();
+                auto Install = GetInstall(PrimaryGame);
+                return Install ? *Install : UpdateCheck.GetInstalledGames().emplace_back();
             });
             ConfirmInstallStateHolder.ClearHeldState();
         });

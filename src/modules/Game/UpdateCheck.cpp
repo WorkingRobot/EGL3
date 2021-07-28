@@ -69,11 +69,9 @@ namespace EGL3::Modules::Game {
         std::unique_lock Lock(Mutex);
         do {
             for (auto& Game : *InstalledGames) {
-                if (Game.IsValid() && !Game.IsArchiveOpen()) {
-                    if (auto HeaderPtr = Game.GetHeader()) {
-                        if (!HeaderPtr->GetUpdateInfo().IsUpdating) {
-                            CheckForUpdate(HeaderPtr->GetGameId(), HeaderPtr->GetVersionNum());
-                        }
+                if (auto HeaderPtr = Game.GetHeader()) {
+                    if (!HeaderPtr->GetUpdateInfo().IsUpdating) {
+                        CheckForUpdate(HeaderPtr->GetGameId(), HeaderPtr->GetVersionNum());
                     }
                 }
             }
