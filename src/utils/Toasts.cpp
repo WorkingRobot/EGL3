@@ -24,7 +24,7 @@ namespace EGL3::Utils {
 
     Toasts::~Toasts()
     {
-
+        Impl.ClearToasts();
     }
 
     void Toasts::ShowToast(const ToastTemplate& Toast, const ToastHandler& Handler)
