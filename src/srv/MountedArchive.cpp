@@ -74,12 +74,12 @@ namespace EGL3::Service {
                 Parts.emplace_back(ArchiveLists.ChunkDatas.begin() + GetDataItr(Part.ChunkIdx) + Part.Offset, Part.Size);
 
                 while (LUT.size() < ClusterCount) {
-                    LUT.emplace_back(PartIdx, Offset);
-                    Offset += 4096;
                     if (Offset >= Part.Size) {
                         Offset -= Part.Size;
                         break;
                     }
+                    LUT.emplace_back(PartIdx, Offset);
+                    Offset += 4096;
                 }
 
                 ++PartIdx;
@@ -116,8 +116,10 @@ namespace EGL3::Service {
     void MountedArchive::HandleCluster(void* CtxPtr, uint32_t LCN, uint32_t Count, uint8_t* Buffer) noexcept {
         Count *= 4096;
 
+        // Context for the specific file
         auto& Ctx = *(MountedArchive::SectionContext*)CtxPtr;
 
+        // Get the right part to begin reading from
         auto PartItr = Ctx.Parts.begin() + Ctx.LUT[LCN].first;
         uint32_t PartOffset = Ctx.LUT[LCN].second;
 

@@ -12,7 +12,7 @@ set(INSTALLER_VERSION "" CACHE STRING "Installer version to compile to")
 
 set(CONFIG_VERSION_MAJOR 3)
 set(CONFIG_VERSION_MINOR 0)
-set(CONFIG_VERSION_PATCH 12)
+set(CONFIG_VERSION_PATCH 13)
 
 # Get Git Info #
 execute_process(COMMAND git -C ${CMAKE_SOURCE_DIR} log --pretty=format:'%h' -n 1
