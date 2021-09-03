@@ -102,7 +102,7 @@ set_property(
 )
 
 # C++20 #
-set_property(TARGET EGL3 PROPERTY CXX_STANDARD 20)
+set_property(TARGET EGL3 PROPERTY CXX_STANDARD 23)
 
 # Add .pdb for release builds #
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")

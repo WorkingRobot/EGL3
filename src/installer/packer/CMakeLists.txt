@@ -42,7 +42,7 @@ target_include_directories(packer PRIVATE ${RAPIDJSON_INCLUDE_DIRS})
 ## Properties ##
 
 # C++20 #
-set_property(TARGET packer PROPERTY CXX_STANDARD 20)
+set_property(TARGET packer PROPERTY CXX_STANDARD 23)
 
 # Add .pdb for release builds #
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND (CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel"))

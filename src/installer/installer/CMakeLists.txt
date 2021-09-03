@@ -44,7 +44,7 @@ target_link_libraries(installer lz4::lz4)
 target_link_options(installer PRIVATE "/MANIFESTUAC:level='requireAdministrator' uiAccess='false'")
 
 # C++20 #
-set_property(TARGET installer PROPERTY CXX_STANDARD 20)
+set_property(TARGET installer PROPERTY CXX_STANDARD 23)
 
 # Add .pdb for release builds #
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND (CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel"))
