@@ -1,0 +1,90 @@
+#include "InUse.h"
+#include "Backend.h"
+
+using namespace EGL3::Installer::Backend;
+
+NTSTATUS PrintProcessesUsingIds(FILE_PROCESS_IDS_USING_FILE_INFORMATION* ProcIdInfo)
+{
+    NTSTATUS Status;
+
+    ULONG BufSize = 0x8000;
+    PVOID Buf;
+    while (true) {
+        Buf = (PSYSTEM_PROCESS_INFORMATION)Alloc(BufSize);
+        Status = NtQuerySystemInformation(SystemProcessInformation, Buf, BufSize, &BufSize);
+        if (Status != STATUS_INFO_LENGTH_MISMATCH) {
+            break;
+        }
+        Free(Buf);
+        BufSize *= 2;
+    }
+
+    if (!NT_SUCCESS(Status)) {
+        return Status;
+    }
+
+    for (auto ProcInfo = (PSYSTEM_PROCESS_INFORMATION)Buf;;ProcInfo = (PSYSTEM_PROCESS_INFORMATION)((PBYTE)ProcInfo + ProcInfo->NextEntryOffset)) {
+        for (ULONG Idx = 0; Idx < ProcIdInfo->NumberOfProcessIdsInList; ++Idx) {
+            if (ProcIdInfo->ProcessIdList[Idx] == (ULONG_PTR)ProcInfo->UniqueProcessId) {
+                Log(L"%p %s\n", ProcInfo->UniqueProcessId, ProcInfo->ImageName.Buffer);
+                break;
+            }
+        }
+
+        if (ProcInfo->NextEntryOffset == 0) {
+            break;
+        }
+    }
+
+    Free(Buf);
+
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingHandle(HANDLE FileHandle)
+{
+    static constexpr auto ProcIdSize = sizeof(ULONG) + sizeof(ULONG_PTR) * 64;
+
+    IO_STATUS_BLOCK Iosb;
+    auto ProcIdInfo = (PFILE_PROCESS_IDS_USING_FILE_INFORMATION)Alloc(ProcIdSize);
+    NTSTATUS Status = NtQueryInformationFile(FileHandle, &Iosb, ProcIdInfo, ProcIdSize, FileProcessIdsUsingFileInformation);
+    if (NT_SUCCESS(Status)) {
+        if (ProcIdInfo->NumberOfProcessIdsInList) {
+            PrintProcessesUsingIds(ProcIdInfo);
+        }
+    }
+
+    Free(ProcIdInfo);
+
+    // Might return STATUS_INFO_LENGTH_MISMATCH if NtQueryInformationFile needed more than 64 procids/ULONG_PTRs to store
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingAttr(OBJECT_ATTRIBUTES* Attr)
+{
+    IO_STATUS_BLOCK Iosb;
+    HANDLE FileHandle;
+    NTSTATUS Status = NtOpenFile(&FileHandle, FILE_READ_ATTRIBUTES, Attr, &Iosb, FILE_SHARE_VALID_FLAGS, 0);
+    if (NT_SUCCESS(Status)) {
+        Status = PrintProcessesUsingHandle(FileHandle);
+        NtClose(FileHandle);
+    }
+
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingFile(PCWSTR FileName)
+{
+    UNICODE_STRING ObjectName;
+    NTSTATUS Status = RtlDosPathNameToNtPathName_U_WithStatus(FileName, &ObjectName, 0, 0);
+    if (NT_SUCCESS(Status)) {
+        OBJECT_ATTRIBUTES Attr{
+            .Length = sizeof(Attr),
+            .ObjectName = &ObjectName
+        };
+        Status = PrintProcessesUsingAttr(&Attr);
+        RtlFreeUnicodeString(&ObjectName);
+    }
+
+    return Status;
+}

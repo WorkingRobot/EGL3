@@ -1,0 +1,11 @@
+LIBRARY "ntdll.dll"
+EXPORTS
+NtQueryInformationFile
+NtClose
+NtOpenFile
+NtQuerySystemInformation
+RtlDosPathNameToNtPathName_U_WithStatus
+RtlFreeUnicodeString
+NtQuerySystemInformation
+NtQueryObject
+NtDuplicateObject

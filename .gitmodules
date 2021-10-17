@@ -1,9 +1,12 @@
 [submodule "libstrophe"]
-	path = libstrophe
-	url = https://github.com/WorkingRobot/libstrophe
+    path = libstrophe
+    url = https://github.com/WorkingRobot/libstrophe
 [submodule "WinToast"]
-	path = WinToast
-	url = https://github.com/WorkingRobot/WinToast.git
+    path = WinToast
+    url = https://github.com/WorkingRobot/WinToast.git
 [submodule "vcpkg"]
-	path = vcpkg
-	url = https://github.com/WorkingRobot/vcpkg.git
+    path = vcpkg
+    url = https://github.com/WorkingRobot/vcpkg.git
+[submodule "zstd"]
+    path = zstd
+    url = https://github.com/facebook/zstd

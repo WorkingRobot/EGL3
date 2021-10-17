@@ -1,0 +1,26 @@
+#include <verrsrc.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_VERSION_PATCH, 0
+PRODUCTVERSION CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_VERSION_PATCH, 0
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904e4"
+        {
+            VALUE "CompanyName", "WorkingRobot"
+
+            VALUE "FileDescription", "EGL3 Installer"
+            VALUE "FileVersion", CONFIG_VERSION_SHORT
+            VALUE "LegalCopyright", "Copyright \xA9 2021 Aleks Margarian (WorkingRobot)"
+            VALUE "ProductName", "EGL3"
+            VALUE "ProductVersion", CONFIG_VERSION_LONG
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x409, 0x04E4
+    }
+}

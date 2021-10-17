@@ -1,0 +1,129 @@
+#include "InUse.h"
+#include "Backend.h"
+
+using namespace EGL3::Installer::Backend;
+
+NTSTATUS PrintProcessesUsingDupHandleType(HANDLE Handle)
+{
+    NTSTATUS Status;
+
+    ULONG BufSize = 0x400;
+    PVOID Buf;
+    while (true) {
+        Buf = Alloc(BufSize);
+        Status = NtQueryObject(Handle, ObjectTypeInformation, Buf, BufSize, &BufSize);
+        if (Status != STATUS_INFO_LENGTH_MISMATCH) {
+            break;
+        }
+        Free(Buf);
+        BufSize *= 2;
+    }
+
+    if (!NT_SUCCESS(Status)) {
+        Log(L"???: ");
+        Free(Buf);
+        return Status;
+    }
+
+    auto String = (PUNICODE_STRING)Buf;
+    Log(L"%s: ", String->Buffer);
+
+    Free(Buf);
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingDupHandleName(HANDLE Handle)
+{
+    NTSTATUS Status;
+
+    ULONG BufSize = 0x400;
+    PVOID Buf;
+    while (true) {
+        Buf = Alloc(BufSize);
+        Status = NtQueryObject(Handle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation, Buf, BufSize, &BufSize);
+        if (Status != STATUS_INFO_LENGTH_MISMATCH) {
+            break;
+        }
+        Free(Buf);
+        BufSize *= 2;
+    }
+
+    if (!NT_SUCCESS(Status)) {
+        Log(L"Unknown!\n");
+        Free(Buf);
+        return Status;
+    }
+
+    auto String = (PUNICODE_STRING)Buf;
+    Log(L"%s\n", String->Buffer);
+
+    Free(Buf);
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingHandle(PSYSTEM_HANDLE_TABLE_ENTRY_INFO_EX Handle)
+{
+    switch (Handle->GrantedAccess)
+    {
+    case 0x0012019f:
+    case 0x001a019f:
+    case 0x00120089:
+    case 0x00120189:
+    case 0x00100000:
+        return STATUS_SUCCESS;
+    default:
+        break;
+    }
+
+    auto ProcHandle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, Handle->UniqueProcessId);
+    if (ProcHandle == INVALID_HANDLE_VALUE) {
+        return STATUS_INTERNAL_ERROR;
+    }
+
+    NTSTATUS Status;
+
+    HANDLE DupHandle;
+    Status = NtDuplicateObject(ProcHandle, (HANDLE)Handle->HandleValue, GetCurrentProcess(), &DupHandle, 0, 0, 0);
+
+    CloseHandle(ProcHandle);
+    if (!NT_SUCCESS(Status)) {
+        // Log(L"failed\n");
+        return Status;
+    }
+
+    PrintProcessesUsingDupHandleType(DupHandle);
+    PrintProcessesUsingDupHandleName(DupHandle);
+
+    CloseHandle(DupHandle);
+    return Status;
+}
+
+NTSTATUS PrintProcessesUsingFile(PCWSTR FileName)
+{
+    NTSTATUS Status;
+
+    ULONG BufSize = 0x8000;
+    PVOID Buf;
+    while (true) {
+        Buf = Alloc(BufSize);
+        Status = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SystemExtendedHandleInformation, Buf, BufSize, &BufSize);
+        if (Status != STATUS_INFO_LENGTH_MISMATCH) {
+            break;
+        }
+        Free(Buf);
+        BufSize *= 2;
+    }
+
+    if (!NT_SUCCESS(Status)) {
+        Free(Buf);
+        return Status;
+    }
+
+    auto HandleInfo = (PSYSTEM_HANDLE_INFORMATION_EX)Buf;
+    for (ULONG_PTR Idx = 0; Idx < HandleInfo->NumberOfHandles; ++Idx) {
+        PrintProcessesUsingHandle(HandleInfo->Handles + Idx);
+    }
+
+    Free(Buf);
+    return Status;
+}
